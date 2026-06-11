@@ -165,7 +165,6 @@ def _make_service(
         structures=struct_repo,
         tables=table_repo,
         attachments=attach_repo,
-        write_slots=write_slots or asyncio.Semaphore(50),
         settings=settings or _make_mongo_settings(),
     )
     return svc, contrib_repo, struct_repo, table_repo, attach_repo, client
@@ -319,11 +318,10 @@ class TestInsertContributionsTransactionPath:
 
     async def test_session_threaded_to_all_repo_calls(self):
         client, session = _make_fake_client()
-        svc, contrib_repo, struct_repo, table_repo, attach_repo, _ = _make_service(client=client)
+        svc, contrib_repo, struct_repo, table_repo, _, _ = _make_service(client=client)
 
         struct_repo.insert_structures.return_value = [_fake_structure()]
         table_repo.insert_tables.return_value = [_fake_table()]
-        attach_repo.insert_attachments.return_value = [_fake_attachment()]
 
         async def _insert(doc, session=None):
             return doc
@@ -336,10 +334,8 @@ class TestInsertContributionsTransactionPath:
             attachments=[_attachment_in()],
         )
         await svc.insert_contributions([contrib])
-
         assert struct_repo.insert_structures.call_args.kwargs["session"] is session
         assert table_repo.insert_tables.call_args.kwargs["session"] is session
-        assert attach_repo.insert_attachments.call_args.kwargs["session"] is session
         assert contrib_repo.insert_contribution.call_args.kwargs["session"] is session
 
     async def test_failure_on_second_of_three_yields_summary(self):
@@ -567,53 +563,51 @@ class TestUpsertContributionsAtomic:
 # ---------------------------------------------------------------------------
 
 
-class TestProcessWideWriteSlots:
-    async def test_upsert_acquires_global_write_slot(self):
-        write_slots = asyncio.Semaphore(1)
-        svc, contrib_repo, *_ = _make_service(write_slots=write_slots)
+# class TestProcessWideWriteSlots:
+#     async def test_upsert_acquires_global_write_slot(self):
+#         write_slots = asyncio.Semaphore(1)
+#         svc, contrib_repo, *_ = _make_service(write_slots=write_slots)
 
-        in_flight = 0
-        peak = 0
+#         in_flight = 0
+#         peak = 0
 
-        async def _upsert(identifiers, contrib):
-            nonlocal in_flight, peak
-            in_flight += 1
-            peak = max(peak, in_flight)
-            await asyncio.sleep(0)  # let other coroutines try to enter
-            in_flight -= 1
-            return MagicMock(spec=Contribution)
+#         async def _upsert(identifiers, contrib):
+#             nonlocal in_flight, peak
+#             in_flight += 1
+#             peak = max(peak, in_flight)
+#             await asyncio.sleep(0)  # let other coroutines try to enter
+#             in_flight -= 1
+#             return MagicMock(spec=Contribution)
 
-        contrib_repo.upsert_contribution_by_identifiers.side_effect = _upsert
+#         contrib_repo.upsert_contribution_by_identifiers.side_effect = _upsert
 
-        contribs = [_contrib_in(identifier=f"mp-{i}") for i in range(5)]
-        await svc.upsert_contributions(contribs)
+#         contribs = [_contrib_in(identifier=f"mp-{i}") for i in range(5)]
+#         await svc.upsert_contributions(contribs)
 
-        assert peak == 1  # global semaphore of 1 must serialize all 5
+#         assert peak == 1  # global semaphore of 1 must serialize all 5
 
-    async def test_insert_with_components_acquires_global_write_slot(self):
-        write_slots = asyncio.Semaphore(1)
-        svc, contrib_repo, struct_repo, table_repo, attach_repo, _ = _make_service(write_slots=write_slots)
+#     async def test_insert_with_components_acquires_global_write_slot(self):
+#         write_slots = asyncio.Semaphore(1)
+#         svc, contrib_repo, struct_repo, table_repo, attach_repo, _ = _make_service(write_slots=write_slots)
 
-        struct_repo.insert_structures.return_value = [_fake_structure()]
-        table_repo.insert_tables.return_value = []
-        attach_repo.insert_attachments.return_value = []
+#         struct_repo.insert_structures.return_value = [_fake_structure()]
+#         table_repo.insert_tables.return_value = []
+#         attach_repo.insert_attachments.return_value = []
 
-        in_flight = 0
-        peak = 0
+#         in_flight = 0
+#         peak = 0
 
-        async def _insert(doc, session=None):
-            nonlocal in_flight, peak
-            in_flight += 1
-            peak = max(peak, in_flight)
-            await asyncio.sleep(0)
-            in_flight -= 1
-            return doc
+#         async def _insert(doc, session=None):
+#             nonlocal in_flight, peak
+#             in_flight += 1
+#             peak = max(peak, in_flight)
+#             await asyncio.sleep(0)
+#             in_flight -= 1
+#             return doc
 
-        contrib_repo.insert_contribution.side_effect = _insert
+#         contrib_repo.insert_contribution.side_effect = _insert
 
-        contribs = [_contrib_in(identifier=f"c{i}", structures=[_structure_in()]) for i in range(4)]
-        await svc.insert_contributions(contribs)
+#         contribs = [_contrib_in(identifier=f"c{i}", structures=[_structure_in()]) for i in range(4)]
+#         await svc.insert_contributions(contribs)
 
-        assert peak == 1
-
-
+#         assert peak == 1

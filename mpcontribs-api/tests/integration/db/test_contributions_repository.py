@@ -21,7 +21,7 @@ from mpcontribs_api.domains.contributions.models import (
     ContributionPatch,
 )
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
-from mpcontribs_api.exceptions import ValidationError
+from mpcontribs_api.exceptions import NotFoundError, ValidationError
 from mpcontribs_api.pagination import CursorParams
 
 pytestmark = [pytest.mark.db, pytest.mark.asyncio(loop_scope="session")]
@@ -437,8 +437,9 @@ class TestDeleteContributionById:
         found = await Contribution.find_one(Contribution.id == doc.id)
         assert found is None
 
-    async def test_delete_nonexistent_is_silent(self, db):
-        await _repo(ADMIN).delete_contribution_by_id(str(PydanticObjectId()))
+    async def test_delete_nonexistent_throws_error(self, db):
+        with pytest.raises(NotFoundError, match="not found"):
+            await _repo(ADMIN).delete_contribution_by_id(str(PydanticObjectId()))
 
     async def test_raises_validation_error_for_bad_id(self, db):
         with pytest.raises(ValidationError):
@@ -446,7 +447,8 @@ class TestDeleteContributionById:
 
     async def test_anon_cannot_delete_private_doc(self, db):
         doc = await _insert(identifier="del-anon-priv", is_public=False)
-        await _repo(ANON).delete_contribution_by_id(str(doc.id))
+        with pytest.raises(NotFoundError, match="not found"):
+            await _repo(ANON).delete_contribution_by_id(str(doc.id))
         # Scope prevents anonymous from seeing the doc, so it is never deleted.
         still_there = await Contribution.find_one(Contribution.id == doc.id)
         assert still_there is not None

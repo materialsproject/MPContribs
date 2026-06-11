@@ -275,9 +275,10 @@ class TestDeleteProject:
         ids = {p.id for p in page.items}
         assert "del-me" not in ids
 
-    async def test_delete_nonexistent_is_silent(self, db):
-        # delete_project_by_id does find_one().delete() — no error if not found
-        await _repo(ADMIN).delete_project_by_id(id="ghost-id")
+    async def test_delete_nonexistent_throws_error(self, db):
+        # delete_project_by_id does find_one().delete() — Error if not found
+        with pytest.raises(NotFoundError, match="not found"):
+            await _repo(ADMIN).delete_project_by_id(id="ghost-id")
 
 
 # ---------------------------------------------------------------------------

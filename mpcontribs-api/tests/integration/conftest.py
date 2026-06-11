@@ -93,35 +93,6 @@ def make_test_app() -> FastAPI:
     return app
 
 
-def make_gateway_app() -> FastAPI:
-    """Like make_test_app() but with real gateway enforcement.
-
-    Used by gateway-specific tests to exercise the actual x-gateway-secret
-    header validation through the full HTTP cycle.
-    """
-    from fastapi import Depends
-
-    from mpcontribs_api.dependencies import verify_gateway
-
-    @asynccontextmanager
-    async def _noop_lifespan(app: FastAPI):
-        app.state.db = MagicMock()
-        yield
-
-    app = FastAPI(
-        title="mpcontribs-gateway-test",
-        lifespan=_noop_lifespan,
-        dependencies=[Depends(verify_gateway)],
-    )
-    app.add_middleware(RequestContextMiddleware)
-    register_exception_handlers(app)
-
-    from mpcontribs_api.api.v1.router import router as v1_router
-
-    app.include_router(v1_router, prefix="/api/v1")
-    return app
-
-
 # ---------------------------------------------------------------------------
 # Shared fixtures
 # ---------------------------------------------------------------------------
@@ -130,11 +101,6 @@ def make_gateway_app() -> FastAPI:
 @pytest.fixture(scope="session")
 def test_app() -> FastAPI:
     return make_test_app()
-
-
-@pytest.fixture(scope="session")
-def gateway_app() -> FastAPI:
-    return make_gateway_app()
 
 
 @pytest.fixture
