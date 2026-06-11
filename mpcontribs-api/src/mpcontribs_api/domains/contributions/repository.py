@@ -43,7 +43,7 @@ class MongoDbContributionRepository(
         ors: list[dict[str, Any]] = [{"is_public": True}]
         if not user.is_anonymous:
             if user.groups:
-                ors.append({"_id": {"$in": sorted(user.groups)}})
+                ors.append({"project": {"$in": sorted(user.groups)}})
         return {"$or": ors}
 
     async def get_contributions(
