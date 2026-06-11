@@ -13,6 +13,7 @@ from mpcontribs_api.domains.contributions.models import (
     ContributionOut,
     ContributionPatch,
 )
+from mpcontribs_api.exceptions import ValidationError
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -97,6 +98,37 @@ class TestContributionBase:
         contrib = _make_contribution_in(data=nested)
         assert contrib.data["band_gap"]["value"] == 1.5
 
+    def test_data_depth_validation(self):
+        max_nesting = {"lvl_1": {"lvl_2": {"lvl_3": {"lvl_4": {"lvl_5": {"lvl_6": {"lvl_7": "pass"}}}}}}}
+        invalid_nesting = {"lvl_1": {"lvl_2": {"lvl_3": {"lvl_4": {"lvl_5": {"lvl_6": {"lvl_7": {"lvl_8": "fail"}}}}}}}}
+        _make_contribution_in(data=max_nesting)
+        assert True
+        with pytest.raises(ValidationError, match="Depth of Contribution.data"):
+            _make_contribution_in(data=invalid_nesting)
+
+    def test_data_key_validation(self):
+        valid_punctuation = {"test*/|": "pass"}
+        invalid_punctuation = {"test.": "fail"}
+        too_many_pipes = {"test||": "fail"}
+        non_ascii = {"ΔE": "fail"}
+        _make_contribution_in(data=valid_punctuation)
+        assert True
+        with pytest.raises(ValidationError, match="Punctuation found in Contribution.data keys"):
+             _make_contribution_in(data=invalid_punctuation)
+        with pytest.raises(ValidationError, match="Punctuation found in Contribution.data keys"):
+            _make_contribution_in(data=too_many_pipes)
+        with pytest.raises(ValidationError, match="Non-ASCII key found in Contribution.data"):
+            _make_contribution_in(data=non_ascii)
+
+    # There isn't currently value validation. This is to check that that is true
+    def test_data_value_validation(self):
+        pipes_in_values = {"test": "pass||"}
+        punctuation_in_values = {"test": "pass."}
+        ascii_in_values = {"test": "Δ"}
+        _make_contribution_in(data=pipes_in_values)
+        _make_contribution_in(data=punctuation_in_values)
+        _make_contribution_in(data=ascii_in_values)
+        assert True
 
 # ---------------------------------------------------------------------------
 # Contribution.from_input_model

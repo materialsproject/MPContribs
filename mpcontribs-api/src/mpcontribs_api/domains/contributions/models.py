@@ -1,3 +1,4 @@
+import re
 from datetime import UTC, datetime
 from typing import Annotated, Any
 
@@ -29,12 +30,12 @@ def _get_dict_depth(x) -> int:
     if isinstance(x, dict):
         return 1 + max((_get_dict_depth(v) for v in x.values()), default=0)
     elif isinstance(x, list):
-        raise ValidationError("List encountered in Contribution.data")
+        return max((_get_dict_depth(item) for item in x), default=0)
     return 0
 
 
 def _validate_data_depth(data: dict[str, Any] | None) -> dict[str, Any] | None:
-    if not data:
+    if data is None:
         return None
     depth = _get_dict_depth(data)
     if depth > 7:
@@ -42,11 +43,34 @@ def _validate_data_depth(data: dict[str, Any] | None) -> dict[str, Any] | None:
     return data
 
 
+# Forbid punctuation, excluding: '*', '/' and exactly 1 '|' anywhere in string
+_DATA_PUNCTUATION_PATTERN = re.compile(r"(?![^|]*\|[^|]*\|)[^\x21-\x29\x2B-\x2E\x3A-\x40\x5B-\x5E\x60\x7B\x7D-\x7E]*")
+
+
+def _validate_keys(data: dict[str, Any] | None) -> dict[str, Any] | None:
+    if data is None:
+        return None
+    if not all(isinstance(k, str) and k.isascii() for k in data.keys()):
+        raise ValidationError("Non-ASCII key found in Contribution.data. All dict keys must be only ASCII")
+    if any(_DATA_PUNCTUATION_PATTERN.fullmatch(k) is None for k in data.keys()):
+        raise ValidationError(
+            "Punctuation found in Contribution.data keys. Only '_', '*', '/', and at most 1 '|' permitted."
+        )
+    for v in data.values():
+        if isinstance(v, dict):
+            _validate_keys(v)
+    return data
+
+
 class ContributionBase(BaseDocumentWithInput[PydanticObjectId]):
     project: str
     identifier: str
     formula: str
-    data: Annotated[dict[str, Any], BeforeValidator(_validate_data_depth)]
+    data: Annotated[
+        dict[str, Any],
+        BeforeValidator(_validate_data_depth),
+        BeforeValidator(_validate_keys),
+    ]
 
     # TODO: Verify that this should default to True and be passed by users
     needs_build: bool = True
@@ -110,7 +134,11 @@ class ContributionOut(DocumentOut[PydanticObjectId]):
     is_public: bool | None = None
     last_modified: datetime | None = None
     needs_build: bool | None = None
-    data: Annotated[dict[str, Any] | None, BeforeValidator(_validate_data_depth)] = None
+    data: Annotated[
+        dict[str, Any] | None,
+        BeforeValidator(_validate_data_depth),
+        BeforeValidator(_validate_keys),
+    ] = None
     structures: list[Link[Structure]] | None = None
     tables: list[Link[Table]] | None = None
     attachments: list[Link[Attachment]] | None = None
@@ -133,7 +161,11 @@ class ContributionPatch(SparseFieldsModel):
     identifier: str | None = None
     formula: str | None = None
     needs_build: bool | None = None
-    data: Annotated[dict[str, Any] | None, BeforeValidator(_validate_data_depth)] = None
+    data: Annotated[
+        dict[str, Any] | None,
+        BeforeValidator(_validate_data_depth),
+        BeforeValidator(_validate_keys),
+    ] = None
     structures: list[Link[Structure]] | None = None
     tables: list[Link[Table]] | None = None
     attachments: list[Link[Attachment]] | None = None
