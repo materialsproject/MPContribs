@@ -78,7 +78,7 @@ The `_fields` query parameter (handled in `projection.py`) lets callers request 
 
 ### Exception hierarchy
 
-`exceptions.py` defines `AppError` subclasses (`NotFoundError`, `ConflictError`, `ValidationError`, `AuthenticationError`, `PermissionError`, `GatewayError`). All carry `status_code`, `error_code`, `message`, and a `context` dict. Handlers in `app.py` convert them to a uniform JSON shape; internal context is logged but not sent to clients.
+`exceptions.py` defines `AppError` subclasses (`NotFoundError`, `ConflictError`, `ValidationError`, `AuthenticationError`, `PermissionError`). All carry `status_code`, `error_code`, `message`, and a `context` dict. Handlers in `app.py` convert them to a uniform JSON shape; internal context is logged but not sent to clients.
 
 ### Observability
 

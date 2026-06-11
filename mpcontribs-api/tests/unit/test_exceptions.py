@@ -4,7 +4,6 @@ from mpcontribs_api.exceptions import (
     AppError,
     AuthenticationError,
     ConflictError,
-    GatewayError,
     NotFoundError,
     PermissionError,
     ValidationError,
@@ -124,17 +123,6 @@ class TestAuthenticationError:
 
     def test_is_app_error(self):
         assert issubclass(AuthenticationError, AppError)
-
-
-class TestGatewayError:
-    def test_status_code(self):
-        assert GatewayError.status_code == 403
-
-    def test_error_code(self):
-        assert GatewayError.error_code == "gateway_error"
-
-    def test_is_app_error(self):
-        assert issubclass(GatewayError, AppError)
 
 
 class TestExceptionRaising:
