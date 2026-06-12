@@ -25,7 +25,7 @@ async def get_tables(
     return await repo.get_tables(filter=filter, fields=selected, pagination=pagination)
 
 
-@router.get("{pk}", response_model=TableOut)
+@router.get("/{pk}", response_model=TableOut)
 async def get_table(
     repo: TableDep,
     pk: str,
@@ -35,7 +35,7 @@ async def get_table(
     return await repo.get_table_by_id(id=pk, fields=selected)
 
 
-@router.get("download/{short_mime}")
+@router.get("/download/{short_mime}")
 async def download_table(
     repo: TableDep,
     format: DownloadFormat,
@@ -72,12 +72,12 @@ async def delete_tables(repo: TableDep, filter: TableFilter = FilterDepends(Tabl
     return await repo.delete_tables(filter=filter)
 
 
-@router.delete("{id}", response_model=DeleteResponse)
+@router.delete("/{id}", response_model=DeleteResponse)
 async def delete_table_by_id(repo: TableDep, id: str):
     return await repo.delete_table_by_id(id=id)
 
 
-@router.patch("{id}")
+@router.patch("/{id}")
 async def patch_table_by_id(
     repo: TableDep,
     id: str,

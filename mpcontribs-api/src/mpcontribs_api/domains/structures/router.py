@@ -25,7 +25,7 @@ async def get_structures(
     return await repo.get_structures(filter=filter, fields=selected, pagination=pagination)
 
 
-@router.get("{pk}", response_model=StructureOut)
+@router.get("/{pk}", response_model=StructureOut)
 async def get_structure(
     repo: StructureDep,
     pk: str,
@@ -35,7 +35,7 @@ async def get_structure(
     return await repo.get_structure_by_id(id=pk, fields=selected)
 
 
-@router.get("download/{short_mime}")
+@router.get("/download/{short_mime}")
 async def download_structure(
     repo: StructureDep,
     response: Response,
@@ -73,12 +73,12 @@ async def delete_structures(repo: StructureDep, filter: StructureFilter = Filter
     return await repo.delete_structures(filter=filter)
 
 
-@router.delete("{id}", response_model=DeleteResponse)
+@router.delete("/{id}", response_model=DeleteResponse)
 async def delete_structure_by_id(repo: StructureDep, id: str):
     return await repo.delete_structure_by_id(id=id)
 
 
-@router.patch("{id}")
+@router.patch("/{id}")
 async def patch_structure_by_id(
     repo: StructureDep,
     id: str,

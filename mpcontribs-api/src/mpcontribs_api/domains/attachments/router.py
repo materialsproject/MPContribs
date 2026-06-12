@@ -6,46 +6,46 @@ from fastapi_filter import FilterDepends
 
 from mpcontribs_api.domains._shared.models import DeleteResponse
 from mpcontribs_api.domains._shared.types import DownloadFormat, FieldSelector
-from mpcontribs_api.domains.structures.dependencies import StructureDep
-from mpcontribs_api.domains.structures.models import StructureFilter, StructureOut
+from mpcontribs_api.domains.attachments.dependencies import AttachmentDep
+from mpcontribs_api.domains.attachments.models import AttachmentFilter, AttachmentOut
 from mpcontribs_api.pagination import CursorParams, Page
 
 router = APIRouter()
 
 
-@router.get("", response_model=Page[StructureOut])
-async def get_structures(
-    repo: StructureDep,
+@router.get("", response_model=Page[AttachmentOut])
+async def get_attachments(
+    repo: AttachmentDep,
     pagination: Annotated[CursorParams, Depends()],
-    filter: StructureFilter = FilterDepends(StructureFilter),
-    fields: FieldSelector = StructureOut.default_fields(),
+    filter: AttachmentFilter = FilterDepends(AttachmentFilter),
+    fields: FieldSelector = AttachmentOut.default_fields(),
 ):
-    selected = StructureOut.parse_fields(fields)
-    return await repo.get_structures(filter=filter, fields=selected, pagination=pagination)
+    selected = AttachmentOut.parse_fields(fields)
+    return await repo.get_attachments(filter=filter, fields=selected, pagination=pagination)
 
 
-@router.get("{pk}", response_model=StructureOut)
-async def get_structure(
-    repo: StructureDep,
+@router.get("/{pk}", response_model=AttachmentOut)
+async def get_attachment(
+    repo: AttachmentDep,
     pk: str,
-    fields: FieldSelector = StructureOut.default_fields(),
+    fields: FieldSelector = AttachmentOut.default_fields(),
 ):
-    selected = StructureOut.parse_fields(fields)
-    return await repo.get_structure_by_id(id=pk, fields=selected)
+    selected = AttachmentOut.parse_fields(fields)
+    return await repo.get_attachment_by_id(id=pk, fields=selected)
 
 
-@router.get("download/{short_mime}")
-async def download_structure(
-    repo: StructureDep,
+@router.get("/download/{short_mime}")
+async def download_attachment(
+    repo: AttachmentDep,
     response: Response,
     format: DownloadFormat,
     short_mime: Literal["gz", None] = "gz",
     ignore_cache: bool = False,
-    filter: StructureFilter = FilterDepends(StructureFilter),
-    fields: FieldSelector = StructureOut.default_fields(),
+    filter: AttachmentFilter = FilterDepends(AttachmentFilter),
+    fields: FieldSelector = AttachmentOut.default_fields(),
 ) -> StreamingResponse:
-    selected = StructureOut.parse_fields(fields)
-    body = await repo.download_structures(
+    selected = AttachmentOut.parse_fields(fields)
+    body = await repo.download_attachments(
         format=format,
         short_mime=short_mime,
         ignore_cache=ignore_cache,
@@ -55,15 +55,15 @@ async def download_structure(
     return StreamingResponse(
         body,
         media_type="application/gzip",
-        headers={"Content-Disposition": 'attachment; filename="structures.jsonl.gz"'},
+        headers={"Content-Disposition": 'attachment; filename="attachments.jsonl.gz"'},
     )
 
 
 @router.delete("", response_model=DeleteResponse)
-async def delete_structures(repo: StructureDep, filter: StructureFilter = FilterDepends(StructureFilter)):
-    return await repo.delete_structures(filter=filter)
+async def delete_attachments(repo: AttachmentDep, filter: AttachmentFilter = FilterDepends(AttachmentFilter)):
+    return await repo.delete_attachments(filter=filter)
 
 
-@router.delete("{id}", response_model=DeleteResponse)
-async def delete_structure_by_id(repo: StructureDep, id: str):
-    return await repo.delete_structure_by_id(id=id)
+@router.delete("/{id}", response_model=DeleteResponse)
+async def delete_attachment_by_id(repo: AttachmentDep, id: str):
+    return await repo.delete_attachment_by_id(id=id)
