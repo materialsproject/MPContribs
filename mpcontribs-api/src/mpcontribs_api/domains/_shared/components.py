@@ -28,7 +28,7 @@ class MongoDbComponentsRepository[
     def _build_scope(user: User) -> dict[str, Any]:
         return {}
 
-    # TODO: Returned docs don't have IDs assigned to them
+    # TODO: The docs I return don't have ID yet, since they were created locally
     async def insert_components(
         self,
         components: list[TIn],
@@ -42,6 +42,7 @@ class MongoDbComponentsRepository[
         """
         if not components:
             return []
+
         docs = [self.document_model.model_validate(t.model_dump()) for t in components]
         chunk_size = get_settings().mongo.component_insert_chunk_size
         for start in range(0, len(docs), chunk_size):
@@ -55,7 +56,7 @@ class MongoDbComponentsRepository[
             component (TIn): the table to insert
 
         Returns:
-            TDpc: the component actually in the database
+            TDoc: the component actually in the database
 
         Raises:
             AppError: If insert_one returns None, raises
@@ -65,15 +66,6 @@ class MongoDbComponentsRepository[
         if not full_doc:
             raise AppError("Error inserting Table", table=component)
         return full_doc
-
-    async def get_components(
-        self,
-        filter: TFilter,
-        pagination: CursorParams,
-        fields: frozenset[str] | None,
-    ) -> Page[TOut]:
-        """Query the component collection, scoped to the current user. See ``get_many``."""
-        return await self.get_many(pagination=pagination, filter=filter, fields=fields)
 
     async def get_component_by_id(self, id: str, fields: frozenset[str] | None) -> TDoc | TOut | None:
         """Find a single table by id, scoped to the current user. See ``get_by_id``."""

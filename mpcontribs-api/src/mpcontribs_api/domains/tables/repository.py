@@ -54,7 +54,7 @@ class MongoDbTableRepository(MongoDbComponentsRepository[Table, TableIn, TableOu
         fields: frozenset[str] | None,
     ) -> Page[TableOut]:
         """Query the table collection, scoped to the current user. See ``get_many``."""
-        return await self.get_components(pagination=pagination, filter=filter, fields=fields)
+        return await self.get_many(pagination=pagination, filter=filter, fields=fields)
 
     async def get_table_by_id(self, id: str, fields: frozenset[str] | None) -> Table | TableOut | None:
         """Find a single table by id, scoped to the current user. See ``get_by_id``."""
