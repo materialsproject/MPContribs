@@ -611,3 +611,210 @@ class TestUpsertContributionsAtomic:
 #         await svc.insert_contributions(contribs)
 
 #         assert peak == 1
+
+
+# ---------------------------------------------------------------------------
+# delete_contributions — cascade delete (components-first), cursor loop
+# ---------------------------------------------------------------------------
+
+from types import SimpleNamespace  # noqa: E402
+
+from mpcontribs_api.domains._shared.models import DeleteResponse  # noqa: E402
+from mpcontribs_api.domains.contributions.models import ContributionFilter  # noqa: E402
+from mpcontribs_api.pagination import Page  # noqa: E402
+
+
+def _link(ref_id: PydanticObjectId) -> SimpleNamespace:
+    """Minimal stand-in for a Beanie Link: only ``.ref.id`` is read by the service."""
+    return SimpleNamespace(ref=SimpleNamespace(id=ref_id))
+
+
+def _contrib_doc(structures=None, attachments=None, tables=None, id_=None) -> SimpleNamespace:
+    """A contribution page item exposing the attributes delete_contributions reads."""
+    return SimpleNamespace(
+        id=id_ or _oid(),
+        structures=[_link(s) for s in (structures or [])],
+        attachments=[_link(a) for a in (attachments or [])],
+        tables=[_link(t) for t in (tables or [])],
+    )
+
+
+def _page(items) -> Page:
+    return Page(items=items, next_cursor=None)
+
+
+def _delete_result(n: int) -> SimpleNamespace:
+    """Stand-in for pymongo DeleteResult (only ``.deleted_count`` is read)."""
+    return SimpleNamespace(deleted_count=n)
+
+
+def _noop_filter() -> ContributionFilter:
+    return ContributionFilter()
+
+
+class TestDeleteContributionsEmpty:
+    async def test_empty_match_returns_zero_summary(self):
+        svc, contrib_repo, *_ = _make_service()
+        contrib_repo.get_contributions.return_value = _page([])
+        contrib_repo.delete_contributions.return_value = _delete_result(0)
+
+        summary = await svc.delete_contributions(_noop_filter())
+
+        assert summary.num_deleted == 0
+        assert summary.num_children_deleted == 0
+
+    async def test_empty_match_does_not_call_child_repos(self):
+        svc, contrib_repo, struct_repo, table_repo, attach_repo, _ = _make_service()
+        contrib_repo.get_contributions.return_value = _page([])
+        contrib_repo.delete_contributions.return_value = _delete_result(0)
+
+        await svc.delete_contributions(_noop_filter())
+
+        struct_repo.delete_by_ids.assert_not_called()
+        table_repo.delete_by_ids.assert_not_called()
+        attach_repo.delete_by_ids.assert_not_called()
+
+    async def test_empty_match_terminates_after_one_page(self):
+        svc, contrib_repo, *_ = _make_service()
+        contrib_repo.get_contributions.return_value = _page([])
+        contrib_repo.delete_contributions.return_value = _delete_result(0)
+
+        await svc.delete_contributions(_noop_filter())
+
+        assert contrib_repo.get_contributions.await_count == 1
+
+
+class TestDeleteContributionsSinglePage:
+    async def test_deletes_contributions_then_terminates(self):
+        svc, contrib_repo, *_ = _make_service()
+        docs = [_contrib_doc() for _ in range(3)]
+        # First call returns the page; second returns empty so the loop ends.
+        contrib_repo.get_contributions.side_effect = [_page(docs), _page([])]
+        contrib_repo.delete_contributions.side_effect = [_delete_result(3), _delete_result(0)]
+
+        summary = await svc.delete_contributions(_noop_filter())
+
+        assert summary.num_deleted == 3
+
+    async def test_no_components_means_no_child_deletes(self):
+        svc, contrib_repo, struct_repo, table_repo, attach_repo, _ = _make_service()
+        contrib_repo.get_contributions.side_effect = [_page([_contrib_doc()]), _page([])]
+        contrib_repo.delete_contributions.side_effect = [_delete_result(1), _delete_result(0)]
+
+        summary = await svc.delete_contributions(_noop_filter())
+
+        struct_repo.delete_by_ids.assert_not_called()
+        table_repo.delete_by_ids.assert_not_called()
+        attach_repo.delete_by_ids.assert_not_called()
+        assert summary.num_children_deleted == 0
+
+    async def test_components_deleted_before_contributions(self):
+        # Records call order across repos to assert children go first.
+        order: list[str] = []
+        svc, contrib_repo, struct_repo, table_repo, attach_repo, _ = _make_service()
+
+        doc = _contrib_doc(structures=[_oid()], tables=[_oid()], attachments=[_oid()])
+        contrib_repo.get_contributions.side_effect = [_page([doc]), _page([])]
+
+        def _make_child_recorder(name):
+            async def _record(ids, *a, **k):
+                order.append(name)
+                return DeleteResponse(num_deleted=1)
+
+            return _record
+
+        struct_repo.delete_by_ids.side_effect = _make_child_recorder("structures")
+        table_repo.delete_by_ids.side_effect = _make_child_recorder("tables")
+        attach_repo.delete_by_ids.side_effect = _make_child_recorder("attachments")
+
+        async def _record_contrib(_filter, *a, **k):
+            order.append("contributions")
+            return _delete_result(1)
+
+        contrib_repo.delete_contributions.side_effect = _record_contrib
+
+        await svc.delete_contributions(_noop_filter())
+
+        # The loop makes a final pass on the empty page that still issues one
+        # (no-op) contribution delete before breaking, so there are two
+        # "contributions" entries. The invariant under test: all three child
+        # deletes happen before the first contribution delete.
+        first_contrib = order.index("contributions")
+        assert set(order[:first_contrib]) == {"structures", "tables", "attachments"}
+
+    async def test_child_ids_collected_from_links(self):
+        svc, contrib_repo, struct_repo, *_ = _make_service()
+        s1, s2 = _oid(), _oid()
+        doc = _contrib_doc(structures=[s1, s2])
+        contrib_repo.get_contributions.side_effect = [_page([doc]), _page([])]
+        struct_repo.delete_by_ids.return_value = DeleteResponse(num_deleted=2)
+        contrib_repo.delete_contributions.side_effect = [_delete_result(1), _delete_result(0)]
+
+        await svc.delete_contributions(_noop_filter())
+
+        called_ids = struct_repo.delete_by_ids.await_args.args[0]
+        assert set(called_ids) == {s1, s2}
+
+    async def test_child_counts_accumulated_across_types(self):
+        svc, contrib_repo, struct_repo, table_repo, attach_repo, _ = _make_service()
+        doc = _contrib_doc(structures=[_oid()], tables=[_oid(), _oid()], attachments=[_oid()])
+        contrib_repo.get_contributions.side_effect = [_page([doc]), _page([])]
+        struct_repo.delete_by_ids.return_value = DeleteResponse(num_deleted=1)
+        table_repo.delete_by_ids.return_value = DeleteResponse(num_deleted=2)
+        attach_repo.delete_by_ids.return_value = DeleteResponse(num_deleted=1)
+        contrib_repo.delete_contributions.side_effect = [_delete_result(1), _delete_result(0)]
+
+        summary = await svc.delete_contributions(_noop_filter())
+
+        assert summary.num_children_deleted == 4
+
+    async def test_contributions_deleted_by_id_in_of_page(self):
+        svc, contrib_repo, *_ = _make_service()
+        ids = [_oid(), _oid()]
+        docs = [_contrib_doc(id_=i) for i in ids]
+        contrib_repo.get_contributions.side_effect = [_page(docs), _page([])]
+        contrib_repo.delete_contributions.side_effect = [_delete_result(2), _delete_result(0)]
+
+        await svc.delete_contributions(_noop_filter())
+
+        first_call_filter = contrib_repo.delete_contributions.await_args_list[0].args[0]
+        assert set(first_call_filter.id__in) == set(ids)
+
+
+class TestDeleteContributionsMultiPage:
+    async def test_loops_until_page_empty(self):
+        svc, contrib_repo, *_ = _make_service()
+        contrib_repo.get_contributions.side_effect = [
+            _page([_contrib_doc() for _ in range(2)]),
+            _page([_contrib_doc()]),
+            _page([]),
+        ]
+        contrib_repo.delete_contributions.side_effect = [
+            _delete_result(2),
+            _delete_result(1),
+            _delete_result(0),
+        ]
+
+        summary = await svc.delete_contributions(_noop_filter())
+
+        assert summary.num_deleted == 3
+        assert contrib_repo.get_contributions.await_count == 3
+
+    async def test_children_accumulate_across_pages(self):
+        svc, contrib_repo, struct_repo, *_ = _make_service()
+        contrib_repo.get_contributions.side_effect = [
+            _page([_contrib_doc(structures=[_oid()])]),
+            _page([_contrib_doc(structures=[_oid()])]),
+            _page([]),
+        ]
+        struct_repo.delete_by_ids.return_value = DeleteResponse(num_deleted=1)
+        contrib_repo.delete_contributions.side_effect = [
+            _delete_result(1),
+            _delete_result(1),
+            _delete_result(0),
+        ]
+
+        summary = await svc.delete_contributions(_noop_filter())
+
+        assert summary.num_children_deleted == 2
+        assert struct_repo.delete_by_ids.await_count == 2
