@@ -232,3 +232,25 @@ class TestProjectFromInputModel:
         assert project.is_approved is False
         assert project.references == []
         assert project.columns == []
+
+
+# ---------------------------------------------------------------------------
+# Project.decode_cursor (string-id override)
+# ---------------------------------------------------------------------------
+
+
+class TestProjectDecodeCursor:
+    def test_round_trips_string_id(self):
+        from mpcontribs_api.pagination import encode_cursor
+
+        assert Project.decode_cursor(encode_cursor("my-project")) == "my-project"
+
+    def test_returns_plain_str_not_object_id(self):
+        from mpcontribs_api.pagination import encode_cursor
+
+        decoded = Project.decode_cursor(encode_cursor("solar-cells"))
+        assert type(decoded) is str
+
+    def test_malformed_cursor_raises_value_error(self):
+        with pytest.raises(ValueError):
+            Project.decode_cursor("!!!not-base64!!!")
