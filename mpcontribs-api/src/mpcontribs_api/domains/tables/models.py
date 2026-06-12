@@ -6,13 +6,13 @@ from fastapi_filter.contrib.beanie import Filter
 from pydantic import (
     BaseModel,
     ConfigDict,
-    ValidationError,
     field_serializer,
     model_validator,
 )
 
 from mpcontribs_api.domains._shared.models import Component, DocumentOut
 from mpcontribs_api.domains._shared.types import MD5Hash, PolarsFrame
+from mpcontribs_api.exceptions import ValidationError
 from mpcontribs_api.projection import SparseFieldsModel
 
 

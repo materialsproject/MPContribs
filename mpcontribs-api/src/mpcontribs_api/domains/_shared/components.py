@@ -15,7 +15,6 @@ from mpcontribs_api.config import get_settings
 from mpcontribs_api.domains._shared.models import Component, DeleteResponse, DocumentOut
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
 from mpcontribs_api.domains._shared.types import DownloadFormat, MD5Hash
-from mpcontribs_api.exceptions import AppError
 
 
 class MongoDbComponentsRepository[
