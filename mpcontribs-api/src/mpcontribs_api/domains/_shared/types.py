@@ -42,7 +42,7 @@ _MD5 = re.compile(r"^[a-f0-9]{32}$")
 def _md5_like(v: str) -> str:
     v = v.strip().lower()
     if not _MD5.match(v):
-        raise ValidationError("must be a 32-character MD5 hex digest")
+        raise ValidationError("must be a 32-character MD5 hex digest", md5=v)
     return v
 
 

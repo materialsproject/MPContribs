@@ -3,7 +3,7 @@ from fastapi_filter.contrib.beanie import Filter
 from pydantic import BaseModel, ConfigDict
 from pymatgen.core import Element
 
-from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
+from mpcontribs_api.domains._shared.models import Component, DocumentOut
 from mpcontribs_api.domains._shared.types import MD5Hash, PolarsFrame
 from mpcontribs_api.projection import SparseFieldsModel
 
@@ -46,9 +46,8 @@ class Cif(BaseModel):
     pass
 
 
-class Structure(BaseDocumentWithInput[PydanticObjectId]):
-    name: str
-    md5: MD5Hash
+class Structure(Component):
+    hash_fields = frozenset({"lattice", "sites", "charge"})
     lattice: Lattice
     sites: list[Site]
     charge: float | None

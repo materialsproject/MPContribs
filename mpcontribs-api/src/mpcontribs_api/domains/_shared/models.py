@@ -1,10 +1,15 @@
-from typing import Annotated, Any, Self
+import hashlib
+import json
+import unicodedata
+from collections.abc import Mapping
+from typing import Annotated, Any, ClassVar, Self
 
 from beanie import DocumentWithSoftDelete, PydanticObjectId
 from pydantic import BaseModel, Field
 from pymongo.results import DeleteResult
 
 from mpcontribs_api import pagination
+from mpcontribs_api.domains._shared.types import MD5Hash
 from mpcontribs_api.projection import SparseFieldsModel
 
 
@@ -51,3 +56,21 @@ class DeleteResponse(BaseModel):
     @classmethod
     def from_delete_result(cls, delete_result: DeleteResult) -> Self:
         return cls(num_deleted=delete_result.deleted_count)
+
+
+def canonical_md5(payload: Mapping[str, Any]) -> str:
+    """MD5 hex digest of a content mapping, stable across processes/hosts."""
+    text = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    normalized = unicodedata.normalize("NFC", text)
+    return hashlib.md5(normalized.encode("utf-8")).hexdigest()
+
+
+class Component(BaseDocumentWithInput[PydanticObjectId]):
+    name: str
+    md5: MD5Hash
+
+    hash_fields: ClassVar[frozenset[str]]
+
+    def compute_md5(self) -> str:
+        payload = self.model_dump(mode="json", include=set(self.hash_fields), by_alias=False)
+        return canonical_md5(payload)
