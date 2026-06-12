@@ -9,6 +9,7 @@ from mpcontribs_api.domains.contributions.repository import MongoDbContributionR
 
 from mpcontribs_api.domains.contributions.models import (
     Contribution,
+    ContributionFilter,
     ContributionIn,
     ContributionOut,
     ContributionPatch,
@@ -255,3 +256,32 @@ class TestContributionRepoScope:
         user = User(username="u@example.com", groups=frozenset())
         ors = MongoDbContributionRepository._build_scope(user)["$or"]
         assert not any("_id" in c for c in ors)
+
+
+# ---------------------------------------------------------------------------
+# ContributionFilter.convert_str_to_oid
+# ---------------------------------------------------------------------------
+
+
+class TestContributionFilterIdValidator:
+    def test_empty_filter_id_is_none(self):
+        assert ContributionFilter().id is None
+
+    def test_str_converted_to_object_id(self):
+        oid = PydanticObjectId()
+        filter = ContributionFilter(id=str(oid))
+        assert isinstance(filter.id, PydanticObjectId)
+        assert filter.id == oid
+
+    def test_object_id_passthrough(self):
+        oid = PydanticObjectId()
+        assert ContributionFilter(id=oid).id == oid
+
+    # RED: a malformed id currently leaks bson.errors.InvalidId (not a
+    # ValueError subclass), which the exception handlers don't map — so
+    # `DELETE /contributions/{bad-id}` would 500 instead of 422. Intended
+    # behavior is a controlled validation error, matching how
+    # MongoDbRepository._convert_object_id handles the same input.
+    def test_malformed_id_raises_validation_error(self):
+        with pytest.raises(ValidationError):
+            ContributionFilter(id="not-an-object-id")

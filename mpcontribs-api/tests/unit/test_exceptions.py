@@ -8,6 +8,7 @@ from mpcontribs_api.exceptions import (
     PermissionError,
     ValidationError,
     _error_body,
+    _sanitize_validation_errors,
 )
 
 
@@ -140,3 +141,34 @@ class TestExceptionRaising:
         with pytest.raises(ValidationError) as exc_info:
             raise ValidationError("bad field", field="email", value="oops")
         assert exc_info.value.context == {"field": "email", "value": "oops"}
+
+
+# ---------------------------------------------------------------------------
+# _sanitize_validation_errors
+# ---------------------------------------------------------------------------
+
+
+class TestSanitizeValidationErrors:
+    def test_drops_input_and_url_keys(self):
+        errors = [
+            {"type": "missing", "loc": ("body", "name"), "msg": "Field required", "input": {"secret": 1}, "url": "https://errors.pydantic.dev/x"}
+        ]
+        sanitized = _sanitize_validation_errors(errors)
+        assert sanitized == [{"type": "missing", "loc": ("body", "name"), "msg": "Field required"}]
+
+    def test_echoed_input_never_survives(self):
+        errors = [{"msg": "bad", "input": "user-supplied-payload"}]
+        assert "input" not in _sanitize_validation_errors(errors)[0]
+
+    def test_multiple_errors_all_sanitized(self):
+        errors = [
+            {"msg": "a", "input": 1, "url": "u"},
+            {"msg": "b", "input": 2},
+            {"msg": "c"},
+        ]
+        sanitized = _sanitize_validation_errors(errors)
+        assert all("input" not in e and "url" not in e for e in sanitized)
+        assert [e["msg"] for e in sanitized] == ["a", "b", "c"]
+
+    def test_empty_sequence(self):
+        assert _sanitize_validation_errors([]) == []
