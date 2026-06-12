@@ -56,7 +56,7 @@ class MongoDbStructureRepository(
         fields: frozenset[str] | None,
     ) -> Page[StructureOut]:
         """Query the structure collection, scoped to the current user. See ``get_many``."""
-        return await self.get_components(pagination=pagination, filter=filter, fields=fields)
+        return await self.get_many(pagination=pagination, filter=filter, fields=fields)
 
     async def get_structure_by_id(self, id: str, fields: frozenset[str] | None) -> Structure | StructureOut | None:
         """Find a single table by id, scoped to the current user. See ``get_by_id``."""

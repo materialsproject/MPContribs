@@ -29,7 +29,7 @@ class MongoDbAttachmentRepository(
         fields: frozenset[str] | None,
     ) -> Page[AttachmentOut]:
         """Query the attachment collection, scoped to the current user. See ``get_many``."""
-        return await self.get_components(pagination=pagination, filter=filter, fields=fields)
+        return await self.get_many(pagination=pagination, filter=filter, fields=fields)
 
     async def get_attachment_by_id(self, id: str, fields: frozenset[str] | None) -> Attachment | AttachmentOut | None:
         """Find a single table by id, scoped to the current user. See ``get_by_id``."""
