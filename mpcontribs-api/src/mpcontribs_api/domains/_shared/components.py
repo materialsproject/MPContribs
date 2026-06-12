@@ -14,7 +14,7 @@ from mpcontribs_api.auth import User
 from mpcontribs_api.config import get_settings
 from mpcontribs_api.domains._shared.models import Component, DeleteResponse, DocumentOut
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
-from mpcontribs_api.domains._shared.types import DownloadFormat
+from mpcontribs_api.domains._shared.types import DownloadFormat, MD5Hash
 from mpcontribs_api.exceptions import AppError
 
 
@@ -29,6 +29,22 @@ class MongoDbComponentsRepository[
     def _build_scope(user: User) -> dict[str, Any]:
         return {}
 
+    async def _check_existing(
+        self,
+        components: list[TIn] | TIn,
+        session: AsyncClientSession | None = None,
+    ) -> tuple[dict[MD5Hash, TIn], dict[str, TDoc]]:
+        if not isinstance(components, list):
+            components = [components]
+        by_md5 = {comp.md5: comp for comp in components}
+
+        # Full fetch so existing docs come back with their ids
+        existing_docs = await self.document_model.find(
+            In(self.document_model.md5, list(by_md5.keys())),
+            session=session,
+        ).to_list()
+        return (by_md5, {doc.md5: doc for doc in existing_docs})
+
     async def insert_components(
         self,
         components: list[TIn],
@@ -40,15 +56,7 @@ class MongoDbComponentsRepository[
             components (list[TIn]): components to insert
             session (AsyncClientSession): optional client session; pass when inserting inside a transaction
         """
-        by_md5 = {comp.md5: comp for comp in components}
-
-        # Full fetch so existing docs come back with their ids
-        existing_docs = await self.document_model.find(
-            In(self.document_model.md5, list(by_md5.keys())),
-            session=session,
-        ).to_list()
-        existing_by_md5 = {doc.md5: doc for doc in existing_docs}
-
+        by_md5, existing_by_md5 = await self._check_existing(components=components, session=session)
         # Assign ids manually: insert_many won't populate id back onto these
         # objects, and get_dict drops id when it's None.
         new_docs: list[TDoc] = []
@@ -74,7 +82,7 @@ class MongoDbComponentsRepository[
         resolved = existing_by_md5 | {doc.md5: doc for doc in new_docs}
         return [resolved[md5] for md5 in by_md5]
 
-    async def insert_component(self, component: TIn) -> TDoc:
+    async def insert_component(self, component: TIn, *, session: AsyncClientSession | None = None) -> TDoc:
         """Insert a single component.
 
         Args:
@@ -86,11 +94,7 @@ class MongoDbComponentsRepository[
         Raises:
             AppError: If insert_one returns None, raises
         """
-        doc = self.document_model.model_validate(component.model_dump())
-        full_doc = await self.document_model.insert_one(doc)
-        if not full_doc:
-            raise AppError("Error inserting Table", table=component)
-        return full_doc
+        return (await self.insert_components(components=[component], session=session))[0]
 
     async def get_component_by_id(self, id: str, fields: frozenset[str] | None) -> TDoc | TOut | None:
         """Find a single table by id, scoped to the current user. See ``get_by_id``."""
