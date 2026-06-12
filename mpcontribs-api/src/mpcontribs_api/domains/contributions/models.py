@@ -12,6 +12,7 @@ from beanie import (
     Update,
     before_event,
 )
+from bson.errors import InvalidId
 from fastapi_filter import FilterDepends, with_prefix
 from fastapi_filter.contrib.beanie import Filter
 from pydantic import BeforeValidator, Field, field_validator
@@ -203,4 +204,10 @@ class ContributionFilter(Filter):
     @field_validator("id", mode="before")
     @classmethod
     def convert_str_to_oid(cls, v: str):
-        return PydanticObjectId(v)
+        try:
+            return PydanticObjectId(v)
+        except InvalidId as err:
+            raise ValidationError(
+                "Invalid ObjectId format. Must be 12-byte input or a 24-character hex string",
+                oid=v,
+            ) from err

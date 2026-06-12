@@ -1,9 +1,13 @@
 from beanie import PydanticObjectId
 from fastapi_filter.contrib.beanie import Filter
+from pydantic import field_validator
 
 from mpcontribs_api.domains._shared.models import Component, DocumentOut
 from mpcontribs_api.domains._shared.types import FileLike, MD5Hash, MimeFormat
+from mpcontribs_api.exceptions import ValidationError
 from mpcontribs_api.projection import SparseFieldsModel
+
+ACCEPTED_FORMATS = ["jpg", "jpeg", "png", "csv", "parquet", "gz"]
 
 
 class Attachment(Component):
@@ -13,6 +17,17 @@ class Attachment(Component):
 
     class Settings:
         name = "attachments"
+
+    @field_validator("name", mode="before")
+    @classmethod
+    def _name_with_extension(cls, v: str) -> str:
+        parts = v.strip().split(".")
+        if parts[-1].lower() not in ACCEPTED_FORMATS:
+            raise ValidationError(
+                f"Attachment extension not in allowed formats: {ACCEPTED_FORMATS}",
+                found_extension=parts[-1],
+            )
+        return v
 
 
 class AttachmentIn(Attachment):
