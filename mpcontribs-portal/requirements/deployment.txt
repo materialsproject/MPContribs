@@ -363,7 +363,7 @@ tabulate==0.10.0
     # via pymatgen-core
 tinycss2==1.5.1
     # via bleach
-tornado==6.5.7
+tornado==6.5.6
     # via
     #   ipykernel
     #   jupyter-client
