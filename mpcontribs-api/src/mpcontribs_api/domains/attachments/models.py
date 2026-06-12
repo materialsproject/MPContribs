@@ -39,6 +39,10 @@ class AttachmentOut(DocumentOut[PydanticObjectId]):
     md5: MD5Hash | None = None
     mime: MimeFormat | None = None
 
+    @staticmethod
+    def default_fields() -> list[str]:
+        return ["id", "name", "md5", "mime"]
+
 
 class AttachmentPatch(SparseFieldsModel):
     name: FileLike | None = None

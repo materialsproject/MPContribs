@@ -54,7 +54,7 @@ async def upsert_contributions(
     return await service.upsert_contributions(contributions=contributions)
 
 
-@router.get("download/{mime}")
+@router.get("/download/{mime}")
 async def download_contributions(
     repo: ContributionDep,
     format: Literal["json", "csv", "parquet"] = "parquet",
@@ -65,7 +65,7 @@ async def download_contributions(
     return await repo.download_contributions(format=format, filter=filter, fields=selected)
 
 
-@router.delete("{id}")
+@router.delete("/{id}")
 async def delete_contribtion_by_id(
     service: ContributionServiceDep,
     id: str,
@@ -73,7 +73,7 @@ async def delete_contribtion_by_id(
     return await service.delete_contributions(ContributionFilter.model_validate({"id": id}))
 
 
-@router.get("{id}")
+@router.get("/{id}")
 async def get_contribution_by_id(
     repo: ContributionDep,
     id: str,
@@ -83,11 +83,11 @@ async def get_contribution_by_id(
     return await repo.get_contribution_by_id(id=id, fields=selected)
 
 
-@router.put("{id}")
+@router.put("/{id}")
 async def upsert_contribution_by_id(repo: ContributionDep, id: str, contribution: ContributionIn):
     return await repo.upsert_contribution_by_id(id=id, contribution=contribution)
 
 
-@router.patch("{id}")
+@router.patch("/{id}")
 async def patch_contribution_by_id(repo: ContributionDep, id: str, update: ContributionPatch):
     return await repo.patch_contribution_by_id(id=id, update=update)
