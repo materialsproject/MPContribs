@@ -4,22 +4,23 @@ import zlib
 from collections.abc import AsyncIterable
 from typing import Any, Literal
 
+from beanie import PydanticObjectId
+from beanie.operators import In
 from fastapi_filter.contrib.beanie import Filter
 from pydantic import BaseModel
 from pymongo.asynchronous.client_session import AsyncClientSession
 
 from mpcontribs_api.auth import User
 from mpcontribs_api.config import get_settings
-from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DeleteResponse, DocumentOut
+from mpcontribs_api.domains._shared.models import Component, DeleteResponse, DocumentOut
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
 from mpcontribs_api.domains._shared.types import DownloadFormat
 from mpcontribs_api.exceptions import AppError
-from mpcontribs_api.pagination import CursorParams, Page
 
 
 class MongoDbComponentsRepository[
-    TDoc: BaseDocumentWithInput,
-    TIn: BaseModel,
+    TDoc: Component,
+    TIn: Component,
     TOut: DocumentOut,
     TFilter: Filter,  # not FilterDepends — see below
     TPatch: BaseModel,
@@ -28,7 +29,6 @@ class MongoDbComponentsRepository[
     def _build_scope(user: User) -> dict[str, Any]:
         return {}
 
-    # TODO: The docs I return don't have ID yet, since they were created locally
     async def insert_components(
         self,
         components: list[TIn],
@@ -40,14 +40,39 @@ class MongoDbComponentsRepository[
             components (list[TIn]): components to insert
             session (AsyncClientSession): optional client session; pass when inserting inside a transaction
         """
-        if not components:
-            return []
+        by_md5 = {comp.md5: comp for comp in components}
 
-        docs = [self.document_model.model_validate(t.model_dump()) for t in components]
+        # Full fetch so existing docs come back with their ids
+        existing_docs = await self.document_model.find(
+            In(self.document_model.md5, list(by_md5.keys())),
+            session=session,
+        ).to_list()
+        existing_by_md5 = {doc.md5: doc for doc in existing_docs}
+
+        # Assign ids manually: insert_many won't populate id back onto these
+        # objects, and get_dict drops id when it's None.
+        new_docs: list[TDoc] = []
+        for md5, comp in by_md5.items():
+            if md5 in existing_by_md5:
+                continue
+            doc = self.document_model.model_validate(comp.model_dump())
+            doc.id = PydanticObjectId()
+            new_docs.append(doc)
+
+        # TODO: Might want to delegate this logic to a higher level. This method might want to simply insert everything
+        # its given
+        # Insert by chunks
         chunk_size = get_settings().mongo.component_insert_chunk_size
-        for start in range(0, len(docs), chunk_size):
-            await self.document_model.insert_many(docs[start : start + chunk_size], ordered=False, session=session)
-        return docs
+        for start in range(0, len(new_docs), chunk_size):
+            await self.document_model.insert_many(
+                new_docs[start : start + chunk_size],
+                ordered=False,
+                session=session,
+            )
+
+        # Return a list of documents reflecting what was stored/found
+        resolved = existing_by_md5 | {doc.md5: doc for doc in new_docs}
+        return [resolved[md5] for md5 in by_md5]
 
     async def insert_component(self, component: TIn) -> TDoc:
         """Insert a single component.

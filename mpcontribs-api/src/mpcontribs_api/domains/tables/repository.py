@@ -31,7 +31,7 @@ class MongoDbTableRepository(MongoDbComponentsRepository[Table, TableIn, TableOu
             tables: tables to insert
             session: optional client session; pass when inserTableIng inside a transaction
         """
-        return await self.insert_tables(tables=tables, session=session)
+        return await self.insert_components(components=tables, session=session)
 
     async def insert_table(self, table: TableIn) -> Table:
         """Insert a single table.

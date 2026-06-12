@@ -1,14 +1,13 @@
 from beanie import PydanticObjectId
 from fastapi_filter.contrib.beanie import Filter
 
-from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
+from mpcontribs_api.domains._shared.models import Component, DocumentOut
 from mpcontribs_api.domains._shared.types import FileLike, MD5Hash, MimeFormat
 from mpcontribs_api.projection import SparseFieldsModel
 
 
-class Attachment(BaseDocumentWithInput[PydanticObjectId]):
-    name: FileLike
-    md5: MD5Hash
+class Attachment(Component):
+    hash_fields = frozenset({"mime", "content"})
     mime: MimeFormat
     content: int
 

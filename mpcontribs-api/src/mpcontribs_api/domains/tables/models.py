@@ -11,7 +11,7 @@ from pydantic import (
     model_validator,
 )
 
-from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
+from mpcontribs_api.domains._shared.models import Component, DocumentOut
 from mpcontribs_api.domains._shared.types import MD5Hash, PolarsFrame
 from mpcontribs_api.projection import SparseFieldsModel
 
@@ -27,11 +27,10 @@ class Attributes(BaseModel):
     labels: Labels
 
 
-class Table(BaseDocumentWithInput[PydanticObjectId]):
+class Table(Component):
     model_config = ConfigDict(arbitrary_types_allowed=True)
+    hash_fields = frozenset({"index", "columns", "data"})
 
-    name: str
-    md5: MD5Hash
     attrs: Attributes
     total_data_rows: int
     data: PolarsFrame
