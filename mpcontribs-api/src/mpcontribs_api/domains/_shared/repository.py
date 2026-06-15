@@ -1,8 +1,10 @@
+import csv
 import hashlib
+import io
 import json
 import zlib
 from abc import ABC, abstractmethod
-from collections.abc import AsyncIterable
+from collections.abc import AsyncIterable, AsyncIterator, Callable
 from typing import Any
 
 from beanie import PydanticObjectId, UpdateResponse
@@ -194,6 +196,34 @@ class MongoDbRepository[
         )
         return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
+    def _get_serializer(
+        self, format: DownloadFormat, fields: frozenset[str] | None
+    ) -> Callable[[AsyncIterable[TOut]], AsyncIterable[bytes]]:
+        if format == DownloadFormat.JSONL:
+            return self._serialize_jsonl
+        if format == DownloadFormat.CSV:
+            return lambda rows: self._serialize_csv(rows, fields)
+
+    @staticmethod
+    async def _serialize_jsonl(rows: AsyncIterable) -> AsyncIterator[bytes]:
+        async for out in rows:
+            yield out.model_dump_json().encode() + b"\n"
+
+    @staticmethod
+    async def _serialize_csv(rows: AsyncIterable, fields: frozenset[str] | None) -> AsyncIterator[bytes]:
+        buf = io.StringIO()
+        writer: csv.DictWriter | None = None
+        async for out in rows:
+            row = out.model_dump(mode="json")
+            if writer is None:
+                cols = sorted(fields) if fields else list(row.keys())
+                writer = csv.DictWriter(buf, fieldnames=cols, extrasaction="ignore")
+                writer.writeheader()
+            writer.writerow(row)
+            yield buf.getvalue().encode()
+            buf.seek(0)
+            buf.truncate(0)
+
     async def download(
         self,
         format: DownloadFormat,
@@ -220,21 +250,17 @@ class MongoDbRepository[
         query = filter.filter(self.document_model.find(self._scope))
         query = filter.sort(query)
 
+        serializer = self._get_serializer(format, fields)
+
         # Compress using gzip level 9 and stream out
         compressor = zlib.compressobj(9, zlib.DEFLATED, 16 + zlib.MAX_WBITS)
-        buf = bytearray()
-        async for table in query:
-            # TODO: We might think about skipping validation to save time
-            out = self.out_model.model_validate(table, from_attributes=True)
-            line = out.model_dump_json().encode() + b"\n"
+
+        async def rows() -> AsyncIterator[TOut]:
+            async for table in query:
+                # TODO: We might think about skipping validation to save time
+                yield self.out_model.model_validate(table, from_attributes=True)
+
+        async for line in serializer(rows()):
             chunk = compressor.compress(line)
             if chunk:
-                # TODO: Cache in S3 as multi-part upload so we stream to user and to S3 simultaneously,
-                # can then remove buf
-                buf += chunk
                 yield chunk
-        tail = compressor.flush()
-        if tail:
-            # TODO: Final upload final part to S3 in multi-part upload, remove buf
-            buf += tail
-            yield tail
