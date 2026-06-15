@@ -16,8 +16,11 @@ from beanie import init_beanie
 from pymongo import AsyncMongoClient
 
 from mpcontribs_api.config import get_settings
+from mpcontribs_api.domains.attachments.models import Attachment
 from mpcontribs_api.domains.contributions.models import Contribution
 from mpcontribs_api.domains.projects.models import Project
+from mpcontribs_api.domains.structures.models import Structure
+from mpcontribs_api.domains.tables.models import Table
 
 # ---------------------------------------------------------------------------
 # Auto-mark all tests in this directory as @pytest.mark.db
@@ -73,11 +76,9 @@ async def db(mongo_client):
     """Database handle with Beanie initialised against the test database."""
     settings = get_settings()
     database = mongo_client[settings.mongo.db_name]
-    # Only initialise concrete documents (stubs like Structure/Table/Attachment
-    # have no Settings.name yet and cause Beanie to fall back to the base class).
     await init_beanie(
         database=database,
-        document_models=[Project, Contribution],
+        document_models=[Project, Contribution, Structure, Table, Attachment],
     )
     yield database
 
@@ -99,3 +100,12 @@ async def clean_contributions(db):
     await db["contributions"].delete_many({})
     yield
     await db["contributions"].delete_many({})
+
+
+@pytest_asyncio.fixture(autouse=True)
+async def clean_components(db):
+    for collection in ("structures", "tables", "attachments"):
+        await db[collection].delete_many({})
+    yield
+    for collection in ("structures", "tables", "attachments"):
+        await db[collection].delete_many({})
