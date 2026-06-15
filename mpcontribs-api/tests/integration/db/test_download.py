@@ -1,19 +1,3 @@
-"""Database integration tests for the download pipeline (live MongoDB).
-
-These exercise ``MongoDbContributionRepository.download_contributions`` against
-real Beanie/MongoDB: the scoped+sorted query, projection, JSONL/CSV serialization
-and gzip streaming, end to end.
-
-Most round-trip tests gzip-*decompress* the streamed bytes and compare to the
-seeded data.  They are RED today: ``MongoDbRepository.download`` never calls
-``compressor.flush()``, so the streamed gzip member is truncated (missing trailing
-data + CRC/ISIZE footer) and ``gzip.decompress`` raises.  Once ``flush()`` is added
-these same tests also verify scope filtering and field projection on real data.
-
-Run with:  uv run pytest -m db
-Skip with: uv run pytest -m "not db"
-"""
-
 import csv
 import gzip
 import io

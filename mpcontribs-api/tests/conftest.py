@@ -1,10 +1,3 @@
-"""Shared pytest configuration and fixtures.
-
-Environment variables for Settings are set at module level (before any source
-imports) so that auth.py and config.py can load successfully without a real
-.env file.
-"""
-
 import os
 
 from dotenv import load_dotenv

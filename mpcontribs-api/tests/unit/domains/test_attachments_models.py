@@ -1,5 +1,3 @@
-"""Unit tests for domains/attachments/models.py."""
-
 import pytest
 from beanie import PydanticObjectId
 from pydantic import ValidationError as PydanticValidationError

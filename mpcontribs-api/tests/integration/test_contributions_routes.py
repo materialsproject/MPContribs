@@ -1,10 +1,3 @@
-"""Integration tests for previously-untested /contributions routes.
-
-test_contributions.py covers GET list and DELETE batch plus stub-existence of
-POST/PUT. This file covers the behavior of POST, PUT, the single-resource
-routes, and download — all via AsyncMock repo/service overrides.
-"""
-
 import pytest
 from beanie import PydanticObjectId
 
@@ -225,21 +218,13 @@ class TestDownloadContributions:
         assert client.get("/api/v1/contributions/download/gz?_fields=not_a_field").status_code == 422
 
     def test_filename_names_the_contributions_resource(self, client, contribution_repo):
-        """RED: the attachment filename should reference contributions, not attachments.
-
-        The route hardcodes ``filename="attachments.jsonl.gz"`` (copy-paste from the
-        attachments router), so a contributions download saves under the wrong name.
-        """
+        """The attachment filename references the contributions resource."""
         contribution_repo.download_contributions.return_value = iter([b"x"])
         cd = client.get("/api/v1/contributions/download/gz").headers["content-disposition"]
         assert "contributions" in cd
 
     def test_csv_filename_uses_csv_extension(self, client, contribution_repo):
-        """RED: a CSV download should be named *.csv.gz, not *.jsonl.gz.
-
-        The filename extension is hardcoded to ``.jsonl.gz`` regardless of the
-        requested ``format``, so CSV downloads are mislabelled as JSONL.
-        """
+        """A CSV download is named *.csv.gz, matching the requested format."""
         contribution_repo.download_contributions.return_value = iter([b"x"])
         cd = client.get("/api/v1/contributions/download/gz?format=csv").headers["content-disposition"]
         assert ".csv.gz" in cd

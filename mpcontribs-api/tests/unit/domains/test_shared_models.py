@@ -1,10 +1,3 @@
-"""Unit tests for domains/_shared/models.py.
-
-Uses Attachment as the concrete BaseDocumentWithInput subclass since it is the
-simplest document in the codebase; from_input_model business-logic overrides
-are covered per-domain (e.g. test_contributions_models.py).
-"""
-
 import pytest
 from beanie import PydanticObjectId
 from pymongo.results import DeleteResult

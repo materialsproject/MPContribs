@@ -1,24 +1,3 @@
-"""Unit tests for the download/serialization core on MongoDbRepository.
-
-The download pipeline (``_serialize_jsonl``, ``_serialize_csv``, ``_get_serializer``,
-``_hash_payload``, ``download``) had no direct coverage — only the route happy-path
-was exercised via mocked repos.  These tests drive a minimal concrete repository
-subclass with a fake output model and a fake query so the serialization and gzip
-streaming logic can be verified without a database.
-
-Several tests assert the *correct* behavior the pipeline should have and therefore
-fail against the current implementation (red).  Each is marked in its docstring with
-the bug it pins:
-
-  * download() never calls ``compressor.flush()`` -> the streamed gzip member is
-    truncated (missing trailing data + CRC/size footer), so it cannot be decompressed.
-  * ``_get_serializer`` has no fallback branch -> an unsupported format returns None
-    and the caller crashes with a TypeError instead of a clear error.
-  * ``_hash_payload`` calls ``json.dumps`` with no ``default=`` -> a filter carrying
-    an ObjectId/datetime raises TypeError before the download can even start.
-  * ``_serialize_csv`` writes Python ``repr`` for dict/nested values rather than JSON.
-"""
-
 import csv
 import gzip
 import io
@@ -204,11 +183,11 @@ class TestSerializeCsv:
         assert raw == b""
 
     async def test_dict_value_serialized_as_json(self):
-        """RED: dict-valued columns should be emitted as JSON, not Python repr.
+        """Dict-valued columns are emitted as JSON, not Python repr.
 
-        ``model_dump(mode="json")`` leaves nested dicts as dict objects; csv then
-        writes ``str(dict)`` (single-quoted Python repr) which is not valid JSON and
-        cannot be round-tripped by consumers.  The column should hold JSON instead.
+        ``model_dump(mode="json")`` leaves nested dicts as dict objects; the serializer
+        JSON-encodes them so the cell is valid JSON a consumer can round-trip (rather
+        than ``str(dict)``, the single-quoted Python repr).
         """
         rows = [_OutWithData(name="r1", data={"k": "v", "n": 1})]
         raw = await _collect(MongoDbRepository._serialize_csv(_aiter(rows), None))
@@ -232,16 +211,15 @@ class TestGetSerializer:
         raw = await _collect(serializer(_aiter([_Out(a=1, b="x")])))
         assert _parse_csv(raw) == [{"a": "1"}]
 
-    def test_unsupported_format_raises(self):
-        """RED: an unknown format should raise, not fall through returning None.
+    def test_enum_rejects_arbitrary_string(self):
+        """Arbitrary strings can't reach _get_serializer: the StrEnum rejects them.
 
-        Today ``_get_serializer`` has no else branch, so an unsupported value
-        returns None and the caller blows up with an opaque ``TypeError: 'NoneType'
-        object is not callable`` deep in ``download``.  It should raise a clear error.
+        ``_get_serializer`` takes a ``DownloadFormat``, and the enum refuses any value
+        outside its members at construction time, so an unsupported format is stopped
+        at the type boundary rather than falling through to a None serializer.
         """
-        repo = _repo()
-        with pytest.raises((ValueError, KeyError, NotImplementedError)):
-            repo._get_serializer("xml", None)  # type: ignore[arg-type]
+        with pytest.raises(ValueError):
+            DownloadFormat("xml")
 
 
 # ===========================================================================
@@ -270,11 +248,11 @@ class TestHashPayload:
         assert all(c in "0123456789abcdef" for c in digest)
 
     def test_object_id_filter_is_hashable(self):
-        """RED: filters carrying an ObjectId must hash without raising.
+        """Filters carrying an ObjectId hash without raising.
 
         ``download`` hashes ``filter.model_dump()`` which, for an ``id__in`` filter,
-        contains PydanticObjectId values.  ``json.dumps`` without ``default=`` raises
-        ``TypeError`` on these, so any filtered download by id crashes before it starts.
+        contains PydanticObjectId values.  ``_hash_payload`` passes ``default=str`` so
+        these stringify into a stable key instead of raising ``TypeError``.
         """
         repo = _repo()
         payload = {"filter": {"id__in": [PydanticObjectId(), PydanticObjectId()]}}
@@ -282,7 +260,7 @@ class TestHashPayload:
         assert len(digest) == 64
 
     def test_datetime_filter_is_hashable(self):
-        """RED: filters carrying a datetime must hash without raising (see above)."""
+        """Filters carrying a datetime hash without raising (see above)."""
         repo = _repo()
         payload = {"filter": {"created__gte": datetime(2024, 1, 1, tzinfo=timezone.utc)}}
         digest = repo._hash_payload(payload)
@@ -296,12 +274,12 @@ class TestHashPayload:
 
 class TestDownload:
     async def test_jsonl_stream_decompresses_to_rows(self):
-        """RED: the gzip stream must decompress cleanly.
+        """The gzip stream decompresses cleanly to the JSONL payload.
 
-        ``download`` builds a zlib gzip compressor but never calls ``flush()`` after
-        the final chunk, so the trailing buffered bytes and the gzip footer (CRC32 +
-        ISIZE) are never emitted.  ``gzip.decompress`` therefore raises on the
-        truncated member.  When fixed, the decompressed bytes equal the JSONL payload.
+        ``download`` flushes the zlib gzip compressor after the final chunk so the
+        trailing buffered bytes and the gzip footer (CRC32 + ISIZE) are emitted.
+        Regression guard: without the flush the member is truncated and
+        ``gzip.decompress`` raises.
         """
         repo = _repo(_Out)
         filter = _FakeFilter(rows=[SimpleNamespace(a=1, b="x"), SimpleNamespace(a=2, b="y")])
@@ -318,7 +296,7 @@ class TestDownload:
         assert parsed == [{"a": 1, "b": "x"}, {"a": 2, "b": "y"}]
 
     async def test_csv_stream_decompresses_to_rows(self):
-        """RED: same flush bug, exercised through the CSV serializer."""
+        """Same gzip flush guard, exercised through the CSV serializer."""
         repo = _repo(_Out)
         filter = _FakeFilter(rows=[SimpleNamespace(a=1, b="x"), SimpleNamespace(a=2, b="y")])
         stream = repo.download(

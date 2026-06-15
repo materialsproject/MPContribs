@@ -6,18 +6,6 @@ from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
 from mpcontribs_api.exceptions import ConflictError, NotFoundError
 from mpcontribs_api.pagination import CursorParams
 
-"""Database integration tests for MongoDbProjectRepository.
-
-These tests require a live MongoDB connection (see conftest.py).  They exercise
-the real Beanie/MongoDB layer — query scoping, field projection, cursor
-pagination, soft-delete, conflict detection, patch, and upsert — none of which
-can be verified with mock repositories.
-
-Run with:  just test db
-Skip with: uv run pytest -m "not db"
-"""
-
-
 # All tests in this module share the session event loop so they can reuse the
 # session-scoped AsyncMongoClient initialised in conftest.  Beanie's internal
 # collection references are loop-bound, so mixing loops causes errors.

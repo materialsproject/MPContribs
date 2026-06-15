@@ -1,15 +1,3 @@
-"""Fixtures for tests that require a live MongoDB connection.
-
-Connection settings come from the .env file (MPCONTRIBS_MONGO__URI and
-MPCONTRIBS_MONGO__DB_NAME).  All tests in this directory are marked `db`
-automatically; run them with `just test db` or skip them with `-m "not db"`.
-
-Data isolation: the `clean_projects` and `clean_contributions` fixtures
-(autouse) delete all documents from the test collections before each test.
-This is intentionally destructive — point MPCONTRIBS_MONGO__DB_NAME at a
-dedicated test database, not a shared or production one.
-"""
-
 import pytest
 import pytest_asyncio
 from beanie import init_beanie
