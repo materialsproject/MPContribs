@@ -14,6 +14,19 @@ class KongSettings(BaseModel):
     gateway_secret: SecretStr
 
 
+class AwsSettings(BaseModel):
+    """AWS Settings
+
+    Primarily used for S3 access
+    """
+
+    region: str = Field("east1", description="The region to connect to")
+    max_pool_connections: int = Field(
+        10,
+        description="The maximum number of connections the app is allowed to have to S3",
+    )
+
+
 class MongoSettings(BaseModel):
     """MongoDB settings.
 
@@ -111,10 +124,16 @@ class Settings(BaseSettings):
 
     environment: Literal["dev", "prod"]
 
+    # MPContribs_mongo__*
     mongo: MongoSettings
 
+    # MPContribs_aws__*
+    aws: AwsSettings
+
+    # MPContribs_kong__*
     kong: KongSettings
 
+    # MPContribs_redis__*
     redis: RedisSettings
 
     # SMTP Settings

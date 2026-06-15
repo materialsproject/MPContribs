@@ -47,6 +47,8 @@ dependencies = [
     "opentelemetry-instrumentation-pymongo>=0.63b1",
     "beanie>=2.1.0",
     "fastapi-filter>=2.0.1",
+    "aioboto3>=15.5.0",
+    "types-aiobotocore[s3]>=3.7.0",
 ]
 
 [project.urls]
