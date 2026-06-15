@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 from collections.abc import AsyncGenerator
-from contextlib import asynccontextmanager
+from contextlib import AbstractAsyncContextManager, AsyncExitStack, asynccontextmanager
+from typing import cast
 
+import aioboto3
 from beanie import init_beanie
+from botocore.config import Config
 from fastapi import Depends, FastAPI
 from pymongo import AsyncMongoClient
+from types_aiobotocore_s3 import S3Client
 
 from mpcontribs_api._openapi import contact_info, license_info, openapi_tags
 from mpcontribs_api.api.v1.router import router as v1_router
@@ -24,48 +28,66 @@ from mpcontribs_api.middleware import RequestContextMiddleware
 logger = get_logger(__name__)
 
 
+async def _setup_mongo(app: FastAPI, settings: Settings, stack: AsyncExitStack) -> None:
+    """Setting up app-wide access to MongoDB via AsyncMongoClient and Beanie"""
+    client = AsyncMongoClient(
+        settings.mongo.uri.get_secret_value(),
+        appname=settings.mongo.app_name,
+        maxPoolSize=settings.mongo.max_pool_size,
+        minPoolSize=settings.mongo.min_pool_size,
+        maxIdleTimeMS=settings.mongo.max_idle_time_ms,
+        timeoutMS=settings.mongo.timeout_ms,
+        serverSelectionTimeoutMS=settings.mongo.server_selection_timeout_ms,
+        retryWrites=True,
+        retryReads=True,
+        compressors=settings.mongo.compressors,
+        readPreference=settings.mongo.read_preference,
+        uuidRepresentation="standard",
+    )
+    # Fail fast if the DB is unreachable
+    await client.admin.command("ping")
+    logger.info("connected to mongo", extra={"db": settings.mongo.db_name})
+    stack.push_async_callback(client.close)
+
+    app.state.mongo_client = client
+    app.state.db = client[settings.mongo.db_name]
+    await init_beanie(
+        database=client[settings.mongo.db_name],
+        document_models=[
+            Project,
+            Contribution,
+            Attachment,
+            Structure,
+            Table,
+        ],
+    )
+
+
+async def _setup_s3(app: FastAPI, settings: Settings, stack: AsyncExitStack) -> None:
+    """Setting up app-wide access to AWS S3 via aioboto3"""
+    session = aioboto3.Session()
+    cm = cast(
+        AbstractAsyncContextManager[S3Client],
+        session.client(
+            "s3",
+            region_name=settings.aws.region,
+            config=Config(max_pool_connections=settings.aws.max_pool_connections),
+        ),
+    )
+    s3 = await stack.enter_async_context(cm)
+    app.state.boto_session = session
+    app.state.s3 = s3
+    logger.info("connected to s3")
+
+
 def _build_lifespan(settings: Settings):
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
-        # --- startup ---
-        client = AsyncMongoClient(
-            settings.mongo.uri.get_secret_value(),
-            appname=settings.mongo.app_name,
-            maxPoolSize=settings.mongo.max_pool_size,
-            minPoolSize=settings.mongo.min_pool_size,
-            maxIdleTimeMS=settings.mongo.max_idle_time_ms,
-            timeoutMS=settings.mongo.timeout_ms,
-            serverSelectionTimeoutMS=settings.mongo.server_selection_timeout_ms,
-            retryWrites=True,
-            retryReads=True,
-            compressors=settings.mongo.compressors,
-            readPreference=settings.mongo.read_preference,
-            uuidRepresentation="standard",
-        )
-        # Fail fast if the DB is unreachable
-        await client.admin.command("ping")
-        logger.info("connected to mongo", extra={"db": settings.mongo.db_name})
-
-        app.state.mongo_client = client
-        app.state.db = client[settings.mongo.db_name]
-
-        await init_beanie(
-            database=client[settings.mongo.db_name],
-            document_models=[
-                Project,
-                Contribution,
-                Attachment,
-                Structure,
-                Table,
-            ],
-        )
-
-        try:
+        async with AsyncExitStack() as stack:
+            await _setup_mongo(app, settings, stack)
+            await _setup_s3(app, settings, stack)
             yield
-        finally:
-            # shutdown
-            await client.close()
-            logger.info("mongo client closed")
+            # stack unwinds in reverse: s3 closed, then mongo
 
     return lifespan
 
