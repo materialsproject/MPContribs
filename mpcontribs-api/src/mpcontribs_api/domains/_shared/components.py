@@ -128,7 +128,7 @@ class MongoDbComponentsRepository[
         Returns:
             DeleteResponse: A report of the deletion
         """
-        return await self.delete_by_id(id=id, session=session)
+        return await self.delete_by_id(id=self._convert_object_id(id), session=session)
 
     async def patch_component_by_id(self, id: str, update: TPatch) -> TDoc:
         """Partially update a component by id, scoped to the current user. See ``patch``."""

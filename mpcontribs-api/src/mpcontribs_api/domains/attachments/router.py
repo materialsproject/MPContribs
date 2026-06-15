@@ -5,7 +5,12 @@ from fastapi.responses import StreamingResponse
 from fastapi_filter import FilterDepends
 
 from mpcontribs_api.domains._shared.models import DeleteResponse
-from mpcontribs_api.domains._shared.types import DownloadFormat, FieldSelector, ShortMimeFormat
+from mpcontribs_api.domains._shared.types import (
+    DownloadFormat,
+    FieldSelector,
+    ShortMimeFormat,
+    download_filename,
+)
 from mpcontribs_api.domains.attachments.dependencies import AttachmentDep
 from mpcontribs_api.domains.attachments.models import AttachmentFilter, AttachmentOut
 from mpcontribs_api.pagination import CursorParams, Page
@@ -52,10 +57,11 @@ async def download_attachment(
         filter=filter,
         fields=selected,
     )
+    filename = download_filename("attachments", format, short_mime)
     return StreamingResponse(
         body,
         media_type="application/gzip",
-        headers={"Content-Disposition": 'attachment; filename="attachments.jsonl.gz"'},
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 
 
