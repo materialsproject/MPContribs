@@ -34,6 +34,7 @@ class MongoDbComponentsRepository[
         by_md5 = {comp.md5: comp for comp in components}
 
         # Full fetch so existing docs come back with their ids
+        # TODO: Most likely does a COLLSCAN - see if we can project to get a COVERED QUERY
         existing_docs = await self.document_model.find(
             In(self.document_model.md5, list(by_md5.keys())),
             session=session,
@@ -62,8 +63,8 @@ class MongoDbComponentsRepository[
             doc.id = PydanticObjectId()
             new_docs.append(doc)
 
-        # TODO: Might want to delegate this logic to a higher level. This method might want to simply insert everything
-        # its given
+        # TODO: Might want to delegate this logic to a higher level
+        # - This method might want to simply insert everything it's given
         # Insert by chunks
         chunk_size = get_settings().mongo.component_insert_chunk_size
         for start in range(0, len(new_docs), chunk_size):
