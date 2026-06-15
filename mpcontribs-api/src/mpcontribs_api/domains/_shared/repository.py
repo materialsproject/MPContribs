@@ -200,10 +200,11 @@ class MongoDbRepository[
     def _get_serializer(
         self, format: DownloadFormat, fields: frozenset[str] | None
     ) -> Callable[[AsyncIterable[TOut]], AsyncIterable[bytes]]:
-        if format == DownloadFormat.JSONL:
-            return self._serialize_jsonl
-        if format == DownloadFormat.CSV:
-            return lambda rows: self._serialize_csv(rows, fields)
+        match format:
+            case DownloadFormat.JSONL:
+                return self._serialize_jsonl
+            case DownloadFormat.CSV:
+                return lambda rows: self._serialize_csv(rows, fields)
 
     @staticmethod
     async def _serialize_jsonl(rows: AsyncIterable) -> AsyncIterator[bytes]:
