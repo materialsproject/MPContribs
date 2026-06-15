@@ -1,15 +1,3 @@
-"""Database integration tests for MongoDbComponentsRepository (live MongoDB).
-
-The component repository's md5-dedupe insert, chunked ``insert_many``, filtered
-delete, delete-by-id and patch logic lives on the shared
-``MongoDbComponentsRepository`` and had no direct coverage.  These tests exercise
-it through ``MongoDbAttachmentRepository`` (the simplest concrete component) against
-real Beanie/MongoDB.
-
-Run with:  uv run pytest -m db
-Skip with: uv run pytest -m "not db"
-"""
-
 import gzip
 
 import pytest
@@ -128,15 +116,7 @@ class TestDeleteComponents:
         assert remaining == {"b" * 32}
 
     async def test_delete_by_id_removes_one(self, db):
-        """RED: delete_component_by_id never matches a string id.
-
-        Routers pass the id through as a path string, but ``delete_component_by_id``
-        forwards it straight to ``delete_by_id`` without converting to a
-        ``PydanticObjectId`` (unlike ``patch_component_by_id``, which calls
-        ``_convert_object_id``).  ``Attachment.id == "<hex str>"`` then never matches
-        the ObjectId-typed ``_id``, so the delete raises NotFoundError and component
-        delete-by-id is effectively broken.
-        """
+        """delete_component_by_id matches a string id by converting it to ObjectId."""
         [doc] = await _repo().insert_components([_attachment("a" * 32)])
         result = await _repo().delete_component_by_id(str(doc.id))
         assert result.num_deleted == 1
@@ -173,18 +153,7 @@ class TestPatchComponent:
 
 class TestComponentDownload:
     async def test_jsonl_download_round_trips(self, db):
-        """RED: component downloads are doubly broken.
-
-        1. ``MongoDbRepository.download`` calls ``filter.sort(query)``, but the
-           component filters (Attachment/Structure/Table) don't define an
-           ``order_by`` field, so ``sort`` raises ``AttributeError`` before any
-           bytes are streamed.  (ContributionFilter does define ``order_by``, which
-           is why contribution downloads get past this point.)
-        2. Even once ordering is added, the compressor is never flushed (see
-           tests/integration/db/test_download.py), so the gzip member is truncated.
-
-        When both are fixed this verifies the component download path end to end.
-        """
+        """Component downloads stream a decompressable gzip of all rows."""
         await _repo().insert_components([_attachment("a" * 32), _attachment("b" * 32)])
         stream = await _repo().download_attachments(
             format=DownloadFormat.JSONL,

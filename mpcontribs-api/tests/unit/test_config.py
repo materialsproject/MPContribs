@@ -1,5 +1,3 @@
-"""Unit tests for config.py: MongoSettings clamping, Settings env loading, get_settings caching."""
-
 import pytest
 from pydantic import SecretStr
 from pydantic import ValidationError as PydanticValidationError

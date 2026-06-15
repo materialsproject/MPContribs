@@ -1,17 +1,3 @@
-"""Unit tests for domains/tables/models.py.
-
-NOTE ON RED TESTS: tables/models.py imports ``ValidationError`` from pydantic
-and raises it with a plain string (``raise ValidationError("...")``). Pydantic
-v2's ValidationError cannot be constructed that way, so every failing
-validation path currently crashes with
-``TypeError: ValidationError.__new__() missing 1 required positional argument``
-instead of raising a controlled error. The intended behavior — consistent with
-domains/_shared/types.py and the 422 exception handler — is the domain
-``mpcontribs_api.exceptions.ValidationError``. The tests in
-TestTableInValidationFailures assert the intended behavior and are expected to
-FAIL until the import in tables/models.py is fixed.
-"""
-
 import polars as pl
 import pytest
 from beanie import PydanticObjectId

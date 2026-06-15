@@ -1,10 +1,3 @@
-"""Integration tests for exception handlers registered in app.py.
-
-Tests exercise the full HTTP cycle to verify that AppError subclasses and
-framework errors (RequestValidationError, HTTPException) all produce the
-uniform JSON envelope: {"error": {"code": "...", "message": "..."}}.
-"""
-
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient

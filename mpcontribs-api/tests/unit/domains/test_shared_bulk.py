@@ -1,5 +1,3 @@
-"""Unit tests for domains/_shared/bulk.py."""
-
 from beanie import PydanticObjectId
 
 from mpcontribs_api.domains._shared.bulk import (

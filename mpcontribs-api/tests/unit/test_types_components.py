@@ -1,10 +1,3 @@
-"""Unit tests for component-related shared types in domains/_shared/types.py.
-
-Covers FileLike, MD5Hash, MimeFormat, DownloadFormat, and the PolarsFrame
-annotated type (coercion + serialization). ShortStr and PrefixedEmail are
-covered in test_types.py.
-"""
-
 import polars as pl
 import pytest
 from pydantic import BaseModel, ConfigDict

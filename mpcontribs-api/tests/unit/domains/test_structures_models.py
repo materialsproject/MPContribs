@@ -1,5 +1,3 @@
-"""Unit tests for domains/structures/models.py."""
-
 import polars as pl
 import pytest
 from beanie import PydanticObjectId

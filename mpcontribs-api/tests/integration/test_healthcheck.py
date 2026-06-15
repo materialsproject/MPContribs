@@ -1,12 +1,3 @@
-"""Integration tests for the /health router.
-
-The healthcheck router is mounted by create_app() at /health, but the shared
-make_test_app() fixture only mounts the v1 router. So this module builds its
-own minimal app that mounts the healthcheck router and overrides the DbDep
-dependency with a mock whose admin.command("ping") can be made to succeed or
-fail.
-"""
-
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest

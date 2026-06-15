@@ -1,14 +1,3 @@
-"""Database integration tests for MongoDbContributionRepository.
-
-These tests require a live MongoDB connection (see conftest.py). They exercise
-the real Beanie/MongoDB layer: query scoping, field projection, cursor
-pagination, bulk insert, single insert, find-one, update, delete-by-id, and
-bulk delete — none of which can be verified with mocks.
-
-Run with:  uv run pytest -m db
-Skip with: uv run pytest -m "not db"
-"""
-
 import pytest
 from beanie import PydanticObjectId
 

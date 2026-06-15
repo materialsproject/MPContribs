@@ -1,14 +1,3 @@
-"""Integration tests for /api/v1/projects routes.
-
-The project repository is overridden with an AsyncMock for each test so no
-MongoDB connection is needed. Tests verify:
-  - HTTP status codes
-  - Response JSON shapes (Page envelope, ProjectOut fields)
-  - That the correct repository method is called
-  - That query parameters (_fields, pagination, filters) are forwarded
-  - Error handling (NotFoundError → 404, etc.)
-"""
-
 import pytest
 
 from mpcontribs_api.domains.projects.dependencies import get_scoped_projects

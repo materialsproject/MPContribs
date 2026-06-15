@@ -1,10 +1,3 @@
-"""Integration tests for /api/v1/contributions routes.
-
-Uses an AsyncMock repository override so no database is required. Tests cover
-the implemented GET and DELETE batch endpoints; stub endpoints (POST, PUT,
-single-resource) are verified to exist and wire through to the repo.
-"""
-
 import pytest
 
 from mpcontribs_api.domains.contributions.dependencies import get_scoped_contributions

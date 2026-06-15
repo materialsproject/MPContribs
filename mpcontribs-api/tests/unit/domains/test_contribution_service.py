@@ -1,12 +1,3 @@
-"""Unit tests for ContributionService.
-
-All database access is replaced with AsyncMock repositories so no MongoDB
-connection is needed.  These tests verify:
-  - insert_contributions: pre-checks, no-component fast path, per-contribution txn path,
-    partial-failure summary
-  - upsert_contributions: guard against components, insert vs update branching
-"""
-
 import asyncio
 from unittest.mock import AsyncMock, MagicMock
 

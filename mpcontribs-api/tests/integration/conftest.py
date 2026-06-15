@@ -1,17 +1,3 @@
-"""Integration test infrastructure.
-
-make_test_app() builds a real FastAPI application (routers, middleware,
-exception handlers) but with:
-  - A no-op lifespan so no MongoDB connection is attempted.
-  - The verify_gateway dependency absent at the app level; tests that want to
-    check gateway enforcement use the gateway_app fixture instead.
-
-Fixtures follow the pattern:
-  test_app (session)  — base app, no dependency overrides
-  client   (function) — TestClient wrapping test_app; overrides are set per-test
-                        and cleared on teardown to avoid bleed between tests.
-"""
-
 from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, MagicMock, patch
 

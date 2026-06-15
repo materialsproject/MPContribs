@@ -1,9 +1,3 @@
-"""Integration tests for component routers: /structures, /tables, /attachments.
-
-All use AsyncMock repositories via dependency_overrides, so no DB is required —
-the same pattern as test_projects.py / test_contributions.py.
-"""
-
 import pytest
 from beanie import PydanticObjectId
 
@@ -260,11 +254,7 @@ class TestComponentDownloads:
         assert getattr(repo, method).call_args.kwargs["format"] == "csv"
 
     def test_csv_filename_uses_csv_extension(self, client, download_target):
-        """RED: a CSV download should be named *.csv.gz, not *.jsonl.gz.
-
-        Every component router hardcodes the ``.jsonl.gz`` extension regardless of
-        the requested ``format``, so CSV downloads are mislabelled.
-        """
+        """A CSV download is named *.csv.gz, matching the requested format."""
         prefix, *_ = download_target
         cd = client.get(f"/api/v1/{prefix}/download/gz?format=csv").headers["content-disposition"]
         assert ".csv.gz" in cd

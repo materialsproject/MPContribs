@@ -1,10 +1,3 @@
-"""Unit-test-only fixtures.
-
-The Beanie collection mock lives here (not the root conftest) so it is
-applied only to unit tests and does not interfere with DB integration tests
-that need real Beanie initialization.
-"""
-
 from unittest.mock import MagicMock, patch
 
 import pytest
