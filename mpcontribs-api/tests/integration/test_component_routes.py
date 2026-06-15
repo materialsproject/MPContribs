@@ -2,8 +2,6 @@
 
 All use AsyncMock repositories via dependency_overrides, so no DB is required —
 the same pattern as test_projects.py / test_contributions.py.
-
-THREE BUG CLASSES ARE PINNED TO INTENDED BEHAVIOR (these tests are RED):
 """
 
 import pytest
@@ -162,8 +160,6 @@ class TestTablesInsert:
 
 
 class TestTablesByIdRouting:
-    """RED: same glued-path bug as structures."""
-
     def test_get_by_id_conventional_path(self, client, table_repo):
         table_repo.get_table_by_id.return_value = SAMPLE_TABLE
         assert client.get(f"/api/v1/tables/{PydanticObjectId()}").status_code == 200
@@ -184,12 +180,6 @@ class TestTablesByIdRouting:
 
 
 class TestAttachmentsRouterWiring:
-    """RED: attachments/router.py wires StructureDep and calls structure repo
-    methods. With the attachment repo overridden, the structure-named methods
-    don't exist on it, so these assertions can't pass until the router is
-    rewritten against the attachment domain.
-    """
-
     def test_list_calls_attachment_repo(self, client, attachment_repo):
         attachment_repo.get_attachments.return_value = Page(items=[], next_cursor=None)
         r = client.get("/api/v1/attachments")

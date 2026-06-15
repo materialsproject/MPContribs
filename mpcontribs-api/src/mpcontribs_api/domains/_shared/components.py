@@ -1,8 +1,4 @@
-import hashlib
-import json
-import zlib
-from collections.abc import AsyncIterable
-from typing import Any, Literal
+from typing import Any
 
 from beanie import PydanticObjectId
 from beanie.operators import In
@@ -14,7 +10,7 @@ from mpcontribs_api.auth import User
 from mpcontribs_api.config import get_settings
 from mpcontribs_api.domains._shared.models import Component, DeleteResponse, DocumentOut
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
-from mpcontribs_api.domains._shared.types import DownloadFormat, MD5Hash
+from mpcontribs_api.domains._shared.types import MD5Hash
 
 
 class MongoDbComponentsRepository[
@@ -98,60 +94,6 @@ class MongoDbComponentsRepository[
     async def get_component_by_id(self, id: str, fields: frozenset[str] | None) -> TDoc | TOut | None:
         """Find a single table by id, scoped to the current user. See ``get_by_id``."""
         return await self.get_by_id(id, fields)
-
-    def _hash_payload(self, payload: dict[str, Any], *, separators: tuple[str, str] = (",", ":")) -> str:
-        canonical = json.dumps(
-            payload,
-            sort_keys=True,
-            separators=separators,
-            ensure_ascii=True,
-        )
-        return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
-
-    async def download_components(
-        self,
-        format: DownloadFormat,
-        short_mime: Literal["gz", None],
-        ignore_cache: bool,
-        filter: TFilter,
-        fields: frozenset[str] | None,
-    ) -> AsyncIterable[bytes]:
-        # Hash parameters to generate key for cache
-        payload = {
-            "format": format,
-            "short_mime": short_mime,
-            "filter": filter.model_dump(),
-            "fields": sorted(fields) if fields else None,
-        }
-        _ = self._hash_payload(payload)
-
-        # Check S3 for the cached file
-        # TODO: Implement
-        if not ignore_cache:
-            pass
-
-        # If not found in cache, build from MongoDB and save to cache
-        query = filter.filter(self.document_model.find(self._scope))
-        query = filter.sort(query)
-
-        # Compress using gzip level 9 and stream out
-        compressor = zlib.compressobj(9, zlib.DEFLATED, 16 + zlib.MAX_WBITS)
-        buf = bytearray()
-        async for table in query:
-            # TODO: We might think about skipping validation to save time
-            out = self.out_model.model_validate(table, from_attributes=True)
-            line = out.model_dump_json().encode() + b"\n"
-            chunk = compressor.compress(line)
-            if chunk:
-                # TODO: Cache in S3 as multi-part upload so we stream to user and to S3 simultaneously,
-                # can then remove buf
-                buf += chunk
-                yield chunk
-        tail = compressor.flush()
-        if tail:
-            # TODO: Final upload final part to S3 in multi-part upload, remove buf
-            buf += tail
-            yield tail
 
     async def delete_components(
         self,

@@ -65,6 +65,10 @@ class DownloadFormat(StrEnum):
     CSV = "csv"
 
 
+class ShortMimeFormat(StrEnum):
+    GZ = "gz"
+
+
 def _coerce_frame(v: object) -> pl.DataFrame:
     if isinstance(v, pl.DataFrame):
         return v

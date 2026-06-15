@@ -1,4 +1,4 @@
-from typing import Annotated, Literal
+from typing import Annotated
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
@@ -6,7 +6,7 @@ from fastapi_filter import FilterDepends
 
 from mpcontribs_api.domains._shared.bulk import BulkWriteSummary
 from mpcontribs_api.domains._shared.models import DeleteResponse
-from mpcontribs_api.domains._shared.types import DownloadFormat, FieldSelector
+from mpcontribs_api.domains._shared.types import DownloadFormat, FieldSelector, ShortMimeFormat
 from mpcontribs_api.domains.tables.dependencies import TableDep
 from mpcontribs_api.domains.tables.models import Table, TableFilter, TableIn, TableOut, TablePatch
 from mpcontribs_api.pagination import CursorParams, Page
@@ -39,7 +39,7 @@ async def get_table(
 async def download_table(
     repo: TableDep,
     format: DownloadFormat,
-    short_mime: Literal["gz", None] = "gz",
+    short_mime: ShortMimeFormat = ShortMimeFormat.GZ,
     ignore_cache: bool = False,
     filter: TableFilter = FilterDepends(TableFilter),
     fields: FieldSelector = TableOut.default_fields(),

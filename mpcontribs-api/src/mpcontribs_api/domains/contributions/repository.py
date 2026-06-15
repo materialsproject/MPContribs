@@ -1,4 +1,5 @@
-from typing import Any, Literal
+from collections.abc import AsyncIterable
+from typing import Any
 
 from beanie import UpdateResponse
 from beanie.operators import Set
@@ -7,6 +8,7 @@ from pymongo.results import DeleteResult
 
 from mpcontribs_api.auth import User
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
+from mpcontribs_api.domains._shared.types import DownloadFormat, ShortMimeFormat
 from mpcontribs_api.domains.contributions.models import (
     Contribution,
     ContributionFilter,
@@ -24,7 +26,7 @@ class MongoDbContributionRepository(
 
     Shared CRUD logic lives on :class:`MongoDbRepository`; the methods here are domain-named
     forwarders that give routers a consistent vocabulary and concrete types, plus the operations
-    whose shape is genuinely contribution-specific (filtered delete, id-keyed upsert, download).
+    whose shape is contribution-specific (filtered delete, id-keyed upsert, download).
     Multi-collection orchestration (component inserts) lives in ``ContributionService``.
     """
 
@@ -166,8 +168,16 @@ class MongoDbContributionRepository(
 
     async def download_contributions(
         self,
-        format: Literal["json", "csv", "parquet"],
+        format: DownloadFormat,
+        short_mime: ShortMimeFormat,
+        ignore_cache: bool,
         filter: ContributionFilter,
         fields: frozenset[str] | None,
-    ):
-        pass
+    ) -> AsyncIterable[bytes]:
+        return self.download(
+            format=format,
+            short_mime=short_mime,
+            ignore_cache=ignore_cache,
+            filter=filter,
+            fields=fields,
+        )
