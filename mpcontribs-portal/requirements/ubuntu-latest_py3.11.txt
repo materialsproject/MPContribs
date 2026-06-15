@@ -97,7 +97,7 @@ greenlet==3.5.0
     # via gevent
 gunicorn[gevent]==24.1.1
     # via mpcontribs-portal (pyproject.toml)
-idna==3.15
+idna==3.18
     # via
     #   jsonschema
     #   requests
@@ -360,7 +360,7 @@ tabulate==0.10.0
     # via pymatgen-core
 tinycss2==1.4.0
     # via bleach
-tornado==6.5.5
+tornado==6.5.7
     # via
     #   ipykernel
     #   jupyter-client
@@ -392,7 +392,7 @@ typing-extensions==4.15.0
     #   swagger-spec-validator
 tzdata==2026.2
     # via arrow
-ujson==5.12.1
+ujson==5.13.0
     # via mpcontribs-client
 uncertainties==3.2.3
     # via pymatgen-core
