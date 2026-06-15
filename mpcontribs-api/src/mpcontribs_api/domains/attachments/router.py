@@ -1,11 +1,11 @@
-from typing import Annotated, Literal
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Response
 from fastapi.responses import StreamingResponse
 from fastapi_filter import FilterDepends
 
 from mpcontribs_api.domains._shared.models import DeleteResponse
-from mpcontribs_api.domains._shared.types import DownloadFormat, FieldSelector
+from mpcontribs_api.domains._shared.types import DownloadFormat, FieldSelector, ShortMimeFormat
 from mpcontribs_api.domains.attachments.dependencies import AttachmentDep
 from mpcontribs_api.domains.attachments.models import AttachmentFilter, AttachmentOut
 from mpcontribs_api.pagination import CursorParams, Page
@@ -39,7 +39,7 @@ async def download_attachment(
     repo: AttachmentDep,
     response: Response,
     format: DownloadFormat,
-    short_mime: Literal["gz", None] = "gz",
+    short_mime: ShortMimeFormat = ShortMimeFormat.GZ,
     ignore_cache: bool = False,
     filter: AttachmentFilter = FilterDepends(AttachmentFilter),
     fields: FieldSelector = AttachmentOut.default_fields(),

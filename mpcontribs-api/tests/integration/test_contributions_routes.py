@@ -3,19 +3,6 @@
 test_contributions.py covers GET list and DELETE batch plus stub-existence of
 POST/PUT. This file covers the behavior of POST, PUT, the single-resource
 routes, and download — all via AsyncMock repo/service overrides.
-
-RED behavior pinned here:
-
-1. Glued path params (same class as the component routers). Single-resource
-   contribution routes mount as ``/contributions{id}`` not
-   ``/contributions/{id}``; the ``...ByIdRouting`` tests assert the
-   conventional ``/{id}`` form.
-
-2. Download route shape. The route is declared ``download/{mime}`` but the
-   handler reads ``format`` from the query and never uses the ``mime`` path
-   param, while structures/tables use ``download/{short_mime}`` with a
-   ``DownloadFormat`` enum. test_download_route_conventional_path asserts the
-   conventional ``/download/...`` path resolves.
 """
 
 import pytest
@@ -162,14 +149,8 @@ class TestContributionByIdRouting:
         assert client.delete(f"/api/v1/contributions/{PydanticObjectId()}").status_code == 200
 
     def test_download_route_conventional_path(self, client, contribution_repo):
-        # NOTE: this stays red even after the leading-slash fix. The route is
-        # declared download/{mime} and the handler ignores the mime path param
-        # while reading `format` from the query — diverging from structures/
-        # tables, which use download/{short_mime} + a DownloadFormat enum and
-        # work. Reconciling the contributions download route with the other
-        # domains is a separate fix from the glued-path one.
         contribution_repo.download_contributions.return_value = iter([b"x"])
-        assert client.get("/api/v1/contributions/download/parquet").status_code == 200
+        assert client.get("/api/v1/contributions/download/gz").status_code == 200
 
 
 # ===========================================================================
@@ -178,16 +159,6 @@ class TestContributionByIdRouting:
 
 
 class TestDeleteContributionByIdWiring:
-    """delete_contribtion_by_id builds a ContributionFilter from the id and
-    delegates to the service. These use the CURRENT (glued) path so the handler
-    is reached today, isolating the wiring assertion from the routing bug.
-
-    PAIRING NOTE: when the glued-path bug is fixed (leading slash added), these
-    two tests must be updated to the conventional ``/contributions/{id}`` path —
-    at that point the TestContributionByIdRouting.test_delete_by_id_conventional_path
-    test goes green and supersedes them. They are expected to PASS today.
-    """
-
     def test_delete_delegates_to_service(self, client, contribution_service):
         contribution_service.delete_contributions.return_value = BulkDeleteSummary(
             num_deleted=1, num_children_deleted=2

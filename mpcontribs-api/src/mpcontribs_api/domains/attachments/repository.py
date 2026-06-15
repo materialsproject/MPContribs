@@ -1,11 +1,10 @@
 from collections.abc import AsyncIterable
-from typing import Literal
 
 from pymongo.asynchronous.client_session import AsyncClientSession
 
 from mpcontribs_api.domains._shared.components import MongoDbComponentsRepository
 from mpcontribs_api.domains._shared.models import DeleteResponse
-from mpcontribs_api.domains._shared.types import DownloadFormat
+from mpcontribs_api.domains._shared.types import DownloadFormat, ShortMimeFormat
 from mpcontribs_api.domains.attachments.models import (
     Attachment,
     AttachmentFilter,
@@ -38,12 +37,12 @@ class MongoDbAttachmentRepository(
     async def download_attachments(
         self,
         format: DownloadFormat,
-        short_mime: Literal["gz", None],
+        short_mime: ShortMimeFormat,
         ignore_cache: bool,
         filter: AttachmentFilter,
         fields: frozenset[str] | None,
     ) -> AsyncIterable[bytes]:
-        return self.download_components(
+        return self.download(
             format=format,
             short_mime=short_mime,
             ignore_cache=ignore_cache,

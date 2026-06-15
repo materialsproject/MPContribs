@@ -1,10 +1,11 @@
-from typing import Annotated, Literal
+from typing import Annotated
 
 from fastapi import APIRouter, Depends
+from fastapi.responses import StreamingResponse
 from fastapi_filter import FilterDepends
 
 from mpcontribs_api.domains._shared.bulk import BulkWriteSummary
-from mpcontribs_api.domains._shared.types import FieldSelector
+from mpcontribs_api.domains._shared.types import DownloadFormat, FieldSelector, ShortMimeFormat
 from mpcontribs_api.domains.contributions.dependencies import ContributionDep, ContributionServiceDep
 from mpcontribs_api.domains.contributions.models import (
     Contribution,
@@ -25,8 +26,8 @@ async def get_contributions(
     filter: ContributionFilter = FilterDepends(ContributionFilter),
     fields: FieldSelector = ContributionOut.default_fields(),
 ):
-    field_set = ContributionOut.parse_fields(fields)
-    return await repo.get_contributions(pagination=pagination, filter=filter, fields=field_set)
+    selected = ContributionOut.parse_fields(fields)
+    return await repo.get_contributions(pagination=pagination, filter=filter, fields=selected)
 
 
 @router.delete("")
@@ -54,15 +55,28 @@ async def upsert_contributions(
     return await service.upsert_contributions(contributions=contributions)
 
 
-@router.get("/download/{mime}")
+@router.get("/download/{short_mime}")
 async def download_contributions(
     repo: ContributionDep,
-    format: Literal["json", "csv", "parquet"] = "parquet",
+    short_mime: ShortMimeFormat = ShortMimeFormat.GZ,
+    format: DownloadFormat = DownloadFormat.JSONL,
+    ignore_cache: bool = False,
     filter: ContributionFilter = FilterDepends(ContributionFilter),
     fields: FieldSelector = ContributionOut.default_fields(),
 ):
     selected = ContributionOut.parse_fields(fields)
-    return await repo.download_contributions(format=format, filter=filter, fields=selected)
+    body = await repo.download_contributions(
+        format=format,
+        short_mime=short_mime,
+        ignore_cache=ignore_cache,
+        filter=filter,
+        fields=selected,
+    )
+    return StreamingResponse(
+        body,
+        media_type="application/gzip",
+        headers={"Content-Disposition": 'attachment; filename="attachments.jsonl.gz"'},
+    )
 
 
 @router.delete("/{id}")

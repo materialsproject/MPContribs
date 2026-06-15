@@ -1,12 +1,12 @@
-from typing import Annotated, Literal
+from typing import Annotated
 
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from fastapi_filter import FilterDepends
 
 from mpcontribs_api.domains._shared.bulk import BulkWriteSummary
 from mpcontribs_api.domains._shared.models import DeleteResponse
-from mpcontribs_api.domains._shared.types import DownloadFormat, FieldSelector
+from mpcontribs_api.domains._shared.types import DownloadFormat, FieldSelector, ShortMimeFormat
 from mpcontribs_api.domains.structures.dependencies import StructureDep
 from mpcontribs_api.domains.structures.models import StructureFilter, StructureIn, StructureOut, StructurePatch
 from mpcontribs_api.pagination import CursorParams, Page
@@ -38,9 +38,8 @@ async def get_structure(
 @router.get("/download/{short_mime}")
 async def download_structure(
     repo: StructureDep,
-    response: Response,
     format: DownloadFormat,
-    short_mime: Literal["gz", None] = "gz",
+    short_mime: ShortMimeFormat = ShortMimeFormat.GZ,
     ignore_cache: bool = False,
     filter: StructureFilter = FilterDepends(StructureFilter),
     fields: FieldSelector = StructureOut.default_fields(),

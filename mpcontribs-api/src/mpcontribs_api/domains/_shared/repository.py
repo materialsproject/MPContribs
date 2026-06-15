@@ -1,4 +1,8 @@
+import hashlib
+import json
+import zlib
 from abc import ABC, abstractmethod
+from collections.abc import AsyncIterable
 from typing import Any
 
 from beanie import PydanticObjectId, UpdateResponse
@@ -10,6 +14,7 @@ from pymongo.asynchronous.client_session import AsyncClientSession
 
 from mpcontribs_api.auth import User
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DeleteResponse, DocumentOut
+from mpcontribs_api.domains._shared.types import DownloadFormat, ShortMimeFormat
 from mpcontribs_api.exceptions import ConflictError, NotFoundError, ValidationError
 from mpcontribs_api.pagination import CursorParams, Page, encode_cursor
 
@@ -179,3 +184,57 @@ class MongoDbRepository[
         if updated is None:
             raise NotFoundError(self._not_found(id))
         return updated
+
+    def _hash_payload(self, payload: dict[str, Any], *, separators: tuple[str, str] = (",", ":")) -> str:
+        canonical = json.dumps(
+            payload,
+            sort_keys=True,
+            separators=separators,
+            ensure_ascii=True,
+        )
+        return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+    async def download(
+        self,
+        format: DownloadFormat,
+        short_mime: ShortMimeFormat,
+        ignore_cache: bool,
+        filter: TFilter,
+        fields: frozenset[str] | None,
+    ) -> AsyncIterable[bytes]:
+        # Hash parameters to generate key for cache
+        payload = {
+            "format": format,
+            "short_mime": short_mime,
+            "filter": filter.model_dump(),
+            "fields": sorted(fields) if fields else None,
+        }
+        _ = self._hash_payload(payload)
+
+        # Check S3 for the cached file
+        # TODO: Implement
+        if not ignore_cache:
+            pass
+
+        # If not found in cache, build from MongoDB and save to cache
+        query = filter.filter(self.document_model.find(self._scope))
+        query = filter.sort(query)
+
+        # Compress using gzip level 9 and stream out
+        compressor = zlib.compressobj(9, zlib.DEFLATED, 16 + zlib.MAX_WBITS)
+        buf = bytearray()
+        async for table in query:
+            # TODO: We might think about skipping validation to save time
+            out = self.out_model.model_validate(table, from_attributes=True)
+            line = out.model_dump_json().encode() + b"\n"
+            chunk = compressor.compress(line)
+            if chunk:
+                # TODO: Cache in S3 as multi-part upload so we stream to user and to S3 simultaneously,
+                # can then remove buf
+                buf += chunk
+                yield chunk
+        tail = compressor.flush()
+        if tail:
+            # TODO: Final upload final part to S3 in multi-part upload, remove buf
+            buf += tail
+            yield tail
