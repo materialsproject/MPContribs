@@ -108,6 +108,9 @@ class TableFilter(Filter):
     # Columns
     # Attrs
 
+    # sorting
+    order_by: list[str] | None = None
+
     class Constants(Filter.Constants):
         model = Table
 

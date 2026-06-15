@@ -68,5 +68,8 @@ class AttachmentFilter(Filter):
     mime__neq: MimeFormat | None = None
     mime__ilike: MimeFormat | None = None
 
+    # sorting
+    order_by: list[str] | None = None
+
     class Constants(Filter.Constants):
         model = Attachment

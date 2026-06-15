@@ -69,6 +69,16 @@ class ShortMimeFormat(StrEnum):
     GZ = "gz"
 
 
+# Not exactly a type, but used to coerce a str to a desired format (pseudo-type)
+def download_filename(resource: str, format: DownloadFormat, short_mime: ShortMimeFormat) -> str:
+    """Build a download filename reflecting the resource, payload format, and compression.
+
+    e.g. ``download_filename("contributions", DownloadFormat.CSV, ShortMimeFormat.GZ)``
+    -> ``"contributions.csv.gz"``.
+    """
+    return f"{resource}.{format.value}.{short_mime.value}"
+
+
 def _coerce_frame(v: object) -> pl.DataFrame:
     if isinstance(v, pl.DataFrame):
         return v

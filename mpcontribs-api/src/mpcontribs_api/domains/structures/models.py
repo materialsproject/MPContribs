@@ -96,5 +96,8 @@ class StructureFilter(Filter):
 
     # sites
 
+    # sorting
+    order_by: list[str] | None = None
+
     class Constants(Filter.Constants):
         model = Structure

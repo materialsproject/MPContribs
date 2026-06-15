@@ -6,7 +6,12 @@ from fastapi_filter import FilterDepends
 
 from mpcontribs_api.domains._shared.bulk import BulkWriteSummary
 from mpcontribs_api.domains._shared.models import DeleteResponse
-from mpcontribs_api.domains._shared.types import DownloadFormat, FieldSelector, ShortMimeFormat
+from mpcontribs_api.domains._shared.types import (
+    DownloadFormat,
+    FieldSelector,
+    ShortMimeFormat,
+    download_filename,
+)
 from mpcontribs_api.domains.structures.dependencies import StructureDep
 from mpcontribs_api.domains.structures.models import StructureFilter, StructureIn, StructureOut, StructurePatch
 from mpcontribs_api.pagination import CursorParams, Page
@@ -52,10 +57,11 @@ async def download_structure(
         filter=filter,
         fields=selected,
     )
+    filename = download_filename("structures", format, short_mime)
     return StreamingResponse(
         body,
         media_type="application/gzip",
-        headers={"Content-Disposition": 'attachment; filename="structures.jsonl.gz"'},
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 
 

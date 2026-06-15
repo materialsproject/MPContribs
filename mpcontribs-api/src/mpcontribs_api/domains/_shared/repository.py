@@ -193,6 +193,7 @@ class MongoDbRepository[
             sort_keys=True,
             separators=separators,
             ensure_ascii=True,
+            default=str,  # filters may carry ObjectId/datetime values; stringify for a stable key
         )
         return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
@@ -210,6 +211,13 @@ class MongoDbRepository[
             yield out.model_dump_json().encode() + b"\n"
 
     @staticmethod
+    def _csv_cell(value: Any) -> Any:
+        """Render a cell value for CSV: scalars as-is, dict/list as JSON (not Python repr)."""
+        if value is None or isinstance(value, (str, int, float, bool)):
+            return value
+        return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+
+    @staticmethod
     async def _serialize_csv(rows: AsyncIterable, fields: frozenset[str] | None) -> AsyncIterator[bytes]:
         buf = io.StringIO()
         writer: csv.DictWriter | None = None
@@ -219,7 +227,7 @@ class MongoDbRepository[
                 cols = sorted(fields) if fields else list(row.keys())
                 writer = csv.DictWriter(buf, fieldnames=cols, extrasaction="ignore")
                 writer.writeheader()
-            writer.writerow(row)
+            writer.writerow({key: MongoDbRepository._csv_cell(value) for key, value in row.items()})
             yield buf.getvalue().encode()
             buf.seek(0)
             buf.truncate(0)
@@ -264,3 +272,9 @@ class MongoDbRepository[
             chunk = compressor.compress(line)
             if chunk:
                 yield chunk
+
+        # Flush the remaining buffered bytes and the gzip footer
+        # Without this the stream is a truncated gzip that cannot be decompressed.
+        tail = compressor.flush()
+        if tail:
+            yield tail

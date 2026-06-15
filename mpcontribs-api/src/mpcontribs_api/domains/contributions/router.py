@@ -5,7 +5,12 @@ from fastapi.responses import StreamingResponse
 from fastapi_filter import FilterDepends
 
 from mpcontribs_api.domains._shared.bulk import BulkWriteSummary
-from mpcontribs_api.domains._shared.types import DownloadFormat, FieldSelector, ShortMimeFormat
+from mpcontribs_api.domains._shared.types import (
+    DownloadFormat,
+    FieldSelector,
+    ShortMimeFormat,
+    download_filename,
+)
 from mpcontribs_api.domains.contributions.dependencies import ContributionDep, ContributionServiceDep
 from mpcontribs_api.domains.contributions.models import (
     Contribution,
@@ -72,10 +77,11 @@ async def download_contributions(
         filter=filter,
         fields=selected,
     )
+    filename = download_filename("contributions", format, short_mime)
     return StreamingResponse(
         body,
         media_type="application/gzip",
-        headers={"Content-Disposition": 'attachment; filename="attachments.jsonl.gz"'},
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 
 
