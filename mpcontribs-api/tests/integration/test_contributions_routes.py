@@ -14,6 +14,7 @@ from mpcontribs_api.domains.contributions.dependencies import (
     get_scoped_contributions,
 )
 from mpcontribs_api.domains.contributions.models import ContributionOut
+from mpcontribs_api.exceptions import NotFoundError
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -177,3 +178,76 @@ class TestDeleteContributionByIdWiring:
         client.delete(f"/api/v1/contributions/{oid}")
         passed_filter = contribution_service.delete_contributions.call_args.args[0]
         assert passed_filter.id == oid
+
+
+# ===========================================================================
+# GET /contributions/download/{short_mime}
+# ===========================================================================
+
+
+class TestDownloadContributions:
+    def test_default_format_jsonl_returns_200(self, client, contribution_repo):
+        # The contributions route gives `format` a default of JSONL, so it works
+        # with the param omitted (component routes require it — see test_component_routes).
+        contribution_repo.download_contributions.return_value = iter([b"x"])
+        assert client.get("/api/v1/contributions/download/gz").status_code == 200
+
+    def test_csv_format_returns_200(self, client, contribution_repo):
+        contribution_repo.download_contributions.return_value = iter([b"x"])
+        assert client.get("/api/v1/contributions/download/gz?format=csv").status_code == 200
+
+    def test_body_is_streamed_bytes(self, client, contribution_repo):
+        contribution_repo.download_contributions.return_value = iter([b"abc", b"def"])
+        assert client.get("/api/v1/contributions/download/gz").content == b"abcdef"
+
+    def test_invalid_short_mime_returns_422(self, client, contribution_repo):
+        contribution_repo.download_contributions.return_value = iter([b"x"])
+        # Only 'gz' is a valid ShortMimeFormat.
+        assert client.get("/api/v1/contributions/download/zip").status_code == 422
+
+    def test_invalid_format_returns_422(self, client, contribution_repo):
+        contribution_repo.download_contributions.return_value = iter([b"x"])
+        assert client.get("/api/v1/contributions/download/gz?format=xml").status_code == 422
+
+    def test_format_forwarded_to_repo(self, client, contribution_repo):
+        contribution_repo.download_contributions.return_value = iter([b"x"])
+        client.get("/api/v1/contributions/download/gz?format=csv")
+        assert contribution_repo.download_contributions.call_args.kwargs["format"] == "csv"
+
+    def test_fields_parsed_and_forwarded(self, client, contribution_repo):
+        contribution_repo.download_contributions.return_value = iter([b"x"])
+        client.get("/api/v1/contributions/download/gz?_fields=project")
+        forwarded = contribution_repo.download_contributions.call_args.kwargs["fields"]
+        assert "project" in forwarded
+
+    def test_invalid_fields_returns_422(self, client, contribution_repo):
+        contribution_repo.download_contributions.return_value = iter([b"x"])
+        assert client.get("/api/v1/contributions/download/gz?_fields=not_a_field").status_code == 422
+
+    def test_filename_names_the_contributions_resource(self, client, contribution_repo):
+        """RED: the attachment filename should reference contributions, not attachments.
+
+        The route hardcodes ``filename="attachments.jsonl.gz"`` (copy-paste from the
+        attachments router), so a contributions download saves under the wrong name.
+        """
+        contribution_repo.download_contributions.return_value = iter([b"x"])
+        cd = client.get("/api/v1/contributions/download/gz").headers["content-disposition"]
+        assert "contributions" in cd
+
+    def test_csv_filename_uses_csv_extension(self, client, contribution_repo):
+        """RED: a CSV download should be named *.csv.gz, not *.jsonl.gz.
+
+        The filename extension is hardcoded to ``.jsonl.gz`` regardless of the
+        requested ``format``, so CSV downloads are mislabelled as JSONL.
+        """
+        contribution_repo.download_contributions.return_value = iter([b"x"])
+        cd = client.get("/api/v1/contributions/download/gz?format=csv").headers["content-disposition"]
+        assert ".csv.gz" in cd
+
+    def test_repo_error_surfaces_as_uniform_json(self, client, contribution_repo):
+        # An AppError raised while the repo builds the download surfaces through the
+        # registered exception handler as the uniform error envelope (not a 500 traceback).
+        contribution_repo.download_contributions.side_effect = NotFoundError("nothing to download")
+        r = client.get("/api/v1/contributions/download/gz")
+        assert r.status_code == 404
+        assert r.json()["error"]["code"] == "not_found"

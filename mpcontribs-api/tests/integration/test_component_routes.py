@@ -200,3 +200,71 @@ class TestAttachmentsRouterWiring:
         attachment_repo.delete_attachments.return_value = DeleteResponse(num_deleted=0)
         client.delete("/api/v1/attachments")
         attachment_repo.delete_attachments.assert_awaited_once()
+
+
+# ===========================================================================
+# Component downloads: /{resource}/download/{short_mime}
+#
+# Parametrised over the three component resources so download behavior is held
+# to the same contract everywhere.  Each entry is
+# (url_prefix, repo_fixture_name, download_method, expected_stem).
+# ===========================================================================
+
+_DOWNLOAD_CASES = [
+    ("structures", "structure_repo", "download_structures", "structures"),
+    ("tables", "table_repo", "download_tables", "tables"),
+    ("attachments", "attachment_repo", "download_attachments", "attachments"),
+]
+
+
+@pytest.fixture
+def download_target(request):
+    """Resolve a (prefix, repo, method_name, stem) case into a wired repo mock."""
+    prefix, repo_fixture, method, stem = request.param
+    repo = request.getfixturevalue(repo_fixture)
+    getattr(repo, method).return_value = iter([b"x"])
+    return prefix, repo, method, stem
+
+
+@pytest.mark.parametrize("download_target", _DOWNLOAD_CASES, indirect=True)
+class TestComponentDownloads:
+    def test_csv_returns_200(self, client, download_target):
+        prefix, *_ = download_target
+        assert client.get(f"/api/v1/{prefix}/download/gz?format=csv").status_code == 200
+
+    def test_jsonl_returns_200(self, client, download_target):
+        prefix, *_ = download_target
+        assert client.get(f"/api/v1/{prefix}/download/gz?format=jsonl").status_code == 200
+
+    def test_body_is_streamed_bytes(self, client, download_target):
+        prefix, repo, method, _ = download_target
+        getattr(repo, method).return_value = iter([b"ab", b"cd"])
+        assert client.get(f"/api/v1/{prefix}/download/gz?format=jsonl").content == b"abcd"
+
+    def test_format_is_required(self, client, download_target):
+        # Component download routes give `format` no default, unlike contributions.
+        prefix, *_ = download_target
+        assert client.get(f"/api/v1/{prefix}/download/gz").status_code == 422
+
+    def test_invalid_short_mime_returns_422(self, client, download_target):
+        prefix, *_ = download_target
+        assert client.get(f"/api/v1/{prefix}/download/zip?format=jsonl").status_code == 422
+
+    def test_invalid_format_returns_422(self, client, download_target):
+        prefix, *_ = download_target
+        assert client.get(f"/api/v1/{prefix}/download/gz?format=xml").status_code == 422
+
+    def test_format_forwarded_to_repo(self, client, download_target):
+        prefix, repo, method, _ = download_target
+        client.get(f"/api/v1/{prefix}/download/gz?format=csv")
+        assert getattr(repo, method).call_args.kwargs["format"] == "csv"
+
+    def test_csv_filename_uses_csv_extension(self, client, download_target):
+        """RED: a CSV download should be named *.csv.gz, not *.jsonl.gz.
+
+        Every component router hardcodes the ``.jsonl.gz`` extension regardless of
+        the requested ``format``, so CSV downloads are mislabelled.
+        """
+        prefix, *_ = download_target
+        cd = client.get(f"/api/v1/{prefix}/download/gz?format=csv").headers["content-disposition"]
+        assert ".csv.gz" in cd
