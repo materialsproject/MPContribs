@@ -46,8 +46,6 @@ async def download_structure(
     repo: StructureDep,
     format: DownloadFormat,
     s3: S3Dep,
-    key_name: str,
-    bucket_name: str = "structures",
     short_mime: ShortMimeFormat = ShortMimeFormat.GZ,
     ignore_cache: bool = False,
     filter: StructureFilter = FilterDepends(StructureFilter),
@@ -60,8 +58,8 @@ async def download_structure(
         ignore_cache=ignore_cache,
         filter=filter,
         fields=selected,
-        key_name=key_name,
-        bucket_name=bucket_name,
+        key_name="",  # TODO: Temp
+        bucket_name="structures",
         s3=s3,
     )
     filename = download_filename("structures", format, short_mime)

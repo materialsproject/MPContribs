@@ -25,6 +25,10 @@ class AwsSettings(BaseModel):
         default=10,
         description="The maximum number of connections the app is allowed to have to S3",
     )
+    health_bucket: str = Field(
+        default="contributions",
+        description="The S3 bucket probed by the healthcheck to verify connectivity",
+    )
 
 
 class MongoSettings(BaseModel):

@@ -101,15 +101,18 @@ class ContributionService:
         return BulkWriteSummary[Contribution](total=len(contributions), succeeded=succeeded, failed=failed)
 
     def _reject_duplicate_keys(self, contributions: list[ContributionIn]) -> None:
-        """Reject the whole batch if any (project, identifier) appears more than once.
+        """Reject the whole batch if any identifying key appears more than once.
 
         Mongo would surface this as a duplicate key error; catching it upfront keeps a guaranteed
         failure from consuming a transaction slot and gives the caller all offending indices at once.
+
+        The dedup key is derived from every value in ``identifiers()`` so adding a field to the
+        uniqueness contract there flows through here automatically.
         """
-        seen: dict[tuple[str, str], list[int]] = defaultdict(list)
+        seen: dict[tuple[str, ...], list[int]] = defaultdict(list)
         for index, contribution in enumerate(contributions):
             ids = contribution.identifiers()
-            seen[tuple(**ids)].append(index)
+            seen[tuple(ids.values())].append(index)
         duplicates = sorted(index for indices in seen.values() if len(indices) > 1 for index in indices)
         if duplicates:
             raise ValidationError(
