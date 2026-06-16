@@ -1,18 +1,18 @@
+from contextlib import AbstractAsyncContextManager
 from typing import Annotated
 
+import aioboto3
 import structlog
 from fastapi import Depends, Request
 from pymongo import AsyncMongoClient
 from pymongo.asynchronous.database import AsyncDatabase
+from types_aiobotocore_s3 import S3Client
 
 from mpcontribs_api.auth import User
-from mpcontribs_api.config import get_settings
 from mpcontribs_api.exceptions import (
     AuthenticationError,
     PermissionError,
 )
-
-settings = get_settings()
 
 
 def get_db(request: Request) -> AsyncDatabase:
@@ -20,6 +20,20 @@ def get_db(request: Request) -> AsyncDatabase:
 
 
 DbDep = Annotated[AsyncDatabase, Depends(get_db)]
+
+
+def get_boto(request: Request) -> aioboto3.Session:
+    return request.app.state.boto_session
+
+
+BotoDep = Annotated[aioboto3.Session, Depends(get_boto)]
+
+
+def get_s3(request: Request) -> AbstractAsyncContextManager[S3Client]:
+    return request.app.state.s3
+
+
+S3Dep = Annotated[AbstractAsyncContextManager[S3Client], Depends(get_s3)]
 
 
 def get_mongo_client(request: Request) -> AsyncMongoClient:
