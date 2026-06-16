@@ -47,10 +47,10 @@ class Experiment(BaseModel, extra="forbid"):
     target_formula: str | None = Field(
         default=None,
         description=(
-            "The formula used internally to determine precursor weights. "
-            "May differ from the true intended formula (global_formula) due to experimental "
-            "constraints (e.g. oxygen mass balancing corrections, excess "
-            "alkali for battery materials). Not always a chemically meaningful "
+            "The formula used internally to determine precursor weights."
+            "May differ from the true intended formula (global_formula) due to experimental"
+            "constraints (e.g. oxygen mass balancing corrections, excess"
+            "alkali for battery materials). Not always a chemically meaningful"
             "representation of what was attempted."
         ),
     )
@@ -58,7 +58,7 @@ class Experiment(BaseModel, extra="forbid"):
     global_formula: str | None = Field(
         default=None,
         description=(
-            "The canonical formula for the target material, independent of per-run precursor adjustments. "
+            "The canonical formula for the target material, independent of per-run precursor adjustments."
             "Represents what the experiment was ultimately trying to synthesize."
         ),
     )
@@ -75,7 +75,7 @@ class Experiment(BaseModel, extra="forbid"):
 
     precursor_powders: list[str] | None = Field(
         default=None,
-        description="List of precursor powder names used in the experiment"
+        description="List of precursor powder names used in the experiment",
     )
 
     # === Heating fields (prefix: heating_) ===
