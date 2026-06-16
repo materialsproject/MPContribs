@@ -10,8 +10,8 @@ class RedisSettings(BaseModel):
     url: SecretStr
 
 
-# class KongSettings(BaseModel):
-#     gateway_secret: SecretStr
+class KongSettings(BaseModel):
+    gateway_secret: SecretStr
 
 
 class AwsSettings(BaseModel):
@@ -135,7 +135,7 @@ class Settings(BaseSettings):
     aws: AwsSettings = Field(default_factory=AwsSettings)
 
     # MPContribs_kong__*
-    # kong: KongSettings
+    kong: KongSettings
 
     # MPContribs_redis__*
     redis: RedisSettings
