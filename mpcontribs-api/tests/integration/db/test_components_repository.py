@@ -3,7 +3,7 @@ import gzip
 import pytest
 from beanie import PydanticObjectId
 
-from mpcontribs_api.auth import User
+from mpcontribs_api.authz import User
 from mpcontribs_api.config import get_settings
 from mpcontribs_api.domains._shared.types import DownloadFormat, ShortMimeFormat
 from mpcontribs_api.domains.attachments.models import (
