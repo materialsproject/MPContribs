@@ -8,7 +8,7 @@ from pymongo import AsyncMongoClient
 from pymongo.asynchronous.database import AsyncDatabase
 from types_aiobotocore_s3 import S3Client
 
-from mpcontribs_api.auth import User
+from mpcontribs_api.authz import User
 from mpcontribs_api.exceptions import (
     AuthenticationError,
     PermissionError,

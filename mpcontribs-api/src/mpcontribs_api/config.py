@@ -10,8 +10,8 @@ class RedisSettings(BaseModel):
     url: SecretStr
 
 
-class KongSettings(BaseModel):
-    gateway_secret: SecretStr
+# class KongSettings(BaseModel):
+#     gateway_secret: SecretStr
 
 
 class AwsSettings(BaseModel):
@@ -20,9 +20,9 @@ class AwsSettings(BaseModel):
     Primarily used for S3 access
     """
 
-    region: str = Field("east1", description="The region to connect to")
+    region: str = Field(default="us-east-1", description="The region to connect to")
     max_pool_connections: int = Field(
-        10,
+        default=10,
         description="The maximum number of connections the app is allowed to have to S3",
     )
 
@@ -33,8 +33,11 @@ class MongoSettings(BaseModel):
     Provided defaults are the defaults of AsyncMongoClient
     """
 
+    # Required
     uri: SecretStr = Field(description="The full uri from MongoDB (username and password included)")
     db_name: str
+
+    # Optional
     app_name: str = Field(
         default="MPContribs_FastAPI_Server",
         description="The name of the application that created this AsyncMongoClient instance. The server will log this "
@@ -125,13 +128,14 @@ class Settings(BaseSettings):
     environment: Literal["dev", "prod"]
 
     # MPContribs_mongo__*
+    # requires uri and db_name
     mongo: MongoSettings
 
     # MPContribs_aws__*
-    aws: AwsSettings
+    aws: AwsSettings = Field(default_factory=AwsSettings)
 
     # MPContribs_kong__*
-    kong: KongSettings
+    # kong: KongSettings
 
     # MPContribs_redis__*
     redis: RedisSettings

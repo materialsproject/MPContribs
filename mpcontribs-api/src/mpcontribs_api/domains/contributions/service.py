@@ -108,7 +108,8 @@ class ContributionService:
         """
         seen: dict[tuple[str, str], list[int]] = defaultdict(list)
         for index, contribution in enumerate(contributions):
-            seen[(contribution.project, contribution.identifier)].append(index)
+            ids = contribution.identifiers()
+            seen[tuple(**ids)].append(index)
         duplicates = sorted(index for indices in seen.values() if len(indices) > 1 for index in indices)
         if duplicates:
             raise ValidationError(
@@ -134,7 +135,8 @@ class ContributionService:
                         index=i,
                         identifier=contrib.identifiers(),
                         error_code="validation_error",
-                        message=f"contribution has {count} components, exceeds cap of {cap}",
+                        message=f"contribution has {count} components, exceeds cap of {cap}. "
+                        "Recommend inserting the component alone, followed by bulk inserts of components",
                     )
                 )
             else:

@@ -13,7 +13,7 @@ from types_aiobotocore_s3 import S3Client
 
 from mpcontribs_api._openapi import contact_info, license_info, openapi_tags
 from mpcontribs_api.api.v1.router import router as v1_router
-from mpcontribs_api.auth import api_key_scheme
+from mpcontribs_api.authz import api_key_scheme
 from mpcontribs_api.config import Settings, get_settings
 from mpcontribs_api.domains.attachments.models import Attachment
 from mpcontribs_api.domains.contributions.models import Contribution

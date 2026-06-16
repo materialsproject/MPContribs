@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from fastapi_filter import FilterDepends
 
+from mpcontribs_api.dependencies import S3Dep
 from mpcontribs_api.domains._shared.bulk import BulkWriteSummary
 from mpcontribs_api.domains._shared.models import DeleteResponse
 from mpcontribs_api.domains._shared.types import (
@@ -43,11 +44,14 @@ async def get_table(
 @router.get("/download/{short_mime}")
 async def download_table(
     repo: TableDep,
+    s3: S3Dep,
+    key_name: str,
     format: DownloadFormat,
     short_mime: ShortMimeFormat = ShortMimeFormat.GZ,
     ignore_cache: bool = False,
     filter: TableFilter = FilterDepends(TableFilter),
     fields: FieldSelector = TableOut.default_fields(),
+    bucket_name: str = "tables",
 ) -> StreamingResponse:
     selected = TableOut.parse_fields(fields)
     body = await repo.download_tables(
@@ -56,6 +60,9 @@ async def download_table(
         ignore_cache=ignore_cache,
         filter=filter,
         fields=selected,
+        s3=s3,
+        bucket_name=bucket_name,
+        key_name=key_name,
     )
     filename = download_filename("tables", format, short_mime)
     return StreamingResponse(

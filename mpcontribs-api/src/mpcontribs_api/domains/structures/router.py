@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from fastapi_filter import FilterDepends
 
+from mpcontribs_api.dependencies import S3Dep
 from mpcontribs_api.domains._shared.bulk import BulkWriteSummary
 from mpcontribs_api.domains._shared.models import DeleteResponse
 from mpcontribs_api.domains._shared.types import (
@@ -44,6 +45,9 @@ async def get_structure(
 async def download_structure(
     repo: StructureDep,
     format: DownloadFormat,
+    s3: S3Dep,
+    key_name: str,
+    bucket_name: str = "structures",
     short_mime: ShortMimeFormat = ShortMimeFormat.GZ,
     ignore_cache: bool = False,
     filter: StructureFilter = FilterDepends(StructureFilter),
@@ -56,6 +60,9 @@ async def download_structure(
         ignore_cache=ignore_cache,
         filter=filter,
         fields=selected,
+        key_name=key_name,
+        bucket_name=bucket_name,
+        s3=s3,
     )
     filename = download_filename("structures", format, short_mime)
     return StreamingResponse(
