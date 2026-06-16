@@ -2,6 +2,7 @@ from collections.abc import AsyncIterable
 
 from pymongo.asynchronous.client_session import AsyncClientSession
 
+from mpcontribs_api.dependencies import S3Dep
 from mpcontribs_api.domains._shared.components import MongoDbComponentsRepository
 from mpcontribs_api.domains._shared.models import DeleteResponse
 from mpcontribs_api.domains._shared.types import DownloadFormat, ShortMimeFormat
@@ -68,6 +69,9 @@ class MongoDbStructureRepository(
         ignore_cache: bool,
         filter: StructureFilter,
         fields: frozenset[str] | None,
+        s3: S3Dep,
+        bucket_name: str,
+        key_name: str,
     ) -> AsyncIterable[bytes]:
         return self.download(
             format=format,
@@ -75,6 +79,9 @@ class MongoDbStructureRepository(
             ignore_cache=ignore_cache,
             filter=filter,
             fields=fields,
+            s3=s3,
+            key_name=key_name,
+            bucket_name=bucket_name,
         )
 
     async def delete_structures(

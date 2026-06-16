@@ -1,9 +1,10 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from fastapi_filter import FilterDepends
 
+from mpcontribs_api.dependencies import S3Dep
 from mpcontribs_api.domains._shared.models import DeleteResponse
 from mpcontribs_api.domains._shared.types import (
     DownloadFormat,
@@ -42,8 +43,8 @@ async def get_attachment(
 @router.get("/download/{short_mime}")
 async def download_attachment(
     repo: AttachmentDep,
-    response: Response,
     format: DownloadFormat,
+    s3: S3Dep,
     short_mime: ShortMimeFormat = ShortMimeFormat.GZ,
     ignore_cache: bool = False,
     filter: AttachmentFilter = FilterDepends(AttachmentFilter),
@@ -56,6 +57,7 @@ async def download_attachment(
         ignore_cache=ignore_cache,
         filter=filter,
         fields=selected,
+        s3=s3,
     )
     filename = download_filename("attachments", format, short_mime)
     return StreamingResponse(

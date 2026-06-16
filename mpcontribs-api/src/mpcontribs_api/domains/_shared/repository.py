@@ -5,6 +5,7 @@ import json
 import zlib
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterable, AsyncIterator, Callable
+from contextlib import AbstractAsyncContextManager
 from typing import Any
 
 from beanie import PydanticObjectId, UpdateResponse
@@ -13,8 +14,9 @@ from bson.errors import InvalidId
 from fastapi_filter.contrib.beanie import Filter
 from pydantic import BaseModel
 from pymongo.asynchronous.client_session import AsyncClientSession
+from types_aiobotocore_s3 import S3Client
 
-from mpcontribs_api.auth import User
+from mpcontribs_api.authz import User
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DeleteResponse, DocumentOut
 from mpcontribs_api.domains._shared.types import DownloadFormat, ShortMimeFormat
 from mpcontribs_api.exceptions import ConflictError, NotFoundError, ValidationError
@@ -233,6 +235,14 @@ class MongoDbRepository[
             buf.seek(0)
             buf.truncate(0)
 
+    async def _s3_object_exists(self, bucket_name: str, key_name: str, s3: AbstractAsyncContextManager[S3Client]):
+        async with s3 as s3_client:
+            try:
+                await s3_client.head_object(Bucket=bucket_name, Key=key_name)
+                return True
+            except Exception:
+                return False
+
     async def download(
         self,
         format: DownloadFormat,
@@ -240,6 +250,9 @@ class MongoDbRepository[
         ignore_cache: bool,
         filter: TFilter,
         fields: frozenset[str] | None,
+        s3: AbstractAsyncContextManager[S3Client],
+        bucket_name: str,
+        key_name: str,
     ) -> AsyncIterable[bytes]:
         # Hash parameters to generate key for cache
         payload = {
@@ -252,7 +265,8 @@ class MongoDbRepository[
 
         # Check S3 for the cached file
         # TODO: Implement
-        if not ignore_cache:
+        if not ignore_cache and self._s3_object_exists(bucket_name=bucket_name, key_name=key_name, s3=s3):
+            # Download from either presigned url or bytes
             pass
 
         # If not found in cache, build from MongoDB and save to cache

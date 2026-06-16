@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from fastapi_filter import FilterDepends
 
+from mpcontribs_api.dependencies import S3Dep
 from mpcontribs_api.domains._shared.bulk import BulkWriteSummary
 from mpcontribs_api.domains._shared.types import (
     DownloadFormat,
@@ -63,6 +64,7 @@ async def upsert_contributions(
 @router.get("/download/{short_mime}")
 async def download_contributions(
     repo: ContributionDep,
+    s3: S3Dep,
     short_mime: ShortMimeFormat = ShortMimeFormat.GZ,
     format: DownloadFormat = DownloadFormat.JSONL,
     ignore_cache: bool = False,
@@ -76,6 +78,8 @@ async def download_contributions(
         ignore_cache=ignore_cache,
         filter=filter,
         fields=selected,
+        s3=s3,
+        key_name="",  # TODO: Temp
     )
     filename = download_filename("contributions", format, short_mime)
     return StreamingResponse(

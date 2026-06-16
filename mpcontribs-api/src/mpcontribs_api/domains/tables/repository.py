@@ -1,6 +1,8 @@
 from collections.abc import AsyncIterable
+from contextlib import AbstractAsyncContextManager
 
 from pymongo.asynchronous.client_session import AsyncClientSession
+from types_aiobotocore_s3 import S3Client
 
 from mpcontribs_api.domains._shared.components import MongoDbComponentsRepository
 from mpcontribs_api.domains._shared.models import DeleteResponse
@@ -66,6 +68,9 @@ class MongoDbTableRepository(MongoDbComponentsRepository[Table, TableIn, TableOu
         ignore_cache: bool,
         filter: TableFilter,
         fields: frozenset[str] | None,
+        s3: AbstractAsyncContextManager[S3Client],
+        bucket_name: str,
+        key_name: str,
     ) -> AsyncIterable[bytes]:
         return self.download(
             format=format,
@@ -73,6 +78,9 @@ class MongoDbTableRepository(MongoDbComponentsRepository[Table, TableIn, TableOu
             ignore_cache=ignore_cache,
             filter=filter,
             fields=fields,
+            s3=s3,
+            bucket_name=bucket_name,
+            key_name=key_name,
         )
 
     async def delete_tables(
