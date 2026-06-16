@@ -40,6 +40,13 @@ class Experiment(BaseModel, extra="forbid"):
         description="Root experiment type (NSC, Na, PG, MINES, TRI)"
     )
 
+    global_formula: str = Field(
+        description=(
+            "The canonical formula for the target material, independent of per-run precursor adjustments."
+            "Represents what the experiment was ultimately trying to synthesize. This should be same as `formula`."
+        ),
+    )
+
     experiment_subgroup: str | None = Field(
         default=None, description="Experiment subgroup (e.g., NSC_249, Na_123)"
     )
@@ -51,15 +58,7 @@ class Experiment(BaseModel, extra="forbid"):
             "May differ from the true intended formula (global_formula) due to experimental"
             "constraints (e.g. oxygen mass balancing corrections, excess"
             "alkali for battery materials). Not always a chemically meaningful"
-            "representation of what was attempted."
-        ),
-    )
-
-    global_formula: str | None = Field(
-        default=None,
-        description=(
-            "The canonical formula for the target material, independent of per-run precursor adjustments."
-            "Represents what the experiment was ultimately trying to synthesize."
+            "representation of what was attempted. Can be null if there is no adjustment for experiment."
         ),
     )
 
