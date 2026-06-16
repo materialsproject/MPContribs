@@ -1,6 +1,7 @@
 import csv
 import gzip
 import io
+from unittest.mock import MagicMock
 
 import pytest
 from beanie import PydanticObjectId
@@ -62,6 +63,8 @@ async def _download_bytes(repo: MongoDbContributionRepository, *, format="jsonl"
         ignore_cache=True,
         filter=filter or ContributionFilter(),
         fields=fields,
+        key_name="",
+        s3=MagicMock(),
     )
     return gzip.decompress(await _collect(stream))
 

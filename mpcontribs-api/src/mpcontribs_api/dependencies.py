@@ -1,4 +1,3 @@
-from contextlib import AbstractAsyncContextManager
 from typing import Annotated
 
 import aioboto3
@@ -29,11 +28,11 @@ def get_boto(request: Request) -> aioboto3.Session:
 BotoDep = Annotated[aioboto3.Session, Depends(get_boto)]
 
 
-def get_s3(request: Request) -> AbstractAsyncContextManager[S3Client]:
+def get_s3(request: Request) -> S3Client:
     return request.app.state.s3
 
 
-S3Dep = Annotated[AbstractAsyncContextManager[S3Client], Depends(get_s3)]
+S3Dep = Annotated[S3Client, Depends(get_s3)]
 
 
 def get_mongo_client(request: Request) -> AsyncMongoClient:

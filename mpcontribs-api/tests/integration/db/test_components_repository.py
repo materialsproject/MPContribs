@@ -1,4 +1,5 @@
 import gzip
+from unittest.mock import MagicMock
 
 import pytest
 from beanie import PydanticObjectId
@@ -161,6 +162,7 @@ class TestComponentDownload:
             ignore_cache=True,
             filter=AttachmentFilter(),
             fields=None,
+            s3=MagicMock(),
         )
         chunks = [c async for c in stream]
         decompressed = gzip.decompress(b"".join(chunks))

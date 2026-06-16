@@ -45,13 +45,11 @@ async def get_table(
 async def download_table(
     repo: TableDep,
     s3: S3Dep,
-    key_name: str,
     format: DownloadFormat,
     short_mime: ShortMimeFormat = ShortMimeFormat.GZ,
     ignore_cache: bool = False,
     filter: TableFilter = FilterDepends(TableFilter),
     fields: FieldSelector = TableOut.default_fields(),
-    bucket_name: str = "tables",
 ) -> StreamingResponse:
     selected = TableOut.parse_fields(fields)
     body = await repo.download_tables(
@@ -61,8 +59,8 @@ async def download_table(
         filter=filter,
         fields=selected,
         s3=s3,
-        bucket_name=bucket_name,
-        key_name=key_name,
+        bucket_name="tables",
+        key_name="",  # TODO: Temp
     )
     filename = download_filename("tables", format, short_mime)
     return StreamingResponse(

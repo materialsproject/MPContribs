@@ -289,6 +289,9 @@ class TestDownload:
             ignore_cache=True,
             filter=filter,  # type: ignore[arg-type]
             fields=None,
+            s3=MagicMock(),
+            bucket_name="test-bucket",
+            key_name="test-key",
         )
         compressed = await _collect(stream)
         decompressed = gzip.decompress(compressed)
@@ -305,6 +308,9 @@ class TestDownload:
             ignore_cache=True,
             filter=filter,  # type: ignore[arg-type]
             fields=frozenset({"a", "b"}),
+            s3=MagicMock(),
+            bucket_name="test-bucket",
+            key_name="test-key",
         )
         compressed = await _collect(stream)
         decompressed = gzip.decompress(compressed)
@@ -325,6 +331,9 @@ class TestDownload:
             ignore_cache=True,
             filter=filter,  # type: ignore[arg-type]
             fields=None,
+            s3=MagicMock(),
+            bucket_name="test-bucket",
+            key_name="test-key",
         )
         compressed = await _collect(stream)
         assert gzip.decompress(compressed) == b""

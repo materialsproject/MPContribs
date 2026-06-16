@@ -67,6 +67,7 @@ def make_test_app() -> FastAPI:
     @asynccontextmanager
     async def _noop_lifespan(app: FastAPI):
         app.state.db = MagicMock()
+        app.state.s3 = MagicMock()
         yield
 
     app = FastAPI(title="mpcontribs-test", lifespan=_noop_lifespan)
