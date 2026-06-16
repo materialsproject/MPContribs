@@ -12,7 +12,7 @@ import pytest
 from beanie import PydanticObjectId
 from pydantic import BaseModel
 
-from mpcontribs_api.auth import User
+from mpcontribs_api.authz import User
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
 from mpcontribs_api.domains._shared.types import DownloadFormat, ShortMimeFormat
 

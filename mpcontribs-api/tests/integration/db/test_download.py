@@ -5,7 +5,7 @@ import io
 import pytest
 from beanie import PydanticObjectId
 
-from mpcontribs_api.auth import User
+from mpcontribs_api.authz import User
 from mpcontribs_api.domains.contributions.models import Contribution, ContributionFilter
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
 
