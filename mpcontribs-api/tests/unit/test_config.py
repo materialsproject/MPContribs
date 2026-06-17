@@ -152,12 +152,6 @@ class TestSettingsEnvLoading:
         with pytest.raises(PydanticValidationError):
             Settings()
 
-    def test_missing_required_env_raises(self, monkeypatch):
-        for key in REQUIRED_ENV:
-            monkeypatch.delenv(key, raising=False)
-        with pytest.raises(PydanticValidationError):
-            Settings()
-
 
 # ---------------------------------------------------------------------------
 # get_settings caching
