@@ -82,13 +82,7 @@ fonttools==4.63.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
-<<<<<<< HEAD
 idna==3.18
-||||||| parent of 5ef6d1d6 (upgrade dependencies for deployment)
-idna==3.16
-=======
-idna==3.17
->>>>>>> 5ef6d1d6 (upgrade dependencies for deployment)
     # via
     #   anyio
     #   jsonschema
@@ -97,13 +91,7 @@ importlib-resources==7.1.0
     # via swagger-spec-validator
 ipykernel==7.2.0
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
-<<<<<<< HEAD
 ipython==9.14.1
-||||||| parent of 5ef6d1d6 (upgrade dependencies for deployment)
-ipython==9.13.0
-=======
-ipython==9.14.0
->>>>>>> 5ef6d1d6 (upgrade dependencies for deployment)
     # via
     #   ipykernel
     #   ipywidgets
@@ -202,13 +190,7 @@ msgpack==1.1.2
     # via
     #   bravado
     #   bravado-core
-<<<<<<< HEAD
 narwhals==2.22.1
-||||||| parent of 5ef6d1d6 (upgrade dependencies for deployment)
-narwhals==2.21.2
-=======
-narwhals==2.22.0
->>>>>>> 5ef6d1d6 (upgrade dependencies for deployment)
     # via plotly
 nbclient==0.11.0
     # via nbconvert
@@ -401,13 +383,7 @@ terminado==0.18.1
     #   jupyter-server-terminals
 tinycss2==1.5.1
     # via bleach
-<<<<<<< HEAD
 tornado==6.5.7
-||||||| parent of 5ef6d1d6 (upgrade dependencies for deployment)
-tornado==6.5.5
-=======
-tornado==6.5.6
->>>>>>> 5ef6d1d6 (upgrade dependencies for deployment)
     # via
     #   ipykernel
     #   jupyter-client
