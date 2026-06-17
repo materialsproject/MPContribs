@@ -5,14 +5,14 @@ from fastapi.responses import StreamingResponse
 from fastapi_filter import FilterDepends
 
 from mpcontribs_api.dependencies import S3Dep
-from mpcontribs_api.domains._shared.models import DeleteResponse
+from mpcontribs_api.domains._shared.models import ComponentDeleteResponse
 from mpcontribs_api.domains._shared.types import (
     DownloadFormat,
     FieldSelector,
     ShortMimeFormat,
     download_filename,
 )
-from mpcontribs_api.domains.attachments.dependencies import AttachmentDep
+from mpcontribs_api.domains.attachments.dependencies import AttachmentDep, AttachmentServiceDep
 from mpcontribs_api.domains.attachments.models import AttachmentFilter, AttachmentOut
 from mpcontribs_api.pagination import CursorParams, Page
 
@@ -67,11 +67,11 @@ async def download_attachment(
     )
 
 
-@router.delete("", response_model=DeleteResponse)
-async def delete_attachments(repo: AttachmentDep, filter: AttachmentFilter = FilterDepends(AttachmentFilter)):
-    return await repo.delete_attachments(filter=filter)
+@router.delete("", response_model=ComponentDeleteResponse)
+async def delete_attachments(service: AttachmentServiceDep, filter: AttachmentFilter = FilterDepends(AttachmentFilter)):
+    return await service.delete(filter=filter)
 
 
-@router.delete("/{id}", response_model=DeleteResponse)
-async def delete_attachment_by_id(repo: AttachmentDep, id: str):
-    return await repo.delete_attachment_by_id(id=id)
+@router.delete("/{id}", response_model=ComponentDeleteResponse)
+async def delete_attachment_by_id(service: AttachmentServiceDep, id: str):
+    return await service.delete_by_id(id=id)

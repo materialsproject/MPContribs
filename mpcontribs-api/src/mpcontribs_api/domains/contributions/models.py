@@ -85,7 +85,12 @@ class ContributionBase(BaseDocumentWithInput[PydanticObjectId]):
                 keys=[("project", ASCENDING), ("identifier", ASCENDING)],
                 name="project_idenfitier",
                 unique=True,
-            )
+            ),
+            # Multikey indexes over each Link field's DBRef id so the component-delete
+            # reference check (referenced_component_ids) is index-served, not a COLLSCAN.
+            IndexModel(keys=[("structures.$id", ASCENDING)], name="ref_structures"),
+            IndexModel(keys=[("tables.$id", ASCENDING)], name="ref_tables"),
+            IndexModel(keys=[("attachments.$id", ASCENDING)], name="ref_attachments"),
         ]
 
 

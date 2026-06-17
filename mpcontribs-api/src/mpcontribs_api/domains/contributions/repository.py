@@ -2,7 +2,7 @@ from collections.abc import AsyncIterable
 from contextlib import AbstractAsyncContextManager
 from typing import Any
 
-from beanie import UpdateResponse
+from beanie import PydanticObjectId, UpdateResponse
 from beanie.operators import Set
 from pymongo.asynchronous.client_session import AsyncClientSession
 from pymongo.results import DeleteResult
@@ -111,6 +111,45 @@ class MongoDbContributionRepository(
             self.document_model.project == project,
             self.document_model.identifier == identifier,
         )
+
+    async def referenced_component_ids(
+        self,
+        ref_field: str,
+        ids: list[PydanticObjectId],
+        *,
+        scoped: bool,
+    ) -> set[PydanticObjectId]:
+        """Return the subset of ``ids`` referenced by contributions through ``ref_field``.
+
+        Beanie stores each ``Link`` as a DBRef (``{"$ref": ..., "$id": ObjectId}``), so a
+        component is referenced when its id appears under ``<ref_field>.$id`` on any matching
+        contribution.
+
+        Args:
+            ref_field: the contribution link field to inspect ("structures" | "tables" |
+                "attachments"). Always a fixed class-attr at the call site, never user input.
+            ids: candidate component ids to test
+            scoped: when ``True`` the user scope is applied (access gate / reachability); when
+                ``False`` the check spans every contribution (global integrity check)
+
+        Returns:
+            set[PydanticObjectId]: the ids in ``ids`` that are still referenced
+        """
+        if not ids:
+            return set()
+        key = f"{ref_field}.$id"
+        query: dict[str, Any] = {key: {"$in": ids}}
+        if scoped and self._scope:
+            query = {"$and": [self._scope, query]}
+        target = set(ids)
+        referenced: set[PydanticObjectId] = set()
+        collection = self.document_model.get_pymongo_collection()
+        async for doc in collection.find(query, {ref_field: 1}):
+            for ref in doc.get(ref_field) or []:
+                rid = ref.id if hasattr(ref, "id") else ref.get("$id")
+                if rid in target:
+                    referenced.add(rid)
+        return referenced
 
     async def update_contribution(self, doc: Contribution, update_data: dict[str, Any]) -> None:
         """Apply a partial update to an existing Contribution document."""

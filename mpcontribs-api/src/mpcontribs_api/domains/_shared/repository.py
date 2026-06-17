@@ -112,6 +112,21 @@ class MongoDbRepository[
             projection_model=self.out_model.projection(fields),
         )
 
+    async def list_ids(self, filter: TFilter, session: AsyncClientSession | None = None) -> list[Any]:
+        """Return just the ids of scoped documents matching ``filter``.
+
+        Projects to ``{"_id": 1}`` so the lookup can be served as a covered query from the
+        default ``_id`` index without materializing full documents.
+
+        Args:
+            filter (TFilter): the fastapi-filter query to apply on top of the user scope
+            session (AsyncClientSession | None): optional client session for transactions
+        """
+        projection = self.out_model.projection(frozenset({"id"}))
+        query = filter.filter(self.document_model.find(self._scope, session=session))
+        docs = await query.project(projection).to_list()
+        return [doc.id for doc in docs]
+
     async def insert_one(self, in_resource: TIn) -> TDoc:
         """Insert a new document built from its input model, rejecting duplicate ids.
 

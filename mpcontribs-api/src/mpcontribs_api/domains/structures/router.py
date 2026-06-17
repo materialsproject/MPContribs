@@ -6,14 +6,14 @@ from fastapi_filter import FilterDepends
 
 from mpcontribs_api.dependencies import S3Dep
 from mpcontribs_api.domains._shared.bulk import BulkWriteSummary
-from mpcontribs_api.domains._shared.models import DeleteResponse
+from mpcontribs_api.domains._shared.models import ComponentDeleteResponse
 from mpcontribs_api.domains._shared.types import (
     DownloadFormat,
     FieldSelector,
     ShortMimeFormat,
     download_filename,
 )
-from mpcontribs_api.domains.structures.dependencies import StructureDep
+from mpcontribs_api.domains.structures.dependencies import StructureDep, StructureServiceDep
 from mpcontribs_api.domains.structures.models import StructureFilter, StructureIn, StructureOut, StructurePatch
 from mpcontribs_api.pagination import CursorParams, Page
 
@@ -78,14 +78,14 @@ async def insert_structures(
     return await repo.insert_structures(structures=structures)
 
 
-@router.delete("", response_model=DeleteResponse)
-async def delete_structures(repo: StructureDep, filter: StructureFilter = FilterDepends(StructureFilter)):
-    return await repo.delete_structures(filter=filter)
+@router.delete("", response_model=ComponentDeleteResponse)
+async def delete_structures(service: StructureServiceDep, filter: StructureFilter = FilterDepends(StructureFilter)):
+    return await service.delete(filter=filter)
 
 
-@router.delete("/{id}", response_model=DeleteResponse)
-async def delete_structure_by_id(repo: StructureDep, id: str):
-    return await repo.delete_structure_by_id(id=id)
+@router.delete("/{id}", response_model=ComponentDeleteResponse)
+async def delete_structure_by_id(service: StructureServiceDep, id: str):
+    return await service.delete_by_id(id=id)
 
 
 @router.patch("/{id}")
