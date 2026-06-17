@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """module defines utility methods for MPContribs core.io library"""
-
 from __future__ import unicode_literals
 from decimal import Decimal, DecimalException, InvalidOperation
 import six
@@ -83,7 +82,7 @@ def normalize_root_level(title):
     try:
         composition = get_composition_from_string(title)
         return False, composition
-    except CompositionError, KeyError, TypeError, ValueError:
+    except (CompositionError, KeyError, TypeError, ValueError):
         if mp_id_pattern.match(title.lower()):
             return False, title.lower()
         return True, title
@@ -158,6 +157,6 @@ def read_csv(body, is_data_section=True, **kwargs):
             squeeze=True,
             converters=converters,
             encoding="utf8",
-            **options,
+            **options
         ).dropna(how="all")
     )

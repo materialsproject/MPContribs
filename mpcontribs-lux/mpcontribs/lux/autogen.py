@@ -100,7 +100,7 @@ class SchemaGenerator(BaseModel):
                         self.file_name, orient=orient, lines=self.fmt == "jsonl"
                     )
                     break
-                except Exception:
+                except Exception as exc:
                     continue
             else:
                 raise ValueError(
@@ -118,7 +118,7 @@ class SchemaGenerator(BaseModel):
         }
 
         return create_model(
-            f"{self.file_name.name.split('.', 1)[0]}",
+            f"{self.file_name.name.split('.',1)[0]}",
             **model_fields,
         )
 

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-import os
-import json
+import os, json
 from pandas import DataFrame
 from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.core.utils import clean_value
@@ -12,7 +11,6 @@ from pymongo import MongoClient
 client = MongoClient("mongodb+srv://" + os.environ["MPCONTRIBS_MONGO_HOST"])
 db = client["mpcontribs"]
 print(db.contributions.count_documents({"project": "screening_inorganic_pv"}))
-
 
 # @duplicate_check
 def run(mpfile, **kwargs):
@@ -48,11 +46,11 @@ def run(mpfile, **kwargs):
         rd = RecursiveDict({"formula": formula})
         for k, v in config.items():
             value = clean_value(d[k], v[1], max_dgts=4)
-            if "." not in v[0]:
+            if not "." in v[0]:
                 rd[v[0]] = value
             else:
                 keys = v[0].split(".")
-                if keys[0] not in rd:
+                if not keys[0] in rd:
                     rd[keys[0]] = RecursiveDict({keys[1]: value})
                 else:
                     rd[keys[0]][keys[1]] = value

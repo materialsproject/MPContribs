@@ -1,5 +1,8 @@
 from django.shortcuts import render
-from records.forms import MaterialQueryForm
+from django.http import HttpResponseRedirect
+from django.contrib.auth.decorators import login_required
+from records.forms import MaterialQueryForm, MaterialSubmissionForm
+from records.tables import QMCDBSetTable
 from records.models import QMCDBSet
 from django.utils.safestring import mark_safe
 from django.utils.html import escape

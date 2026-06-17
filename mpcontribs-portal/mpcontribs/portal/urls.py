@@ -25,7 +25,7 @@ urlpatterns = [
     url(
         r"^contributions/download/create/?$",
         views.create_download,
-        name="create_download",
+        name="create_download"
     ),
     url(
         r"^contributions/component/(?P<oid>[a-f\d]{24})$",
@@ -53,7 +53,7 @@ urlpatterns = [
     url(r"^Fe-Co-V/?$", RedirectView.as_view(url="/projects/swf")),
     url(
         r"^ScreeningInorganicPV/?$",
-        RedirectView.as_view(url="/projects/screening_inorganic_pv"),
+        RedirectView.as_view(url="/projects/screening_inorganic_pv")
     ),
     url(
         r"^(?P<project>[a-zA-Z0-9_]{3,31})/?$",

@@ -1,6 +1,4 @@
-import os
-import json
-import requests
+import os, json, requests, sys
 from pandas import read_excel, isnull, ExcelWriter, Series
 from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.core.utils import clean_value, nest_dict
@@ -23,6 +21,7 @@ def run(mpfile, hosts=None, download=False):
     fpath = f"{project}.xlsx"
 
     if download or not os.path.exists(fpath):
+
         figshare_id = 1546772
         url = "https://api.figshare.com/v2/articles/{}".format(figshare_id)
         print("get figshare article {}".format(figshare_id))
@@ -61,7 +60,7 @@ def run(mpfile, hosts=None, download=False):
         if hosts is not None:
             if isinstance(hosts, int) and idx + 1 > hosts:
                 break
-            elif isinstance(hosts, list) and host not in hosts:
+            elif isinstance(hosts, list) and not host in hosts:
                 continue
 
         print("get mp-id for {}".format(host))
@@ -134,6 +133,7 @@ def run(mpfile, hosts=None, download=False):
         mpfile.add_data_table(mpid, df_D0_Q, "D₀_Q")
 
         if hdata["Host"]["crystal_structure"] == "BCC":
+
             print("add table for hop activation barriers for {} (BCC)".format(mpid))
             columns_E = (
                 ["Hop activation barrier, E_{} [eV]".format(i) for i in range(2, 5)]
@@ -169,6 +169,7 @@ def run(mpfile, hosts=None, download=False):
             mpfile.add_data_table(mpid, df_v, "hop_attempt_frequencies")
 
         elif hdata["Host"]["crystal_structure"] == "FCC":
+
             print("add table for hop activation barriers for {} (FCC)".format(mpid))
             columns_E = [
                 "Hop activation barrier, E_{} [eV]".format(i) for i in range(5)
@@ -190,6 +191,7 @@ def run(mpfile, hosts=None, download=False):
             mpfile.add_data_table(mpid, df_v, "hop_attempt_frequencies")
 
         elif hdata["Host"]["crystal_structure"] == "HCP":
+
             print("add table for hop activation barriers for {} (HCP)".format(mpid))
             columns_E = [
                 "Hop activation barrier, E_X [eV]",
