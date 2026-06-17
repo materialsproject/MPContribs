@@ -118,24 +118,6 @@ def mock_contribution_repo() -> AsyncMock:
 
 
 @pytest.fixture
-def mock_structure_repo() -> AsyncMock:
-    """Fully async mock of MongoDbStructureRepository."""
-    return AsyncMock()
-
-
-@pytest.fixture
-def mock_table_repo() -> AsyncMock:
-    """Fully async mock of MongoDbTableRepository."""
-    return AsyncMock()
-
-
-@pytest.fixture
-def mock_attachment_repo() -> AsyncMock:
-    """Fully async mock of MongoDbAttachmentRepository."""
-    return AsyncMock()
-
-
-@pytest.fixture
 def mock_contribution_service() -> AsyncMock:
     """Fully async mock of ContributionService."""
     return AsyncMock()

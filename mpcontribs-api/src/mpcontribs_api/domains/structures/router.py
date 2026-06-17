@@ -13,7 +13,7 @@ from mpcontribs_api.domains._shared.types import (
     ShortMimeFormat,
     download_filename,
 )
-from mpcontribs_api.domains.structures.dependencies import StructureDep, StructureServiceDep
+from mpcontribs_api.domains.structures.dependencies import StructureServiceDep
 from mpcontribs_api.domains.structures.models import StructureFilter, StructureIn, StructureOut, StructurePatch
 from mpcontribs_api.pagination import CursorParams, Page
 
@@ -22,28 +22,28 @@ router = APIRouter()
 
 @router.get("", response_model=Page[StructureOut])
 async def get_structures(
-    repo: StructureDep,
+    service: StructureServiceDep,
     pagination: Annotated[CursorParams, Depends()],
     filter: StructureFilter = FilterDepends(StructureFilter),
     fields: FieldSelector = StructureOut.default_fields(),
 ):
     selected = StructureOut.parse_fields(fields)
-    return await repo.get_structures(filter=filter, fields=selected, pagination=pagination)
+    return await service.get_many(filter=filter, fields=selected, pagination=pagination)
 
 
 @router.get("/{pk}", response_model=StructureOut)
 async def get_structure(
-    repo: StructureDep,
+    service: StructureServiceDep,
     pk: str,
     fields: FieldSelector = StructureOut.default_fields(),
 ):
     selected = StructureOut.parse_fields(fields)
-    return await repo.get_structure_by_id(id=pk, fields=selected)
+    return await service.get_by_id(id=pk, fields=selected)
 
 
 @router.get("/download/{short_mime}")
 async def download_structure(
-    repo: StructureDep,
+    service: StructureServiceDep,
     format: DownloadFormat,
     s3: S3Dep,
     short_mime: ShortMimeFormat = ShortMimeFormat.GZ,
@@ -52,14 +52,12 @@ async def download_structure(
     fields: FieldSelector = StructureOut.default_fields(),
 ) -> StreamingResponse:
     selected = StructureOut.parse_fields(fields)
-    body = await repo.download_structures(
+    body = await service.download(
         format=format,
         short_mime=short_mime,
         ignore_cache=ignore_cache,
         filter=filter,
         fields=selected,
-        key_name="",  # TODO: Temp
-        bucket_name="structures",
         s3=s3,
     )
     filename = download_filename("structures", format, short_mime)
@@ -72,10 +70,10 @@ async def download_structure(
 
 @router.post("", response_model=BulkWriteSummary[StructureOut])
 async def insert_structures(
-    repo: StructureDep,
+    service: StructureServiceDep,
     structures: list[StructureIn],
 ):
-    return await repo.insert_structures(structures=structures)
+    return await service.insert(components=structures)
 
 
 @router.delete("", response_model=ComponentDeleteResponse)
@@ -90,8 +88,8 @@ async def delete_structure_by_id(service: StructureServiceDep, id: str):
 
 @router.patch("/{id}")
 async def patch_structure_by_id(
-    repo: StructureDep,
+    service: StructureServiceDep,
     id: str,
     update: StructurePatch,
 ):
-    return await repo.patch_structure_by_id(id=id, update=update)
+    return await service.patch_by_id(id=id, update=update)

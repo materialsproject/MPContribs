@@ -224,7 +224,7 @@ class TestInsertContributionsPreChecks:
         assert summary.failed[0].index == 1
         assert summary.failed[0].error_code == "validation_error"
         # Oversize never reached the component repo
-        struct_repo.insert_structures.assert_not_called()
+        struct_repo.insert_components.assert_not_called()
         # And the in-pool contribution did go through the no-component fast path
         contrib_repo.insert_many_contributions.assert_called_once()
 
@@ -290,9 +290,9 @@ class TestInsertContributionsTransactionPath:
     async def test_with_components_opens_session_per_contribution(self):
         svc, contrib_repo, struct_repo, table_repo, attach_repo, client = _make_service()
 
-        struct_repo.insert_structures.return_value = [_fake_structure()]
-        table_repo.insert_tables.return_value = []
-        attach_repo.insert_attachments.return_value = []
+        struct_repo.insert_components.return_value = [_fake_structure()]
+        table_repo.insert_components.return_value = []
+        attach_repo.insert_components.return_value = []
 
         async def _insert(doc, session=None):
             return doc
@@ -311,8 +311,8 @@ class TestInsertContributionsTransactionPath:
         client, session = _make_fake_client()
         svc, contrib_repo, struct_repo, table_repo, _, _ = _make_service(client=client)
 
-        struct_repo.insert_structures.return_value = [_fake_structure()]
-        table_repo.insert_tables.return_value = [_fake_table()]
+        struct_repo.insert_components.return_value = [_fake_structure()]
+        table_repo.insert_components.return_value = [_fake_table()]
 
         async def _insert(doc, session=None):
             return doc
@@ -325,16 +325,16 @@ class TestInsertContributionsTransactionPath:
             attachments=[_attachment_in()],
         )
         await svc.insert_contributions([contrib])
-        assert struct_repo.insert_structures.call_args.kwargs["session"] is session
-        assert table_repo.insert_tables.call_args.kwargs["session"] is session
+        assert struct_repo.insert_components.call_args.kwargs["session"] is session
+        assert table_repo.insert_components.call_args.kwargs["session"] is session
         assert contrib_repo.insert_contribution.call_args.kwargs["session"] is session
 
     async def test_failure_on_second_of_three_yields_summary(self):
         svc, contrib_repo, struct_repo, table_repo, attach_repo, _ = _make_service()
 
-        struct_repo.insert_structures.return_value = [_fake_structure()]
-        table_repo.insert_tables.return_value = []
-        attach_repo.insert_attachments.return_value = []
+        struct_repo.insert_components.return_value = [_fake_structure()]
+        table_repo.insert_components.return_value = []
+        attach_repo.insert_components.return_value = []
 
         async def _insert(doc, session=None):
             # Fail the second contribution by inspecting the doc identifier
@@ -362,9 +362,9 @@ class TestInsertContributionsTransactionPath:
 
         struct_a, struct_b = _fake_structure(), _fake_structure()
         struct_calls = iter([[struct_a], [struct_b]])
-        struct_repo.insert_structures.side_effect = lambda *_args, **_kwargs: next(struct_calls)
-        table_repo.insert_tables.return_value = []
-        attach_repo.insert_attachments.return_value = []
+        struct_repo.insert_components.side_effect = lambda *_args, **_kwargs: next(struct_calls)
+        table_repo.insert_components.return_value = []
+        attach_repo.insert_components.return_value = []
 
         captured: list[Contribution] = []
 
@@ -394,9 +394,9 @@ class TestInsertContributionsMixedBatch:
     async def test_mixed_batch_routes_correctly(self):
         svc, contrib_repo, struct_repo, table_repo, attach_repo, client = _make_service()
 
-        struct_repo.insert_structures.return_value = [_fake_structure()]
-        table_repo.insert_tables.return_value = []
-        attach_repo.insert_attachments.return_value = []
+        struct_repo.insert_components.return_value = [_fake_structure()]
+        table_repo.insert_components.return_value = []
+        attach_repo.insert_components.return_value = []
         contrib_repo.insert_many_contributions.return_value = None
 
         async def _insert(doc, session=None):
@@ -581,9 +581,9 @@ class TestUpsertContributionsAtomic:
 #         write_slots = asyncio.Semaphore(1)
 #         svc, contrib_repo, struct_repo, table_repo, attach_repo, _ = _make_service(write_slots=write_slots)
 
-#         struct_repo.insert_structures.return_value = [_fake_structure()]
-#         table_repo.insert_tables.return_value = []
-#         attach_repo.insert_attachments.return_value = []
+#         struct_repo.insert_components.return_value = [_fake_structure()]
+#         table_repo.insert_components.return_value = []
+#         attach_repo.insert_components.return_value = []
 
 #         in_flight = 0
 #         peak = 0

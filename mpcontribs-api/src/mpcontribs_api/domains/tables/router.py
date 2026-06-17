@@ -13,7 +13,7 @@ from mpcontribs_api.domains._shared.types import (
     ShortMimeFormat,
     download_filename,
 )
-from mpcontribs_api.domains.tables.dependencies import TableDep, TableServiceDep
+from mpcontribs_api.domains.tables.dependencies import TableServiceDep
 from mpcontribs_api.domains.tables.models import Table, TableFilter, TableIn, TableOut, TablePatch
 from mpcontribs_api.pagination import CursorParams, Page
 
@@ -22,28 +22,28 @@ router = APIRouter()
 
 @router.get("", response_model=Page[TableOut])
 async def get_tables(
-    repo: TableDep,
+    service: TableServiceDep,
     pagination: Annotated[CursorParams, Depends()],
     filter: TableFilter = FilterDepends(TableFilter),
     fields: FieldSelector = TableOut.default_fields(),
 ):
     selected = TableOut.parse_fields(fields)
-    return await repo.get_tables(filter=filter, fields=selected, pagination=pagination)
+    return await service.get_many(filter=filter, fields=selected, pagination=pagination)
 
 
 @router.get("/{pk}", response_model=TableOut)
 async def get_table(
-    repo: TableDep,
+    service: TableServiceDep,
     pk: str,
     fields: FieldSelector = TableOut.default_fields(),
 ):
     selected = TableOut.parse_fields(fields)
-    return await repo.get_table_by_id(id=pk, fields=selected)
+    return await service.get_by_id(id=pk, fields=selected)
 
 
 @router.get("/download/{short_mime}")
 async def download_table(
-    repo: TableDep,
+    service: TableServiceDep,
     s3: S3Dep,
     format: DownloadFormat,
     short_mime: ShortMimeFormat = ShortMimeFormat.GZ,
@@ -52,15 +52,13 @@ async def download_table(
     fields: FieldSelector = TableOut.default_fields(),
 ) -> StreamingResponse:
     selected = TableOut.parse_fields(fields)
-    body = await repo.download_tables(
+    body = await service.download(
         format=format,
         short_mime=short_mime,
         ignore_cache=ignore_cache,
         filter=filter,
         fields=selected,
         s3=s3,
-        bucket_name="tables",
-        key_name="",  # TODO: Temp
     )
     filename = download_filename("tables", format, short_mime)
     return StreamingResponse(
@@ -72,10 +70,10 @@ async def download_table(
 
 @router.post("", response_model=BulkWriteSummary[Table])
 async def insert_tables(
-    repo: TableDep,
+    service: TableServiceDep,
     tables: list[TableIn],
 ):
-    return await repo.insert_tables(tables=tables)
+    return await service.insert(components=tables)
 
 
 @router.delete("", response_model=ComponentDeleteResponse)
@@ -90,8 +88,8 @@ async def delete_table_by_id(service: TableServiceDep, id: str):
 
 @router.patch("/{id}")
 async def patch_table_by_id(
-    repo: TableDep,
+    service: TableServiceDep,
     id: str,
     update: TablePatch,
 ):
-    return await repo.patch_table_by_id(id=id, update=update)
+    return await service.patch_by_id(id=id, update=update)

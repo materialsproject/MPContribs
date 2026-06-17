@@ -12,7 +12,7 @@ from mpcontribs_api.domains._shared.types import (
     ShortMimeFormat,
     download_filename,
 )
-from mpcontribs_api.domains.attachments.dependencies import AttachmentDep, AttachmentServiceDep
+from mpcontribs_api.domains.attachments.dependencies import AttachmentServiceDep
 from mpcontribs_api.domains.attachments.models import AttachmentFilter, AttachmentOut
 from mpcontribs_api.pagination import CursorParams, Page
 
@@ -21,28 +21,28 @@ router = APIRouter()
 
 @router.get("", response_model=Page[AttachmentOut])
 async def get_attachments(
-    repo: AttachmentDep,
+    service: AttachmentServiceDep,
     pagination: Annotated[CursorParams, Depends()],
     filter: AttachmentFilter = FilterDepends(AttachmentFilter),
     fields: FieldSelector = AttachmentOut.default_fields(),
 ):
     selected = AttachmentOut.parse_fields(fields)
-    return await repo.get_attachments(filter=filter, fields=selected, pagination=pagination)
+    return await service.get_many(filter=filter, fields=selected, pagination=pagination)
 
 
 @router.get("/{pk}", response_model=AttachmentOut)
 async def get_attachment(
-    repo: AttachmentDep,
+    service: AttachmentServiceDep,
     pk: str,
     fields: FieldSelector = AttachmentOut.default_fields(),
 ):
     selected = AttachmentOut.parse_fields(fields)
-    return await repo.get_attachment_by_id(id=pk, fields=selected)
+    return await service.get_by_id(id=pk, fields=selected)
 
 
 @router.get("/download/{short_mime}")
 async def download_attachment(
-    repo: AttachmentDep,
+    service: AttachmentServiceDep,
     format: DownloadFormat,
     s3: S3Dep,
     short_mime: ShortMimeFormat = ShortMimeFormat.GZ,
@@ -51,7 +51,7 @@ async def download_attachment(
     fields: FieldSelector = AttachmentOut.default_fields(),
 ) -> StreamingResponse:
     selected = AttachmentOut.parse_fields(fields)
-    body = await repo.download_attachments(
+    body = await service.download(
         format=format,
         short_mime=short_mime,
         ignore_cache=ignore_cache,

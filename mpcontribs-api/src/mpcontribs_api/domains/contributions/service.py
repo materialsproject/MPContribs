@@ -247,8 +247,8 @@ class ContributionService:
         Components are inserted sequentially because a session is single-threaded — sharing it
         across concurrent awaits would corrupt the wire protocol.
         """
-        structures = await self._structures.insert_structures(contrib.structures or [], session=session)
-        tables = await self._tables.insert_tables(contrib.tables or [], session=session)
+        structures = await self._structures.insert_components(contrib.structures or [], session=session)
+        tables = await self._tables.insert_components(contrib.tables or [], session=session)
 
         doc = Contribution.from_input_model(contrib)
         doc.structures = cast(list[Link[Structure]] | None, structures or None)
