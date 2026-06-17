@@ -35,3 +35,4 @@ mpcontribs-portal/supervisord.conf
 **/.DS_Store
 .venv/
 .env
+.claude/
