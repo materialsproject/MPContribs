@@ -1,30 +1,32 @@
 from mpcontribs.config import mp_level01_titles
+from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.core.utils import clean_value, get_composition_from_string
 from mpcontribs.users.utils import duplicate_check
 
 
 def round_to_100_percent(number_set, digit_after_decimal=1):
     unround_numbers = [
-        x / float(sum(number_set)) * 100 * 10**digit_after_decimal for x in number_set
+        x / float(sum(number_set)) * 100 * 10 ** digit_after_decimal for x in number_set
     ]
     decimal_part_with_index = sorted(
         [(index, unround_numbers[index] % 1) for index in range(len(unround_numbers))],
         key=lambda y: y[1],
         reverse=True,
     )
-    remainder = 100 * 10**digit_after_decimal - sum(map(int, unround_numbers))
+    remainder = 100 * 10 ** digit_after_decimal - sum(map(int, unround_numbers))
     index = 0
     while remainder > 0:
         unround_numbers[decimal_part_with_index[index][0]] += 1
         remainder -= 1
         index = (index + 1) % len(number_set)
-    return [int(x) / float(10**digit_after_decimal) for x in unround_numbers]
+    return [int(x) / float(10 ** digit_after_decimal) for x in unround_numbers]
 
 
 @duplicate_check
 def run(mpfile, **kwargs):
     import pymatgen
     import pandas as pd
+    from mpcontribs.users.swf.rest.rester import SwfRester
 
     # load data from google sheet
     google_sheet = mpfile.document[mp_level01_titles[0]].pop("google_sheet")

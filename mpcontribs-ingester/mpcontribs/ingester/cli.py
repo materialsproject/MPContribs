@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 # http://flask.pocoo.org/docs/0.10/patterns/appdispatch/
-import os
-import argparse
-import string
+import os, argparse, string
 from werkzeug.serving import run_simple
 from werkzeug.wsgi import DispatcherMiddleware, SharedDataMiddleware
 from flask import Flask

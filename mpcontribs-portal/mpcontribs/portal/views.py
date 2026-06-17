@@ -12,6 +12,8 @@ import urllib
 from redis import Redis
 from io import BytesIO
 from copy import deepcopy
+from pathlib import Path
+from shutil import make_archive, rmtree
 from nbconvert import HTMLExporter
 from bravado.exception import HTTPNotFound
 from json2html import Json2Html
@@ -53,7 +55,7 @@ def get_consumer(request):
     ]
     headers = {}
     for name in names:
-        key = f"HTTP_{name.upper().replace('-', '_')}"
+        key = f'HTTP_{name.upper().replace("-", "_")}'
         value = request.META.get(key)
         if value is not None:
             headers[name] = value
@@ -124,7 +126,7 @@ def landingpage(request, project):
             ctx["columns"] = ["identifier", "id", "formula"] + [
                 col["path"]
                 if col["unit"] == "NaN"
-                else f"{col['path']} [{col['unit']}]"
+                else f'{col["path"]} [{col["unit"]}]'
                 for col in prov["columns"]
             ]
             ctx["search_columns"] = ["identifier", "formula"] + [
@@ -137,7 +139,7 @@ def landingpage(request, project):
             ]
             ctx["ranges"] = json.dumps(
                 {
-                    f"{col['path']} [{col['unit']}]": [col["min"], col["max"]]
+                    f'{col["path"]} [{col["unit"]}]': [col["min"], col["max"]]
                     for col in prov["columns"]
                     if col["unit"] != "NaN"
                 }
@@ -164,7 +166,7 @@ def apply(request):
 
     if headers.get("X-Anonymous-Consumer", False):
         ctx["alert"] = f"""
-        Please <a href=\"{ctx["OAUTH_URL"]}\">log in</a> to apply for a project.
+        Please <a href=\"{ctx['OAUTH_URL']}\">log in</a> to apply for a project.
         """.strip()
 
     return render(request, "apply.html", ctx.flatten())

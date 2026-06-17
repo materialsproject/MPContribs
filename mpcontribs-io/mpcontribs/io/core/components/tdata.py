@@ -105,7 +105,7 @@ class Table(pd.DataFrame):
                             composition = get_composition_from_string(cell)
                             composition = pmg_util.string.unicodeify(composition)
                             table["rows"][row_index][col] = composition
-                        except CompositionError, ValueError, OverflowError:
+                        except (CompositionError, ValueError, OverflowError):
                             try:
                                 # https://stackoverflow.com/a/38020041
                                 result = urlparse(cell)

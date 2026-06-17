@@ -1,5 +1,4 @@
-import inspect
-import os
+import inspect, os
 from typing import Any, Dict
 
 
@@ -46,10 +45,7 @@ def duplicate_check(f):
 
 
 # https://stackoverflow.com/a/55545369
-def unflatten(
-    d: Dict[str, Any],
-    base: Dict[str, Any] = None,
-) -> Dict[str, Any]:
+def unflatten(d: Dict[str, Any], base: Dict[str, Any] = None,) -> Dict[str, Any]:
     """Convert any keys containing dotted paths to nested dicts
 
     >>> unflatten({'a': 12, 'b': 13, 'c': 14})  # no expansion

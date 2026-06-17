@@ -12,11 +12,9 @@ HEADERS = {"X-Authenticated-Groups": os.environ["ADMIN_GROUP"]}
 def generate_downloads(names=None):
     q = {"name__in": names} if names else {}
     client = Client(host=os.environ["MPCONTRIBS_API_HOST"], headers=HEADERS)
-    projects = (
-        client.projects.queryProjects(_fields=["name", "stats"], **q)
-        .result()
-        .get("data", [])
-    )
+    projects = client.projects.queryProjects(
+        _fields=["name", "stats"], **q
+    ).result().get("data", [])
     skip = {"columns", "contributions"}
     print("PROJECTS", len(projects))
 
@@ -30,7 +28,7 @@ def generate_downloads(names=None):
             print(name, json.loads(resp.content))
 
             if include:
-                for r in range(1, len(include) + 1):
+                for r in range(1, len(include)+1):
                     for combo in combinations(include, r):
                         resp = make_download(client, query, combo)
                         print(name, combo, json.loads(resp.content))

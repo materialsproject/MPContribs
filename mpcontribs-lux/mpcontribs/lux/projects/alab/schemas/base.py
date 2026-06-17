@@ -24,7 +24,7 @@ def ExcludeFromUpload(default: Any = None, description: str = "", **kwargs) -> A
         default=default,
         description=description,
         json_schema_extra={"exclude_from_upload": True},
-        **kwargs,
+        **kwargs
     )
 
 
