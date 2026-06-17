@@ -281,7 +281,7 @@ class MongoDbRepository[
         # Check S3 for the cached file
         # TODO: Implement
         if not ignore_cache and self._s3_object_exists(bucket_name=bucket_name, key_name=key_name, s3=s3):
-            # Download from either presigned url or bytes
+            # Download from either presigned url
             pass
 
         # If not found in cache, build from MongoDB and save to cache

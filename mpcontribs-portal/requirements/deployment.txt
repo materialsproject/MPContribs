@@ -25,9 +25,11 @@ boltons==25.0.0
     #   mpcontribs-client
     #   mpcontribs-portal (MPContribs/mpcontribs-portal/pyproject.toml)
 boto3==1.43.30
+||||||| parent of 24d7b5d6 (Revert changes to deployment of other submodules)
 boto3==1.43.25
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/pyproject.toml)
 botocore==1.43.30
+||||||| parent of 24d7b5d6 (Revert changes to deployment of other submodules)
 botocore==1.43.25
     # via
     #   boto3
