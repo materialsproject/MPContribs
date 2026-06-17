@@ -201,25 +201,35 @@ class TestSerializeCsv:
 
 
 class TestGetSerializer:
-    def test_jsonl_returns_jsonl_serializer(self):
-        repo = _repo()
-        assert repo._get_serializer(DownloadFormat.JSONL, None) is MongoDbRepository._serialize_jsonl
+    @pytest.mark.parametrize("format", list(DownloadFormat))
+    async def test_every_format_dispatches_to_a_usable_serializer(self, format: DownloadFormat):
+        """Every ``DownloadFormat`` member maps to a serializer of the expected shape.
 
-    async def test_csv_serializer_is_callable_and_serializes(self):
+        ``_get_serializer`` has no default case, so an unhandled member would silently
+        return ``None``. Parametrizing over every member guarantees the match stays
+        exhaustive: adding a format without a matching case fails here rather than at
+        request time. The returned object is uniformly a callable taking the row stream
+        and yielding ``bytes``, regardless of which format produced it.
+        """
+        repo = _repo()
+        serializer = repo._get_serializer(format, None)
+        assert callable(serializer)
+        raw = await _collect(serializer(_aiter([_Out(a=1, b="x")])))
+        assert isinstance(raw, bytes) and raw
+
+    async def test_jsonl_dispatches_to_jsonl_output(self):
+        repo = _repo()
+        serializer = repo._get_serializer(DownloadFormat.JSONL, None)
+        raw = await _collect(serializer(_aiter([_Out(a=1, b="x")])))
+        assert json.loads(raw) == {"a": 1, "b": "x"}
+
+    async def test_csv_dispatches_to_csv_output_and_threads_fields(self):
+        # The fields passed to _get_serializer must reach the CSV serializer: 'b' is
+        # dropped because only 'a' was requested.
         repo = _repo()
         serializer = repo._get_serializer(DownloadFormat.CSV, frozenset({"a"}))
         raw = await _collect(serializer(_aiter([_Out(a=1, b="x")])))
         assert _parse_csv(raw) == [{"a": "1"}]
-
-    def test_enum_rejects_arbitrary_string(self):
-        """Arbitrary strings can't reach _get_serializer: the StrEnum rejects them.
-
-        ``_get_serializer`` takes a ``DownloadFormat``, and the enum refuses any value
-        outside its members at construction time, so an unsupported format is stopped
-        at the type boundary rather than falling through to a None serializer.
-        """
-        with pytest.raises(ValueError):
-            DownloadFormat("xml")
 
 
 # ===========================================================================
