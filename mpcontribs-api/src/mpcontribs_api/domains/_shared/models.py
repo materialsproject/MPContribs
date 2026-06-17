@@ -58,6 +58,18 @@ class DeleteResponse(BaseModel):
         return cls(num_deleted=delete_result.deleted_count)
 
 
+class ComponentDeleteResponse(DeleteResponse):
+    """Result of a component delete that may leave referenced components in place.
+
+    ``num_deleted`` (inherited) counts components actually removed; ``referenced_ids`` are the
+    component ids skipped because a contribution still references them, and ``num_skipped`` is
+    their count.
+    """
+
+    referenced_ids: list[PydanticObjectId] = Field(default_factory=list)
+    num_skipped: int = 0
+
+
 def canonical_md5(payload: Mapping[str, Any]) -> str:
     """MD5 hex digest of a content mapping, stable across processes/hosts."""
     text = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)

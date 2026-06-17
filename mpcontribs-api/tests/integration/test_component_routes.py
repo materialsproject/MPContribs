@@ -1,11 +1,14 @@
+from unittest.mock import AsyncMock
+
 import pytest
 from beanie import PydanticObjectId
 
-from mpcontribs_api.domains._shared.models import DeleteResponse
-from mpcontribs_api.domains.attachments.dependencies import get_scoped_attachments
+from mpcontribs_api.domains._shared.models import ComponentDeleteResponse
+from mpcontribs_api.domains.attachments.dependencies import get_attachment_service, get_scoped_attachments
 from mpcontribs_api.domains.structures.dependencies import get_scoped_tables as get_scoped_structures
+from mpcontribs_api.domains.structures.dependencies import get_structure_service
 from mpcontribs_api.domains.structures.models import StructureOut
-from mpcontribs_api.domains.tables.dependencies import get_scoped_tables
+from mpcontribs_api.domains.tables.dependencies import get_scoped_tables, get_table_service
 from mpcontribs_api.domains.tables.models import TableOut
 from mpcontribs_api.pagination import Page
 
@@ -33,6 +36,32 @@ def attachment_repo(test_app, mock_attachment_repo):
     test_app.dependency_overrides[get_scoped_attachments] = lambda: mock_attachment_repo
     yield mock_attachment_repo
     test_app.dependency_overrides.pop(get_scoped_attachments, None)
+
+
+# Delete endpoints route through the component service (not the repo), so they are
+# overridden separately from the read/insert/patch endpoints above.
+@pytest.fixture
+def structure_service(test_app):
+    mock = AsyncMock()
+    test_app.dependency_overrides[get_structure_service] = lambda: mock
+    yield mock
+    test_app.dependency_overrides.pop(get_structure_service, None)
+
+
+@pytest.fixture
+def table_service(test_app):
+    mock = AsyncMock()
+    test_app.dependency_overrides[get_table_service] = lambda: mock
+    yield mock
+    test_app.dependency_overrides.pop(get_table_service, None)
+
+
+@pytest.fixture
+def attachment_service(test_app):
+    mock = AsyncMock()
+    test_app.dependency_overrides[get_attachment_service] = lambda: mock
+    yield mock
+    test_app.dependency_overrides.pop(get_attachment_service, None)
 
 
 SAMPLE_STRUCTURE = StructureOut(name="Fe2O3.cif", md5="a" * 32)
@@ -73,16 +102,16 @@ class TestStructuresList:
 
 
 class TestStructuresDelete:
-    def test_batch_delete_returns_200(self, client, structure_repo):
-        structure_repo.delete_structures.return_value = DeleteResponse(num_deleted=3)
+    def test_batch_delete_returns_200(self, client, structure_service):
+        structure_service.delete.return_value = ComponentDeleteResponse(num_deleted=3)
         r = client.delete("/api/v1/structures")
         assert r.status_code == 200
-        assert r.json() == {"num_deleted": 3}
+        assert r.json() == {"num_deleted": 3, "num_skipped": 0, "referenced_ids": []}
 
-    def test_repo_delete_called(self, client, structure_repo):
-        structure_repo.delete_structures.return_value = DeleteResponse(num_deleted=0)
+    def test_service_delete_called(self, client, structure_service):
+        structure_service.delete.return_value = ComponentDeleteResponse(num_deleted=0)
         client.delete("/api/v1/structures")
-        structure_repo.delete_structures.assert_awaited_once()
+        structure_service.delete.assert_awaited_once()
 
 
 class TestStructuresInsert:
@@ -103,8 +132,8 @@ class TestStructuresByIdRouting:
         structure_repo.get_structure_by_id.return_value = SAMPLE_STRUCTURE
         assert client.get(f"/api/v1/structures/{PydanticObjectId()}").status_code == 200
 
-    def test_delete_by_id_conventional_path(self, client, structure_repo):
-        structure_repo.delete_structure_by_id.return_value = DeleteResponse(num_deleted=1)
+    def test_delete_by_id_conventional_path(self, client, structure_service):
+        structure_service.delete_by_id.return_value = ComponentDeleteResponse(num_deleted=1)
         assert client.delete(f"/api/v1/structures/{PydanticObjectId()}").status_code == 200
 
     def test_patch_by_id_conventional_path(self, client, structure_repo):
@@ -141,9 +170,13 @@ class TestTablesList:
 
 
 class TestTablesDelete:
-    def test_batch_delete_returns_200(self, client, table_repo):
-        table_repo.delete_tables.return_value = DeleteResponse(num_deleted=2)
-        assert client.delete("/api/v1/tables").json() == {"num_deleted": 2}
+    def test_batch_delete_returns_200(self, client, table_service):
+        table_service.delete.return_value = ComponentDeleteResponse(num_deleted=2)
+        assert client.delete("/api/v1/tables").json() == {
+            "num_deleted": 2,
+            "num_skipped": 0,
+            "referenced_ids": [],
+        }
 
 
 class TestTablesInsert:
@@ -158,8 +191,8 @@ class TestTablesByIdRouting:
         table_repo.get_table_by_id.return_value = SAMPLE_TABLE
         assert client.get(f"/api/v1/tables/{PydanticObjectId()}").status_code == 200
 
-    def test_delete_by_id_conventional_path(self, client, table_repo):
-        table_repo.delete_table_by_id.return_value = DeleteResponse(num_deleted=1)
+    def test_delete_by_id_conventional_path(self, client, table_service):
+        table_service.delete_by_id.return_value = ComponentDeleteResponse(num_deleted=1)
         assert client.delete(f"/api/v1/tables/{PydanticObjectId()}").status_code == 200
 
     def test_patch_by_id_conventional_path(self, client, table_repo):
@@ -185,15 +218,15 @@ class TestAttachmentsRouterWiring:
         client.get(f"/api/v1/attachments/{PydanticObjectId()}")
         attachment_repo.get_attachment_by_id.assert_awaited_once()
 
-    def test_delete_by_id_calls_attachment_repo(self, client, attachment_repo):
-        attachment_repo.delete_attachment_by_id.return_value = DeleteResponse(num_deleted=1)
+    def test_delete_by_id_calls_attachment_service(self, client, attachment_service):
+        attachment_service.delete_by_id.return_value = ComponentDeleteResponse(num_deleted=1)
         client.delete(f"/api/v1/attachments/{PydanticObjectId()}")
-        attachment_repo.delete_attachment_by_id.assert_awaited_once()
+        attachment_service.delete_by_id.assert_awaited_once()
 
-    def test_batch_delete_calls_attachment_repo(self, client, attachment_repo):
-        attachment_repo.delete_attachments.return_value = DeleteResponse(num_deleted=0)
+    def test_batch_delete_calls_attachment_service(self, client, attachment_service):
+        attachment_service.delete.return_value = ComponentDeleteResponse(num_deleted=0)
         client.delete("/api/v1/attachments")
-        attachment_repo.delete_attachments.assert_awaited_once()
+        attachment_service.delete.assert_awaited_once()
 
 
 # ===========================================================================
