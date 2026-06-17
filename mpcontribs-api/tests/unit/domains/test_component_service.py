@@ -4,8 +4,8 @@ import pytest
 from beanie import PydanticObjectId
 
 from mpcontribs_api.domains._shared.models import ComponentDeleteResponse, DeleteResponse
+from mpcontribs_api.domains._shared.service import ComponentService
 from mpcontribs_api.domains.attachments.models import AttachmentFilter
-from mpcontribs_api.domains.attachments.service import AttachmentService
 from mpcontribs_api.exceptions import NotFoundError
 
 pytestmark = pytest.mark.asyncio
@@ -20,8 +20,8 @@ def _make_service(
     candidate_ids: list[PydanticObjectId],
     reachable: set[PydanticObjectId],
     referenced: set[PydanticObjectId],
-) -> tuple[AttachmentService, AsyncMock, AsyncMock]:
-    """Build an AttachmentService over mocked component + contribution repos.
+) -> tuple[ComponentService, AsyncMock, AsyncMock]:
+    """Build a ComponentService over mocked component + contribution repos.
 
     ``referenced_component_ids`` returns ``reachable`` for scoped checks (access gate) and
     ``referenced`` for unscoped checks (global integrity), keyed off the ``scoped`` kwarg.
@@ -41,7 +41,8 @@ def _make_service(
 
     contributions.referenced_component_ids = AsyncMock(side_effect=_referenced)
 
-    return AttachmentService(components, contributions), components, contributions
+    service = ComponentService(components, contributions, ref_field="attachments")
+    return service, components, contributions
 
 
 # ---------------------------------------------------------------------------

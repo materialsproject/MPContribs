@@ -156,13 +156,15 @@ class TestComponentDownload:
     async def test_jsonl_download_round_trips(self, db):
         """Component downloads stream a decompressable gzip of all rows."""
         await _repo().insert_components([_attachment("a" * 32), _attachment("b" * 32)])
-        stream = await _repo().download_attachments(
+        stream = _repo().download(
             format=DownloadFormat.JSONL,
             short_mime=ShortMimeFormat.GZ,
             ignore_cache=True,
             filter=AttachmentFilter(),
             fields=None,
             s3=MagicMock(),
+            bucket_name="attachments",
+            key_name="",
         )
         chunks = [c async for c in stream]
         decompressed = gzip.decompress(b"".join(chunks))

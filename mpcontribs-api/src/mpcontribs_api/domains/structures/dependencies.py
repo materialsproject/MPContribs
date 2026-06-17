@@ -3,20 +3,26 @@ from typing import Annotated
 from fastapi import Depends
 
 from mpcontribs_api.dependencies import UserDep
+from mpcontribs_api.domains._shared.service import ComponentService
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
+from mpcontribs_api.domains.structures.models import (
+    Structure,
+    StructureFilter,
+    StructureIn,
+    StructureOut,
+    StructurePatch,
+)
 from mpcontribs_api.domains.structures.repository import MongoDbStructureRepository
-from mpcontribs_api.domains.structures.service import StructureService
 
-
-def get_scoped_tables(user: UserDep) -> MongoDbStructureRepository:
-    return MongoDbStructureRepository(user)
-
-
-StructureDep = Annotated[MongoDbStructureRepository, Depends(get_scoped_tables)]
+StructureService = ComponentService[Structure, StructureIn, StructureOut, StructureFilter, StructurePatch]
 
 
 def get_structure_service(user: UserDep) -> StructureService:
-    return StructureService(MongoDbStructureRepository(user), MongoDbContributionRepository(user))
+    return ComponentService(
+        MongoDbStructureRepository(user),
+        MongoDbContributionRepository(user),
+        ref_field="structures",
+    )
 
 
 StructureServiceDep = Annotated[StructureService, Depends(get_structure_service)]
