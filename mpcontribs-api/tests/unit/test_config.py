@@ -3,7 +3,6 @@ from pydantic import SecretStr
 from pydantic import ValidationError as PydanticValidationError
 
 from mpcontribs_api.config import (
-    KongSettings,
     MongoSettings,
     RedisSettings,
     Settings,
@@ -18,7 +17,6 @@ REQUIRED_ENV = {
     "MPCONTRIBS_ENVIRONMENT": "dev",
     "MPCONTRIBS_MONGO__URI": "mongodb://user:pass@localhost:27017",
     "MPCONTRIBS_MONGO__DB_NAME": "mpcontribs-test",
-    "MPCONTRIBS_KONG__GATEWAY_SECRET": "kong-secret",
     "MPCONTRIBS_REDIS__ADDRESS": "redis://localhost:6379",
     "MPCONTRIBS_REDIS__URL": "redis://localhost:6379/0",
     "MPCONTRIBS_MAIL_DEFAULT_SENDER": "noreply@materialsproject.org",
@@ -110,11 +108,6 @@ class TestClampConcurrency:
 
 
 class TestSubSettingsSecrets:
-    def test_kong_secret_masked(self):
-        kong = KongSettings(gateway_secret=SecretStr("s3cret"))
-        assert kong.gateway_secret.get_secret_value() == "s3cret"
-        assert "s3cret" not in repr(kong)
-
     def test_redis_secrets_masked(self):
         redis = RedisSettings(address=SecretStr("redis://h"), url=SecretStr("redis://h/0"))
         assert redis.address.get_secret_value() == "redis://h"
@@ -140,10 +133,9 @@ class TestSettingsEnvLoading:
         assert settings.mongo.db_name == "mpcontribs-test"
         assert settings.mongo.uri.get_secret_value() == "mongodb://user:pass@localhost:27017"
 
-    def test_nested_delimiter_populates_kong_and_redis(self, monkeypatch):
+    def test_nested_delimiter_populates_and_redis(self, monkeypatch):
         _set_required_env(monkeypatch)
         settings = Settings()
-        assert settings.kong.gateway_secret.get_secret_value() == "kong-secret"
         assert settings.redis.url.get_secret_value() == "redis://localhost:6379/0"
 
     def test_nested_field_override(self, monkeypatch):

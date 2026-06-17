@@ -31,11 +31,6 @@ def _mock_beanie_collection():
 
 from mpcontribs_api.config import get_settings
 
-# Read the real secret from settings (from .env or the root conftest fallback)
-# so gateway tests always use whatever the live server will accept.
-GATEWAY_SECRET = get_settings().kong.gateway_secret.get_secret_value()
-GATEWAY_HEADERS = {"x-gateway-secret": GATEWAY_SECRET}
-
 ANON_HEADERS: dict[str, str] = {}
 
 AUTHED_HEADERS = {
