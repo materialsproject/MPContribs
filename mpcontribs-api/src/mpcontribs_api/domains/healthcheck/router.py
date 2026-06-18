@@ -28,7 +28,7 @@ async def healthcheck(db: DbDep, s3_client: S3Dep) -> HealthStatus:
 
     try:
         await s3_client.head_bucket(Bucket=settings.aws.health_bucket)
-    except (ClientError, BotoCoreError):
+    except ClientError, BotoCoreError:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail={"status": "unhealthy", "s3": "unreachable"},

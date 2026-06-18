@@ -17,7 +17,7 @@ class MongoDbComponentsRepository[
     TDoc: Component,
     TIn: Component,
     TOut: DocumentOut,
-    TFilter: Filter,  # not FilterDepends — see below
+    TFilter: Filter,
     TPatch: BaseModel,
 ](MongoDbRepository[TDoc, TIn, TOut, TFilter, TPatch]):
     @staticmethod

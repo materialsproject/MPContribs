@@ -30,7 +30,8 @@ kwargs = {
     "node_env": "production" if PRODUCTION else "development",
     "flask_log_level": "INFO" if PRODUCTION else "DEBUG",
     "jupyter_gateway_host": f"localhost:{KG_PORT}" if PRODUCTION else f"kernel-gateway:{KG_PORT}",
-    "dd_agent_host": "localhost" if PRODUCTION else "datadog",
+    # OTLP/gRPC receiver: the Datadog Agent sidecar in prod, the "datadog" compose service in dev.
+    "otel_endpoint": "localhost:4317" if PRODUCTION else "datadog:4317",
     "mpcontribs_api_host": "localhost" if PRODUCTION else "contribs-apis",
 }
 kwargs["flask_debug"] = kwargs["node_env"] == "development"

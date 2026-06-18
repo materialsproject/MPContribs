@@ -29,14 +29,11 @@ COPY docker-entrypoint.sh .
 RUN chmod +x main.py scripts/start.sh docker-entrypoint.sh
 
 ARG VERSION
-ENV PATH="/app/.venv/bin:$PATH" \
-  DD_SERVICE=contribs-apis \
-  DD_ENV=prod \
-  DD_VERSION=$VERSION \
-  DD_TRACE_HOST=localhost:8126 \
-  DD_MAIN_PACKAGE=mpcontribs-api
+# Telemetry (traces/metrics/logs) is emitted via OTLP to the Datadog Agent's OTLP receiver; the
+# endpoint and other OTEL settings are configured per-environment in supervisord.conf.jinja
+# (MPCONTRIBS_OTEL__*). No Datadog-specific app config lives here.
+ENV PATH="/app/.venv/bin:$PATH"
 
-LABEL com.datadoghq.ad.logs='[{"source": "uvicorn", "service": "contribs-apis"}]'
 EXPOSE 10000 10002 10003 10005 20000
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["/usr/bin/supervisord", "-c", "supervisord.conf"]
