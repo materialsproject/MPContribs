@@ -32,7 +32,6 @@ Copy `.env.example` to `.env`. Key variables (all prefixed `MPCONTRIBS_`):
 
 - `MONGO__URI` — MongoDB Atlas URI
 - `MONGO__DB_NAME` — database name
-- `KONG__GATEWAY_SECRET` — shared secret for verifying requests came through Kong
 - `ENVIRONMENT` — `dev` or `prod` (controls log format and debug mode)
 
 ## Architecture
@@ -50,11 +49,13 @@ Routers are registered in `src/mpcontribs_api/api/v1/router.py`.
 
 ### Authentication and authorization
 
-Kong injects user identity via headers; `auth.py` parses them into a frozen `User` model. The dependency chain is:
+Kong injects user identity via headers; `dependencies.get_user` parses them into a frozen `User` model (`authz.py`). The dependency chain is:
 
 - `UserDep` — any caller (anonymous or authenticated)
-- `AuthedDep` — requires authenticated user (raises 401 otherwise)
+- `AuthedDep` / `require_user` — requires an authenticated user (raises 401 otherwise)
 - `require_role(role)` — factory returning a dependency that requires a specific group membership
+
+All mutating endpoints (POST/PUT/PATCH/DELETE) depend on `require_user`, so anonymous callers get 401; read endpoints (GET) stay open and rely on scope to filter results.
 
 All database access goes through a repository instantiated with the current `User`. The repository's `_scope` dict is injected into every MongoDB query automatically:
 
@@ -62,7 +63,9 @@ All database access goes through a repository instantiated with the current `Use
 - **Authenticated users**: see public+approved data, own resources (`owner == username`), and group resources
 - **Anonymous**: public + approved only
 
-`verify_gateway()` in `dependencies.py` validates the `x-gateway-secret` header to ensure Kong was the actual caller.
+Components (structures/tables/attachments) have no access field of their own; their reads and deletes are gated by whether an in-scope contribution references them (see `ContributionService`/`ComponentService`).
+
+**Trust boundary:** the service is only reachable through Kong, which terminates auth and sets the identity headers. There is no in-app gateway-secret check today — the deployment network is the boundary, so the identity headers are trusted. If the service is ever exposed off the Kong path, add a gateway-secret (or mTLS) check before trusting those headers.
 
 ### Repository pattern
 
