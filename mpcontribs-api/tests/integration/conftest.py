@@ -33,6 +33,10 @@ from mpcontribs_api.config import get_settings
 
 ANON_HEADERS: dict[str, str] = {}
 
+# Forces anonymity even when the client carries default auth headers: get_user()
+# treats x-anonymous-consumer == "true" as anonymous regardless of other headers.
+FORCE_ANON_HEADERS = {"x-anonymous-consumer": "true"}
+
 AUTHED_HEADERS = {
     "x-consumer-username": "google:alice@example.com",
     "x-consumer-id": "test-consumer-id",

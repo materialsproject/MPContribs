@@ -10,11 +10,23 @@ from mpcontribs_api.domains.structures.models import StructureOut
 from mpcontribs_api.domains.tables.dependencies import get_table_service
 from mpcontribs_api.domains.tables.models import TableOut
 from mpcontribs_api.pagination import Page
+from tests.integration.conftest import AUTHED_HEADERS, FORCE_ANON_HEADERS
 
 # ---------------------------------------------------------------------------
 # Fixtures: every component endpoint routes through the unified ComponentService,
 # so each domain has a single mock service override.
 # ---------------------------------------------------------------------------
+
+
+@pytest.fixture(autouse=True)
+def _authenticate(client):
+    """Mutating component endpoints now require an authenticated caller.
+
+    These route tests exercise mutations, so default the shared client to an
+    authenticated identity. Anonymous-rejection is covered explicitly by the
+    *RequireAuth tests, which force anonymity with FORCE_ANON_HEADERS.
+    """
+    client.headers.update(AUTHED_HEADERS)
 
 
 @pytest.fixture
@@ -268,3 +280,45 @@ class TestComponentDownloads:
         prefix, *_ = download_target
         cd = client.get(f"/api/v1/{prefix}/download/gz?format=csv").headers["content-disposition"]
         assert ".csv.gz" in cd
+
+
+# ===========================================================================
+# Authentication enforcement: component mutations require an authenticated user
+# ===========================================================================
+
+
+class TestComponentMutationsRequireAuth:
+    def test_structures_post_anon_401(self, client, structure_service):
+        r = client.post("/api/v1/structures", json=[], headers=FORCE_ANON_HEADERS)
+        assert r.status_code == 401
+        structure_service.insert.assert_not_called()
+
+    def test_structures_delete_anon_401(self, client, structure_service):
+        r = client.delete("/api/v1/structures", headers=FORCE_ANON_HEADERS)
+        assert r.status_code == 401
+        structure_service.delete.assert_not_called()
+
+    def test_structure_delete_by_id_anon_401(self, client, structure_service):
+        r = client.delete(f"/api/v1/structures/{PydanticObjectId()}", headers=FORCE_ANON_HEADERS)
+        assert r.status_code == 401
+        structure_service.delete_by_id.assert_not_called()
+
+    def test_structure_patch_by_id_anon_401(self, client, structure_service):
+        r = client.patch(f"/api/v1/structures/{PydanticObjectId()}", json={"name": "x"}, headers=FORCE_ANON_HEADERS)
+        assert r.status_code == 401
+        structure_service.patch_by_id.assert_not_called()
+
+    def test_tables_delete_anon_401(self, client, table_service):
+        r = client.delete("/api/v1/tables", headers=FORCE_ANON_HEADERS)
+        assert r.status_code == 401
+        table_service.delete.assert_not_called()
+
+    def test_attachment_delete_by_id_anon_401(self, client, attachment_service):
+        r = client.delete(f"/api/v1/attachments/{PydanticObjectId()}", headers=FORCE_ANON_HEADERS)
+        assert r.status_code == 401
+        attachment_service.delete_by_id.assert_not_called()
+
+    def test_structures_get_still_open_to_anon(self, client, structure_service):
+        structure_service.get_many.return_value = Page(items=[], next_cursor=None)
+        r = client.get("/api/v1/structures", headers=FORCE_ANON_HEADERS)
+        assert r.status_code == 200
