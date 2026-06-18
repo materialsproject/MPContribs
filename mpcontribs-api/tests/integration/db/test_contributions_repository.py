@@ -476,3 +476,42 @@ class TestDeleteContributions:
         remaining = await Contribution.find().to_list()
         identifiers = {d.identifier for d in remaining}
         assert "bdel-scope-priv" in identifiers
+
+
+class TestUpsertContributionById:
+    async def test_insert_when_id_absent_persists_document(self, db):
+        new_id = PydanticObjectId()
+        payload = _contrib_in(identifier="ups-new", _id=new_id)
+        result = await _repo(ADMIN).upsert_contribution_by_id(str(new_id), payload)
+        # Must be the resolved document, not an un-awaited query object.
+        assert isinstance(result, Contribution)
+        stored = await Contribution.find_one(Contribution.id == new_id)
+        assert stored is not None
+        assert stored.identifier == "ups-new"
+
+    async def test_update_when_id_present_applies_change(self, db):
+        existing = await _insert(identifier="ups-existing")
+        payload = _contrib_in(identifier="ups-existing", formula="Li2O", _id=existing.id)
+        result = await _repo(ADMIN).upsert_contribution_by_id(str(existing.id), payload)
+        assert isinstance(result, Contribution)
+        stored = await Contribution.find_one(Contribution.id == existing.id)
+        assert stored is not None
+        assert stored.formula == "Li2O"
+
+
+class TestDeleteByIdsScope:
+    async def test_anon_cannot_delete_out_of_scope_ids(self, db):
+        pub = await _insert(identifier="dbi-pub", is_public=True)
+        priv = await _insert(identifier="dbi-priv", is_public=False)
+        # Anonymous scope only sees public docs; deleting both ids must spare the private one.
+        result = await _repo(ANON).delete_by_ids([pub.id, priv.id])
+        assert result.num_deleted == 1
+        remaining = {d.identifier for d in await Contribution.find().to_list()}
+        assert "dbi-priv" in remaining
+        assert "dbi-pub" not in remaining
+
+    async def test_admin_deletes_all_ids(self, db):
+        a = await _insert(identifier="dbi-a", is_public=False)
+        b = await _insert(identifier="dbi-b", is_public=False)
+        result = await _repo(ADMIN).delete_by_ids([a.id, b.id])
+        assert result.num_deleted == 2

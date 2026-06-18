@@ -293,3 +293,51 @@ class TestUpsertProject:
         await _repo(ADMIN).upsert_project_by_id(id="path-id", data=data)
         found = await Project.find_one(Project.id == "path-id")
         assert found is not None
+
+
+# ---------------------------------------------------------------------------
+# upsert_project_by_id — authorization (owner-or-admin)
+# ---------------------------------------------------------------------------
+
+BOB = User(username="google:bob@example.com", groups=frozenset())
+
+
+class TestUpsertProjectAuthorization:
+    async def test_owner_can_overwrite_own_project(self, db):
+        await _insert("auth-own", owner="google:alice@example.com")
+        data = _project_in("auth-own", owner="google:alice@example.com", title="Owner Edit")
+        await _repo(ALICE).upsert_project_by_id(id="auth-own", data=data)
+        found = await Project.find_one(Project.id == "auth-own")
+        assert found.title == "Owner Edit"
+
+    async def test_admin_can_overwrite_any_project(self, db):
+        await _insert("auth-admin", owner="google:alice@example.com")
+        data = _project_in("auth-admin", owner="google:alice@example.com", title="Admin Edit")
+        await _repo(ADMIN).upsert_project_by_id(id="auth-admin", data=data)
+        found = await Project.find_one(Project.id == "auth-admin")
+        assert found.title == "Admin Edit"
+
+    async def test_non_owner_cannot_overwrite(self, db):
+        await _insert("auth-other", owner="google:alice@example.com", title="Original")
+        data = _project_in("auth-other", owner="google:alice@example.com", title="Hijacked")
+        from mpcontribs_api.exceptions import PermissionError as AppPermissionError
+
+        with pytest.raises(AppPermissionError):
+            await _repo(BOB).upsert_project_by_id(id="auth-other", data=data)
+        found = await Project.find_one(Project.id == "auth-other")
+        assert found.title == "Original"
+
+    async def test_new_project_sets_owner_to_caller(self, db):
+        # Body owner is someone else; the caller's identity must win.
+        data = _project_in("auth-newowner", owner="google:alice@example.com")
+        await _repo(BOB).upsert_project_by_id(id="auth-newowner", data=data)
+        found = await Project.find_one(Project.id == "auth-newowner")
+        assert found.owner == "google:bob@example.com"
+
+    async def test_update_preserves_original_owner(self, db):
+        await _insert("auth-preserve", owner="google:alice@example.com")
+        # Alice tries to reassign ownership via the body; owner must stay hers.
+        data = _project_in("auth-preserve", owner="google:bob@example.com", title="Edit")
+        await _repo(ALICE).upsert_project_by_id(id="auth-preserve", data=data)
+        found = await Project.find_one(Project.id == "auth-preserve")
+        assert found.owner == "google:alice@example.com"
