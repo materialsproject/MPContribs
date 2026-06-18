@@ -53,7 +53,7 @@ async def insert_contributions(
     return await service.insert_contributions(contributions=contributions)
 
 
-@router.put("", dependencies=[Depends(require_user)])
+@router.put("", response_model=BulkWriteSummary[Contribution], dependencies=[Depends(require_user)])
 async def upsert_contributions(
     service: ContributionServiceDep,
     contributions: list[ContributionIn],

@@ -255,8 +255,8 @@ class ContributionService:
         doc.tables = cast(list[Link[Table]] | None, tables or None)
         return await self._contributions.insert_contribution(doc, session=session)
 
-    async def upsert_contributions(self, contributions: list[ContributionIn]) -> list[Contribution]:
-        """Upsert contributions by their identifying fields, bounded by concurrency caps.
+    async def upsert_contributions(self, contributions: list[ContributionIn]) -> BulkWriteSummary[Contribution]:
+        """Upsert contributions by their identifying fields, reporting per-item outcomes.
 
         Components (structures, tables, attachments) must be managed via their respective
         services. If any contribution in the batch carries components, the entire request is
@@ -265,14 +265,22 @@ class ContributionService:
         Each item is upserted atomically by ``ContributionIn.identifiers()`` via a single
         ``findOneAndUpdate(..., upsert=True)`` so two requests targeting the same key cannot
         race past the find branch — the unique index over those fields is the tiebreaker.
-        Concurrent upserts within a batch are bounded by ``settings.mongo.max_concurrent_transactions``
+        Concurrent upserts within a batch are bounded by ``settings.mongo.max_concurrent_transactions``.
+        A single item failing does not fail the batch: it is reported in ``failed`` while the others
+        still commit (mirroring ``insert_contributions``).
 
         Args:
             contributions: contributions to upsert; must not include nested components
 
         Returns:
-            list[Contribution]: upserted documents in input order
+            BulkWriteSummary[Contribution]: per-item outcome, sized to ``len(contributions)``
+
+        Raises:
+            ValidationError: if any contribution in the batch carries components
         """
+        if not contributions:
+            return BulkWriteSummary[Contribution](total=0, succeeded=[], failed=[])
+
         indices_with_components = [i for i, c in enumerate(contributions) if c.has_components()]
         if indices_with_components:
             raise ValidationError(
@@ -282,11 +290,18 @@ class ContributionService:
 
         sem = asyncio.Semaphore(self._settings.max_concurrent_transactions)
 
-        async def _bounded_upsert(contrib: ContributionIn) -> Contribution:
+        async def _bounded_upsert(index: int, contrib: ContributionIn) -> Contribution | BulkFailure:
             async with sem:
-                return await self._contributions.upsert_contribution_by_identifiers(contrib.identifiers(), contrib)
+                try:
+                    return await self._contributions.upsert_contribution_by_identifiers(contrib.identifiers(), contrib)
+                except Exception as exc:
+                    logger.error("upsert_contribution_failed", index=index, identifier=contrib.identifiers())
+                    return bulk_failure_from_exception(index, contrib.identifiers(), exc)
 
-        return await asyncio.gather(*[_bounded_upsert(c) for c in contributions])
+        results = await asyncio.gather(*[_bounded_upsert(i, c) for i, c in enumerate(contributions)])
+        succeeded = [r for r in results if not isinstance(r, BulkFailure)]
+        failed = [r for r in results if isinstance(r, BulkFailure)]
+        return BulkWriteSummary[Contribution](total=len(contributions), succeeded=succeeded, failed=failed)
 
     async def delete_contributions(self, filter: ContributionFilter) -> BulkDeleteSummary:
         """Delete a contribution and all of its child components
