@@ -4,7 +4,7 @@ import unicodedata
 from collections.abc import Mapping
 from typing import Annotated, Any, ClassVar, Self
 
-from beanie import DocumentWithSoftDelete, PydanticObjectId
+from beanie import Document, PydanticObjectId
 from pydantic import BaseModel, Field
 from pymongo.results import DeleteResult
 
@@ -13,7 +13,7 @@ from mpcontribs_api.domains._shared.types import MD5Hash
 from mpcontribs_api.projection import SparseFieldsModel
 
 
-class BaseDocumentWithInput[TId](DocumentWithSoftDelete):
+class BaseDocumentWithInput[TId](Document):
     """A stored resource document with a required ``id`` and an input counterpart.
 
     Subclasses bind their id type as ``TId``. The ``id`` is declared here as required and non-null so
@@ -21,8 +21,7 @@ class BaseDocumentWithInput[TId](DocumentWithSoftDelete):
     type (``ShortStr`` for projects, ``PydanticObjectId`` for contributions). ``from_input_model``
     translates a validated input payload into a full document; the base param is intentionally ``Any``
     so each resource's override can declare its concrete input model without violating LSP (input
-    models subclass their document, so they can't be bound as a class type parameter). Soft-delete
-    behavior is inherited from ``DocumentWithSoftDelete``.
+    models subclass their document, so they can't be bound as a class type parameter).
     """
 
     # Required, non-null, resource-specific id. Overrides Document's optional ``PydanticObjectId`` id.
