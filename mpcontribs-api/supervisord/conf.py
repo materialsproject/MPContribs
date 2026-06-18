@@ -24,6 +24,10 @@ for deployment in os.environ.get("DEPLOYMENTS", "ml:10002").split(","):
 
 kwargs = {
     "production": PRODUCTION,
+    # MPCONTRIBS_ENVIRONMENT drives the new pydantic Settings (log format, debug mode).
+    "environment": "prod" if PRODUCTION else "dev",
+    # MPCONTRIBS_VERSION is required by Settings; sourced from the image build arg at container start.
+    "version": os.environ.get("CONTRIBS_VERSION", os.environ.get("MPCONTRIBS_VERSION", "0.0.0")),
     "deployments": deployments,
     "nworkers": NWORKERS,
     "reload": int(not PRODUCTION),
