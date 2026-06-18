@@ -1,5 +1,5 @@
-# NOTE: base image must be updated to Python 3.14 to satisfy requires-python in pyproject.toml
-FROM materialsproject/devops:python-3.1113.4 AS base
+# FROM materialsproject/devops:python-3.1113.4 AS base
+FROM python:3.14-slim AS base
 RUN apt-get update && apt-get install -y --no-install-recommends supervisor libopenblas-dev vim && apt-get clean
 WORKDIR /app
 
