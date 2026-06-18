@@ -93,7 +93,11 @@ class MongoDbComponentsRepository[
         return (await self.insert_components(components=[component], session=session))[0]
 
     async def get_component_by_id(self, id: str, fields: frozenset[str] | None) -> TDoc | TOut | None:
-        """Find a single component by id. See ``get_by_id``."""
+        """Find a single component by id. See ``get_by_id``.
+
+        The id must be converted to an ObjectId first; ``get_by_id`` compares against the
+        ObjectId ``_id`` and a raw string would never match.
+        """
         return await self.get_by_id(self._convert_object_id(id), fields)
 
     async def delete_components(
