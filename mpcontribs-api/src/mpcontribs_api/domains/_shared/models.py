@@ -5,7 +5,7 @@ from collections.abc import Mapping
 from typing import Annotated, Any, ClassVar, Self
 
 from beanie import Document, PydanticObjectId
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from pymongo.results import DeleteResult
 
 from mpcontribs_api import pagination
@@ -76,12 +76,51 @@ def canonical_md5(payload: Mapping[str, Any]) -> str:
     return hashlib.md5(normalized.encode("utf-8")).hexdigest()
 
 
-class Component(BaseDocumentWithInput[PydanticObjectId]):
+class ComponentIn(BaseModel):
+    """Base for component input payloads.
+
+    Components are content-addressed: the server computes ``md5`` from the content and assigns the
+    ``_id`` on insert, so neither is part of the input contract. Subclasses add the required content
+    fields for their resource.
+    """
+
     name: str
-    md5: MD5Hash
+
+
+class Component(BaseDocumentWithInput[PydanticObjectId]):
+    """Stored component document.
+
+    ``md5`` is server-authoritative: it is (re)computed from ``hash_fields`` whenever a full document
+    is validated — on insert, on update, and on full-document reads — so a client-supplied value can
+    never define a component's content identity.
+    """
+
+    name: str
+    # Server-computed; the placeholder default is overwritten by ``_recompute_md5`` on validation.
+    md5: MD5Hash = Field(default="0" * 32)
 
     hash_fields: ClassVar[frozenset[str]]
 
+    # The md5 functions look redundant but aren't, we should keep both
+    # Used in patching to compute the hash after an update - should not return self
     def compute_md5(self) -> str:
         payload = self.model_dump(mode="json", include=set(self.hash_fields), by_alias=False)
         return canonical_md5(payload)
+
+    # Used on validation - must return self
+    @model_validator(mode="after")
+    def _recompute_md5(self) -> Self:
+        self.md5 = self.compute_md5()
+        return self
+
+    @classmethod
+    def from_input(cls, input: ComponentIn) -> Self:
+        """Build a stored document from an input payload, assigning a fresh id (md5 is computed).
+
+        The default maps every input field onto the document one-to-one. Subclasses whose document
+        carries fields that are absent from the input or derived from it should override this - see
+        ``Table.from_input``, which computes ``total_data_rows`` from the data frame.
+        """
+        payload = input.model_dump()
+        payload["_id"] = PydanticObjectId()
+        return cls.model_validate(payload)

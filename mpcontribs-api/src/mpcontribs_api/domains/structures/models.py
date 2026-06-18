@@ -3,8 +3,8 @@ from fastapi_filter.contrib.beanie import Filter
 from pydantic import BaseModel, ConfigDict
 from pymatgen.core import Element
 
-from mpcontribs_api.domains._shared.models import Component, DocumentOut
-from mpcontribs_api.domains._shared.types import MD5Hash, PolarsFrame
+from mpcontribs_api.domains._shared.models import Component, ComponentIn, DocumentOut
+from mpcontribs_api.domains._shared.types import FRAME_BSON_ENCODERS, MD5Hash, PolarsFrame
 from mpcontribs_api.projection import SparseFieldsModel
 
 
@@ -55,18 +55,30 @@ class Structure(Component):
 
     class Settings:
         name = "structures"
+        bson_encoders = FRAME_BSON_ENCODERS
 
 
-class StructureIn(Structure):
-    pass
+class StructureIn(ComponentIn):
+    """User-supplied structure content. ``_id`` and ``md5`` are server-assigned, so absent here."""
+
+    lattice: Lattice
+    sites: list[Site]
+    charge: float | None = None
+    cif: str
 
 
 class StructureOut(DocumentOut[PydanticObjectId]):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     name: str | None = None
     md5: MD5Hash | None = None
+    lattice: Lattice | None = None
+    sites: list[Site] | None = None
+    charge: float | None = None
+    cif: str | None = None
 
     @staticmethod
     def default_fields() -> list[str]:
+        # Light default; content (lattice/sites/charge/cif) is fetched via ?_fields=.
         return [
             "id",
             "name",
@@ -77,7 +89,9 @@ class StructureOut(DocumentOut[PydanticObjectId]):
 class StructurePatch(SparseFieldsModel):
     name: str | None = None
     lattice: Lattice | None = None
-    sites: Site | None = None
+    sites: list[Site] | None = None
+    charge: float | None = None
+    cif: str | None = None
 
 
 class StructureFilter(Filter):
