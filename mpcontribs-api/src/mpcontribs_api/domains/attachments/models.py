@@ -2,12 +2,22 @@ from beanie import PydanticObjectId
 from fastapi_filter.contrib.beanie import Filter
 from pydantic import field_validator
 
-from mpcontribs_api.domains._shared.models import Component, DocumentOut
+from mpcontribs_api.domains._shared.models import Component, ComponentIn, DocumentOut
 from mpcontribs_api.domains._shared.types import FileLike, MD5Hash, MimeFormat
 from mpcontribs_api.exceptions import ValidationError
 from mpcontribs_api.projection import SparseFieldsModel
 
 ACCEPTED_FORMATS = ["jpg", "jpeg", "png", "csv", "parquet", "gz"]
+
+
+def _validate_attachment_name(v: str) -> str:
+    parts = v.strip().split(".")
+    if parts[-1].lower() not in ACCEPTED_FORMATS:
+        raise ValidationError(
+            f"Attachment extension not in allowed formats: {ACCEPTED_FORMATS}",
+            found_extension=parts[-1],
+        )
+    return v
 
 
 class Attachment(Component):
@@ -21,32 +31,37 @@ class Attachment(Component):
     @field_validator("name", mode="before")
     @classmethod
     def _name_with_extension(cls, v: str) -> str:
-        parts = v.strip().split(".")
-        if parts[-1].lower() not in ACCEPTED_FORMATS:
-            raise ValidationError(
-                f"Attachment extension not in allowed formats: {ACCEPTED_FORMATS}",
-                found_extension=parts[-1],
-            )
-        return v
+        return _validate_attachment_name(v)
 
 
-class AttachmentIn(Attachment):
-    pass
+class AttachmentIn(ComponentIn):
+    """User-supplied attachment content. ``_id`` and ``md5`` are server-assigned, so absent here."""
+
+    mime: MimeFormat
+    content: int
+
+    @field_validator("name", mode="before")
+    @classmethod
+    def _name_with_extension(cls, v: str) -> str:
+        return _validate_attachment_name(v)
 
 
 class AttachmentOut(DocumentOut[PydanticObjectId]):
     name: FileLike | None = None
     md5: MD5Hash | None = None
     mime: MimeFormat | None = None
+    content: int | None = None
 
     @staticmethod
     def default_fields() -> list[str]:
+        # Light default; content fetched via ?_fields=.
         return ["id", "name", "md5", "mime"]
 
 
 class AttachmentPatch(SparseFieldsModel):
     name: FileLike | None = None
     mime: MimeFormat | None = None
+    content: int | None = None
 
 
 class AttachmentFilter(Filter):

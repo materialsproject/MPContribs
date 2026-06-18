@@ -7,7 +7,7 @@ from pymongo.asynchronous.client_session import AsyncClientSession
 from types_aiobotocore_s3 import S3Client
 
 from mpcontribs_api.domains._shared.components import MongoDbComponentsRepository
-from mpcontribs_api.domains._shared.models import Component, ComponentDeleteResponse, DocumentOut
+from mpcontribs_api.domains._shared.models import Component, ComponentDeleteResponse, ComponentIn, DocumentOut
 from mpcontribs_api.domains._shared.types import DownloadFormat, ShortMimeFormat
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
 from mpcontribs_api.exceptions import NotFoundError
@@ -16,7 +16,7 @@ from mpcontribs_api.pagination import CursorParams, Page
 
 class ComponentService[
     TDoc: Component,
-    TIn: Component,
+    TIn: ComponentIn,
     TOut: DocumentOut,
     TFilter: Filter,
     TPatch: BaseModel,
