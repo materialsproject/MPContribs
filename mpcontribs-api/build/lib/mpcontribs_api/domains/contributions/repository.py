@@ -161,7 +161,8 @@ class MongoDbContributionRepository(
         """Return every component id referenced through ``ref_field`` by matching contributions.
 
         Unlike :meth:`referenced_component_ids`, this takes no candidate list — it enumerates all
-        ids reachable from contributions in scope.
+        ids reachable from contributions in scope. Used to gate component *reads* (list/download)
+        to only the components a user can reach via a contribution they are allowed to see.
 
         Args:
             ref_field: the contribution link field to inspect ("structures" | "tables" |

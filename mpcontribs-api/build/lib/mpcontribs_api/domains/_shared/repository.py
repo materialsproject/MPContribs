@@ -288,6 +288,8 @@ class MongoDbRepository[
 
         # TODO: S3 download cache. When implemented, this should `await
         # self._s3_object_exists(...)` and stream the cached object on a hit.
+        # The previous code called the coroutine without awaiting it (a no-op
+        # that always evaluated truthy), so the branch was removed.
 
         # Build from MongoDB (and, in future, save to cache)
         query = filter.filter(self.document_model.find(self._scope))
