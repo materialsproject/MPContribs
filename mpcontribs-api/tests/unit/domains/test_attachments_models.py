@@ -46,13 +46,17 @@ class TestAttachment:
         with pytest.raises(AppValidationError):
             Attachment(**_payload(name="noextension"))
 
-    def test_md5_normalized(self):
-        attachment = Attachment(**_payload(md5="C" * 32))
-        assert attachment.md5 == "c" * 32
+    def test_md5_is_computed_not_taken_from_input(self):
+        # A client-supplied md5 is overwritten by the content-derived hash.
+        attachment = Attachment(**_payload(md5="c" * 32))
+        assert attachment.md5 != "c" * 32
+        assert len(attachment.md5) == 32
 
-    def test_invalid_md5_raises(self):
-        with pytest.raises(AppValidationError):
-            Attachment(**_payload(md5="zz"))
+    def test_same_content_same_md5(self):
+        assert Attachment(**_payload()).md5 == Attachment(**_payload()).md5
+
+    def test_different_content_different_md5(self):
+        assert Attachment(**_payload(content=1)).md5 != Attachment(**_payload(content=2)).md5
 
     def test_invalid_mime_raises(self):
         with pytest.raises(AppValidationError):
@@ -64,10 +68,18 @@ class TestAttachment:
         with pytest.raises(PydanticValidationError):
             Attachment(**payload)
 
-    def test_attachment_in_is_attachment(self):
-        # Input models subclass their document so from_input_model can dump them 1:1.
-        assert issubclass(AttachmentIn, Attachment)
-        assert isinstance(AttachmentIn(**_payload()), Attachment)
+    def test_attachment_in_has_no_id_or_md5(self):
+        assert "md5" not in AttachmentIn.model_fields
+        assert "id" not in AttachmentIn.model_fields
+
+    def test_attachment_in_validates_name_extension(self):
+        with pytest.raises(AppValidationError):
+            AttachmentIn(name="noextension", mime="application/gzip", content=1)
+
+    def test_from_input_assigns_id_and_computes_md5(self):
+        doc = Attachment.from_input(AttachmentIn(name="s.gz", mime="application/gzip", content=1))
+        assert doc.id is not None
+        assert len(doc.md5) == 32
 
 
 # ---------------------------------------------------------------------------

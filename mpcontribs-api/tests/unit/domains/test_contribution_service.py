@@ -488,9 +488,11 @@ class TestUpsertContributionsAtomic:
         contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
 
         contribs = [_contrib_in(identifier=f"mp-{i}") for i in range(3)]
-        results = await svc.upsert_contributions(contribs)
+        summary = await svc.upsert_contributions(contribs)
 
-        assert len(results) == 3
+        assert summary.total == 3
+        assert len(summary.succeeded) == 3
+        assert summary.failed == []
         assert contrib_repo.upsert_contribution_by_identifiers.call_count == 3
         # The legacy read-then-write path must not be used
         contrib_repo.find_one_contribution.assert_not_called()
@@ -521,14 +523,16 @@ class TestUpsertContributionsAtomic:
         contrib_repo.upsert_contribution_by_identifiers.side_effect = _upsert
 
         contribs = [_contrib_in(identifier=f"mp-{i}") for i in range(3)]
-        results = await svc.upsert_contributions(contribs)
+        summary = await svc.upsert_contributions(contribs)
 
-        assert results == [returned["mp-0"], returned["mp-1"], returned["mp-2"]]
+        assert summary.succeeded == [returned["mp-0"], returned["mp-1"], returned["mp-2"]]
 
-    async def test_empty_batch_returns_empty_list(self):
+    async def test_empty_batch_returns_empty_summary(self):
         svc, contrib_repo, *_ = _make_service()
-        results = await svc.upsert_contributions([])
-        assert results == []
+        summary = await svc.upsert_contributions([])
+        assert summary.total == 0
+        assert summary.succeeded == []
+        assert summary.failed == []
         contrib_repo.upsert_contribution_by_identifiers.assert_not_called()
 
     async def test_same_key_concurrent_upserts_both_go_through_atomic_call(self):
@@ -543,10 +547,28 @@ class TestUpsertContributionsAtomic:
             _contrib_in(project="p", identifier="same"),
             _contrib_in(project="p", identifier="same"),
         ]
-        results = await svc.upsert_contributions(contribs)
+        summary = await svc.upsert_contributions(contribs)
 
-        assert len(results) == 2
+        assert len(summary.succeeded) == 2
         assert contrib_repo.upsert_contribution_by_identifiers.call_count == 2
+
+    async def test_one_failure_is_reported_not_raised(self):
+        svc, contrib_repo, *_ = _make_service()
+
+        async def _upsert(identifiers, contrib):
+            if contrib.identifier == "mp-1":
+                raise ConflictError("boom")
+            return MagicMock(spec=Contribution)
+
+        contrib_repo.upsert_contribution_by_identifiers.side_effect = _upsert
+
+        contribs = [_contrib_in(identifier=f"mp-{i}") for i in range(3)]
+        summary = await svc.upsert_contributions(contribs)
+
+        assert summary.total == 3
+        assert len(summary.succeeded) == 2
+        assert [f.index for f in summary.failed] == [1]
+        assert summary.failed[0].error_code == "conflict"
 
 
 # ---------------------------------------------------------------------------
