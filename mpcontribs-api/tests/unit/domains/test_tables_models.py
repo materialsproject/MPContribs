@@ -10,7 +10,6 @@ from mpcontribs_api.domains.tables.models import (
     TableIn,
     TableOut,
     TablePatch,
-    TableSummaryOut,
 )
 from mpcontribs_api.exceptions import ValidationError as AppValidationError
 
@@ -18,36 +17,40 @@ from mpcontribs_api.exceptions import ValidationError as AppValidationError
 # Helpers
 # ---------------------------------------------------------------------------
 
-ATTRS = {"title": "Band gaps", "labels": {"index": "T", "value": "gap", "variable": "method"}}
+ATTRS = {"title": "Band gaps", "labels": {"index": "T", "value": "gap", "variable": "doping"}}
 
 
-def _table_payload(**overrides) -> dict:
+def _table_doc_payload(**overrides) -> dict:
+    """Payload for the stored Table document — raw MongoDB shape (index/columns/data as strings)."""
     payload = {
         "_id": PydanticObjectId(),
         "name": "bandgaps",
-        "md5": "d" * 32,
         "attrs": ATTRS,
+        "index": ["100.0", "200.0"],
+        "columns": ["1e16", "1e17"],
+        "data": [["1.1", "1.2"], ["2.1", "2.2"]],
         "total_data_rows": 2,
-        "data": {"T": [100, 200], "gap": [1.1, 1.2]},
     }
     payload.update(overrides)
     return payload
 
 
-def _source_doc(**overrides) -> dict:
-    """A source document for TableIn.from_input."""
-    doc = {
-        "id": PydanticObjectId(),
+def _table_in_frame() -> pl.DataFrame:
+    # First column is the index (T), the rest are the data columns; all cells are strings.
+    return pl.DataFrame(
+        {"T": ["100.0", "200.0"], "1e16": ["1.1", "2.1"], "1e17": ["1.2", "2.2"]}
+    )
+
+
+def _table_in_payload(**overrides) -> dict:
+    """Payload for user input: a DataFrame (first column = index), no _id/md5/total_data_rows."""
+    payload = {
         "name": "bandgaps",
-        "md5": "d" * 32,
         "attrs": ATTRS,
-        "columns": ["gap", "method"],
-        "index": [100, 200],
-        "data": [[1.1, "GGA"], [1.2, "HSE"]],
-        "total_data_rows": 2,
+        "data": _table_in_frame(),
     }
-    doc.update(overrides)
-    return doc
+    payload.update(overrides)
+    return payload
 
 
 # ---------------------------------------------------------------------------
@@ -69,93 +72,73 @@ class TestAttributes:
     def test_valid(self):
         attrs = Attributes(**ATTRS)
         assert attrs.title == "Band gaps"
-        assert attrs.labels.variable == "method"
+        assert attrs.labels.variable == "doping"
 
 
 # ---------------------------------------------------------------------------
-# Table
+# Table (stored document) — md5 is server-computed
 # ---------------------------------------------------------------------------
 
 
 class TestTable:
     def test_valid_construction(self):
-        table = Table(**_table_payload())
-        assert isinstance(table.data, pl.DataFrame)
+        table = Table(**_table_doc_payload())
+        assert table.index == ["100.0", "200.0"]
+        assert table.columns == ["1e16", "1e17"]
+        assert table.data == [["1.1", "1.2"], ["2.1", "2.2"]]
         assert table.total_data_rows == 2
 
     def test_collection_name(self):
         assert Table.Settings.name == "tables"
 
-    def test_md5_normalized(self):
-        assert Table(**_table_payload(md5="D" * 32)).md5 == "d" * 32
+    def test_md5_is_computed_not_taken_from_input(self):
+        # A client-supplied md5 is ignored; the stored value is derived from content.
+        table = Table(**_table_doc_payload(md5="d" * 32))
+        assert table.md5 != "d" * 32
+        assert len(table.md5) == 32
 
-    def test_data_serializes_to_column_dict(self):
-        table = Table(**_table_payload())
-        assert table.model_dump()["data"] == {"T": [100, 200], "gap": [1.1, 1.2]}
+    def test_same_content_same_md5(self):
+        assert Table(**_table_doc_payload()).md5 == Table(**_table_doc_payload()).md5
 
+    def test_different_data_different_md5(self):
+        a = Table(**_table_doc_payload())
+        b = Table(**_table_doc_payload(data=[["9.9", "8.8"], ["7.7", "6.6"]]))
+        assert a.md5 != b.md5
 
-# ---------------------------------------------------------------------------
-# TableIn: happy paths
-# ---------------------------------------------------------------------------
+    def test_attrs_part_of_md5(self):
+        a = Table(**_table_doc_payload())
+        b = Table(**_table_doc_payload(attrs={**ATTRS, "title": "Different"}))
+        assert a.md5 != b.md5
 
-
-class TestTableInHappyPath:
-    def test_matching_row_count_validates(self):
-        table = TableIn(**_table_payload())
-        assert len(table.data) == table.total_data_rows
-
-    def test_from_input_builds_dataframe_with_index_column(self):
-        table = TableIn.from_input(_source_doc())
-        assert table.data.columns == ["index", "gap", "method"]
-        assert table.data["index"].to_list() == [100, 200]
-
-    def test_from_input_custom_index_name(self):
-        table = TableIn.from_input(_source_doc(), index_name="T")
-        assert table.data.columns == ["T", "gap", "method"]
-
-    def test_from_input_carries_metadata(self):
-        doc = _source_doc()
-        table = TableIn.from_input(doc)
-        assert table.id == doc["id"]
-        assert table.name == "bandgaps"
-        assert table.md5 == "d" * 32
-        assert table.total_data_rows == 2
-
-    def test_from_input_rows_zip_index_with_data(self):
-        table = TableIn.from_input(_source_doc())
-        assert table.data["gap"].to_list() == [1.1, 1.2]
-        assert table.data["method"].to_list() == ["GGA", "HSE"]
+    def test_data_stored_as_string_rows(self):
+        table = Table(**_table_doc_payload())
+        assert table.model_dump()["data"] == [["1.1", "1.2"], ["2.1", "2.2"]]
 
 
 # ---------------------------------------------------------------------------
-# TableIn: validation failures (RED — see module docstring)
+# TableIn — content only, no id/md5
 # ---------------------------------------------------------------------------
 
 
-class TestTableInValidationFailures:
-    """All four tests assert the INTENDED domain ValidationError.
+class TestTableIn:
+    def test_has_no_server_assigned_fields(self):
+        # _id, md5, and total_data_rows are all server-owned, so absent from the input contract.
+        assert "md5" not in TableIn.model_fields
+        assert "id" not in TableIn.model_fields
+        assert "total_data_rows" not in TableIn.model_fields
 
-    They fail today because tables/models.py raises pydantic's ValidationError
-    with a string, which crashes with TypeError before any error can surface.
-    Fix: import ValidationError from mpcontribs_api.exceptions instead.
-    """
+    def test_from_input_splits_frame_into_storage(self):
+        # First column -> index; remaining columns -> columns; cells -> row-major string data.
+        doc = Table.from_input(TableIn(**_table_in_payload()))
+        assert doc.index == ["100.0", "200.0"]
+        assert doc.columns == ["1e16", "1e17"]
+        assert doc.data == [["1.1", "1.2"], ["2.1", "2.2"]]
+        assert doc.total_data_rows == 2
 
-    def test_row_count_mismatch_raises_validation_error(self):
-        with pytest.raises(AppValidationError):
-            TableIn(**_table_payload(total_data_rows=5))
-
-    def test_from_input_column_collision_raises_validation_error(self):
-        # index_name defaults to "index"; a source column named "index" collides.
-        with pytest.raises(AppValidationError):
-            TableIn.from_input(_source_doc(columns=["index", "gap"]))
-
-    def test_from_input_index_data_length_mismatch_raises_validation_error(self):
-        with pytest.raises(AppValidationError):
-            TableIn.from_input(_source_doc(index=[100, 200, 300]))
-
-    def test_from_input_declared_row_count_mismatch_raises_validation_error(self):
-        with pytest.raises(AppValidationError):
-            TableIn.from_input(_source_doc(total_data_rows=99))
+    def test_built_document_computes_md5(self):
+        doc = Table.from_input(TableIn(**_table_in_payload()))
+        assert len(doc.md5) == 32
+        assert doc.id is not None
 
 
 # ---------------------------------------------------------------------------
@@ -195,18 +178,8 @@ class TestTableFilter:
 
 
 # ---------------------------------------------------------------------------
-# TableSummaryOut / TableOut / TablePatch
+# TableOut / TablePatch
 # ---------------------------------------------------------------------------
-
-
-class TestTableSummaryOut:
-    def test_valid(self):
-        summary = TableSummaryOut(attrs=ATTRS, columns=["gap"], total_data_rows=10)
-        assert summary.total_data_pages == 1
-
-    def test_explicit_pages(self):
-        summary = TableSummaryOut(attrs=ATTRS, columns=["gap"], total_data_rows=10, total_data_pages=3)
-        assert summary.total_data_pages == 3
 
 
 class TestTableOut:
@@ -217,24 +190,45 @@ class TestTableOut:
         assert out.attrs is None
 
     def test_default_fields(self):
-        assert TableOut.default_fields() == [
-            "id",
-            "name",
-            "md5",
-            "attrs",
-            "columns",
-            "total_data_rows",
-            "total_data_pages",
-        ]
+        assert TableOut.default_fields() == ["id", "name", "md5", "attrs", "total_data_rows"]
 
     def test_default_fields_parseable(self):
-        # The route default must survive parse_fields without raising.
         parsed = TableOut.parse_fields(TableOut.default_fields())
         assert "attrs" in parsed
+
+    def test_content_projectable(self):
+        # data is on the Out model so it can be requested explicitly.
+        parsed = TableOut.parse_fields(["data"])
+        assert "data" in parsed
 
     def test_data_coerced_when_present(self):
         out = TableOut(data={"a": [1]})
         assert isinstance(out.data, pl.DataFrame)
+
+    def test_reconstructs_frame_from_storage_dict(self):
+        # Read path: a raw Mongo dict with index/columns/data is reassembled into a DataFrame
+        # whose first column is the index (named by attrs.labels.index), cells preserved as strings.
+        out = TableOut.model_validate(_table_doc_payload(md5="a" * 32))
+        assert isinstance(out.data, pl.DataFrame)
+        assert out.data.columns == ["T", "1e16", "1e17"]
+        assert out.data["T"].to_list() == ["100.0", "200.0"]
+        assert out.data["1e16"].to_list() == ["1.1", "2.1"]
+
+    def test_storage_keys_not_leaked(self):
+        out = TableOut.model_validate(_table_doc_payload(md5="a" * 32))
+        dumped = out.model_dump()
+        assert "index" not in dumped
+        assert "columns" not in dumped
+
+    def test_projection_full_model_when_data_requested(self):
+        # data requested -> full model (so index/columns come back to rebuild the frame).
+        assert TableOut.projection(TableOut.parse_fields(["data"])) is TableOut
+
+    def test_projection_partial_when_data_not_requested(self):
+        # light read -> a trimmed projection model that does not pull the storage triple.
+        proj = TableOut.projection(TableOut.parse_fields(["name"]))
+        assert proj is not TableOut
+        assert hasattr(proj, "Settings")
 
 
 class TestTablePatch:

@@ -131,24 +131,38 @@ class TestStructure:
         with pytest.raises(PydanticValidationError):
             Structure(**payload)
 
-    def test_invalid_md5_raises(self):
-        with pytest.raises(AppValidationError):
-            Structure(**_structure_payload(md5="nope"))
+    def test_md5_is_computed_not_taken_from_input(self):
+        # A client-supplied md5 is overwritten by the content-derived hash.
+        structure = Structure(**_structure_payload(md5="a" * 32))
+        assert structure.md5 != "a" * 32
+        assert len(structure.md5) == 32
+
+    def test_same_content_same_md5(self):
+        assert Structure(**_structure_payload()).md5 == Structure(**_structure_payload()).md5
+
+    def test_different_charge_different_md5(self):
+        assert Structure(**_structure_payload(charge=0.0)).md5 != Structure(**_structure_payload(charge=1.0)).md5
 
     def test_cif_kept_as_raw_string(self):
         structure = Structure(**_structure_payload())
         assert structure.cif.startswith("data_Fe2O3")
 
-    def test_structure_in_is_structure(self):
-        assert issubclass(StructureIn, Structure)
-        assert isinstance(StructureIn(**_structure_payload()), Structure)
+    def test_structure_in_has_no_id_or_md5(self):
+        assert "md5" not in StructureIn.model_fields
+        assert "id" not in StructureIn.model_fields
 
-    def test_from_input_model_round_trip(self):
-        oid = PydanticObjectId()
-        doc = Structure.from_input_model(StructureIn(**_structure_payload(_id=oid)))
+    def test_from_input_assigns_id_and_computes_md5(self):
+        sin = StructureIn(
+            name="Fe2O3",
+            lattice=_lattice_payload(),
+            sites=[_site_payload()],
+            charge=0.0,
+            cif="data_Fe2O3\n",
+        )
+        doc = Structure.from_input(sin)
         assert isinstance(doc, Structure)
-        assert doc.id == oid
-        assert doc.md5 == "f" * 32
+        assert doc.id is not None
+        assert len(doc.md5) == 32
 
 
 # ---------------------------------------------------------------------------
@@ -182,10 +196,6 @@ class TestStructureOut:
 
 
 class TestStructurePatch:
-    # NOTE: StructurePatch.sites is annotated `Site | None` (singular) while
-    # Structure.sites is `list[Site]`. A patch produced from this model can
-    # therefore write a non-list into a list field. Likely a typo; tests below
-    # pin the current shape so the fix surfaces here when made.
     def test_all_fields_optional(self):
         patch = StructurePatch()
         assert patch.name is None
@@ -200,6 +210,12 @@ class TestStructurePatch:
         patch = StructurePatch(lattice=_lattice_payload())
         assert patch.lattice is not None
         assert patch.lattice.volume == 1.0
+
+    def test_sites_is_a_list(self):
+        # Regression: sites must be list[Site], not a single Site.
+        patch = StructurePatch(sites=[_site_payload()])
+        assert isinstance(patch.sites, list)
+        assert patch.sites[0].label == "Fe"
 
 
 # ---------------------------------------------------------------------------

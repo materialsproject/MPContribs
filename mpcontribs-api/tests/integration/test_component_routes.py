@@ -89,6 +89,15 @@ class TestStructuresList:
         # parse_fields always includes the id identity field.
         assert structure_service.get_many.call_args.kwargs["fields"] == frozenset({"id", "name"})
 
+    def test_content_fields_are_selectable(self, client, structure_service):
+        # Regression for #4: structure content must be reachable via _fields (on the Out model).
+        structure_service.get_many.return_value = Page(items=[], next_cursor=None)
+        r = client.get("/api/v1/structures?_fields=lattice&_fields=sites&_fields=charge&_fields=cif")
+        assert r.status_code == 200
+        assert structure_service.get_many.call_args.kwargs["fields"] == frozenset(
+            {"id", "lattice", "sites", "charge", "cif"}
+        )
+
 
 class TestStructuresDelete:
     def test_batch_delete_returns_200(self, client, structure_service):

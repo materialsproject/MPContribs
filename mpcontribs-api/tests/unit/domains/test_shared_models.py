@@ -17,9 +17,7 @@ from mpcontribs_api.pagination import encode_cursor
 
 def _attachment_in(**overrides) -> AttachmentIn:
     payload = {
-        "_id": PydanticObjectId(),
         "name": "data.csv.gz",
-        "md5": "a" * 32,
         "mime": "application/gzip",
         "content": 1,
     }
@@ -32,23 +30,22 @@ class _OidOut(DocumentOut[PydanticObjectId]):
 
 
 # ---------------------------------------------------------------------------
-# BaseDocumentWithInput.from_input_model
+# Component.from_input (server-assigned id, computed md5)
 # ---------------------------------------------------------------------------
 
 
-class TestFromInputModel:
+class TestComponentFromInput:
     def test_returns_document_class_instance(self):
-        doc = Attachment.from_input_model(_attachment_in())
+        doc = Attachment.from_input(_attachment_in())
         assert isinstance(doc, Attachment)
 
-    def test_all_fields_carried_over(self):
-        oid = PydanticObjectId()
-        doc = Attachment.from_input_model(_attachment_in(_id=oid, name="x.gz"))
-        assert doc.id == oid
+    def test_content_carried_id_assigned_md5_computed(self):
+        doc = Attachment.from_input(_attachment_in(name="x.gz"))
         assert doc.name == "x.gz"
-        assert doc.md5 == "a" * 32
         assert doc.mime == "application/gzip"
         assert doc.content == 1
+        assert doc.id is not None
+        assert len(doc.md5) == 32
 
 
 # ---------------------------------------------------------------------------

@@ -108,11 +108,13 @@ class TestInsertContributions:
 
 class TestUpsertContributions:
     def test_empty_list_returns_200(self, client, contribution_service):
-        contribution_service.upsert_contributions.return_value = []
-        assert client.put("/api/v1/contributions", json=[]).status_code == 200
+        contribution_service.upsert_contributions.return_value = BulkWriteSummary(total=0, succeeded=[], failed=[])
+        r = client.put("/api/v1/contributions", json=[])
+        assert r.status_code == 200
+        assert set(r.json()) == {"total", "succeeded", "failed"}
 
     def test_service_receives_parsed_contributions(self, client, contribution_service):
-        contribution_service.upsert_contributions.return_value = []
+        contribution_service.upsert_contributions.return_value = BulkWriteSummary(total=1, succeeded=[], failed=[])
         client.put("/api/v1/contributions", json=[_valid_contribution_body()])
         contributions = contribution_service.upsert_contributions.call_args.kwargs["contributions"]
         assert contributions[0].identifier == "mp-1234"
