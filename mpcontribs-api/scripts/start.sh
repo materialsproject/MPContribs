@@ -10,8 +10,6 @@ PMGRC=$HOME/.pmgrc.yaml
 
 set -x
 
-if [[ -n "$DD_TRACE_HOST" ]]; then
-  wait-for-it.sh "$DD_TRACE_HOST" -q -s -t 10 || echo "WARNING: datadog agent unreachable"
-fi
-
+# No wait for the OTLP collector: the OTEL batch processors tolerate an unavailable endpoint
+# (they retry and drop), so startup must not block on it.
 exec uvicorn mpcontribs_api.app:app --host 0.0.0.0 --port "$API_PORT"

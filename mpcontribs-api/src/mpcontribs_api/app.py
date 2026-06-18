@@ -23,7 +23,7 @@ from mpcontribs_api.domains.structures.models import Structure
 from mpcontribs_api.domains.tables.models import Table
 from mpcontribs_api.exceptions import register_exception_handlers
 from mpcontribs_api.logging import configure_logging, get_logger
-from mpcontribs_api.middleware import RequestContextMiddleware
+from mpcontribs_api.middleware import RequestContextMiddleware, configure_tracing, instrument_app
 
 logger = get_logger(__name__)
 
@@ -94,6 +94,8 @@ def _build_lifespan(settings: Settings):
 
 def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or get_settings()
+    # Register OTEL providers before logging so the logs pipeline attaches to live telemetry.
+    configure_tracing(settings)
     configure_logging(settings)
 
     app = FastAPI(
@@ -115,6 +117,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     # Add request context to the logger
     app.add_middleware(RequestContextMiddleware)
+    # Emit server-side request spans/metrics (no-op when telemetry is disabled).
+    instrument_app(app, settings)
     register_exception_handlers(app)
     app.include_router(healthcheck_router, prefix="/health")
     app.include_router(v1_router, prefix="/api/v1")

@@ -10,6 +10,36 @@ class RedisSettings(BaseModel):
     url: SecretStr
 
 
+class ObservabilitySettings(BaseModel):
+    """OpenTelemetry settings.
+
+    The application is vendor-neutral: it emits traces, metrics, and logs via OTLP/gRPC to a
+    collector (in our deployment, the Datadog Agent's OTLP receiver). Datadog is purely the backend.
+    """
+
+    enabled: bool = Field(
+        default=True,
+        description="Master switch for OTEL setup. Disable in tests/local runs without a collector.",
+    )
+    service_name: str = Field(
+        default="contribs-apis",
+        description="Value of the service.name resource attribute. Kept as the legacy Datadog "
+        "service name so existing dashboards and monitors keep resolving.",
+    )
+    otlp_endpoint: str = Field(
+        default="localhost:4317",
+        description="host:port of the OTLP/gRPC receiver (the Datadog Agent's OTLP endpoint).",
+    )
+    insecure: bool = Field(
+        default=True,
+        description="Use an insecure (plaintext) gRPC channel. True for a local/sidecar agent without TLS.",
+    )
+    metric_export_interval_ms: int = Field(
+        default=60_000,
+        description="How often (ms) the periodic metric reader exports to the collector.",
+    )
+
+
 class AwsSettings(BaseModel):
     """AWS Settings
 
@@ -136,6 +166,9 @@ class Settings(BaseSettings):
 
     # MPContribs_redis__*
     redis: RedisSettings
+
+    # MPContribs_otel__*
+    otel: ObservabilitySettings = Field(default_factory=ObservabilitySettings)
 
     # SMTP Settings
     mail_default_sender: str = Field(
