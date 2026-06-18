@@ -26,7 +26,7 @@ COPY supervisord supervisord
 COPY scripts scripts
 COPY main.py .
 COPY docker-entrypoint.sh .
-RUN chmod +x main.py scripts/start.sh docker-entrypoint.sh
+RUN chmod +x main.py scripts/start.sh scripts/start_rq.sh docker-entrypoint.sh
 
 ARG VERSION
 # Telemetry (traces/metrics/logs) is emitted via OTLP to the Datadog Agent's OTLP receiver; the
