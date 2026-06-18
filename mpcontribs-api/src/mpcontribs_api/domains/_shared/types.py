@@ -91,6 +91,13 @@ def _serialize_frame(data: pl.DataFrame) -> dict:
     return data.to_dict(as_series=False)
 
 
+# Beanie/pymongo would otherwise BSON-encode a pl.DataFrame by iterating it into bare column
+# lists, dropping the column names and the dict shape the Pydantic serializer produces — which
+# `_coerce_frame` cannot read back. Registering this on a Document's Settings.bson_encoders makes
+# the stored form match the serialized form, so frames round-trip losslessly.
+FRAME_BSON_ENCODERS = {pl.DataFrame: _serialize_frame}
+
+
 PolarsFrame = Annotated[
     pl.DataFrame,
     BeforeValidator(_coerce_frame),
