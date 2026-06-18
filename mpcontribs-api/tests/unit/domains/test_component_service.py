@@ -145,3 +145,80 @@ async def test_delete_by_id_reachable_and_unreferenced_deletes():
     assert result.num_deleted == 1
     assert result.num_skipped == 0
     components.delete_by_id.assert_awaited_once_with(oid)
+
+
+# ---------------------------------------------------------------------------
+# Read gating: get_by_id / get_many / patch_by_id are reachability-scoped
+# ---------------------------------------------------------------------------
+
+
+def _make_read_service(*, reachable: set[PydanticObjectId]) -> tuple[ComponentService, AsyncMock, AsyncMock]:
+    """ComponentService whose contribution repo reports `reachable` ids as in-scope."""
+    components = AsyncMock(name="components")
+    components._convert_object_id = MagicMock(side_effect=lambda s: PydanticObjectId(s))
+    components._not_found = MagicMock(return_value="not found")
+
+    contributions = AsyncMock(name="contributions")
+
+    async def _referenced(ref_field, ids, *, scoped):
+        return {i for i in ids if i in reachable} if scoped else set()
+
+    contributions.referenced_component_ids = AsyncMock(side_effect=_referenced)
+    contributions.list_referenced_component_ids = AsyncMock(return_value=reachable)
+
+    service = ComponentService(components, contributions, ref_field="attachments")
+    return service, components, contributions
+
+
+async def test_get_by_id_unreachable_returns_none_without_fetch():
+    oid = _oid()
+    svc, components, _ = _make_read_service(reachable=set())
+
+    result = await svc.get_by_id(str(oid), fields=None)
+
+    assert result is None
+    components.get_component_by_id.assert_not_awaited()
+
+
+async def test_get_by_id_reachable_fetches_component():
+    oid = _oid()
+    svc, components, _ = _make_read_service(reachable={oid})
+    components.get_component_by_id = AsyncMock(return_value="the-component")
+
+    result = await svc.get_by_id(str(oid), fields=None)
+
+    assert result == "the-component"
+    components.get_component_by_id.assert_awaited_once()
+
+
+async def test_get_many_restricts_to_reachable_ids():
+    a, b = _oid(), _oid()
+    svc, components, contributions = _make_read_service(reachable={a, b})
+    components.get_many = AsyncMock(return_value="page")
+
+    await svc.get_many(filter=AttachmentFilter(), pagination=None, fields=None)
+
+    contributions.list_referenced_component_ids.assert_awaited_once()
+    assert contributions.list_referenced_component_ids.await_args.kwargs["scoped"] is True
+    restrict = components.get_many.await_args.kwargs["restrict_ids"]
+    assert set(restrict) == {a, b}
+
+
+async def test_patch_by_id_unreachable_raises_not_found():
+    oid = _oid()
+    svc, components, _ = _make_read_service(reachable=set())
+
+    with pytest.raises(NotFoundError):
+        await svc.patch_by_id(str(oid), update=MagicMock())
+    components.patch_component_by_id.assert_not_awaited()
+
+
+async def test_patch_by_id_reachable_patches():
+    oid = _oid()
+    svc, components, _ = _make_read_service(reachable={oid})
+    components.patch_component_by_id = AsyncMock(return_value="patched")
+
+    result = await svc.patch_by_id(str(oid), update=MagicMock())
+
+    assert result == "patched"
+    components.patch_component_by_id.assert_awaited_once()
