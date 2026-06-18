@@ -1,6 +1,5 @@
 from typing import Any
 
-from beanie import PydanticObjectId
 from beanie.operators import In
 from fastapi_filter.contrib.beanie import Filter
 from pydantic import BaseModel
@@ -8,14 +7,15 @@ from pymongo.asynchronous.client_session import AsyncClientSession
 
 from mpcontribs_api.authz import User
 from mpcontribs_api.config import get_settings
-from mpcontribs_api.domains._shared.models import Component, DeleteResponse, DocumentOut
+from mpcontribs_api.domains._shared.models import Component, ComponentIn, DeleteResponse, DocumentOut
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
 from mpcontribs_api.domains._shared.types import MD5Hash
+from mpcontribs_api.exceptions import NotFoundError
 
 
 class MongoDbComponentsRepository[
     TDoc: Component,
-    TIn: Component,
+    TIn: ComponentIn,
     TOut: DocumentOut,
     TFilter: Filter,
     TPatch: BaseModel,
@@ -24,48 +24,50 @@ class MongoDbComponentsRepository[
     def _build_scope(user: User) -> dict[str, Any]:
         return {}
 
-    async def _check_existing(
+    async def _existing_by_md5(
         self,
-        components: list[TIn] | TIn,
+        md5s: list[MD5Hash],
         session: AsyncClientSession | None = None,
-    ) -> tuple[dict[MD5Hash, TIn], dict[str, TDoc]]:
-        if not isinstance(components, list):
-            components = [components]
-        by_md5 = {comp.md5: comp for comp in components}
-
+    ) -> dict[str, TDoc]:
         # Full fetch so existing docs come back with their ids
         # TODO: Most likely does a COLLSCAN - see if we can project to get a COVERED QUERY
         existing_docs = await self.document_model.find(
-            In(self.document_model.md5, list(by_md5.keys())),
+            In(self.document_model.md5, md5s),
             session=session,
         ).to_list()
-        return (by_md5, {doc.md5: doc for doc in existing_docs})
+        return {doc.md5: doc for doc in existing_docs}
 
     async def insert_components(
         self,
         components: list[TIn],
         session: AsyncClientSession | None = None,
     ) -> list[TDoc]:
-        """Bulk-insert components, chunked to fit within a transaction's payload budget.
+        """Bulk-insert components, deduplicated by server-computed content hash.
+
+        Each input is built into a full document via ``Component.from_input``, which assigns a fresh
+        id and computes ``md5`` from the content (the client never supplies it). Inputs are
+        deduplicated by md5 — both against documents already stored and against each other — so the
+        return list has one entry per *unique* content, in first-seen order.
 
         Args:
             components (list[TIn]): components to insert
             session (AsyncClientSession): optional client session; pass when inserting inside a transaction
         """
-        by_md5, existing_by_md5 = await self._check_existing(components=components, session=session)
-        # Assign ids manually: insert_many won't populate id back onto these
-        # objects, and get_dict drops id when it's None.
-        new_docs: list[TDoc] = []
-        for md5, comp in by_md5.items():
-            if md5 in existing_by_md5:
-                continue
-            doc = self.document_model.model_validate(comp.model_dump())
-            doc.id = PydanticObjectId()
-            new_docs.append(doc)
+        # Build full docs up front so md5 is server-computed before any dedup decision.
+        docs = [self.document_model.from_input(comp) for comp in components]
+        existing_by_md5 = await self._existing_by_md5([doc.md5 for doc in docs], session=session)
 
-        # TODO: Might want to delegate this logic to a higher level
-        # - This method might want to simply insert everything it's given
-        # Insert by chunks
+        # First-seen unique md5 order, and the new documents that need inserting.
+        unique_md5s: list[str] = []
+        new_by_md5: dict[str, TDoc] = {}
+        for doc in docs:
+            if doc.md5 not in existing_by_md5 and doc.md5 not in new_by_md5:
+                new_by_md5[doc.md5] = doc
+            if doc.md5 not in unique_md5s:
+                unique_md5s.append(doc.md5)
+
+        # Insert by chunks to stay within a transaction's payload budget.
+        new_docs = list(new_by_md5.values())
         chunk_size = get_settings().mongo.component_insert_chunk_size
         for start in range(0, len(new_docs), chunk_size):
             await self.document_model.insert_many(
@@ -74,9 +76,9 @@ class MongoDbComponentsRepository[
                 session=session,
             )
 
-        # Return a list of documents reflecting what was stored/found
-        resolved = existing_by_md5 | {doc.md5: doc for doc in new_docs}
-        return [resolved[md5] for md5 in by_md5]
+        # One resolved document per unique md5, in first-seen order.
+        resolved = existing_by_md5 | new_by_md5
+        return [resolved[md5] for md5 in unique_md5s]
 
     async def insert_component(self, component: TIn, *, session: AsyncClientSession | None = None) -> TDoc:
         """Insert a single component.
@@ -131,5 +133,19 @@ class MongoDbComponentsRepository[
         return await self.delete_by_id(id=self._convert_object_id(id), session=session)
 
     async def patch_component_by_id(self, id: str, update: TPatch) -> TDoc:
-        """Partially update a component by id, scoped to the current user. See ``patch``."""
-        return await self.patch(self._convert_object_id(id), update)
+        """Partially update a component by id, recomputing its content hash.
+
+        Components are content-addressed, so a content change must update ``md5``. Unlike the base
+        ``patch`` (an in-place ``$set``), this loads the full document, applies the set fields,
+        recomputes ``md5`` from ``hash_fields``, and saves — keeping md5 consistent with content.
+        """
+        oid = self._convert_object_id(id)
+        doc = await self.document_model.find_one(self._scope, self.document_model.id == oid)
+        if doc is None:
+            raise NotFoundError(self._not_found(id))
+        update_data = update.model_dump(exclude_unset=True)
+        for field, value in update_data.items():
+            setattr(doc, field, value)
+        doc.md5 = doc.compute_md5()
+        await doc.save()
+        return doc
