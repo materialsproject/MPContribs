@@ -51,16 +51,27 @@ _DATA_PUNCTUATION_PATTERN = re.compile(r"(?![^|]*\|[^|]*\|)[^\x21-\x29\x2B-\x2E\
 def _validate_keys(data: dict[str, Any] | None) -> dict[str, Any] | None:
     if data is None:
         return None
-    if not all(isinstance(k, str) and k.isascii() for k in data.keys()):
+    keys = list(data.keys())
+    if not all(isinstance(k, str) and k.isascii() for k in keys):
         raise ValidationError("Non-ASCII key found in Contribution.data. All dict keys must be only ASCII")
-    if any(_DATA_PUNCTUATION_PATTERN.fullmatch(k) is None for k in data.keys()):
+    if any(k == "" for k in keys):
+        raise ValidationError("Empty key found in Contribution.data. Keys must be non-empty.")
+    if any(_DATA_PUNCTUATION_PATTERN.fullmatch(k) is None for k in keys):
         raise ValidationError(
             "Punctuation found in Contribution.data keys. Only '_', '*', '/', and at most 1 '|' permitted."
         )
+    # Recurse into nested dicts, including dicts nested inside lists.
     for v in data.values():
-        if isinstance(v, dict):
-            _validate_keys(v)
+        _validate_nested_keys(v)
     return data
+
+
+def _validate_nested_keys(value: Any) -> None:
+    if isinstance(value, dict):
+        _validate_keys(value)
+    elif isinstance(value, list):
+        for item in value:
+            _validate_nested_keys(item)
 
 
 class ContributionBase(BaseDocumentWithInput[PydanticObjectId]):
@@ -103,9 +114,11 @@ class Contribution(ContributionBase):
 
     @classmethod
     def from_input_model(cls, data: ContributionIn) -> Contribution:
+        # Server-owned fields are not taken from input: is_public starts False, components are
+        # inserted separately, and last_modified is stamped by the before_event hook.
         return cls.model_validate(
             {
-                **data.model_dump(exclude={"is_public", "structures", "tables", "attachments"}),
+                **data.model_dump(exclude={"is_public", "structures", "tables", "attachments", "last_modified"}),
                 "is_public": False,
             }
         )
@@ -140,11 +153,9 @@ class ContributionOut(DocumentOut[PydanticObjectId]):
     is_public: bool | None = None
     last_modified: datetime | None = None
     needs_build: bool | None = None
-    data: Annotated[
-        dict[str, Any] | None,
-        BeforeValidator(_validate_data_depth),
-        BeforeValidator(_validate_keys),
-    ] = None
+    # No input validators on the read path: stored documents are trusted, and re-validating here
+    # would 500 on historical data that missed the correction (see carrier_transport contribs)
+    data: dict[str, Any] | None = None
     structures: list[Link[Structure]] | None = None
     tables: list[Link[Table]] | None = None
     attachments: list[Link[Attachment]] | None = None
