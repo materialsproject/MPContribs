@@ -809,3 +809,24 @@ class TestDeleteContributionsMultiPage:
 
         assert summary.num_children_deleted == 2
         assert struct_repo.delete_by_ids.await_count == 2
+
+
+class TestDeleteContributionsNoneComponents:
+    """ContributionOut leaves unset component fields as None (not []).
+
+    The cascade loop must tolerate None rather than raising TypeError on iteration.
+    """
+
+    async def test_none_component_fields_do_not_raise(self):
+        svc, contrib_repo, struct_repo, table_repo, attach_repo, _ = _make_service()
+        doc = SimpleNamespace(id=_oid(), structures=None, tables=None, attachments=None)
+        contrib_repo.get_contributions.side_effect = [_page([doc]), _page([])]
+        contrib_repo.delete_contributions.side_effect = [_delete_result(1), _delete_result(0)]
+
+        summary = await svc.delete_contributions(_noop_filter())
+
+        assert summary.num_deleted == 1
+        assert summary.num_children_deleted == 0
+        struct_repo.delete_by_ids.assert_not_called()
+        table_repo.delete_by_ids.assert_not_called()
+        attach_repo.delete_by_ids.assert_not_called()

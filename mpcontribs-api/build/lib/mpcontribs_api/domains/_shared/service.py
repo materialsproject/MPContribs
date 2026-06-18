@@ -63,7 +63,7 @@ class ComponentService[
 
         Components have no independent access field, so visibility is gated by contribution
         reachability: results are restricted to ids referenced by a contribution the caller is
-        allowed to see
+        allowed to see (the same access gate that ``delete`` applies).
         """
         allowed = await self._contributions.list_referenced_component_ids(self._ref_field, scoped=True)
         return await self._components.get_many(
@@ -92,8 +92,8 @@ class ComponentService[
     async def patch_by_id(self, id: str, update: TPatch) -> TDoc:
         """Partially update a component by id, gated by contribution reachability.
 
-        Raises:
-            NotFoundError: when no in-scope contribution references the id
+        Raises ``NotFoundError`` when no in-scope contribution references the id, mirroring the
+        access gate on ``delete_by_id``.
         """
         oid = self._components._convert_object_id(id)
         if not await self._contributions.referenced_component_ids(self._ref_field, [oid], scoped=True):
@@ -109,7 +109,12 @@ class ComponentService[
         fields: frozenset[str] | None,
         s3: AbstractAsyncContextManager[S3Client],
     ) -> AsyncIterable[bytes]:
-        """Stream a gzip-compressed export of matching components. See ``download``."""
+        """Stream a gzip-compressed export of matching components. See ``download``.
+
+        The S3 cache location is owned by the service: ``bucket_name`` defaults to ``ref_field`` and
+        ``key_name`` is currently unused. Like the other reads, the export is gated to components
+        reachable via an in-scope contribution.
+        """
         allowed = await self._contributions.list_referenced_component_ids(self._ref_field, scoped=True)
         return self._components.download(
             format=format,
