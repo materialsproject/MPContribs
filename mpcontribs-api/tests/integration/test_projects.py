@@ -259,3 +259,38 @@ class TestUpsertProject:
         del body["title"]
         r = client.put("/api/v1/projects/mp-sample", json=body, headers=AUTHED_HEADERS)
         assert r.status_code == 422
+
+
+# ---------------------------------------------------------------------------
+# Authentication enforcement: mutations require an authenticated user
+# ---------------------------------------------------------------------------
+
+
+class TestProjectMutationsRequireAuth:
+    def _body(self):
+        return {
+            "_id": "mp-sample",
+            "title": "Test Project",
+            "authors": "Alice",
+            "description": "A project",
+            "owner": "google:alice@example.com",
+            "unique_identifiers": True,
+            "stats": {"columns": 0, "contributions": 0, "tables": 0, "structures": 0, "attachments": 0, "size": 0.0},
+        }
+
+    def test_anonymous_put_returns_401(self, client, project_repo):
+        project_repo.upsert_project_by_id.return_value = SAMPLE_PROJECT
+        r = client.put("/api/v1/projects/mp-sample", json=self._body(), headers=ANON_HEADERS)
+        assert r.status_code == 401
+        assert r.json()["error"]["code"] == "authentication_error"
+        project_repo.upsert_project_by_id.assert_not_called()
+
+    def test_anonymous_patch_returns_401(self, client, project_repo):
+        r = client.patch("/api/v1/projects/mp-sample", json={"title": "Updated Title"}, headers=ANON_HEADERS)
+        assert r.status_code == 401
+        project_repo.patch_project_by_id.assert_not_called()
+
+    def test_anonymous_delete_returns_401(self, client, project_repo):
+        r = client.delete("/api/v1/projects/mp-sample", headers=ANON_HEADERS)
+        assert r.status_code == 401
+        project_repo.delete_project_by_id.assert_not_called()

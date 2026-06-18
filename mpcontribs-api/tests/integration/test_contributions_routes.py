@@ -8,10 +8,22 @@ from mpcontribs_api.domains.contributions.dependencies import (
 )
 from mpcontribs_api.domains.contributions.models import ContributionOut
 from mpcontribs_api.exceptions import NotFoundError
+from tests.integration.conftest import AUTHED_HEADERS, FORCE_ANON_HEADERS
 
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
+
+@pytest.fixture(autouse=True)
+def _authenticate(client):
+    """Mutating contribution endpoints now require an authenticated caller.
+
+    Default the shared client to an authenticated identity so the existing
+    mutation tests still exercise the handler; anonymous-rejection is covered
+    explicitly by TestContributionMutationsRequireAuth via FORCE_ANON_HEADERS.
+    """
+    client.headers.update(AUTHED_HEADERS)
 
 
 @pytest.fixture
@@ -236,3 +248,53 @@ class TestDownloadContributions:
         r = client.get("/api/v1/contributions/download/gz")
         assert r.status_code == 404
         assert r.json()["error"]["code"] == "not_found"
+
+
+# ---------------------------------------------------------------------------
+# Authentication enforcement: contribution mutations require an authenticated user
+# ---------------------------------------------------------------------------
+
+
+class TestContributionMutationsRequireAuth:
+    def test_post_anon_401(self, client, contribution_service):
+        r = client.post("/api/v1/contributions", json=[], headers=FORCE_ANON_HEADERS)
+        assert r.status_code == 401
+        assert r.json()["error"]["code"] == "authentication_error"
+        contribution_service.insert_contributions.assert_not_called()
+
+    def test_put_collection_anon_401(self, client, contribution_service):
+        r = client.put("/api/v1/contributions", json=[], headers=FORCE_ANON_HEADERS)
+        assert r.status_code == 401
+        contribution_service.upsert_contributions.assert_not_called()
+
+    def test_delete_collection_anon_401(self, client, contribution_repo):
+        r = client.delete("/api/v1/contributions", headers=FORCE_ANON_HEADERS)
+        assert r.status_code == 401
+        contribution_repo.delete_contributions.assert_not_called()
+
+    def test_delete_by_id_anon_401(self, client, contribution_service):
+        r = client.delete(f"/api/v1/contributions/{PydanticObjectId()}", headers=FORCE_ANON_HEADERS)
+        assert r.status_code == 401
+
+    def test_put_by_id_anon_401(self, client, contribution_repo):
+        r = client.put(
+            f"/api/v1/contributions/{PydanticObjectId()}",
+            json=_valid_contribution_body(),
+            headers=FORCE_ANON_HEADERS,
+        )
+        assert r.status_code == 401
+        contribution_repo.upsert_contribution_by_id.assert_not_called()
+
+    def test_patch_by_id_anon_401(self, client, contribution_repo):
+        r = client.patch(
+            f"/api/v1/contributions/{PydanticObjectId()}", json={"formula": "H2O"}, headers=FORCE_ANON_HEADERS
+        )
+        assert r.status_code == 401
+        contribution_repo.patch_contribution_by_id.assert_not_called()
+
+    def test_get_collection_still_open_to_anon(self, client, contribution_repo):
+        from mpcontribs_api.pagination import Page
+
+        contribution_repo.get_contributions.return_value = Page(items=[], next_cursor=None)
+        r = client.get("/api/v1/contributions", headers=FORCE_ANON_HEADERS)
+        assert r.status_code == 200
