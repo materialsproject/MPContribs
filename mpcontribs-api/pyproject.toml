@@ -76,6 +76,11 @@ all = [
     "mpcontribs-api[dev]"
 ]
 
+[dependency-groups]
+dev = [
+    "pytest-cov>=7.1.0",
+]
+
 [tool.pytest]
 markers = [
     "base: basic resource testing",
