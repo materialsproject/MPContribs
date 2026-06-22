@@ -1,0 +1,88 @@
+# Adding a package: once it has a uv-based justfile contract (install/lint/
+# format-check/typecheck/lock-check/test ci), add it to BOTH the paths-filter
+# `filters` below AND the `config` map in the discover step. Until a package is
+# migrated, leave it out - it stays covered by the legacy testing.yml instead.
+
+name: ci
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    outputs:
+      packages: ${{ steps.build.outputs.packages }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            mpcontribs-api:
+              - 'mpcontribs-api/**'
+              - '.github/workflows/ci.yml'
+              - '.github/workflows/_python_ci.yml'
+      - name: Build matrix of changed (migrated) packages
+        id: build
+        env:
+          CHANGES: ${{ toJSON(steps.filter.outputs) }}
+        run: |
+          # Map of migrated package -> optional python-version override
+          # ("" = use the package's .python-version pin). Only packages whose
+          # filter reported a change are emitted into the matrix.
+          python3 - "$CHANGES" <<'PY' >> "$GITHUB_OUTPUT"
+          import json, sys
+          changes = json.loads(sys.argv[1])
+          config = {
+              "mpcontribs-api": {"python-version": ""},
+              # "mpcontribs-client": {"python-version": ""},  # add when migrated
+          }
+          include = [
+              {"package": pkg, **cfg}
+              for pkg, cfg in config.items()
+              if changes.get(pkg) == "true"
+          ]
+          print("packages=" + json.dumps(include))
+          PY
+
+  ci:
+    needs: discover
+    if: ${{ needs.discover.outputs.packages != '[]' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.discover.outputs.packages) }}
+    uses: ./.github/workflows/_python_ci.yml
+    with:
+      package: ${{ matrix.package }}
+      python-version: ${{ matrix.python-version }}
+      coverage-artifact: coverage-${{ matrix.package }}
+
+  # Always-reporting aggregate gate. Make ONLY this a required status check
+  gate:
+    name: ci-success
+    if: always()
+    needs: [discover, ci]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify CI result
+        run: |
+          result="${{ needs.ci.result }}"
+          # 'skipped' is success here: it means no migrated package needed checking.
+          if [ "$result" = "success" ] || [ "$result" = "skipped" ]; then
+            echo "CI gate passed (ci job: $result)"
+            exit 0
+          fi
+          echo "CI gate failed (ci job: $result)"
+          exit 1

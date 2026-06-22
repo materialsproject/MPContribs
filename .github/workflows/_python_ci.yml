@@ -1,0 +1,81 @@
+# Reusable CI runner for sub-repos to rely on (see api_ci.yml for an example)
+name: _python-ci
+
+on:
+  workflow_call:
+    inputs:
+      package:
+        description: "Package directory, e.g. mpcontribs-api"
+        required: true
+        type: string
+      python-version:
+        description: "Override Python version; empty = use the package's .python-version pin"
+        required: false
+        type: string
+        default: ""
+      coverage-artifact:
+        description: "Name for the uploaded coverage XML; empty = don't upload"
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.package }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: "${{ inputs.package }}/uv.lock"
+      - uses: extractions/setup-just@v4
+      - run: uv python install ${{ inputs.python-version }}
+      - run: just install
+      - run: just lint
+      - run: just format-check
+      - run: just lock-check
+
+  typecheck:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.package }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: "${{ inputs.package }}/uv.lock"
+      - uses: extractions/setup-just@v4
+      - run: uv python install ${{ inputs.python-version }}
+      - run: just install
+      - run: just typecheck
+
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.package }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: "${{ inputs.package }}/uv.lock"
+      - uses: extractions/setup-just@v4
+      - run: uv python install ${{ inputs.python-version }}
+      - run: just install
+      - run: just test ci
+      - name: Upload coverage
+        if: ${{ inputs.coverage-artifact != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.coverage-artifact }}
+          path: ${{ inputs.package }}/coverage.xml
+          if-no-files-found: ignore
