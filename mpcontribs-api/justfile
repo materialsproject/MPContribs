@@ -1,0 +1,62 @@
+set shell := ["bash", "-euo", "pipefail", "-c"]
+
+# Importable package name for coverage (src/ layout -> underscore).
+cov_pkg := "mpcontribs_api"
+
+default:
+    @just --list
+
+# --- CI gates (non-mutating) -------------------------------------------------
+
+# Sync deps into the project venv.
+install:
+    uv sync --all-extras --dev
+
+# Lint, no autofix.
+lint:
+    uv run ruff check
+
+# Style check only (does not rewrite files).
+format-check:
+    uv run ruff format --check
+
+# Static type checking.
+typecheck:
+    uv run basedpyright
+
+# Fail if uv.lock is out of sync with pyproject.toml.
+lock-check:
+    uv lock --check
+
+# --- Local dev ---------------------------------------------------------------
+
+# Run the dev server (auto-reloads on file changes).
+dev:
+    uv run fastapi dev src/mpcontribs_api/app.py
+
+# Format, fix, and lint all source code (mutates files — not a CI gate).
+fmt:
+    uv run ruff format
+    -uv run ruff check --fix
+    -uv run ruff check --fix --unsafe-fixes
+    -uv run pydocstringformatter --write
+
+# --- Tests -------------------------------------------------------------------
+# Local suites run fast and coverage-free; the `ci` suite (called by the
+# pipeline) adds coverage + an 80% gate and excludes db-marked tests.
+#
+# Run a suite: all/a (default), unit/u, integration/i, db/d, ci/c.
+test suite="all":
+    #!/usr/bin/env bash
+    case "{{suite}}" in
+      all|a)           uv run pytest tests/ ;;
+      integration|i)   uv run pytest tests/integration/ -m "not db" ;;
+      unit|u)          uv run pytest tests/unit/ ;;
+      db|d)            uv run pytest tests/integration/db/ -m db ;;
+      ci|c)            uv run pytest tests/unit tests/integration -m "not db" \
+                         --cov={{cov_pkg}} --cov-report=xml --cov-report=term-missing ;;
+      *) echo "unknown suite '{{suite}}' — use: all/a, integration/i, unit/u, db/d, ci/c" && exit 1 ;;
+    esac
+
+# Everything CI runs, in CI order — run locally before pushing.
+ci: install lock-check lint format-check typecheck (test "ci")
