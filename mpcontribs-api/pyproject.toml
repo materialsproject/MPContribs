@@ -63,6 +63,7 @@ dev = [
     "pytest-xdist>=3.8.0",
     "httpx2>=0.28.0",
     "pytest-asyncio>=1.4.0",
+    "ty>=0.0.51",
 ]
 
 [tool.pytest.ini_options]
@@ -91,3 +92,6 @@ pythonVersion = "3.14"
 typeCheckingMode = "standard"
 extraPaths = ["src"]
 ignore=["tests/"]
+
+[tool.ty.src]
+exlcude = ["tests"]
