@@ -4,7 +4,7 @@ from pydantic import BaseModel, ConfigDict
 from pymatgen.core import Element
 
 from mpcontribs_api.domains._shared.models import Component, ComponentIn, DocumentOut
-from mpcontribs_api.domains._shared.types import FRAME_BSON_ENCODERS, MD5Hash, PolarsFrame
+from mpcontribs_api.domains._shared.types import MD5Hash, PolarsFrame
 from mpcontribs_api.projection import SparseFieldsModel
 
 
@@ -55,11 +55,10 @@ class Structure(Component):
 
     class Settings:
         name = "structures"
-        bson_encoders = FRAME_BSON_ENCODERS
 
 
 class StructureIn(ComponentIn):
-    """User-supplied structure content. ``_id`` and ``md5`` are server-assigned, so absent here."""
+    """User-supplied structure content."""
 
     lattice: Lattice
     sites: list[Site]
@@ -78,7 +77,6 @@ class StructureOut(DocumentOut[PydanticObjectId]):
 
     @staticmethod
     def default_fields() -> list[str]:
-        # Light default; content (lattice/sites/charge/cif) is fetched via ?_fields=.
         return [
             "id",
             "name",

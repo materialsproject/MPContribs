@@ -48,6 +48,7 @@ dependencies = [
     "fastapi-filter>=2.0.1",
     "aioboto3>=15.5.0",
     "types-aiobotocore[s3]>=3.7.0",
+    "polars>=1.41.2",
 ]
 
 [project.urls]
