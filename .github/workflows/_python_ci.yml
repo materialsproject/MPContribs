@@ -1,4 +1,4 @@
-# Reusable CI runner for sub-repos to rely on (see api_ci.yml for an example)
+# Reusable CI runner
 name: _python-ci
 
 on:
