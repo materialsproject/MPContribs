@@ -1,6 +1,7 @@
 from typing import Any
 
 from mpcontribs_api.authz import User
+from mpcontribs_api.config import get_settings
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
 from mpcontribs_api.domains.projects.models import (
     Project,
@@ -45,6 +46,16 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
                 ors.append({"_id": {"$in": sorted(user.groups)}})
         return {"$or": ors}
 
+    async def _check_num_projects(self, data: ProjectIn):
+        settings = get_settings()
+        result = await Project.find(Project.owner == data.owner).count()
+        if result > settings.user.max_projects:
+            raise PermissionError(
+                f"Cannot be owner of more than {settings.user.max_projects} projects",
+                owner=data.owner,
+                num_projects=result,
+            )
+
     async def get_projects(
         self,
         filter: ProjectFilter,
@@ -60,6 +71,7 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
 
     async def insert_project(self, project: ProjectIn) -> Project:
         """Insert a new project, rejecting a duplicate id. See ``insert_one``."""
+        await self._check_num_projects(project)
         return await self.insert_one(project)
 
     async def patch_project_by_id(self, id: str, update: ProjectPatch) -> Project:
@@ -96,6 +108,8 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
         # The route enforces authentication, so an anonymous caller should never reach here.
         if self._user.username is None:
             raise PermissionError(required_role="authenticated")
+
+        await self._check_num_projects(data)
 
         existing = await self.document_model.find_one(self.document_model.id == id)
         project = self.document_model.from_input_model(data)
