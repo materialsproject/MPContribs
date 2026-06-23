@@ -244,7 +244,7 @@ typing-extensions==4.15.0
     #   swagger-spec-validator
 tzdata==2026.2
     # via arrow
-ujson==5.12.1
+ujson==5.13.0
     # via mpcontribs-client (pyproject.toml)
 uncertainties==3.2.3
     # via pymatgen-core
