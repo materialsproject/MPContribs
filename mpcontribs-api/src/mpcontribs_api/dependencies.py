@@ -8,10 +8,7 @@ from pymongo.asynchronous.database import AsyncDatabase
 from types_aiobotocore_s3 import S3Client
 
 from mpcontribs_api.authz import User
-from mpcontribs_api.exceptions import (
-    AuthenticationError,
-    PermissionError,
-)
+from mpcontribs_api.exceptions import AuthenticationError
 
 
 def get_db(request: Request) -> AsyncDatabase:
@@ -61,7 +58,6 @@ def get_user(request: Request) -> User:
             groups=frozenset(groups),
         )
     structlog.contextvars.bind_contextvars(
-        username=user.username,
         consumer_id=user.consumer_id,
         is_admin=user.is_admin,
     )
@@ -77,13 +73,13 @@ def require_user(user: UserDep) -> User:
     return user
 
 
-AuthedDep = Annotated[User, Depends(require_user)]
+# AuthedDep = Annotated[User, Depends(require_user)]
 
 
-def require_role(role: str):
-    def checker(user: AuthedDep) -> User:
-        if not user.has_role(role):
-            raise PermissionError(required_role=role)
-        return user
+# def require_role(role: str):
+#     def checker(user: AuthedDep) -> User:
+#         if not user.has_role(role):
+#             raise PermissionError(required_role=role)
+#         return user
 
-    return Annotated[User, Depends(checker)]
+#     return Annotated[User, Depends(checker)]
