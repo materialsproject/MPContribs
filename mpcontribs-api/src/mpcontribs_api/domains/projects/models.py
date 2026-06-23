@@ -3,11 +3,15 @@ from __future__ import annotations
 from typing import Any, Literal
 
 from fastapi_filter.contrib.beanie import Filter
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
 
 from mpcontribs_api import pagination
+from mpcontribs_api.config import get_settings
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
 from mpcontribs_api.domains._shared.types import PrefixedEmail, ShortStr
+from mpcontribs_api.exceptions import ValidationError
+
+settings = get_settings()
 
 
 class Column(BaseModel):
@@ -71,6 +75,16 @@ class Project(BaseDocumentWithInput[ShortStr]):
         Needs override over parent class since Project.id is a simple str
         """
         return pagination.decode_cursor(cursor)
+
+    @field_validator("columns", mode="before")
+    @classmethod
+    def limit_column_length(cls, c: list[Column]) -> list[Column]:
+        if len(c) > settings.user.max_columns:
+            raise ValidationError(
+                f"columns cannot have more than {settings.user.max_columns} entries",
+                column_length=len(c),
+            )
+        return c
 
     class Settings:
         name = "projects"
@@ -156,3 +170,13 @@ class ProjectPatch(BaseModel):
     is_public: bool = False
     is_approved: bool = False
     license: Literal["CCA4", "CCPD"] | None = None
+
+    @field_validator("columns", mode="before")
+    @classmethod
+    def limit_column_length(cls, c: list[Column]) -> list[Column]:
+        if len(c) > settings.user.max_columns:
+            raise ValidationError(
+                f"columns cannot have more than {settings.user.max_columns} entries",
+                column_length=len(c),
+            )
+        return c
