@@ -19,11 +19,12 @@ from mpcontribs_api.domains._shared.repository import MongoDbRepository
 from mpcontribs_api.domains.attachments.repository import MongoDbAttachmentRepository
 from mpcontribs_api.domains.contributions.models import Contribution, ContributionFilter, ContributionIn
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
+from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
 from mpcontribs_api.domains.structures.models import Structure
 from mpcontribs_api.domains.structures.repository import MongoDbStructureRepository
 from mpcontribs_api.domains.tables.models import Table
 from mpcontribs_api.domains.tables.repository import MongoDbTableRepository
-from mpcontribs_api.exceptions import AppError, ValidationError
+from mpcontribs_api.exceptions import AppError, PermissionError, ValidationError
 from mpcontribs_api.pagination import CursorParams
 
 logger = structlog.get_logger(__name__)
@@ -33,6 +34,7 @@ class ContributionService:
     def __init__(
         self,
         client: AsyncMongoClient,
+        projects: MongoDbProjectRepository,
         contributions: MongoDbContributionRepository,
         structures: MongoDbStructureRepository,
         attachments: MongoDbAttachmentRepository,
@@ -40,6 +42,7 @@ class ContributionService:
         settings: MongoSettings | None = None,
     ):
         self._client = client
+        self._projects = projects
         self._contributions = contributions
         self._structures = structures
         self._attachments = attachments
@@ -53,6 +56,23 @@ class ContributionService:
             "attachments": self._attachments,
             "tables": self._tables,
         }
+
+    async def _remaining_unapproved_quota(self, project_id: str) -> int | None:
+        """How many more contributions may be added to ``project_id`` in this batch.
+
+        Returns ``None`` when the quota does not apply — the project is approved, or it could not
+        be read in the current scope (existence/permission is enforced on insert, not here).
+
+        For an unapproved project the cap is on the project's total contribution count, so the
+        remaining allowance is ``cap - existing`` (clamped at zero). The ``+ 1`` mirrors the
+        previous per-insert gate, which rejected only once the stored count exceeded the cap.
+        """
+        project = await self._projects.get_by_id(project_id, fields=frozenset({"is_approved"}))
+        if not project or project.is_approved:
+            return None
+        cap = get_settings().user.max_unapproved_contributions_per_project
+        existing = await self._contributions.count_contributions_for_project(project_id)
+        return max(0, cap - existing + 1)
 
     async def insert_contributions(
         self,
@@ -80,7 +100,11 @@ class ContributionService:
 
         self._reject_duplicate_keys(contributions)
 
+        # Reject contributions that exceed the component limit
         oversize_failures, remaining_indices = self._split_oversize(contributions)
+        # Reject contributions that are being added to an unapproved project and cause the project to exceed the
+        # contribution limit
+        quota_failures, remaining_indices = await self._split_quota_exceeded(remaining_indices, contributions)
         no_comp_indices = [i for i in remaining_indices if not contributions[i].has_components()]
         with_comp_indices = [i for i in remaining_indices if contributions[i].has_components()]
 
@@ -95,7 +119,7 @@ class ContributionService:
 
         succeeded = [doc for _, doc in sorted(no_comp_succeeded + with_comp_succeeded, key=lambda p: p[0])]
         failed = sorted(
-            oversize_failures + no_comp_failed + with_comp_failed,
+            oversize_failures + quota_failures + no_comp_failed + with_comp_failed,
             key=lambda f: f.index,
         )
         return BulkWriteSummary[Contribution](total=len(contributions), succeeded=succeeded, failed=failed)
@@ -145,6 +169,42 @@ class ContributionService:
             else:
                 remaining.append(i)
         return oversize, remaining
+
+    async def _split_quota_exceeded(
+        self,
+        indices: list[int],
+        contributions: list[ContributionIn],
+    ) -> tuple[list[BulkFailure], list[int]]:
+        """Trim each unapproved project's in-batch contributions to its remaining quota.
+
+        The unapproved-contribution cap is on a project's total count, so the batch's own additions
+        count toward it: a project with N slots left accepts the first N contributions for it (input
+        order) and rejects the rest. Rejections are non-terminal — they land in ``failed`` while the
+        rest of the batch proceeds, mirroring ``_split_oversize``. The policy is evaluated once per
+        distinct project.
+        """
+        by_project: dict[str, list[int]] = defaultdict(list)
+        for i in indices:
+            by_project[contributions[i].project].append(i)
+
+        cap = get_settings().user.max_unapproved_contributions_per_project
+        failures: list[BulkFailure] = []
+        remaining: list[int] = []
+        for project_id, project_indices in by_project.items():
+            quota = await self._remaining_unapproved_quota(project_id)
+            if quota is None:
+                remaining.extend(project_indices)
+                continue
+            remaining.extend(project_indices[:quota])
+            exc = PermissionError(
+                "Attempted to add more than the allowed number of unapproved contributions",
+                project=project_id,
+                max_contribs=cap,
+            )
+            failures.extend(
+                bulk_failure_from_exception(i, contributions[i].identifiers(), exc) for i in project_indices[quota:]
+            )
+        return failures, sorted(remaining)
 
     async def _insert_no_components(
         self,
