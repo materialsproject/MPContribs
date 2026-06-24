@@ -51,6 +51,7 @@ class Project(BaseDocumentWithInput[ShortStr]):
     stats: Stats
 
     # Optional
+    category: ShortStr | None = None
     references: list[Reference] = Field(default_factory=list)
     long_title: str | None = None
     other: dict[str, Any] = Field(default_factory=dict)
@@ -84,6 +85,7 @@ class ProjectOut(DocumentOut[ShortStr]):
     authors: str | None = None
     description: str | None = None
     title: ShortStr | None = None
+    category: ShortStr | None = None
     owner: PrefixedEmail | None = None
     other: dict[str, Any] | None = None
     is_public: bool | None = None
@@ -117,6 +119,11 @@ class ProjectFilter(Filter):
     owner__neq: PrefixedEmail | None = None
     owner__ilike: str | None = None
 
+    category: ShortStr | None = None
+    category__in: list[ShortStr] | None = None
+    category__neq: ShortStr | None = None
+    category__ilike: str | None = None
+
     # fuzzy only
     long_title__ilike: str | None = None
 
@@ -147,12 +154,13 @@ class ProjectPatch(BaseModel):
     title: ShortStr | None = None
     authors: str | None = None
     description: str | None = None
+    category: ShortStr | None = None
     owner: PrefixedEmail | None = None
     unique_identifiers: bool | None = None
     references: list[Reference] = Field(default_factory=list)
     long_title: str | None = None
     other: dict[str, Any] = Field(default_factory=dict)
     columns: list[Column] = Field(default_factory=list)
-    is_public: bool = False
-    is_approved: bool = False
+    is_public: bool | None = None
+    is_approved: bool | None = None
     license: Literal["CCA4", "CCPD"] | None = None

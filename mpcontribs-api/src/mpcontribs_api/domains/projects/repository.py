@@ -54,7 +54,7 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
         """Query the Project collection, scoped to the current user. See ``get_many``."""
         return await self.get_many(pagination=pagination, filter=filter, fields=fields)
 
-    async def get_project_by_id(self, id: str, fields: frozenset[str] | None):
+    async def get_project_by_id(self, id: str, fields: frozenset[str] | None) -> Project | ProjectOut | None:
         """Find a single project by id, scoped to the current user. See ``get_by_id``."""
         return await self.get_by_id(id, fields)
 
