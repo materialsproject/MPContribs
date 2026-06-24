@@ -8,9 +8,23 @@ from fastapi import FastAPI, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from opentelemetry import trace
+from opentelemetry.trace import Status, StatusCode
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 logger = structlog.get_logger(__name__)
+
+
+def _record_on_span(exc: Exception) -> None:
+    """Attach a server-side exception to the active OTel span so APM error views show the stack.
+
+    No-op when there is no recording span (telemetry disabled or no active span), since the
+    sentinel span returned in that case reports ``is_recording() == False``.
+    """
+    span = trace.get_current_span()
+    if span.is_recording():
+        span.record_exception(exc)
+        span.set_status(Status(StatusCode.ERROR, str(exc)))
 
 
 class AppError(Exception):
@@ -78,6 +92,7 @@ def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(AppError)
     async def _handle_app_error(request: Request, exc: AppError) -> JSONResponse:
         if exc.status_code >= 500:
+            _record_on_span(exc)
             logger.error(exc.error_code, status_code=exc.status_code, exc_info=exc, **exc.context)
         else:
             logger.info(exc.error_code, status_code=exc.status_code, **exc.context)
@@ -95,6 +110,7 @@ def register_exception_handlers(app: FastAPI) -> None:
     # Catch-all for anything that isn't an AppError - bugs, unexpected failures.
     @app.exception_handler(Exception)
     async def _handle_unexpected(request: Request, exc: Exception) -> JSONResponse:
+        _record_on_span(exc)
         logger.exception("unhandled_exception")  # full traceback
         return JSONResponse(
             status_code=500,
@@ -115,7 +131,10 @@ def register_exception_handlers(app: FastAPI) -> None:
 
     # Unify http exceptions from starlette with our exception format
     @app.exception_handler(StarletteHTTPException)
-    async def _handle_http(request, exc):
+    async def _handle_http(request: Request, exc: StarletteHTTPException) -> JSONResponse:
+        if exc.status_code >= 500:
+            _record_on_span(exc)
+            logger.error("http_error", status_code=exc.status_code, exc_info=exc)
         return JSONResponse(
             status_code=exc.status_code,
             content=_error_body("http_error", str(exc.detail)),
