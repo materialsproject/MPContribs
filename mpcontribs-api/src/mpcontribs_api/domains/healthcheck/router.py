@@ -11,6 +11,7 @@ settings = get_settings()
 
 
 class HealthStatus(BaseModel):
+    version: str
     status: str
     mongo: str
     s3: str
@@ -34,4 +35,4 @@ async def healthcheck(db: DbDep, s3_client: S3Dep) -> HealthStatus:
             detail={"status": "unhealthy", "s3": "unreachable"},
         ) from None
 
-    return HealthStatus(status="healthy", mongo="ok", s3="ok")
+    return HealthStatus(version=settings.version, status="healthy", mongo="ok", s3="ok")
