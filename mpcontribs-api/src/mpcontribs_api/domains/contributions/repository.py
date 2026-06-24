@@ -45,6 +45,14 @@ class MongoDbContributionRepository(
             ors.append({"project": {"$in": sorted(user.writable_projects)}})
         return {"$or": ors}
 
+    async def count_contributions_for_project(self, project_name: str) -> int:
+        """Count contributions already stored for a project.
+
+        Unscoped on purpose: the unapproved-contribution quota is a property of the project as a
+        whole, not of what the current user can see. The cap comparison lives in the service.
+        """
+        return await self.document_model.find(self.document_model.project == project_name).count()
+
     async def get_contributions(
         self,
         filter: ContributionFilter,
