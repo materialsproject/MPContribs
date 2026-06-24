@@ -295,7 +295,9 @@ class ContributionService:
                 try:
                     return await self._contributions.upsert_contribution_by_identifiers(contrib.identifiers(), contrib)
                 except Exception as exc:
-                    logger.error("upsert_contribution_failed", index=index, identifier=contrib.identifiers())
+                    logger.error(
+                        "upsert_contribution_failed", index=index, identifier=contrib.identifiers(), exc_info=True
+                    )
                     return bulk_failure_from_exception(index, contrib.identifiers(), exc)
 
         results = await asyncio.gather(*[_bounded_upsert(i, c) for i, c in enumerate(contributions)])
