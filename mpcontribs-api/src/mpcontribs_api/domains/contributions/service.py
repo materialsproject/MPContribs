@@ -32,6 +32,10 @@ from mpcontribs_api.pagination import CursorParams
 
 logger = structlog.get_logger(__name__)
 
+# Upper bound on rejected identifiers attached to a single quota-breach log line, so an
+# adversarial mega-batch can't blow up the log payload. The counts are always exact.
+_QUOTA_LOG_IDENTIFIER_CAP = 100
+
 
 @dataclass(frozen=True, slots=True)
 class ResolvedWrite:
@@ -75,22 +79,17 @@ class ContributionService:
             "tables": self._tables,
         }
 
-    async def _remaining_unapproved_quota(self, project_id: str) -> int | None:
-        """How many more contributions may be added to ``project_id`` in this batch.
+    async def _unapproved_stored_count(self, project_id: str) -> int | None:
+        """Contributions already stored for an unapproved ``project_id``, else ``None``.
 
         Returns ``None`` when the quota does not apply — the project is approved, or it could not
-        be read in the current scope (existence/permission is enforced on insert, not here).
-
-        For an unapproved project the cap is on the project's total contribution count, so the
-        remaining allowance is ``cap - existing`` (clamped at zero). The ``+ 1`` mirrors the
-        previous per-insert gate, which rejected only once the stored count exceeded the cap.
+        be read in the current scope (existence/permission is enforced on insert, not here). The
+        caller turns the count into a remaining allowance against the cap.
         """
         project = await self._projects.get_by_id(project_id, fields=frozenset({"is_approved"}))
         if not project or project.is_approved:
             return None
-        cap = get_settings().user.max_unapproved_contributions_per_project
-        existing = await self._contributions.count_contributions_for_project(project_id)
-        return max(0, cap - existing + 1)
+        return await self._contributions.count_contributions_for_project(project_id)
 
     async def insert_contributions(
         self,
@@ -337,7 +336,11 @@ class ContributionService:
         count toward it: a project with N slots left accepts the first N contributions for it (input
         order) and rejects the rest. Rejections are non-terminal — they land in ``failed`` while the
         rest of the batch proceeds, mirroring ``_split_oversize``. The policy is evaluated once per
-        distinct project.
+        distinct project, and each breach is logged for audit/abuse monitoring (the response is a
+        200 with embedded failures, so the access log alone cannot surface it).
+
+        The ``+ 1`` in the allowance mirrors the previous per-insert gate, which rejected only once
+        the stored count exceeded the cap.
         """
         by_project: dict[str, list[int]] = defaultdict(list)
         for i in indices:
@@ -347,20 +350,51 @@ class ContributionService:
         failures: list[BulkFailure] = []
         remaining: list[int] = []
         for project_id, project_indices in by_project.items():
-            quota = await self._remaining_unapproved_quota(project_id)
-            if quota is None:
+            stored = await self._unapproved_stored_count(project_id)
+            if stored is None:
                 remaining.extend(project_indices)
                 continue
-            remaining.extend(project_indices[:quota])
+            allowed = max(0, cap - stored + 1)
+            accepted, rejected = project_indices[:allowed], project_indices[allowed:]
+            remaining.extend(accepted)
+            if not rejected:
+                continue
+            self._log_quota_exceeded(project_id, contributions, cap, stored, len(accepted), rejected)
             exc = PermissionError(
                 "Attempted to add more than the allowed number of unapproved contributions",
                 project=project_id,
                 max_contribs=cap,
             )
-            failures.extend(
-                bulk_failure_from_exception(i, contributions[i].identifiers(), exc) for i in project_indices[quota:]
-            )
+            failures.extend(bulk_failure_from_exception(i, contributions[i].identifiers(), exc) for i in rejected)
         return failures, sorted(remaining)
+
+    @staticmethod
+    def _log_quota_exceeded(
+        project_id: str,
+        contributions: list[ContributionIn],
+        cap: int,
+        stored: int,
+        accepted: int,
+        rejected: list[int],
+    ) -> None:
+        """Emit a structured audit event for an unapproved-project quota breach.
+
+        Request/user correlation (``consumer_id``, ``request_id``, ``trace_id``) is merged from the
+        per-request contextvars, so only the domain-specific dimensions are added here. The rejected
+        identifier list is capped to keep a pathological batch from bloating a single log line.
+        """
+        rejected_identifiers = [contributions[i].identifier for i in rejected[:_QUOTA_LOG_IDENTIFIER_CAP]]
+        logger.warning(
+            "contribution.unapproved_quota_exceeded",
+            project=project_id,
+            max_allowed=cap,
+            stored=stored,
+            attempted=accepted + len(rejected),
+            accepted=accepted,
+            rejected=len(rejected),
+            rejected_identifiers=rejected_identifiers,
+            rejected_identifiers_truncated=len(rejected) > _QUOTA_LOG_IDENTIFIER_CAP,
+        )
 
     async def _insert_no_components(
         self,
