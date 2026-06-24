@@ -120,7 +120,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # Emit server-side request spans/metrics (no-op when telemetry is disabled).
     instrument_app(app, settings)
     register_exception_handlers(app)
-    app.include_router(healthcheck_router, prefix="/health")
+    app.include_router(healthcheck_router, prefix="/healthcheck")
     app.include_router(v1_router, prefix="/api/v1")
 
     return app
