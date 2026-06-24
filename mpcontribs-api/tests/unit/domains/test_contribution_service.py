@@ -1,5 +1,5 @@
 import asyncio
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import polars as pl
 import pytest
@@ -10,6 +10,7 @@ from pymongo.errors import BulkWriteError
 from mpcontribs_api.config import MongoSettings, get_settings
 from mpcontribs_api.domains.attachments.models import Attachment, AttachmentIn
 from mpcontribs_api.domains.contributions.models import Contribution, ContributionIn
+from mpcontribs_api.domains.contributions import service as service_module
 from mpcontribs_api.domains.contributions.service import ContributionService
 from mpcontribs_api.domains.structures.models import (
     Lattice,
@@ -329,6 +330,39 @@ class TestInsertContributionsUnapprovedQuota:
         assert len(summary.succeeded) == 2
         inserted_ids = {d.identifier for d in contrib_repo.insert_many_contributions.call_args[0][0]}
         assert inserted_ids == {"a", "c"}
+
+    async def test_breach_emits_structured_audit_log(self, monkeypatch):
+        monkeypatch.setattr(get_settings().user, "max_unapproved_contributions_per_project", 2)
+        contrib_repo = AsyncMock()
+        contrib_repo.insert_many_contributions.return_value = None
+        contrib_repo.count_contributions_for_project.return_value = 5
+        svc, *_ = _make_service(contributions=contrib_repo, projects=_unapproved_projects_repo())
+
+        with patch.object(service_module.logger, "warning") as warn:
+            await svc.insert_contributions([_contrib_in(project="p", identifier=f"mp-{i}") for i in range(3)])
+
+        warn.assert_called_once()
+        event, kwargs = warn.call_args.args[0], warn.call_args.kwargs
+        assert event == "contribution.unapproved_quota_exceeded"
+        assert kwargs["project"] == "p"
+        assert kwargs["max_allowed"] == 2
+        assert kwargs["stored"] == 5
+        assert kwargs["attempted"] == 3
+        assert kwargs["accepted"] == 0
+        assert kwargs["rejected"] == 3
+        assert kwargs["rejected_identifiers"] == ["mp-0", "mp-1", "mp-2"]
+        assert kwargs["rejected_identifiers_truncated"] is False
+
+    async def test_approved_project_emits_no_audit_log(self, monkeypatch):
+        monkeypatch.setattr(get_settings().user, "max_unapproved_contributions_per_project", 1)
+        contrib_repo = AsyncMock()
+        contrib_repo.insert_many_contributions.return_value = None
+        svc, *_ = _make_service(contributions=contrib_repo, projects=_approved_projects_repo())
+
+        with patch.object(service_module.logger, "warning") as warn:
+            await svc.insert_contributions([_contrib_in(identifier=f"mp-{i}") for i in range(3)])
+
+        warn.assert_not_called()
 
 
 # ---------------------------------------------------------------------------
