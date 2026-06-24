@@ -1,5 +1,5 @@
-from __future__ import annotations
-
+import os
+import time
 import uuid
 from collections.abc import Iterable
 from typing import TYPE_CHECKING
@@ -13,10 +13,10 @@ from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
-from starlette.types import ASGIApp, Receive, Scope, Send
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from mpcontribs_api.config import Settings
-from mpcontribs_api.logging import build_resource
+from mpcontribs_api.logging import build_resource, get_logger
 
 if TYPE_CHECKING:
     from fastapi import FastAPI
@@ -24,6 +24,18 @@ if TYPE_CHECKING:
 # Guards repeated configure_tracing() (tests, reloads) from re-registering providers or
 # double-instrumenting pymongo.
 _configured = False
+
+# Dedicated access logger. Emits one structured event per request (see RequestContextMiddleware);
+# flows through the same root handlers as everything else (stdout + OTLP when enabled).
+_access_logger = get_logger("access")
+
+# Process identity, matching the old gunicorn ``{group}/{process}`` prefix and ``%(p)s`` pid. The
+# SUPERVISOR_* vars are absent outside supervisord (dev, tests), so these render null there.
+_PROCESS = {
+    "name": os.getenv("SUPERVISOR_PROCESS_NAME"),
+    "group": os.getenv("SUPERVISOR_GROUP_NAME"),
+    "id": os.getpid(),
+}
 
 # Lowercased ASGI byte header name -> structlog context key.
 _LOGGED_HEADERS: dict[bytes, str] = {
@@ -38,6 +50,16 @@ _LOGGED_HEADERS: dict[bytes, str] = {
 
 
 class RequestContextMiddleware:
+    """Bind per-request structlog context and emit one structured access log per HTTP request.
+
+    The two concerns live together because both need the request headers parsed once, and this is
+    the outermost app middleware, so it observes the final status code, total response bytes, and
+    full request duration. The access event uses Datadog standard attribute names (``http.*``,
+    ``network.*``, ``duration`` in nanoseconds) so the existing Datadog log pipeline (URL parser,
+    User-Agent parser, status-category, date remapper) regenerates the same enriched surface the old
+    gunicorn access logs had.
+    """
+
     def __init__(self, app: ASGIApp) -> None:
         self.app = app
 
@@ -69,7 +91,64 @@ class RequestContextMiddleware:
         structlog.contextvars.clear_contextvars()
         structlog.contextvars.bind_contextvars(**context)
 
-        await self.app(scope, receive, send)
+        # Capture the final status and body size by wrapping send; the app may call send many times
+        # (streaming/chunked), so body bytes accumulate across http.response.body messages.
+        status_code = 0
+        bytes_written = 0
+
+        async def send_wrapper(message: Message) -> None:
+            nonlocal status_code, bytes_written
+            if message["type"] == "http.response.start":
+                status_code = message["status"]
+            elif message["type"] == "http.response.body":
+                bytes_written += len(message.get("body", b""))
+            await send(message)
+
+        start = time.perf_counter()
+        try:
+            await self.app(scope, receive, send_wrapper)
+        except Exception:
+            # An exception escaped the app's own handlers (e.g. raised in outer middleware or after
+            # the response had started, so the catch-all never ran). Record it as a 500 instead of
+            # the sentinel 0 so status-based alerting still fires, then re-raise unchanged.
+            if status_code == 0:
+                status_code = 500
+            raise
+        finally:
+            self._emit_access_log(scope, headers, status_code, bytes_written, start)
+
+    @staticmethod
+    def _emit_access_log(
+        scope: Scope,
+        headers: dict[bytes, bytes],
+        status_code: int,
+        bytes_written: int,
+        start: float,
+    ) -> None:
+        duration_ns = int((time.perf_counter() - start) * 1e9)
+        query_string = scope.get("query_string", b"").decode("latin-1")
+        path = scope["path"]
+        url = f"{path}?{query_string}" if query_string else path
+        # True client IP behind Kong: first X-Forwarded-For hop if present, else the direct peer (which is Kong itself)
+        forwarded_for = headers.get(b"x-forwarded-for", b"").decode("latin-1")
+        client = scope.get("client")
+        client_ip = forwarded_for.split(",")[0].strip() if forwarded_for else (client[0] if client else "")
+
+        _access_logger.info(
+            "http.access",
+            http={
+                "method": scope["method"],
+                "status_code": status_code,
+                "url": url,
+                "referer": headers.get(b"referer", b"-").decode("latin-1"),
+                "useragent": headers.get(b"user-agent", b"").decode("latin-1"),
+                "version": scope.get("http_version", "1.1"),
+            },
+            network={"bytes_written": bytes_written, "client": {"ip": client_ip}},
+            duration=duration_ns,  # Datadog standard `duration` is nanoseconds
+            response_time=duration_ns // 1000,  # microseconds, matches the old gunicorn %(D)s
+            process=_PROCESS,
+        )
 
 
 def configure_tracing(settings: Settings) -> None:

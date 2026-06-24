@@ -133,10 +133,18 @@ def configure_logging(settings: Settings) -> None:
     root.setLevel(log_level)
 
     # Let uvicorn's loggers flow through the root handler instead of their own.
-    for name in ("uvicorn", "uvicorn.error", "uvicorn.access"):
+    for name in ("uvicorn", "uvicorn.error"):
         lg = logging.getLogger(name)
         lg.handlers = []
         lg.propagate = True
+
+    # Silence uvicorn's default access log: RequestContextMiddleware emits our own structured access
+    # event with status/size/duration and Datadog standard attributes. disabled=True suppresses it
+    # regardless of uvicorn's --access-log flag, so the two never double-log.
+    access = logging.getLogger("uvicorn.access")
+    access.handlers = []
+    access.propagate = False
+    access.disabled = True
 
 
 def get_logger(name: str | None = None):
