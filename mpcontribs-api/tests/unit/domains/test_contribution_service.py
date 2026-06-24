@@ -7,7 +7,7 @@ from beanie import PydanticObjectId
 from pymatgen.core import Element
 from pymongo.errors import BulkWriteError
 
-from mpcontribs_api.config import MongoSettings
+from mpcontribs_api.config import MongoSettings, get_settings
 from mpcontribs_api.domains.attachments.models import Attachment, AttachmentIn
 from mpcontribs_api.domains.contributions.models import Contribution, ContributionIn
 from mpcontribs_api.domains.contributions.service import ContributionService
@@ -141,6 +141,7 @@ def _make_service(
     tables=None,
     attachments=None,
     client=None,
+    projects=None,
     settings: MongoSettings | None = None,
     write_slots: asyncio.Semaphore | None = None,
 ) -> tuple[ContributionService, AsyncMock, AsyncMock, AsyncMock, AsyncMock, MagicMock]:
@@ -148,10 +149,14 @@ def _make_service(
     struct_repo = structures or AsyncMock()
     table_repo = tables or AsyncMock()
     attach_repo = attachments or AsyncMock()
+    # Default: projects read as approved so the unapproved-contribution quota never trips. Tests
+    # exercising the quota pass their own projects mock (and a contributions mock with a count).
+    proj_repo = projects or _approved_projects_repo()
     if client is None:
         client, _ = _make_fake_client()
     svc = ContributionService(
         client=client,
+        projects=proj_repo,
         contributions=contrib_repo,
         structures=struct_repo,
         tables=table_repo,
@@ -159,6 +164,20 @@ def _make_service(
         settings=settings or _make_mongo_settings(),
     )
     return svc, contrib_repo, struct_repo, table_repo, attach_repo, client
+
+
+def _approved_projects_repo() -> AsyncMock:
+    """A projects repo whose every project reads as approved (quota does not apply)."""
+    repo = AsyncMock()
+    repo.get_by_id = AsyncMock(return_value=MagicMock(is_approved=True))
+    return repo
+
+
+def _unapproved_projects_repo() -> AsyncMock:
+    """A projects repo whose every project reads as unapproved (quota applies)."""
+    repo = AsyncMock()
+    repo.get_by_id = AsyncMock(return_value=MagicMock(is_approved=False))
+    return repo
 
 
 def _fake_structure() -> Structure:
@@ -227,6 +246,89 @@ class TestInsertContributionsPreChecks:
         struct_repo.insert_components.assert_not_called()
         # And the in-pool contribution did go through the no-component fast path
         contrib_repo.insert_many_contributions.assert_called_once()
+
+
+# ---------------------------------------------------------------------------
+# insert_contributions — unapproved-contribution quota
+# ---------------------------------------------------------------------------
+
+
+def _projects_repo_by_approval(approval: dict[str, bool]) -> AsyncMock:
+    """Projects repo whose ``get_by_id`` reports approval per project id from ``approval``."""
+    repo = AsyncMock()
+
+    async def _get_by_id(project_id, fields=None):
+        return MagicMock(is_approved=approval[project_id])
+
+    repo.get_by_id = AsyncMock(side_effect=_get_by_id)
+    return repo
+
+
+class TestInsertContributionsUnapprovedQuota:
+    async def test_unapproved_project_at_capacity_fails_all(self, monkeypatch):
+        monkeypatch.setattr(get_settings().user, "max_unapproved_contributions_per_project", 2)
+        contrib_repo = AsyncMock()
+        contrib_repo.insert_many_contributions.return_value = None
+        contrib_repo.count_contributions_for_project.return_value = 5  # already over cap
+        svc, *_ = _make_service(contributions=contrib_repo, projects=_unapproved_projects_repo())
+
+        summary = await svc.insert_contributions([_contrib_in(identifier=f"mp-{i}") for i in range(3)])
+
+        assert summary.total == 3
+        assert [f.index for f in summary.failed] == [0, 1, 2]
+        assert all(f.error_code == "permission_denied" for f in summary.failed)
+        assert summary.succeeded == []
+        contrib_repo.insert_many_contributions.assert_not_called()
+
+    async def test_batch_trimmed_to_remaining_capacity(self, monkeypatch):
+        # cap 5, 4 already stored -> remaining = 5 - 4 + 1 = 2 slots for this batch
+        monkeypatch.setattr(get_settings().user, "max_unapproved_contributions_per_project", 5)
+        contrib_repo = AsyncMock()
+        contrib_repo.insert_many_contributions.return_value = None
+        contrib_repo.count_contributions_for_project.return_value = 4
+        svc, *_ = _make_service(contributions=contrib_repo, projects=_unapproved_projects_repo())
+
+        summary = await svc.insert_contributions([_contrib_in(identifier=f"mp-{i}") for i in range(4)])
+
+        assert summary.total == 4
+        assert len(summary.succeeded) == 2
+        assert [f.index for f in summary.failed] == [2, 3]
+        # Only the two accepted contributions reached the database
+        inserted = contrib_repo.insert_many_contributions.call_args[0][0]
+        assert len(inserted) == 2
+
+    async def test_approved_project_is_unlimited(self, monkeypatch):
+        monkeypatch.setattr(get_settings().user, "max_unapproved_contributions_per_project", 1)
+        contrib_repo = AsyncMock()
+        contrib_repo.insert_many_contributions.return_value = None
+        svc, *_ = _make_service(contributions=contrib_repo, projects=_approved_projects_repo())
+
+        summary = await svc.insert_contributions([_contrib_in(identifier=f"mp-{i}") for i in range(3)])
+
+        assert len(summary.succeeded) == 3
+        assert summary.failed == []
+        # Approved short-circuits before counting stored contributions
+        contrib_repo.count_contributions_for_project.assert_not_called()
+
+    async def test_quota_evaluated_per_project(self, monkeypatch):
+        monkeypatch.setattr(get_settings().user, "max_unapproved_contributions_per_project", 2)
+        contrib_repo = AsyncMock()
+        contrib_repo.insert_many_contributions.return_value = None
+        contrib_repo.count_contributions_for_project.return_value = 99  # only consulted for the unapproved one
+        projects = _projects_repo_by_approval({"ok": True, "bad": False})
+        svc, *_ = _make_service(contributions=contrib_repo, projects=projects)
+
+        contribs = [
+            _contrib_in(project="ok", identifier="a"),
+            _contrib_in(project="bad", identifier="b"),
+            _contrib_in(project="ok", identifier="c"),
+        ]
+        summary = await svc.insert_contributions(contribs)
+
+        assert [f.index for f in summary.failed] == [1]
+        assert len(summary.succeeded) == 2
+        inserted_ids = {d.identifier for d in contrib_repo.insert_many_contributions.call_args[0][0]}
+        assert inserted_ids == {"a", "c"}
 
 
 # ---------------------------------------------------------------------------
