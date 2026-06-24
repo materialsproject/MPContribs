@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from collections.abc import Sequence
 from typing import Any
 
@@ -38,6 +39,10 @@ class AppError(Exception):
     # them off the type without instantiating special-casing.
     status_code: int = 500
     error_code: str = "internal_error"  # stable, machine-readable
+    # Optional stdlib log level override. None => the handler derives it from status_code
+    # (ERROR for 5xx, INFO for 4xx). Set on a subclass to promote a notable client error,
+    # e.g. WARNING for auth failures so they're alertable without logging every 404.
+    log_level: int | None = None
 
     def __init__(self, message: str | None = None, **context):
         self.message = message or self.__class__.__name__
@@ -48,26 +53,31 @@ class AppError(Exception):
 class NotFoundError(AppError):
     status_code = 404
     error_code = "not_found"
+    log_level = logging.INFO
 
 
 class ConflictError(AppError):
     status_code = 409
     error_code = "conflict"
+    log_level = logging.INFO
 
 
 class ValidationError(AppError):
     status_code = 422
     error_code = "validation_error"
+    log_level = logging.INFO
 
 
 class PermissionError(AppError):
     status_code = 403
     error_code = "permission_denied"
+    log_level = logging.WARNING  # security-relevant: alertable, but not a server fault
 
 
 class AuthenticationError(AppError):
     status_code = 401
     error_code = "authentication_error"
+    log_level = logging.WARNING  # security-relevant: alertable, but not a server fault
 
 
 def _error_body(error_code: str, message: str, **public_context) -> dict:
@@ -91,11 +101,15 @@ def register_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(AppError)
     async def _handle_app_error(request: Request, exc: AppError) -> JSONResponse:
-        if exc.status_code >= 500:
+        is_server_fault = exc.status_code >= 500
+        level = exc.log_level if exc.log_level is not None else (logging.ERROR if is_server_fault else logging.INFO)
+        if is_server_fault:
+            # Only genuine server faults carry a traceback and mark the span; client errors
+            # (incl. opt-in WARNING ones like auth failures) are expected and need neither.
             _record_on_span(exc)
-            logger.error(exc.error_code, status_code=exc.status_code, exc_info=exc, **exc.context)
+            logger.log(level, exc.error_code, status_code=exc.status_code, exc_info=exc, **exc.context)
         else:
-            logger.info(exc.error_code, status_code=exc.status_code, **exc.context)
+            logger.log(level, exc.error_code, status_code=exc.status_code, **exc.context)
         return JSONResponse(
             status_code=exc.status_code,
             content=_error_body(
