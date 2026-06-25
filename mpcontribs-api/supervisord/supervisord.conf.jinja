@@ -18,15 +18,7 @@ environment=
     AWS_DEFAULT_REGION="us-east-1",
     MPCONTRIBS_MAIL_DEFAULT_SENDER="contribs@materialsproject.org",
     PYTHONUNBUFFERED=1,
-    MAX_REQUESTS=0,
-    MAX_REQUESTS_JITTER=0,
     NWORKERS={{ nworkers }},
-    RELOAD={{ reload }},
-    NODE_ENV="{{ node_env }}",
-    FLASK_DEBUG="{{ flask_debug }}",
-    FLASK_LOG_LEVEL="{{ flask_log_level }}",
-    JUPYTER_GATEWAY_URL="{{ jupyter_gateway_url }}",
-    JUPYTER_GATEWAY_HOST="{{ jupyter_gateway_host }}",
     MPCONTRIBS_OTEL__OTLP_ENDPOINT="{{ otel_endpoint }}",
     TINI_SUBREAPER="true"
 
@@ -72,14 +64,7 @@ stderr_logfile_maxbytes=0
 environment=
     DEPLOYMENT={{ loop.index0 }},
     API_PORT={{ cfg.api_port }},
-    PORTAL_PORT={{ cfg.portal_port }},
-    MPCONTRIBS_API_HOST="{{ mpcontribs_api_host }}:{{ cfg.api_port }}",
     MPCONTRIBS_MONGO__DB_NAME="mpcontribs-{{ cfg.db }}",
-    TRADEMARK="{{ cfg.tm }}",
-    MAX_PROJECTS={{ cfg.max_projects }},
-    S3_DOWNLOADS_BUCKET="mpcontribs-downloads-{{ cfg.s3 }}",
-    S3_ATTACHMENTS_BUCKET="mpcontribs-attachments-{{ cfg.s3 }}",
-    S3_IMAGES_BUCKET="mpcontribs-images-{{ cfg.s3 }}",
     MPCONTRIBS_MONGO__ADMIN_GROUP="admin_{{ deployment }}.materialsproject.org"
 {% endset %}
 
