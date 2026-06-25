@@ -10,6 +10,4 @@ PMGRC=$HOME/.pmgrc.yaml
 
 set -x
 
-# No wait for the OTLP collector: the OTEL batch processors tolerate an unavailable endpoint
-# (they retry and drop), so startup must not block on it.
-exec uvicorn mpcontribs_api.app:app --host 0.0.0.0 --port "$API_PORT"
+exec uvicorn mpcontribs_api.app:app --host 0.0.0.0 --port "$API_PORT" --workers "${NWORKERS:-2}"
