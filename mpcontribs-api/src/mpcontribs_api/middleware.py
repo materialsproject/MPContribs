@@ -37,13 +37,11 @@ _PROCESS = {
     "id": os.getpid(),
 }
 
-# Lowercased ASGI byte header name -> structlog context key.
-_LOGGED_HEADERS: dict[bytes, str] = {
-    b"user-agent": "user_agent",
+# Optional request headers folded into the access log's ``http.*`` block, only when sent.
+_ACCESS_LOG_HEADERS: dict[bytes, str] = {
     b"accept": "accept",
     b"accept-language": "accept_language",
     b"accept-encoding": "accept_encoding",
-    b"referer": "referer",
     b"content-type": "content_type",
     b"content-length": "content_length",
 }
@@ -83,10 +81,6 @@ class RequestContextMiddleware:
         raw_consumer_id = headers.get(b"x-consumer-id")
         if raw_consumer_id is not None:
             context["consumer_id"] = raw_consumer_id.decode()
-        for header_name, log_key in _LOGGED_HEADERS.items():
-            value = headers.get(header_name)
-            if value is not None:
-                context[log_key] = value.decode("latin-1")
 
         structlog.contextvars.clear_contextvars()
         structlog.contextvars.bind_contextvars(**context)
@@ -134,16 +128,22 @@ class RequestContextMiddleware:
         client = scope.get("client")
         client_ip = forwarded_for.split(",")[0].strip() if forwarded_for else (client[0] if client else "")
 
+        http: dict[str, object] = {
+            "method": scope["method"],
+            "status_code": status_code,
+            "url": url,
+            "referer": headers.get(b"referer", b"-").decode("latin-1"),
+            "useragent": headers.get(b"user-agent", b"").decode("latin-1"),
+            "version": scope.get("http_version", "1.1"),
+        }
+        for header_name, http_key in _ACCESS_LOG_HEADERS.items():
+            value = headers.get(header_name)
+            if value is not None:
+                http[http_key] = value.decode("latin-1")
+
         _access_logger.info(
             "http.access",
-            http={
-                "method": scope["method"],
-                "status_code": status_code,
-                "url": url,
-                "referer": headers.get(b"referer", b"-").decode("latin-1"),
-                "useragent": headers.get(b"user-agent", b"").decode("latin-1"),
-                "version": scope.get("http_version", "1.1"),
-            },
+            http=http,
             network={"bytes_written": bytes_written, "client": {"ip": client_ip}},
             duration=duration_ns,  # Datadog standard `duration` is nanoseconds
             response_time=duration_ns // 1000,  # microseconds, matches the old gunicorn %(D)s
