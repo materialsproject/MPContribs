@@ -4,7 +4,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends supervisor libo
 WORKDIR /app
 
 FROM base AS builder
-RUN apt-get update && apt-get install -y --no-install-recommends gcc git g++ wget liblapack-dev && apt-get clean
+RUN apt-get update && apt-get install -y --no-install-recommends gcc git g++ wget liblapack-dev libsnappy-dev && apt-get clean
 RUN pip install uv
 COPY pyproject.toml uv.lock ./
 COPY src src
