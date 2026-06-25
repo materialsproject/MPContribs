@@ -50,3 +50,15 @@ class User(BaseModel):
 
     def has_role(self, role: str) -> bool:
         return role in self.groups
+
+    @property
+    def writable_projects(self) -> frozenset[str]:
+        """Projects this user may write to. Admins are unbounded (handled by can_write)"""
+        if self.is_anonymous:
+            return frozenset()
+        # exclude the admin sentinel so it never leaks into a $in / membership test
+        return frozenset(g for g in self.groups if g != ADMIN_GROUP)
+
+    def can_write(self, project: str) -> bool:
+        """Single source of truth for write authorization."""
+        return self.is_admin or project in self.writable_projects

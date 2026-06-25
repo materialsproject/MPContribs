@@ -143,7 +143,7 @@ class ContributionService:
         remaining: list[int] = []
         for i in indices:
             contrib = contributions[i]
-            if self._user.is_admin or contrib.project in self._user.groups:
+            if self._user.can_write(contrib.project):
                 remaining.append(i)
             else:
                 unauthorized.append(
