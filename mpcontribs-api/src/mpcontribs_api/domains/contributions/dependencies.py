@@ -22,6 +22,7 @@ ContributionDep = Annotated[MongoDbContributionRepository, Depends(get_scoped_co
 def get_contribution_service(user: UserDep, client: MongoClientDep) -> ContributionService:
     return ContributionService(
         client=client,
+        user=user,
         contributions=MongoDbContributionRepository(user),
         structures=MongoDbStructureRepository(user),
         attachments=MongoDbAttachmentRepository(user),
