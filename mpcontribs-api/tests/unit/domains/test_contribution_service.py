@@ -7,6 +7,7 @@ from beanie import PydanticObjectId
 from pymatgen.core import Element
 from pymongo.errors import BulkWriteError
 
+from mpcontribs_api.authz import ADMIN_GROUP, User
 from mpcontribs_api.config import MongoSettings
 from mpcontribs_api.domains.attachments.models import Attachment, AttachmentIn
 from mpcontribs_api.domains.contributions.models import Contribution, ContributionIn
@@ -135,6 +136,12 @@ def _make_fake_client() -> tuple[AsyncMock, MagicMock]:
     return client, session
 
 
+def _admin_user() -> User:
+    """An admin user — bypasses project write authorization, so tests not exercising authz
+    keep their previous behavior."""
+    return User(username="admin", groups=frozenset({ADMIN_GROUP}))
+
+
 def _make_service(
     contributions=None,
     structures=None,
@@ -143,6 +150,7 @@ def _make_service(
     client=None,
     settings: MongoSettings | None = None,
     write_slots: asyncio.Semaphore | None = None,
+    user: User | None = None,
 ) -> tuple[ContributionService, AsyncMock, AsyncMock, AsyncMock, AsyncMock, MagicMock]:
     contrib_repo = contributions or AsyncMock()
     struct_repo = structures or AsyncMock()
@@ -152,6 +160,7 @@ def _make_service(
         client, _ = _make_fake_client()
     svc = ContributionService(
         client=client,
+        user=user or _admin_user(),
         contributions=contrib_repo,
         structures=struct_repo,
         tables=table_repo,
@@ -569,6 +578,90 @@ class TestUpsertContributionsAtomic:
         assert len(summary.succeeded) == 2
         assert [f.index for f in summary.failed] == [1]
         assert summary.failed[0].error_code == "conflict"
+
+
+# ---------------------------------------------------------------------------
+# Project-scoped write authorization (insert + upsert)
+# ---------------------------------------------------------------------------
+
+
+def _member_user(*projects: str) -> User:
+    """Non-admin user whose writable projects are exactly ``projects``."""
+    return User(username="alice", groups=frozenset(projects))
+
+
+class TestWriteAuthorization:
+    async def test_insert_rejects_unauthorized_project_per_item(self):
+        svc, contrib_repo, struct_repo, _, _, client = _make_service(user=_member_user("allowed"))
+        contrib_repo.insert_many_contributions.return_value = None
+
+        contribs = [
+            _contrib_in(project="allowed", identifier="ok"),
+            _contrib_in(project="forbidden", identifier="nope"),
+        ]
+        summary = await svc.insert_contributions(contribs)
+
+        assert summary.total == 2
+        assert len(summary.succeeded) == 1
+        assert [f.index for f in summary.failed] == [1]
+        assert summary.failed[0].error_code == "permission_denied"
+        assert "forbidden" in summary.failed[0].message
+        # Only the authorized item reached Mongo
+        contrib_repo.insert_many_contributions.assert_called_once()
+
+    async def test_insert_admin_bypasses_authorization(self):
+        svc, contrib_repo, *_ = _make_service()  # default user is admin
+        contrib_repo.insert_many_contributions.return_value = None
+
+        contribs = [_contrib_in(project="anything", identifier=f"mp-{i}") for i in range(2)]
+        summary = await svc.insert_contributions(contribs)
+
+        assert summary.total == 2
+        assert len(summary.succeeded) == 2
+        assert summary.failed == []
+
+    async def test_insert_unauthorized_and_oversize_yield_single_failure(self):
+        """An item that is both unauthorized and oversize must produce exactly one BulkFailure
+        (authorization runs first), preserving total == len(contributions)."""
+        settings = _make_mongo_settings(max_components_per_contribution=1)
+        svc, contrib_repo, struct_repo, _, _, _ = _make_service(user=_member_user("allowed"), settings=settings)
+
+        bad = _contrib_in(project="forbidden", identifier="big", structures=[_structure_in(), _structure_in()])
+        summary = await svc.insert_contributions([bad])
+
+        assert summary.total == 1
+        assert len(summary.failed) == 1
+        assert summary.failed[0].index == 0
+        assert summary.failed[0].error_code == "permission_denied"
+        struct_repo.insert_components.assert_not_called()
+
+    async def test_upsert_rejects_unauthorized_project_per_item(self):
+        svc, contrib_repo, *_ = _make_service(user=_member_user("allowed"))
+        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
+
+        contribs = [
+            _contrib_in(project="allowed", identifier="ok"),
+            _contrib_in(project="forbidden", identifier="nope"),
+        ]
+        summary = await svc.upsert_contributions(contribs)
+
+        assert summary.total == 2
+        assert len(summary.succeeded) == 1
+        assert [f.index for f in summary.failed] == [1]
+        assert summary.failed[0].error_code == "permission_denied"
+        assert "forbidden" in summary.failed[0].message
+        # Only the authorized item reached the atomic repo method
+        contrib_repo.upsert_contribution_by_identifiers.assert_called_once()
+
+    async def test_upsert_anonymous_authorized_for_nothing(self):
+        svc, contrib_repo, *_ = _make_service(user=User())  # anonymous: no username, no groups
+
+        summary = await svc.upsert_contributions([_contrib_in(project="any", identifier="x")])
+
+        assert summary.total == 1
+        assert summary.succeeded == []
+        assert [f.error_code for f in summary.failed] == ["permission_denied"]
+        contrib_repo.upsert_contribution_by_identifiers.assert_not_called()
 
 
 # ---------------------------------------------------------------------------
