@@ -29,7 +29,6 @@ dependencies = [
     # "pint>=0.24",
     # "psycopg2-binary",
     # "rq<=2.3.2",  # see https://github.com/rq/Flask-RQ2/issues/620
-    # "supervisor",
     # "setproctitle",
     # "uncertainties",
     # "websocket_client",
@@ -49,6 +48,8 @@ dependencies = [
     "aioboto3>=15.5.0",
     "types-aiobotocore[s3]>=3.7.0",
     "polars>=1.41.2",
+    "supervisor>=4.3.0",
+    "python-snappy>=0.7.3",
 ]
 
 [project.urls]
