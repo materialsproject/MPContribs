@@ -46,9 +46,8 @@ class MongoDbContributionRepository(
         if user.is_admin:
             return {}
         ors: list[dict[str, Any]] = [{"is_public": True}]
-        if not user.is_anonymous:
-            if user.groups:
-                ors.append({"project": {"$in": sorted(user.groups)}})
+        if user.writable_projects:
+            ors.append({"project": {"$in": sorted(user.writable_projects)}})
         return {"$or": ors}
 
     async def get_contributions(
@@ -209,7 +208,7 @@ class MongoDbContributionRepository(
             Contribution: the document as it stands after the operation
         """
         # Make sure the user is allowed to upsert a contribution under the provided project
-        if not self._user.is_admin and identifiers["project"] not in self._user.groups:
+        if not self._user.can_write(identifiers["project"]):
             raise PermissionError(f"not authorized to write to project '{identifiers['project']}'")
 
         doc = self.document_model.from_input_model(contribution)
