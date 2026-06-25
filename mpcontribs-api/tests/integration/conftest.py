@@ -74,8 +74,12 @@ def make_test_app() -> FastAPI:
     register_exception_handlers(app)
 
     from mpcontribs_api.api.v1.router import router as v1_router
+    from mpcontribs_api.domains._redirects.router import router as redirects_router
 
     app.include_router(v1_router, prefix="/api/v1")
+    # Mounted last (root path), exactly as in the real app, so legacy-endpoint
+    # redirect/deprecation behaviour is exercised by integration tests.
+    app.include_router(redirects_router)
     return app
 
 
