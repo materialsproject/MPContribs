@@ -18,6 +18,7 @@ from mpcontribs_api.domains.contributions.models import (
     ContributionOut,
     ContributionPatch,
 )
+from mpcontribs_api.exceptions import PermissionError
 from mpcontribs_api.pagination import CursorParams
 
 
@@ -207,6 +208,10 @@ class MongoDbContributionRepository(
         Returns:
             Contribution: the document as it stands after the operation
         """
+        # Make sure the user is allowed to upsert a contribution under the provided project
+        if not self._user.is_admin and identifiers["project"] not in self._user.groups:
+            raise PermissionError(f"not authorized to write to project '{identifiers['project']}'")
+
         doc = self.document_model.from_input_model(contribution)
         update_data = doc.model_dump(exclude={"id"}, exclude_none=True)
         query = self.document_model.find_one(

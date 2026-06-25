@@ -1,5 +1,6 @@
 import asyncio
 from collections import defaultdict
+from collections.abc import Iterable
 from typing import cast
 
 import structlog
@@ -8,6 +9,7 @@ from pymongo import AsyncMongoClient
 from pymongo.asynchronous.client_session import AsyncClientSession
 from pymongo.errors import BulkWriteError
 
+from mpcontribs_api.authz import User
 from mpcontribs_api.config import MongoSettings, get_settings
 from mpcontribs_api.domains._shared.bulk import (
     BulkDeleteSummary,
@@ -23,7 +25,7 @@ from mpcontribs_api.domains.structures.models import Structure
 from mpcontribs_api.domains.structures.repository import MongoDbStructureRepository
 from mpcontribs_api.domains.tables.models import Table
 from mpcontribs_api.domains.tables.repository import MongoDbTableRepository
-from mpcontribs_api.exceptions import AppError, ValidationError
+from mpcontribs_api.exceptions import AppError, PermissionError, ValidationError
 from mpcontribs_api.pagination import CursorParams
 
 logger = structlog.get_logger(__name__)
@@ -33,6 +35,7 @@ class ContributionService:
     def __init__(
         self,
         client: AsyncMongoClient,
+        user: User,
         contributions: MongoDbContributionRepository,
         structures: MongoDbStructureRepository,
         attachments: MongoDbAttachmentRepository,
@@ -40,6 +43,7 @@ class ContributionService:
         settings: MongoSettings | None = None,
     ):
         self._client = client
+        self._user = user
         self._contributions = contributions
         self._structures = structures
         self._attachments = attachments
@@ -80,7 +84,7 @@ class ContributionService:
 
         self._reject_duplicate_keys(contributions)
 
-        oversize_failures, remaining_indices = self._split_oversize(contributions)
+        failures, remaining_indices = self._split_contributions(contributions)
         no_comp_indices = [i for i in remaining_indices if not contributions[i].has_components()]
         with_comp_indices = [i for i in remaining_indices if contributions[i].has_components()]
 
@@ -95,7 +99,7 @@ class ContributionService:
 
         succeeded = [doc for _, doc in sorted(no_comp_succeeded + with_comp_succeeded, key=lambda p: p[0])]
         failed = sorted(
-            oversize_failures + no_comp_failed + with_comp_failed,
+            failures + no_comp_failed + with_comp_failed,
             key=lambda f: f.index,
         )
         return BulkWriteSummary[Contribution](total=len(contributions), succeeded=succeeded, failed=failed)
@@ -120,24 +124,61 @@ class ContributionService:
                 contribution_indices=duplicates,
             )
 
-    def _split_oversize(self, contributions: list[ContributionIn]) -> tuple[list[BulkFailure], list[int]]:
+    def _split_unauthorized(
+        self,
+        indices: Iterable[int],
+        contributions: list[ContributionIn],
+    ) -> tuple[list[BulkFailure], list[int]]:
+        """Reject contributions whose ``project`` the current user is not permitted to write.
+
+        Authorized iff the user is an admin (writes anything) or the contribution's ``project`` is
+        one of the user's groups. Anonymous users are blocked at the router, but carry no groups and
+        are not admins, so they fall through to authorized-for-nothing here (defense-in-depth).
+
+        Partitions ``indices`` into unauthorized ``BulkFailure`` entries and the remaining authorized
+        indices that should proceed. Mirrors ``_split_oversize`` (same shape) so callers can chain
+        the splits and keep each index in exactly one bucket, preserving input ordering.
+        """
+        unauthorized: list[BulkFailure] = []
+        remaining: list[int] = []
+        for i in indices:
+            contrib = contributions[i]
+            if self._user.is_admin or contrib.project in self._user.groups:
+                remaining.append(i)
+            else:
+                unauthorized.append(
+                    BulkFailure(
+                        index=i,
+                        identifier=contrib.identifiers(),
+                        error_code=PermissionError.error_code,
+                        message=f"not authorized to write to project '{contrib.project}'",
+                    )
+                )
+        return unauthorized, remaining
+
+    def _split_oversize(
+        self,
+        indices: Iterable[int],
+        contributions: list[ContributionIn],
+    ) -> tuple[list[BulkFailure], list[int]]:
         """Reject contributions whose component count exceeds the per-contribution ceiling.
 
-        Returns the failure entries for the oversize items and the indices of the remaining items
-        that should proceed to Mongo. Doing this upfront avoids burning a transaction slot on a
-        request guaranteed to exceed transactionLifetimeLimitSeconds.
+        Partitions ``indices`` into oversize ``BulkFailure`` entries and the remaining indices that
+        should proceed to Mongo. Doing this upfront avoids burning a transaction slot on a request
+        guaranteed to exceed transactionLifetimeLimitSeconds.
         """
         cap = self._settings.max_components_per_contribution
         oversize: list[BulkFailure] = []
         remaining: list[int] = []
-        for i, contrib in enumerate(contributions):
+        for i in indices:
+            contrib = contributions[i]
             count = contrib.component_count()
             if count > cap:
                 oversize.append(
                     BulkFailure(
                         index=i,
                         identifier=contrib.identifiers(),
-                        error_code="validation_error",
+                        error_code=ValidationError.error_code,
                         message=f"contribution has {count} components, exceeds cap of {cap}. "
                         "Recommend inserting the component alone, followed by bulk inserts of components",
                     )
@@ -145,6 +186,19 @@ class ContributionService:
             else:
                 remaining.append(i)
         return oversize, remaining
+
+    def _split_contributions(self, contributions) -> tuple[list[BulkFailure], list[int]]:
+        """Common method for validating contribution write failure logic
+
+        Returns:
+            tuple[list[BulkFailure], list[int]]: a tuple containing a list of failures and their reasons,
+            and the indices of valid contributions from 'contributions' to write
+        """
+        # Per-item project authorization (see _split_unauthorized for the per-item vs fail-fast
+        # decision). Only authorized items reach Mongo; the rest are reported in ``failed``.
+        unauthorized_failures, authorized_indices = self._split_unauthorized(range(len(contributions)), contributions)
+        oversize_failures, remaining_indices = self._split_oversize(authorized_indices, contributions)
+        return (unauthorized_failures + oversize_failures, remaining_indices)
 
     async def _insert_no_components(
         self,
@@ -288,6 +342,8 @@ class ContributionService:
                 contribution_indices=indices_with_components,
             )
 
+        failures, remaining_indices = self._split_contributions(contributions)
+
         sem = asyncio.Semaphore(self._settings.max_concurrent_transactions)
 
         async def _bounded_upsert(index: int, contrib: ContributionIn) -> Contribution | BulkFailure:
@@ -300,9 +356,9 @@ class ContributionService:
                     )
                     return bulk_failure_from_exception(index, contrib.identifiers(), exc)
 
-        results = await asyncio.gather(*[_bounded_upsert(i, c) for i, c in enumerate(contributions)])
+        results = await asyncio.gather(*[_bounded_upsert(i, contributions[i]) for i in remaining_indices])
         succeeded = [r for r in results if not isinstance(r, BulkFailure)]
-        failed = [r for r in results if isinstance(r, BulkFailure)]
+        failed = failures + [r for r in results if isinstance(r, BulkFailure)]
         return BulkWriteSummary[Contribution](total=len(contributions), succeeded=succeeded, failed=failed)
 
     async def delete_contributions(self, filter: ContributionFilter) -> BulkDeleteSummary:
