@@ -6,6 +6,10 @@ WORKDIR /app
 FROM base AS builder
 RUN apt-get update && apt-get install -y --no-install-recommends gcc git g++ wget liblapack-dev libsnappy-dev && apt-get clean
 RUN pip install uv
+# Build the venv OUTSIDE /app: docker-compose bind-mounts the host source over
+# /app for live reload, which would mask a /app/.venv and leave `python` falling
+# back to the system interpreter (missing deps)
+ENV UV_PROJECT_ENVIRONMENT=/opt/venv
 COPY pyproject.toml uv.lock ./
 COPY src src
 ARG CONTRIBS_VERSION
@@ -15,8 +19,8 @@ RUN wget -q https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-
 
 FROM base
 ARG BUILDARCH
-ENV BUILDARCH=x86_64
-COPY --from=builder /app/.venv /app/.venv
+ARG BUILDARCH=aarch64
+COPY --from=builder /opt/venv /opt/venv
 COPY --from=builder /usr/local/bin/wait-for-it.sh /usr/local/bin/
 
 WORKDIR /app
@@ -32,7 +36,7 @@ ARG VERSION
 # Telemetry (traces/metrics/logs) is emitted via OTLP to the Datadog Agent's OTLP receiver; the
 # endpoint and other OTEL settings are configured per-environment in supervisord.conf.jinja
 # (MPCONTRIBS_OTEL__*). No Datadog-specific app config lives here.
-ENV PATH="/app/.venv/bin:$PATH"
+ENV PATH="/opt/venv/bin:$PATH"
 
 EXPOSE 10000 10002 10003 10005 20000
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
