@@ -6,14 +6,11 @@ pidfile=/tmp/supervisord.pid
 environment=
     MPCONTRIBS_ENVIRONMENT="{{ environment }}",
     MPCONTRIBS_VERSION="{{ version }}",
-    MPCONTRIBS_MONGO__URI="%(ENV_MPCONTRIBS_MONGO__URI)s",
     {% if not production %}
     AWS_ACCESS_KEY_ID="%(ENV_AWS_ACCESS_KEY_ID)s",
     AWS_SECRET_ACCESS_KEY="%(ENV_AWS_SECRET_ACCESS_KEY)s",
     {% endif %}
     METADATA_URI="%(ENV_ECS_CONTAINER_METADATA_URI_V4)s",
-    MPCONTRIBS_REDIS__ADDRESS="%(ENV_REDIS_ADDRESS)s",
-    MPCONTRIBS_REDIS__URL="%(ENV_REDIS_URL)s",
     AWS_REGION="us-east-1",
     AWS_DEFAULT_REGION="us-east-1",
     MPCONTRIBS_MAIL_DEFAULT_SENDER="contribs@materialsproject.org",
@@ -64,7 +61,6 @@ stderr_logfile_maxbytes=0
 environment=
     DEPLOYMENT={{ loop.index0 }},
     API_PORT={{ cfg.api_port }},
-    MPCONTRIBS_MONGO__DB_NAME="mpcontribs-{{ cfg.db }}",
     MPCONTRIBS_MONGO__ADMIN_GROUP="admin_{{ deployment }}.materialsproject.org"
 {% endset %}
 
