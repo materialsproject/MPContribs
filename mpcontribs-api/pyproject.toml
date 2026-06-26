@@ -25,7 +25,6 @@ authors = [
     {name="The Materials Project", email="feedback@materialsproject.org"},
 ]
 dependencies = [
-    # "jinja2",
     # "pint>=0.24",
     # "psycopg2-binary",
     # "rq<=2.3.2",  # see https://github.com/rq/Flask-RQ2/issues/620
@@ -33,23 +32,24 @@ dependencies = [
     # "uncertainties",
     # "websocket_client",
     # "zstandard",
+    "aioboto3>=15.5.0",
+    "beanie>=2.1.0",
     "fastapi[standard]>=0.136.3",
-    "pymatgen",
-    "pymongo>=4.17.0",
-    "pydantic-settings>=2.14.1",
-    "structlog>=25.5.0",
+    "fastapi-filter>=2.0.1",
+    "jinja2",
     "opentelemetry-api>=1.42.1",
-    "opentelemetry-sdk>=1.42.1",
     "opentelemetry-exporter-otlp-proto-grpc>=1.42.1",
     "opentelemetry-instrumentation-fastapi>=0.63b1",
     "opentelemetry-instrumentation-pymongo>=0.63b1",
-    "beanie>=2.1.0",
-    "fastapi-filter>=2.0.1",
-    "aioboto3>=15.5.0",
-    "types-aiobotocore[s3]>=3.7.0",
+    "opentelemetry-sdk>=1.42.1",
     "polars>=1.41.2",
-    "supervisor>=4.3.0",
+    "pydantic-settings>=2.14.1",
+    "pymatgen",
+    "pymongo>=4.17.0",
     "python-snappy>=0.7.3",
+    "structlog>=25.5.0",
+    "supervisor>=4.3.0",
+    "types-aiobotocore[s3]>=3.7.0",
 ]
 
 [project.urls]
