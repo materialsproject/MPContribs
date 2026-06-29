@@ -32,7 +32,7 @@ beautifulsoup4==4.14.3
     # via nbconvert
 bibtexparser==1.4.4
     # via pymatgen-core
-bleach[css]==6.3.0
+bleach[css]==6.4.0
     # via nbconvert
 blinker==1.9.0
     # via mpcontribs-api (pyproject.toml)
@@ -206,7 +206,7 @@ jupyter-core==5.9.1
     #   notebook
 jupyter-events==0.12.1
     # via jupyter-server
-jupyter-server==2.18.2
+jupyter-server==2.20.0
     # via notebook-shim
 jupyter-server-terminals==0.5.4
     # via jupyter-server
@@ -470,7 +470,7 @@ terminado==0.18.1
     #   notebook
 tinycss2==1.4.0
     # via bleach
-tornado==6.5.5
+tornado==6.5.7
     # via
     #   ipykernel
     #   jupyter-client
