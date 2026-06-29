@@ -18,8 +18,7 @@ from mpcontribs_api.pagination import CursorParams
 router = APIRouter()
 
 
-# Brendan TODO: Add in option to select ProjectSummary or ProjectOut
-@router.get("", response_model=None)
+@router.get("")
 async def get_projects(
     repo: ProjectDep,
     pagination: Annotated[CursorParams, Depends()],
@@ -40,7 +39,7 @@ async def get_projects(
     return await repo.get_projects(filter=filter, pagination=pagination, fields=selected)
 
 
-@router.get("/{id}", response_model=ProjectOut)
+@router.get("/{id}")
 async def get_project_by_id(
     id: str,
     repo: ProjectDep,
