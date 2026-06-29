@@ -143,6 +143,52 @@ class TestGetProjectById:
 
 
 # ---------------------------------------------------------------------------
+# get_projects — id filtering
+#
+# Regression: Beanie stores the primary key under Mongo's ``_id`` (``id`` is an
+# alias), but fastapi-filter keys queries on the raw field name. Without the
+# ``id`` -> ``_id`` remap in BaseFilter these filters matched nothing even
+# though get_project_by_id (which queries ``_id`` directly) found the document.
+# ---------------------------------------------------------------------------
+
+
+class TestGetProjectsIdFilter:
+    async def test_filter_by_id_matches(self, db):
+        from mpcontribs_api.domains.projects.models import ProjectFilter
+
+        await _insert("filter-id-hit")
+        page = await _repo(ADMIN).get_projects(
+            filter=ProjectFilter(id="filter-id-hit"), pagination=CursorParams(), fields=None
+        )
+        assert {p.id for p in page.items} == {"filter-id-hit"}
+
+    async def test_filter_by_id_in_matches(self, db):
+        from mpcontribs_api.domains.projects.models import ProjectFilter
+
+        await _insert("filter-id-in-a")
+        await _insert("filter-id-in-b")
+        await _insert("filter-id-in-c")
+        page = await _repo(ADMIN).get_projects(
+            filter=ProjectFilter(id__in=["filter-id-in-a", "filter-id-in-b"]),
+            pagination=CursorParams(),
+            fields=None,
+        )
+        assert {p.id for p in page.items} == {"filter-id-in-a", "filter-id-in-b"}
+
+    async def test_filter_by_id_neq_excludes(self, db):
+        from mpcontribs_api.domains.projects.models import ProjectFilter
+
+        await _insert("filter-id-neq-keep")
+        await _insert("filter-id-neq-drop")
+        page = await _repo(ADMIN).get_projects(
+            filter=ProjectFilter(id__neq="filter-id-neq-drop"), pagination=CursorParams(), fields=None
+        )
+        ids = {p.id for p in page.items}
+        assert "filter-id-neq-keep" in ids
+        assert "filter-id-neq-drop" not in ids
+
+
+# ---------------------------------------------------------------------------
 # Field projection
 # ---------------------------------------------------------------------------
 

@@ -14,10 +14,10 @@ from beanie import (
 )
 from bson.errors import InvalidId
 from fastapi_filter import FilterDepends, with_prefix
-from fastapi_filter.contrib.beanie import Filter
 from pydantic import BeforeValidator, Field, field_validator
 from pymongo import ASCENDING, IndexModel
 
+from mpcontribs_api.domains._shared.filters import BaseFilter
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
 from mpcontribs_api.domains._shared.types import ShortStr
 from mpcontribs_api.domains.attachments.models import Attachment, AttachmentFilter, AttachmentIn
@@ -188,7 +188,7 @@ class ContributionPatch(SparseFieldsModel):
     attachments: list[Link[Attachment]] | None = None
 
 
-class ContributionFilter(Filter):
+class ContributionFilter(BaseFilter):
     id: PydanticObjectId | None = None
     id__in: list[PydanticObjectId] | None = None
     id__neq: PydanticObjectId | None = None
@@ -214,7 +214,7 @@ class ContributionFilter(Filter):
     # sorting
     order_by: list[str] | None = None
 
-    class Constants(Filter.Constants):
+    class Constants(BaseFilter.Constants):
         model = Contribution
 
     @field_validator("id", mode="before")

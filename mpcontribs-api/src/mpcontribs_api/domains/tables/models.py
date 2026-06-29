@@ -3,7 +3,6 @@ from typing import Any, Self
 
 import polars as pl
 from beanie import PydanticObjectId
-from fastapi_filter.contrib.beanie import Filter
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -11,6 +10,7 @@ from pydantic import (
     model_validator,
 )
 
+from mpcontribs_api.domains._shared.filters import BaseFilter
 from mpcontribs_api.domains._shared.models import Component, ComponentIn, DocumentOut
 from mpcontribs_api.domains._shared.types import MD5Hash, PolarsFrame
 from mpcontribs_api.projection import SparseFieldsModel
@@ -97,7 +97,7 @@ class TableIn(ComponentIn):
     data: PolarsFrame
 
 
-class TableFilter(Filter):
+class TableFilter(BaseFilter):
     id: PydanticObjectId | None = None
     id__in: list[PydanticObjectId] | None = None
     id__neq: PydanticObjectId | None = None
@@ -117,7 +117,7 @@ class TableFilter(Filter):
     # sorting
     order_by: list[str] | None = None
 
-    class Constants(Filter.Constants):
+    class Constants(BaseFilter.Constants):
         model = Table
 
     @field_serializer("id", "id__in", "id__neq")

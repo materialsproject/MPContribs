@@ -1,7 +1,7 @@
 from beanie import PydanticObjectId
-from fastapi_filter.contrib.beanie import Filter
 from pydantic import field_validator
 
+from mpcontribs_api.domains._shared.filters import BaseFilter
 from mpcontribs_api.domains._shared.models import Component, ComponentIn, DocumentOut
 from mpcontribs_api.domains._shared.types import FileLike, MD5Hash, MimeFormat
 from mpcontribs_api.exceptions import ValidationError
@@ -64,7 +64,7 @@ class AttachmentPatch(SparseFieldsModel):
     content: int | None = None
 
 
-class AttachmentFilter(Filter):
+class AttachmentFilter(BaseFilter):
     id: PydanticObjectId | None = None
     id__in: list[PydanticObjectId] | None = None
     id__neq: PydanticObjectId | None = None
@@ -86,5 +86,5 @@ class AttachmentFilter(Filter):
     # sorting
     order_by: list[str] | None = None
 
-    class Constants(Filter.Constants):
+    class Constants(BaseFilter.Constants):
         model = Attachment
