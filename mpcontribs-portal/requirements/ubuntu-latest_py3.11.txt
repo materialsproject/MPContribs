@@ -56,7 +56,7 @@ decorator==5.3.1
     # via ipython
 defusedxml==0.7.1
     # via nbconvert
-django==4.2.30
+django==6.0.6
     # via
     #   django-extensions
     #   django-settings-file
