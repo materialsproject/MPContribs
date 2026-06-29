@@ -1,8 +1,8 @@
 from beanie import PydanticObjectId
-from fastapi_filter.contrib.beanie import Filter
 from pydantic import BaseModel, ConfigDict
 from pymatgen.core import Element
 
+from mpcontribs_api.domains._shared.filters import BaseFilter
 from mpcontribs_api.domains._shared.models import Component, ComponentIn, DocumentOut
 from mpcontribs_api.domains._shared.types import MD5Hash, PolarsFrame
 from mpcontribs_api.projection import SparseFieldsModel
@@ -92,7 +92,7 @@ class StructurePatch(SparseFieldsModel):
     cif: str | None = None
 
 
-class StructureFilter(Filter):
+class StructureFilter(BaseFilter):
     id: PydanticObjectId | None = None
     id__in: list[PydanticObjectId] | None = None
     id__neq: PydanticObjectId | None = None
@@ -111,5 +111,5 @@ class StructureFilter(Filter):
     # sorting
     order_by: list[str] | None = None
 
-    class Constants(Filter.Constants):
+    class Constants(BaseFilter.Constants):
         model = Structure

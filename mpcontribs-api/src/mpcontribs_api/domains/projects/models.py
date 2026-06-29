@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from fastapi_filter.contrib.beanie import Filter
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 
 from mpcontribs_api import pagination
+from mpcontribs_api.domains._shared.filters import BaseFilter
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
 from mpcontribs_api.domains._shared.types import PrefixedEmail, ShortStr
 
@@ -100,7 +100,7 @@ class ProjectOut(DocumentOut[ShortStr]):
         return ["id", "is_public", "title", "owner", "is_approved", "unique_identifiers"]
 
 
-class ProjectFilter(Filter):
+class ProjectFilter(BaseFilter):
     """Filter fields allowed in requests."""
 
     id: ShortStr | None = None
@@ -130,7 +130,7 @@ class ProjectFilter(Filter):
     # sorting
     order_by: list[str] | None = None
 
-    class Constants(Filter.Constants):
+    class Constants(BaseFilter.Constants):
         model = Project
 
 
