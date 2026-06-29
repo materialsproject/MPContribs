@@ -1,0 +1,20 @@
+# Run the dev server (auto-reloads on file changes)
+dev:
+    uv run fastapi dev src/mpcontribs_api/app.py
+
+# Format, fix, and lint all source code
+fmt:
+    uv run ruff format
+    -uv run ruff check --fix
+    -uv run ruff check --fix --unsafe-fixes
+    -uv run pydocstringformatter --write
+
+test suite="all":
+    #!/usr/bin/env bash
+    case "{{suite}}" in
+      all|a)           uv run pytest tests/ ;;
+      integration|i)   uv run pytest tests/integration/ -m "not db" ;;
+      unit|u)          uv run pytest tests/unit/ ;;
+      db|d)            uv run pytest tests/integration/db/ -m db ;;
+      *) echo "unknown suite '{{suite}}' — use: all/a, integration/i, unit/u, db/d" && exit 1 ;;
+    esac
