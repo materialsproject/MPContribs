@@ -64,7 +64,7 @@ jsonpointer==2.3
     # via jsonschema
 jsonref==1.0.0.post1
     # via bravado-core
-jsonschema==3.2.0
+jsonschema[format]==3.2.0
     # via
     #   bravado-core
     #   mpcontribs-client
@@ -181,8 +181,6 @@ scipy==1.14.0
     # via pymatgen
 semantic-version==2.10.0
     # via mpcontribs-client
-setuptools==82.0.1
-    # via jsonschema
 simplejson==3.17.6
     # via
     #   bravado

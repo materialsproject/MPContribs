@@ -22,7 +22,7 @@ beautifulsoup4==4.14.3
     # via nbconvert
 bibtexparser==1.4.4
     # via pymatgen-core
-bleach[css]==6.3.0
+bleach[css]==6.4.0
     # via nbconvert
 blinker==1.9.0
     # via -r requirements.in

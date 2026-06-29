@@ -32,7 +32,7 @@ beautifulsoup4==4.14.3
     # via nbconvert
 bibtexparser==1.4.4
     # via pymatgen-core
-bleach[css]==6.3.0
+bleach[css]==6.4.0
     # via nbconvert
 blinker==1.9.0
     # via mpcontribs-api (pyproject.toml)
@@ -68,7 +68,7 @@ cramjam==2.11.0
     # via python-snappy
 crontab==1.0.5
     # via rq-scheduler
-cryptography==48.0.0
+cryptography==48.0.1
     # via pyopenssl
 css-html-js-minify==2.5.5
     # via mpcontribs-api (pyproject.toml)
