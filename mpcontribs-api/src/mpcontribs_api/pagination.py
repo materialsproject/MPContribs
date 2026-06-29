@@ -36,7 +36,9 @@ def encode_cursor(last_id: str) -> str:
 
 def decode_cursor(cursor: str) -> str:
     """Base64 decodes a cursor for pagination"""
+    # Re-add any base64 padding ('=') that may have been stripped in transit (e.g. via URLs).
+    padded = cursor + "=" * (-len(cursor) % 4)
     try:
-        return base64.urlsafe_b64decode(cursor.encode()).decode()
+        return base64.urlsafe_b64decode(padded.encode()).decode()
     except ValueError, UnicodeDecodeError:
         raise ValueError("malformed cursor") from None
