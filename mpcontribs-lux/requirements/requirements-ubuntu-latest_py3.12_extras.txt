@@ -28,7 +28,7 @@ emmet-core==0.86.2
     # via mpcontribs-lux (pyproject.toml)
 execnet==2.1.2
     # via pytest-xdist
-filelock==3.20.3
+filelock==3.29.4
     # via virtualenv
 flake8==7.3.0
     # via mpcontribs-lux (pyproject.toml)
@@ -36,7 +36,7 @@ fonttools==4.61.0
     # via matplotlib
 identify==2.6.15
     # via pre-commit
-idna==3.15
+idna==3.18
     # via requests
 iniconfig==2.3.0
     # via pytest
@@ -80,7 +80,7 @@ numpy==2.3.5
     #   pymatgen-io-validation
     #   scipy
     #   spglib
-orjson==3.11.6
+orjson==3.11.9
     # via pymatgen
 packaging==25.0
     # via
@@ -107,7 +107,7 @@ pluggy==1.6.0
     #   pytest-cov
 pre-commit==4.5.0
     # via mpcontribs-lux (pyproject.toml)
-pyarrow==22.0.0
+pyarrow==23.0.1
     # via mpcontribs-lux (pyproject.toml)
 pybtex==0.25.1
     # via emmet-core
@@ -142,7 +142,7 @@ pyparsing==3.2.5
     # via
     #   bibtexparser
     #   matplotlib
-pytest==9.0.3
+pytest==9.1.1
     # via
     #   mpcontribs-lux (pyproject.toml)
     #   pytest-cov
@@ -163,7 +163,7 @@ pyyaml==6.0.3
     # via
     #   pre-commit
     #   pybtex
-requests==2.33.0
+requests==2.34.2
     # via
     #   pymatgen
     #   pymatgen-io-validation
@@ -205,5 +205,5 @@ uncertainties==3.2.3
     # via pymatgen
 urllib3==2.7.0
     # via requests
-virtualenv==20.36.1
+virtualenv==21.5.1
     # via pre-commit
