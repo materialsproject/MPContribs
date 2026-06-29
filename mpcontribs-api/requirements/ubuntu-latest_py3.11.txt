@@ -206,7 +206,7 @@ jupyter-core==5.9.1
     #   notebook
 jupyter-events==0.12.1
     # via jupyter-server
-jupyter-server==2.18.2
+jupyter-server==2.20.0
     # via notebook-shim
 jupyter-server-terminals==0.5.4
     # via jupyter-server
@@ -472,7 +472,7 @@ terminado==0.18.1
     #   notebook
 tinycss2==1.4.0
     # via bleach
-tornado==6.5.5
+tornado==6.5.7
     # via
     #   ipykernel
     #   jupyter-client
