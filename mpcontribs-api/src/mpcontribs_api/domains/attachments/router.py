@@ -14,12 +14,12 @@ from mpcontribs_api.domains._shared.types import (
 )
 from mpcontribs_api.domains.attachments.dependencies import AttachmentServiceDep
 from mpcontribs_api.domains.attachments.models import AttachmentFilter, AttachmentOut
-from mpcontribs_api.pagination import CursorParams, Page
+from mpcontribs_api.pagination import CursorParams
 
 router = APIRouter()
 
 
-@router.get("", response_model=Page[AttachmentOut])
+@router.get("")
 async def get_attachments(
     service: AttachmentServiceDep,
     pagination: Annotated[CursorParams, Depends()],
@@ -30,7 +30,7 @@ async def get_attachments(
     return await service.get_many(filter=filter, fields=selected, pagination=pagination)
 
 
-@router.get("/{pk}", response_model=AttachmentOut)
+@router.get("/{pk}")
 async def get_attachment(
     service: AttachmentServiceDep,
     pk: str,

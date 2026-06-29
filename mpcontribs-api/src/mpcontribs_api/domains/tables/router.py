@@ -15,12 +15,12 @@ from mpcontribs_api.domains._shared.types import (
 )
 from mpcontribs_api.domains.tables.dependencies import TableServiceDep
 from mpcontribs_api.domains.tables.models import Table, TableFilter, TableIn, TableOut, TablePatch
-from mpcontribs_api.pagination import CursorParams, Page
+from mpcontribs_api.pagination import CursorParams
 
 router = APIRouter()
 
 
-@router.get("", response_model=Page[TableOut])
+@router.get("")
 async def get_tables(
     service: TableServiceDep,
     pagination: Annotated[CursorParams, Depends()],
@@ -31,7 +31,7 @@ async def get_tables(
     return await service.get_many(filter=filter, fields=selected, pagination=pagination)
 
 
-@router.get("/{pk}", response_model=TableOut)
+@router.get("/{pk}")
 async def get_table(
     service: TableServiceDep,
     pk: str,

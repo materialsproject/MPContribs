@@ -15,12 +15,12 @@ from mpcontribs_api.domains._shared.types import (
 )
 from mpcontribs_api.domains.structures.dependencies import StructureServiceDep
 from mpcontribs_api.domains.structures.models import StructureFilter, StructureIn, StructureOut, StructurePatch
-from mpcontribs_api.pagination import CursorParams, Page
+from mpcontribs_api.pagination import CursorParams
 
 router = APIRouter()
 
 
-@router.get("", response_model=Page[StructureOut])
+@router.get("")
 async def get_structures(
     service: StructureServiceDep,
     pagination: Annotated[CursorParams, Depends()],
@@ -31,7 +31,7 @@ async def get_structures(
     return await service.get_many(filter=filter, fields=selected, pagination=pagination)
 
 
-@router.get("/{pk}", response_model=StructureOut)
+@router.get("/{pk}")
 async def get_structure(
     service: StructureServiceDep,
     pk: str,
