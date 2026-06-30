@@ -1,6 +1,7 @@
 import asyncio
 from collections import defaultdict
 from collections.abc import Iterable
+from dataclasses import dataclass
 from typing import cast
 
 import structlog
@@ -21,14 +22,28 @@ from mpcontribs_api.domains._shared.repository import MongoDbRepository
 from mpcontribs_api.domains.attachments.repository import MongoDbAttachmentRepository
 from mpcontribs_api.domains.contributions.models import Contribution, ContributionFilter, ContributionIn
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
+from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
 from mpcontribs_api.domains.structures.models import Structure
 from mpcontribs_api.domains.structures.repository import MongoDbStructureRepository
 from mpcontribs_api.domains.tables.models import Table
 from mpcontribs_api.domains.tables.repository import MongoDbTableRepository
-from mpcontribs_api.exceptions import AppError, PermissionError, ValidationError
+from mpcontribs_api.exceptions import AppError, ConflictError, PermissionError, ValidationError
 from mpcontribs_api.pagination import CursorParams
 
 logger = structlog.get_logger(__name__)
+
+
+@dataclass(frozen=True, slots=True)
+class ResolvedWrite:
+    """A contribution that passed validation, paired with its server-resolved version.
+
+    Produced by the split pipeline so the resolved version travels with its contribution (and its
+    original batch index)
+    """
+
+    index: int
+    contribution: ContributionIn
+    version: int
 
 
 class ContributionService:
@@ -36,6 +51,7 @@ class ContributionService:
         self,
         client: AsyncMongoClient,
         user: User,
+        projects: MongoDbProjectRepository,
         contributions: MongoDbContributionRepository,
         structures: MongoDbStructureRepository,
         attachments: MongoDbAttachmentRepository,
@@ -44,6 +60,7 @@ class ContributionService:
     ):
         self._client = client
         self._user = user
+        self._projects = projects
         self._contributions = contributions
         self._structures = structures
         self._attachments = attachments
@@ -70,32 +87,25 @@ class ContributionService:
         ``settings.mongo.max_concurrent_transactions``. Per-item failures are returned in the
         summary's ``failed`` list; the request as a whole does not raise on partial failure.
 
+        Version is server-assigned per contribution: unique-identifier projects reject a duplicate
+        (project, identifier) as a conflict (version stays 1); non-unique projects auto-increment
+        from the current max. See ``_split_non_unique``.
+
         Args:
             contributions: contributions to insert; may include nested structures/tables/attachments
 
         Returns:
             BulkWriteSummary[Contribution]: per-item outcome, sized to ``len(contributions)``
-
-        Raises:
-            ValidationError: if duplicate keys (project-identifier) are found in ``contributions``
         """
         if not contributions:
             return BulkWriteSummary[Contribution](total=0, succeeded=[], failed=[])
 
-        self._reject_duplicate_keys(contributions)
+        failures, plan = await self._split_contributions(contributions, is_upsert=False)
+        no_comp = [item for item in plan if not item.contribution.has_components()]
+        with_comp = [item for item in plan if item.contribution.has_components()]
 
-        failures, remaining_indices = self._split_contributions(contributions)
-        no_comp_indices = [i for i in remaining_indices if not contributions[i].has_components()]
-        with_comp_indices = [i for i in remaining_indices if contributions[i].has_components()]
-
-        no_comp_succeeded, no_comp_failed = await self._insert_no_components(
-            indices=no_comp_indices,
-            contributions=contributions,
-        )
-        with_comp_succeeded, with_comp_failed = await self._insert_with_components(
-            indices=with_comp_indices,
-            contributions=contributions,
-        )
+        no_comp_succeeded, no_comp_failed = await self._insert_no_components(no_comp)
+        with_comp_succeeded, with_comp_failed = await self._insert_with_components(with_comp)
 
         succeeded = [doc for _, doc in sorted(no_comp_succeeded + with_comp_succeeded, key=lambda p: p[0])]
         failed = sorted(
@@ -103,26 +113,6 @@ class ContributionService:
             key=lambda f: f.index,
         )
         return BulkWriteSummary[Contribution](total=len(contributions), succeeded=succeeded, failed=failed)
-
-    def _reject_duplicate_keys(self, contributions: list[ContributionIn]) -> None:
-        """Reject the whole batch if any identifying key appears more than once.
-
-        Mongo would surface this as a duplicate key error; catching it upfront keeps a guaranteed
-        failure from consuming a transaction slot and gives the caller all offending indices at once.
-
-        The dedup key is derived from every value in ``identifiers()`` so adding a field to the
-        uniqueness contract there flows through here automatically.
-        """
-        seen: dict[tuple[str, ...], list[int]] = defaultdict(list)
-        for index, contribution in enumerate(contributions):
-            ids = contribution.identifiers()
-            seen[tuple(ids.values())].append(index)
-        duplicates = sorted(index for indices in seen.values() if len(indices) > 1 for index in indices)
-        if duplicates:
-            raise ValidationError(
-                "Duplicate (project, identifier) pairs in batch",
-                contribution_indices=duplicates,
-            )
 
     def _split_unauthorized(
         self,
@@ -154,7 +144,124 @@ class ContributionService:
                         message=f"not authorized to write to project '{contrib.project}'",
                     )
                 )
+                logger.warning(
+                    "User attempted to add contributions to projects they are not authorized for.",
+                    project=contrib.project,
+                )
         return unauthorized, remaining
+
+    async def _split_non_unique(
+        self,
+        indices: Iterable[int],
+        contributions: list[ContributionIn],
+        *,
+        is_upsert: bool,
+    ) -> tuple[list[BulkFailure], list[ResolvedWrite]]:
+        """Apply per-project identifier-uniqueness rules and resolve each contribution's version.
+
+        ``Project.unique_identifiers`` decides the contract per project:
+
+        - **True**: at most one contribution per (project, identifier); version is always 1. On
+          insert a second one (already in the DB, or a duplicate earlier in this batch) is rejected
+          as a conflict. On upsert the version is inferred as 1 (any supplied value is ignored).
+        - **False**: many versions may share (project, identifier). On insert the version is
+          auto-assigned as ``max(existing) + 1``, sequencing intra-batch duplicates. On upsert the
+          caller must supply ``version`` to pick the target row, else the item is rejected.
+
+        Iterates ``indices`` in input order so intra-batch duplicates sequence deterministically.
+
+        Returns:
+            tuple of (rejections, a ``ResolvedWrite`` per survivor pairing it with its version)
+        """
+        indices = list(indices)
+        failures: list[BulkFailure] = []
+        plan: list[ResolvedWrite] = []
+        if not indices:
+            return failures, plan
+
+        # One round-trip each for the per-project uniqueness flags and (insert only) the current
+        # max version per key, instead of a query per contribution.
+        unique_map = await self._projects.unique_identifiers_by_id(sorted({contributions[i].project for i in indices}))
+        max_map: dict[tuple[str, str], int] = {}
+        if not is_upsert:
+            keys = sorted({(contributions[i].project, contributions[i].identifier) for i in indices})
+            max_map = await self._contributions.max_versions(keys)
+
+        seen: dict[tuple[str, str], int] = defaultdict(int)
+        for i in indices:
+            contrib = contributions[i]
+            key = (contrib.project, contrib.identifier)
+
+            if contrib.project not in unique_map:
+                failures.append(
+                    BulkFailure(
+                        index=i,
+                        identifier=contrib.identifiers(),
+                        error_code=ValidationError.error_code,
+                        message=f"project '{contrib.project}' not found or not accessible",
+                    )
+                )
+                logger.info(
+                    "project not found or not accessible",
+                    project=contrib.project,
+                    identifiers=contrib.identifiers(),
+                )
+                continue
+
+            unique = unique_map[contrib.project]
+            if is_upsert:
+                if unique:
+                    version = 1
+                elif contrib.version is not None:
+                    version = contrib.version
+                else:
+                    failures.append(
+                        BulkFailure(
+                            index=i,
+                            identifier=contrib.identifiers(),
+                            error_code=ValidationError.error_code,
+                            message=(
+                                f"project '{contrib.project}' allows multiple versions; a 'version' "
+                                "is required to identify which contribution to update"
+                            ),
+                        )
+                    )
+                    logger.info(
+                        "ambiguous contribution version in project allowing multiple versions",
+                        project=contrib.project,
+                        identifiers=contrib.identifiers(),
+                    )
+                    continue
+            elif unique:
+                # Insert into a unique-identifier project: the first occurrence wins, anything that
+                # already exists (in the DB or earlier in this batch) is a conflict.
+                if key in max_map or seen[key] > 0:
+                    failures.append(
+                        BulkFailure(
+                            index=i,
+                            identifier=contrib.identifiers(),
+                            error_code=ConflictError.error_code,
+                            message=(
+                                f"contribution '{contrib.identifier}' already exists for project '{contrib.project}'"
+                            ),
+                        )
+                    )
+                    logger.info(
+                        "contribution already exists in project during insert/upsert/update",
+                        project=contrib.project,
+                        identifiers=contrib.identifiers(),
+                    )
+                    continue
+                version = 1
+            else:
+                # Insert into a non-unique-identifier project: next version after the current max,
+                # sequencing duplicates within this batch (max+1, max+2, ...).
+                version = max_map.get(key, 0) + 1 + seen[key]
+
+            plan.append(ResolvedWrite(index=i, contribution=contrib, version=version))
+            seen[key] += 1
+
+        return failures, plan
 
     def _split_oversize(
         self,
@@ -183,27 +290,36 @@ class ContributionService:
                         "Recommend inserting the component alone, followed by bulk inserts of components",
                     )
                 )
+                logger.info("Attemped to add contribution with too many components.", num_components=count, max=cap)
             else:
                 remaining.append(i)
         return oversize, remaining
 
-    def _split_contributions(self, contributions) -> tuple[list[BulkFailure], list[int]]:
-        """Common method for validating contribution write failure logic
+    async def _split_contributions(
+        self, contributions: list[ContributionIn], *, is_upsert: bool
+    ) -> tuple[list[BulkFailure], list[ResolvedWrite]]:
+        """Common method for validating contribution write failure logic and resolving versions.
+
+        Runs the cheap, local, index-based filters first (authorization, then component-count cap)
+        so guaranteed failures never reach the DB; ``_split_non_unique`` runs last and turns the
+        remaining indices into a write plan carrying each resolved version.
 
         Returns:
-            tuple[list[BulkFailure], list[int]]: a tuple containing a list of failures and their reasons,
-            and the indices of valid contributions from 'contributions' to write
+            tuple of (failures and their reasons, a ``ResolvedWrite`` per contribution to write)
         """
         # Per-item project authorization (see _split_unauthorized for the per-item vs fail-fast
         # decision). Only authorized items reach Mongo; the rest are reported in ``failed``.
         unauthorized_failures, authorized_indices = self._split_unauthorized(range(len(contributions)), contributions)
-        oversize_failures, remaining_indices = self._split_oversize(authorized_indices, contributions)
-        return (unauthorized_failures + oversize_failures, remaining_indices)
+        # Reject contributions that have too many components associated with them.
+        oversize_failures, sized_indices = self._split_oversize(authorized_indices, contributions)
+        # Verify identifiers/uniqueness within a project and resolve each version, depending on
+        # project.unique_identifiers and whether this is an insert or upsert.
+        non_unique_failures, plan = await self._split_non_unique(sized_indices, contributions, is_upsert=is_upsert)
+        return (unauthorized_failures + oversize_failures + non_unique_failures, plan)
 
     async def _insert_no_components(
         self,
-        indices: list[int],
-        contributions: list[ContributionIn],
+        items: list[ResolvedWrite],
     ) -> tuple[list[tuple[int, Contribution]], list[BulkFailure]]:
         """Single-collection bulk insert for component-free contributions.
 
@@ -211,20 +327,23 @@ class ContributionService:
         raises ``BulkWriteError`` with per-index error info on partial failure; we map that back
         onto the original input indices.
         """
-        if not indices:
+        if not items:
             return [], []
-        docs = [Contribution.from_input_model(contributions[i]) for i in indices]
+        docs = []
+        for item in items:
+            doc = Contribution.from_input_model(item.contribution)
+            doc.version = item.version
+            docs.append(doc)
         try:
             await self._contributions.insert_many_contributions(docs)
-            return list(zip(indices, docs, strict=False)), []
+            return [(item.index, doc) for item, doc in zip(items, docs, strict=True)], []
         except BulkWriteError as exc:
-            return self._partition_bulk_write_error(indices, docs, contributions, exc)
+            return self._partition_bulk_write_error(items, docs, exc)
 
     @staticmethod
     def _partition_bulk_write_error(
-        indices: list[int],
+        items: list[ResolvedWrite],
         docs: list[Contribution],
-        contributions: list[ContributionIn],
         exc: BulkWriteError,
     ) -> tuple[list[tuple[int, Contribution]], list[BulkFailure]]:
         """Map pymongo's per-position writeErrors back to the caller's original input indices."""
@@ -232,15 +351,15 @@ class ContributionService:
         failed_positions = {err.get("index"): err for err in write_errors}
         succeeded: list[tuple[int, Contribution]] = []
         failed: list[BulkFailure] = []
-        for position, (orig_index, doc) in enumerate(zip(indices, docs, strict=False)):
+        for position, (item, doc) in enumerate(zip(items, docs, strict=True)):
             err = failed_positions.get(position)
             if err is None:
-                succeeded.append((orig_index, doc))
+                succeeded.append((item.index, doc))
             else:
                 failed.append(
                     BulkFailure(
-                        index=orig_index,
-                        identifier=contributions[orig_index].identifiers(),
+                        index=item.index,
+                        identifier=item.contribution.identifiers(),
                         error_code="conflict" if err.get("code") == 11000 else "write_error",
                         message=err.get("errmsg", "write failed"),
                     )
@@ -249,53 +368,51 @@ class ContributionService:
 
     async def _insert_with_components(
         self,
-        indices: list[int],
-        contributions: list[ContributionIn],
+        items: list[ResolvedWrite],
     ) -> tuple[list[tuple[int, Contribution]], list[BulkFailure]]:
         """Per-contribution transaction path, bounded by ``max_concurrent_transactions``."""
-        if not indices:
+        if not items:
             return [], []
         sem = asyncio.Semaphore(self._settings.max_concurrent_transactions)
 
-        async def _bounded(orig_index: int) -> Contribution | BulkFailure:
+        async def _bounded(item: ResolvedWrite) -> Contribution | BulkFailure:
             async with sem:
-                return await self._insert_one_with_components(orig_index, contributions[orig_index])
+                return await self._insert_one_with_components(item)
 
-        results = await asyncio.gather(*[_bounded(i) for i in indices])
+        results = await asyncio.gather(*[_bounded(item) for item in items])
         succeeded: list[tuple[int, Contribution]] = []
         failed: list[BulkFailure] = []
-        for orig_index, outcome in zip(indices, results, strict=True):
+        for item, outcome in zip(items, results, strict=True):
             if isinstance(outcome, BulkFailure):
                 failed.append(outcome)
             else:
-                succeeded.append((orig_index, outcome))
+                succeeded.append((item.index, outcome))
         return succeeded, failed
 
-    async def _insert_one_with_components(
-        self,
-        index: int,
-        contrib: ContributionIn,
-    ) -> Contribution | BulkFailure:
+    async def _insert_one_with_components(self, item: ResolvedWrite) -> Contribution | BulkFailure:
         """Run a single contribution + its components inside a transaction.
 
         Uses ``session.with_transaction`` so transient txn errors (write conflicts, primary step-
         downs) get pymongo's retry treatment. Any exception is converted to a ``BulkFailure`` so
         the surrounding ``asyncio.gather`` sees a normal return value for every coroutine.
         """
+        contrib = item.contribution
         try:
             async with self._client.start_session() as session:
 
                 async def _txn(s: AsyncClientSession) -> Contribution:
-                    return await self._do_insert(contrib, s)
+                    return await self._do_insert(contrib, s, item.version)
 
                 return await session.with_transaction(_txn)
         except AppError as exc:
-            return bulk_failure_from_exception(index, contrib.identifiers(), exc)
+            return bulk_failure_from_exception(item.index, contrib.identifiers(), exc)
         except Exception as exc:
-            logger.error("insert_contribution_failed", index=index, identifier=contrib.identifiers(), exc_info=True)
-            return bulk_failure_from_exception(index, contrib.identifiers(), exc)
+            logger.error(
+                "insert_contribution_failed", index=item.index, identifier=contrib.identifiers(), exc_info=True
+            )
+            return bulk_failure_from_exception(item.index, contrib.identifiers(), exc)
 
-    async def _do_insert(self, contrib: ContributionIn, session: AsyncClientSession) -> Contribution:
+    async def _do_insert(self, contrib: ContributionIn, session: AsyncClientSession, version: int) -> Contribution:
         """Insert components then the contribution itself, all in the given session.
 
         Components are inserted sequentially because a session is single-threaded — sharing it
@@ -305,6 +422,7 @@ class ContributionService:
         tables = await self._tables.insert_components(contrib.tables or [], session=session)
 
         doc = Contribution.from_input_model(contrib)
+        doc.version = version
         doc.structures = cast(list[Link[Structure]] | None, structures or None)
         doc.tables = cast(list[Link[Table]] | None, tables or None)
         return await self._contributions.insert_contribution(doc, session=session)
@@ -342,21 +460,24 @@ class ContributionService:
                 contribution_indices=indices_with_components,
             )
 
-        failures, remaining_indices = self._split_contributions(contributions)
+        failures, plan = await self._split_contributions(contributions, is_upsert=True)
 
         sem = asyncio.Semaphore(self._settings.max_concurrent_transactions)
 
-        async def _bounded_upsert(index: int, contrib: ContributionIn) -> Contribution | BulkFailure:
+        async def _bounded_upsert(item: ResolvedWrite) -> Contribution | BulkFailure:
+            contrib = item.contribution
             async with sem:
                 try:
-                    return await self._contributions.upsert_contribution_by_identifiers(contrib.identifiers(), contrib)
+                    return await self._contributions.upsert_contribution_by_identifiers(
+                        contrib.identifiers(), contrib, item.version
+                    )
                 except Exception as exc:
                     logger.error(
-                        "upsert_contribution_failed", index=index, identifier=contrib.identifiers(), exc_info=True
+                        "upsert_contribution_failed", index=item.index, identifier=contrib.identifiers(), exc_info=True
                     )
-                    return bulk_failure_from_exception(index, contrib.identifiers(), exc)
+                    return bulk_failure_from_exception(item.index, contrib.identifiers(), exc)
 
-        results = await asyncio.gather(*[_bounded_upsert(i, contributions[i]) for i in remaining_indices])
+        results = await asyncio.gather(*[_bounded_upsert(item) for item in plan])
         succeeded = [r for r in results if not isinstance(r, BulkFailure)]
         failed = failures + [r for r in results if isinstance(r, BulkFailure)]
         return BulkWriteSummary[Contribution](total=len(contributions), succeeded=succeeded, failed=failed)

@@ -8,6 +8,7 @@ from mpcontribs_api.domains.contributions.repository import (
     MongoDbContributionRepository,
 )
 from mpcontribs_api.domains.contributions.service import ContributionService
+from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
 from mpcontribs_api.domains.structures.repository import MongoDbStructureRepository
 from mpcontribs_api.domains.tables.repository import MongoDbTableRepository
 
@@ -23,6 +24,7 @@ def get_contribution_service(user: UserDep, client: MongoClientDep) -> Contribut
     return ContributionService(
         client=client,
         user=user,
+        projects=MongoDbProjectRepository(user),
         contributions=MongoDbContributionRepository(user),
         structures=MongoDbStructureRepository(user),
         attachments=MongoDbAttachmentRepository(user),

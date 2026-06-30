@@ -105,7 +105,7 @@ class MongoDbRepository[
         next_cursor = encode_cursor(str(items[-1].id)) if has_more and items else None
         return Page(items=items, next_cursor=next_cursor)
 
-    async def get_by_id(self, id: Any, fields: frozenset[str] | None) -> TDoc | TOut | None:
+    async def get_by_id(self, id: Any, fields: frozenset[str] | None = None) -> TDoc | TOut | None:
         """Return a single scoped document by id, projected to the requested fields.
 
         Args:

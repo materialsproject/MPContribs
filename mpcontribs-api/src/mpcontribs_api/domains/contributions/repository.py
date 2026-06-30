@@ -112,6 +112,48 @@ class MongoDbContributionRepository(
             self.document_model.identifier == identifier,
         )
 
+    async def max_versions(self, keys: list[tuple[str, str]]) -> dict[tuple[str, str], int]:
+        """Return ``{(project, identifier): max_version}`` for the given keys, scoped to the user.
+
+        Presence of a key in the result also signals that at least one contribution already exists
+        for it, which the contribution write path uses to enforce uniqueness on unique-identifier
+        projects and to compute the next version on non-unique ones. Keys with no existing
+        contributions are absent from the result.
+
+        A single aggregation answers the whole batch so the write path avoids one round-trip per
+        contribution. Scope is merged into ``$match`` (mirroring :meth:`referenced_component_ids`);
+        a writer sees every contribution in their own project, so the scoped max equals the global
+        max for keys they may write.
+
+        Args:
+            keys: (project, identifier) pairs to look up
+
+        Returns:
+            dict[tuple[str, str], int]: highest existing version per requested key
+        """
+        if not keys:
+            return {}
+        match: dict[str, Any] = {"$or": [{"project": p, "identifier": i} for p, i in keys]}
+        if self._scope:
+            match = {"$and": [self._scope, match]}
+        pipeline: list[dict[str, Any]] = [
+            {"$match": match},
+            {
+                "$group": {
+                    "_id": {"project": "$project", "identifier": "$identifier"},
+                    "max_version": {"$max": "$version"},
+                }
+            },
+        ]
+        collection = self.document_model.get_pymongo_collection()
+        result: dict[tuple[str, str], int] = {}
+        async for doc in await collection.aggregate(pipeline):
+            gid = doc["_id"]
+            # Versions are >= 1; coalesce a null $max (legacy docs without the field) to 0 while
+            # still recording the key's presence (existence check for unique-identifier projects).
+            result[(gid["project"], gid["identifier"])] = doc.get("max_version") or 0
+        return result
+
     async def referenced_component_ids(
         self,
         ref_field: str,
@@ -193,16 +235,20 @@ class MongoDbContributionRepository(
         self,
         identifiers: dict[str, str],
         contribution: ContributionIn,
+        version: int,
     ) -> Contribution:
-        """Atomically upsert a Contribution by its identifying fields.
+        """Atomically upsert a Contribution by its identifying fields and resolved version.
 
-        Relies on the unique index over those fields so that concurrent requests targeting the
-        same key cannot both win the insert branch. Fields the caller did not set are not touched
-        (partial update). On insert a fresh Contribution document is written with ``is_public=False``.
+        Relies on the unique index over (project, identifier, version) so that concurrent requests
+        targeting the same key cannot both win the insert branch. Fields the caller did not set are
+        not touched (partial update). On insert a fresh Contribution document is written with
+        ``is_public=False``.
 
         Args:
             identifiers: the fields ContributionIn.identifiers() returns (project, identifier)
             contribution: the input payload to upsert
+            version: the version resolved by the service (1 for unique-identifier projects, or the
+                caller-supplied version for non-unique ones); selects which row to update
 
         Returns:
             Contribution: the document as it stands after the operation
@@ -212,11 +258,13 @@ class MongoDbContributionRepository(
             raise PermissionError(f"not authorized to write to project '{identifiers['project']}'")
 
         doc = self.document_model.from_input_model(contribution)
+        doc.version = version
         update_data = doc.model_dump(exclude={"id"}, exclude_none=True)
         query = self.document_model.find_one(
             self._scope,
             self.document_model.project == identifiers["project"],
             self.document_model.identifier == identifiers["identifier"],
+            self.document_model.version == version,
         ).upsert(
             Set(update_data),
             on_insert=doc,

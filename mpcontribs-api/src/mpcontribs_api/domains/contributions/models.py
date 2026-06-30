@@ -93,8 +93,8 @@ class ContributionBase(BaseDocumentWithInput[PydanticObjectId]):
         keep_nulls = False
         indexes = [
             IndexModel(
-                keys=[("project", ASCENDING), ("identifier", ASCENDING)],
-                name="project_idenfitier",
+                keys=[("project", ASCENDING), ("identifier", ASCENDING), ("version", ASCENDING)],
+                name="project_identifier_version",
                 unique=True,
             ),
             # Multikey indexes over each Link field's DBRef id so the component-delete
@@ -107,6 +107,9 @@ class ContributionBase(BaseDocumentWithInput[PydanticObjectId]):
 
 class Contribution(ContributionBase):
     is_public: bool
+    # Server-owned: the service resolves the real version (see ContributionService._split_non_unique)
+    # and stamps it on the doc. Defaults to 1 so the no-version (unique-identifier) case is implicit.
+    version: int = 1
     structures: list[Link[Structure]] | None = None
     tables: list[Link[Table]] | None = None
     attachments: list[Link[Attachment]] | None = None
@@ -115,10 +118,13 @@ class Contribution(ContributionBase):
     @classmethod
     def from_input_model(cls, data: ContributionIn) -> Contribution:
         # Server-owned fields are not taken from input: is_public starts False, components are
-        # inserted separately, and last_modified is stamped by the before_event hook.
+        # inserted separately, last_modified is stamped by the before_event hook, and version is
+        # resolved/stamped by the service (never trusted from the request body).
         return cls.model_validate(
             {
-                **data.model_dump(exclude={"is_public", "structures", "tables", "attachments", "last_modified"}),
+                **data.model_dump(
+                    exclude={"is_public", "version", "structures", "tables", "attachments", "last_modified"}
+                ),
                 "is_public": False,
             }
         )
@@ -129,6 +135,10 @@ class Contribution(ContributionBase):
 
 
 class ContributionIn(ContributionBase):
+    # Only meaningful on upsert/update of a non-unique-identifier project, where it selects which
+    # version to target. Ignored on insert (the service auto-assigns) and for unique-identifier
+    # projects (inferred as 1).
+    version: int | None = None
     structures: list[StructureIn] | None = None
     tables: list[TableIn] | None = None
     attachments: list[AttachmentIn] | None = None
@@ -149,6 +159,7 @@ class ContributionIn(ContributionBase):
 class ContributionOut(DocumentOut[PydanticObjectId]):
     project: str | None = None
     identifier: str | None = None
+    version: int | None = None
     formula: str | None = None
     is_public: bool | None = None
     last_modified: datetime | None = None
@@ -166,6 +177,7 @@ class ContributionOut(DocumentOut[PydanticObjectId]):
             "id",
             "project",
             "identifier",
+            "version",
             "formula",
             "is_public",
             "last_modified",
@@ -176,6 +188,7 @@ class ContributionOut(DocumentOut[PydanticObjectId]):
 class ContributionPatch(SparseFieldsModel):
     project: str | None = None
     identifier: str | None = None
+    version: int | None = None
     formula: str | None = None
     needs_build: bool | None = None
     data: Annotated[
@@ -197,6 +210,11 @@ class ContributionFilter(BaseFilter):
     identifier__in: list[ShortStr] | None = None
     identifier__neq: ShortStr | None = None
     identifier__ilike: str | None = None
+
+    version: str | None = None
+    version__in: list[ShortStr] | None = None
+    version__neq: ShortStr | None = None
+    version__ilike: str | None = None
 
     formula: str | None = None
     formula__in: list[ShortStr] | None = None
