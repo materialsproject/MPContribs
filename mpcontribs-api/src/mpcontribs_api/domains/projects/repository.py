@@ -58,6 +58,30 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
         """Find a single project by id, scoped to the current user. See ``get_by_id``."""
         return await self.get_by_id(id, fields)
 
+    async def unique_identifiers_by_id(self, ids: list[str]) -> dict[str, bool]:
+        """Return ``{project_id: unique_identifiers}`` for the given project ids, scoped to the user.
+
+        Used by the contribution write path to apply per-project version rules in one round-trip
+        instead of fetching each project separately. Projects the user cannot see (or that do not
+        exist) are simply absent from the result, so the caller can treat them as inaccessible.
+
+        Args:
+            ids: project ids to look up
+
+        Returns:
+            dict[str, bool]: mapping of project id to its ``unique_identifiers`` flag
+        """
+        if not ids:
+            return {}
+        query: dict[str, Any] = {"_id": {"$in": ids}}
+        if self._scope:
+            query = {"$and": [self._scope, query]}
+        collection = self.document_model.get_pymongo_collection()
+        result: dict[str, bool] = {}
+        async for doc in collection.find(query, {"unique_identifiers": 1}):
+            result[doc["_id"]] = bool(doc.get("unique_identifiers"))
+        return result
+
     async def insert_project(self, project: ProjectIn) -> Project:
         """Insert a new project, rejecting a duplicate id. See ``insert_one``."""
         return await self.insert_one(project)

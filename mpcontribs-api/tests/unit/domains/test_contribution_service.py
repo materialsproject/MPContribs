@@ -151,16 +151,27 @@ def _make_service(
     settings: MongoSettings | None = None,
     write_slots: asyncio.Semaphore | None = None,
     user: User | None = None,
+    projects=None,
+    unique_identifiers: bool = True,
 ) -> tuple[ContributionService, AsyncMock, AsyncMock, AsyncMock, AsyncMock, MagicMock]:
     contrib_repo = contributions or AsyncMock()
     struct_repo = structures or AsyncMock()
     table_repo = tables or AsyncMock()
     attach_repo = attachments or AsyncMock()
+    # Default version resolution: every referenced project reports the ``unique_identifiers`` flag
+    # and no contribution version exists yet, so the common path resolves version == 1 with no
+    # conflict. Tests exercising versioning pass their own ``projects`` mock or override
+    # ``contrib_repo.max_versions``.
+    projects_repo = projects or AsyncMock()
+    if projects is None:
+        projects_repo.unique_identifiers_by_id.side_effect = lambda ids: {pid: unique_identifiers for pid in ids}
+    contrib_repo.max_versions.return_value = {}
     if client is None:
         client, _ = _make_fake_client()
     svc = ContributionService(
         client=client,
         user=user or _admin_user(),
+        projects=projects_repo,
         contributions=contrib_repo,
         structures=struct_repo,
         tables=table_repo,
@@ -206,17 +217,25 @@ class TestInsertContributionsPreChecks:
         contrib_repo.insert_contribution.assert_not_called()
         client.start_session.assert_not_called()
 
-    async def test_duplicate_project_identifier_raises_validation_error(self):
+    async def test_duplicate_project_identifier_unique_project_conflicts_later_item(self):
+        """On a unique-identifier project, a repeated (project, identifier) in one batch no longer
+        fails the whole request (the old _reject_duplicate_keys behavior). The first occurrence is
+        inserted at version 1; later duplicates are per-item conflict failures."""
         svc, contrib_repo, _, _, _, client = _make_service()
+        contrib_repo.insert_many_contributions.return_value = None
         contribs = [
             _contrib_in(project="p", identifier="dup"),
             _contrib_in(project="p", identifier="dup"),
         ]
-        with pytest.raises(ValidationError) as exc_info:
-            await svc.insert_contributions(contribs)
-        assert exc_info.value.context.get("contribution_indices") == [0, 1]
-        contrib_repo.insert_many_contributions.assert_not_called()
-        client.start_session.assert_not_called()
+        summary = await svc.insert_contributions(contribs)
+
+        assert summary.total == 2
+        assert len(summary.succeeded) == 1
+        assert summary.succeeded[0].version == 1
+        assert [f.index for f in summary.failed] == [1]
+        assert summary.failed[0].error_code == "conflict"
+        # Index 0 still reached Mongo (one doc inserted)
+        assert len(contrib_repo.insert_many_contributions.call_args[0][0]) == 1
 
     async def test_oversize_contribution_goes_to_failures_without_db(self):
         settings = _make_mongo_settings(max_components_per_contribution=1)
@@ -433,6 +452,100 @@ class TestInsertContributionsMixedBatch:
 
 
 # ---------------------------------------------------------------------------
+# Versioning — uniqueness rules + version assignment (insert & upsert)
+# ---------------------------------------------------------------------------
+
+
+def _projects_mock(unique_map: dict[str, bool]) -> AsyncMock:
+    """A projects repo whose unique_identifiers_by_id returns only the known projects."""
+    repo = AsyncMock()
+    repo.unique_identifiers_by_id.side_effect = lambda ids: {pid: unique_map[pid] for pid in ids if pid in unique_map}
+    return repo
+
+
+class TestContributionVersioning:
+    async def test_insert_unique_existing_key_conflicts(self):
+        svc, contrib_repo, *_ = _make_service()  # unique_identifiers=True by default
+        contrib_repo.insert_many_contributions.return_value = None
+        contrib_repo.max_versions.return_value = {("proj", "mp-1"): 1}
+
+        summary = await svc.insert_contributions([_contrib_in(identifier="mp-1")])
+
+        assert summary.total == 1
+        assert summary.succeeded == []
+        assert [f.error_code for f in summary.failed] == ["conflict"]
+        contrib_repo.insert_many_contributions.assert_not_called()
+
+    async def test_insert_non_unique_assigns_max_plus_one(self):
+        svc, contrib_repo, *_ = _make_service(unique_identifiers=False)
+        contrib_repo.insert_many_contributions.return_value = None
+        contrib_repo.max_versions.return_value = {("proj", "mp-1"): 3}
+
+        summary = await svc.insert_contributions([_contrib_in(identifier="mp-1")])
+
+        assert len(summary.succeeded) == 1
+        assert summary.succeeded[0].version == 4
+        docs = contrib_repo.insert_many_contributions.call_args[0][0]
+        assert docs[0].version == 4
+
+    async def test_insert_non_unique_no_existing_starts_at_one(self):
+        svc, contrib_repo, *_ = _make_service(unique_identifiers=False)
+        contrib_repo.insert_many_contributions.return_value = None
+        # default max_versions -> {} (no existing contributions)
+
+        summary = await svc.insert_contributions([_contrib_in(identifier="mp-1")])
+
+        assert summary.succeeded[0].version == 1
+
+    async def test_insert_non_unique_same_key_twice_sequences_versions(self):
+        svc, contrib_repo, *_ = _make_service(unique_identifiers=False)
+        contrib_repo.insert_many_contributions.return_value = None
+        contrib_repo.max_versions.return_value = {("proj", "dup"): 5}
+
+        contribs = [_contrib_in(identifier="dup"), _contrib_in(identifier="dup")]
+        summary = await svc.insert_contributions(contribs)
+
+        assert len(summary.succeeded) == 2
+        assert sorted(d.version for d in summary.succeeded) == [6, 7]
+
+    async def test_insert_project_not_found_is_validation_failure(self):
+        svc, contrib_repo, *_ = _make_service(projects=_projects_mock({}))  # no projects known
+
+        summary = await svc.insert_contributions([_contrib_in(identifier="mp-1")])
+
+        assert summary.succeeded == []
+        assert [f.error_code for f in summary.failed] == ["validation_error"]
+        contrib_repo.insert_many_contributions.assert_not_called()
+
+    async def test_upsert_unique_forces_version_one(self):
+        svc, contrib_repo, *_ = _make_service()  # unique by default
+        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
+
+        # A supplied version is ignored for unique-identifier projects (inferred as 1).
+        await svc.upsert_contributions([_contrib_in(identifier="mp-1", version=9)])
+
+        assert contrib_repo.upsert_contribution_by_identifiers.call_args.args[2] == 1
+        contrib_repo.max_versions.assert_not_called()
+
+    async def test_upsert_non_unique_requires_version(self):
+        svc, contrib_repo, *_ = _make_service(unique_identifiers=False)
+
+        summary = await svc.upsert_contributions([_contrib_in(identifier="mp-1")])  # no version
+
+        assert summary.succeeded == []
+        assert [f.error_code for f in summary.failed] == ["validation_error"]
+        contrib_repo.upsert_contribution_by_identifiers.assert_not_called()
+
+    async def test_upsert_non_unique_passes_supplied_version(self):
+        svc, contrib_repo, *_ = _make_service(unique_identifiers=False)
+        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
+
+        await svc.upsert_contributions([_contrib_in(identifier="mp-1", version=7)])
+
+        assert contrib_repo.upsert_contribution_by_identifiers.call_args.args[2] == 7
+
+
+# ---------------------------------------------------------------------------
 # upsert_contributions — guard clause
 # ---------------------------------------------------------------------------
 
@@ -524,7 +637,7 @@ class TestUpsertContributionsAtomic:
         docs = [MagicMock(spec=Contribution, name=f"doc-{i}") for i in range(3)]
         returned = {}
 
-        async def _upsert(identifiers, contrib):
+        async def _upsert(identifiers, contrib, version):
             doc = docs[int(contrib.identifier.split("-")[1])]
             returned[contrib.identifier] = doc
             return doc
@@ -564,7 +677,7 @@ class TestUpsertContributionsAtomic:
     async def test_one_failure_is_reported_not_raised(self):
         svc, contrib_repo, *_ = _make_service()
 
-        async def _upsert(identifiers, contrib):
+        async def _upsert(identifiers, contrib, version):
             if contrib.identifier == "mp-1":
                 raise ConflictError("boom")
             return MagicMock(spec=Contribution)

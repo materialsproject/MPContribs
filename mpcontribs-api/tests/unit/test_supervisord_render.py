@@ -15,10 +15,6 @@ SUPERVISORD_DIR = Path(__file__).resolve().parents[2] / "supervisord"
 # Names the new Settings model needs present in the process environment.
 REQUIRED_ENV_NAMES = [
     "MPCONTRIBS_ENVIRONMENT",
-    "MPCONTRIBS_MONGO__URI",
-    "MPCONTRIBS_MONGO__DB_NAME",
-    "MPCONTRIBS_REDIS__ADDRESS",
-    "MPCONTRIBS_REDIS__URL",
     "MPCONTRIBS_MAIL_DEFAULT_SENDER",
     "MPCONTRIBS_VERSION",
     "MPCONTRIBS_OTEL__OTLP_ENDPOINT",
