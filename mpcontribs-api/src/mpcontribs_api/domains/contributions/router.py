@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from fastapi_filter import FilterDepends
 
+from mpcontribs_api.config import get_settings
 from mpcontribs_api.dependencies import S3Dep, require_user
 from mpcontribs_api.domains._shared.bulk import BulkWriteSummary
 from mpcontribs_api.domains._shared.types import (
@@ -20,9 +21,29 @@ from mpcontribs_api.domains.contributions.models import (
     ContributionOut,
     ContributionPatch,
 )
+from mpcontribs_api.exceptions import ValidationError
 from mpcontribs_api.pagination import CursorParams
 
 router = APIRouter()
+
+
+def _enforce_bulk_limit(contributions: list[ContributionIn]) -> None:
+    """Reject a bulk write larger than the configured per-request ceiling.
+
+    Guards the synchronous bulk endpoints so a single request can't hand the service an unbounded
+    list. Callers over the limit should chunk (the limit is advertised at ``GET /api/v1/limits``)
+    or use the async bulk ingestion endpoint. Complements the body-size middleware, which bounds
+    bytes rather than item count.
+    """
+    limit = get_settings().mongo.bulk_write_limit
+    count = len(contributions)
+    if count > limit:
+        raise ValidationError(
+            f"Bulk request of {count} contributions exceeds the per-request limit of {limit}. "
+            "Chunk the request (see GET /api/v1/limits) or use the async bulk ingestion endpoint.",
+            count=count,
+            limit=limit,
+        )
 
 
 @router.get("")
@@ -50,6 +71,7 @@ async def insert_contributions(
     service: ContributionServiceDep,
     contributions: list[ContributionIn],
 ):
+    _enforce_bulk_limit(contributions)
     return await service.insert_contributions(contributions=contributions)
 
 
@@ -58,6 +80,7 @@ async def upsert_contributions(
     service: ContributionServiceDep,
     contributions: list[ContributionIn],
 ):
+    _enforce_bulk_limit(contributions)
     return await service.upsert_contributions(contributions=contributions)
 
 
