@@ -68,6 +68,12 @@ class ValidationError(AppError):
     log_level = logging.INFO
 
 
+class PayloadTooLargeError(AppError):
+    status_code = 413
+    error_code = "payload_too_large"
+    log_level = logging.INFO  # expected client error: caller sent an oversized body
+
+
 class PermissionError(AppError):
     status_code = 403
     error_code = "permission_denied"
@@ -80,7 +86,7 @@ class AuthenticationError(AppError):
     log_level = logging.WARNING  # security-relevant: alertable, but not a server fault
 
 
-def _error_body(error_code: str, message: str, **public_context) -> dict:
+def error_body(error_code: str, message: str, **public_context) -> dict:
     body: dict[str, Any] = {"error": {"code": error_code, "message": message}}
     if public_context:
         body["error"]["detail"] = public_context
@@ -112,7 +118,7 @@ def register_exception_handlers(app: FastAPI) -> None:
             logger.log(level, exc.error_code, status_code=exc.status_code, **exc.context)
         return JSONResponse(
             status_code=exc.status_code,
-            content=_error_body(
+            content=error_body(
                 exc.error_code,
                 exc.message,
                 # NOTE: not leaking context to client yet
@@ -128,7 +134,7 @@ def register_exception_handlers(app: FastAPI) -> None:
         logger.exception("unhandled_exception")  # full traceback
         return JSONResponse(
             status_code=500,
-            content=_error_body("internal_error", "An unexpected error occurred."),
+            content=error_body("internal_error", "An unexpected error occurred."),
         )
 
     # Unify validation errors from pydantic with our exception format
@@ -136,7 +142,7 @@ def register_exception_handlers(app: FastAPI) -> None:
     async def _handle_validation(_request: Request, exc: RequestValidationError) -> JSONResponse:
         return JSONResponse(
             status_code=422,
-            content=_error_body(
+            content=error_body(
                 "validation_error",
                 "Request validation failed",
                 errors=jsonable_encoder(_sanitize_validation_errors(exc.errors())),
@@ -151,5 +157,5 @@ def register_exception_handlers(app: FastAPI) -> None:
             logger.error("http_error", status_code=exc.status_code, exc_info=exc)
         return JSONResponse(
             status_code=exc.status_code,
-            content=_error_body("http_error", str(exc.detail)),
+            content=error_body("http_error", str(exc.detail)),
         )
