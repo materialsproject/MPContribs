@@ -82,10 +82,6 @@ class MongoSettings(BaseModel):
         default=0,
         description="Minimum number of concurent connections that the pool will maintain connected to each server ",
     )
-    max_global_concurrent_writes: int = Field(
-        default=100,
-        description="Maximum number of writes allowed to happen simultaneously. Key for bulk write efficiency.",
-    )
     datetime_conversion: Literal["datetime_ms", "datetime", "datetime_auto", "datetime_clamp"] = Field(
         default="datetime",
         description="Specifies how UTC datetimes should be decoded within BSON",
@@ -132,6 +128,19 @@ class MongoSettings(BaseModel):
     component_insert_chunk_size: int = Field(
         default=100,
         description="Batch size used by component repositories when chunking insert_many calls inside a transaction.",
+    )
+    # TODO: Tune default
+    max_request_bytes: int = Field(
+        default=16 * 1024 * 1024,
+        description="Hard ceiling on the size (bytes) of any single request body. Requests exceeding it are rejected "
+        "with 413 before the body is read into memory, so one caller can't OOM the worker. Mirrors the client's "
+        "MAX_PAYLOAD (15MB) with headroom.",
+    )
+    # TODO: Tune default
+    bulk_write_limit: int = Field(
+        default=1000,
+        description="Maximum number of items accepted in a single bulk contribution POST/PUT. Larger batches are "
+        "rejected with 422; callers should chunk (or use the async ingestion endpoint). Advertised via GET /limits.",
     )
     max_idle_time_ms: int = Field(
         default=30_000,

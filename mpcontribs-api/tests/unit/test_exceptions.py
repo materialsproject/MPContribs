@@ -7,28 +7,28 @@ from mpcontribs_api.exceptions import (
     NotFoundError,
     PermissionError,
     ValidationError,
-    _error_body,
     _sanitize_validation_errors,
+    error_body,
 )
 
 
 class TestErrorBody:
     def test_minimal_body(self):
-        body = _error_body("not_found", "Resource not found")
+        body = error_body("not_found", "Resource not found")
         assert body == {"error": {"code": "not_found", "message": "Resource not found"}}
 
     def test_body_with_context(self):
-        body = _error_body("not_found", "Resource not found", resource_id="abc", resource_type="project")
+        body = error_body("not_found", "Resource not found", resource_id="abc", resource_type="project")
         assert body["error"]["code"] == "not_found"
         assert body["error"]["message"] == "Resource not found"
         assert body["error"]["detail"] == {"resource_id": "abc", "resource_type": "project"}
 
     def test_no_detail_key_without_context(self):
-        body = _error_body("conflict", "Duplicate id")
+        body = error_body("conflict", "Duplicate id")
         assert "detail" not in body["error"]
 
     def test_detail_present_with_context(self):
-        body = _error_body("conflict", "Duplicate id", existing_id="xyz")
+        body = error_body("conflict", "Duplicate id", existing_id="xyz")
         assert "detail" in body["error"]
 
 

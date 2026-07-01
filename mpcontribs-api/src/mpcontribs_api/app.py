@@ -22,7 +22,12 @@ from mpcontribs_api.domains.structures.models import Structure
 from mpcontribs_api.domains.tables.models import Table
 from mpcontribs_api.exceptions import register_exception_handlers
 from mpcontribs_api.logging import configure_logging, get_logger
-from mpcontribs_api.middleware import RequestContextMiddleware, configure_tracing, instrument_app
+from mpcontribs_api.middleware import (
+    BodySizeLimitMiddleware,
+    RequestContextMiddleware,
+    configure_tracing,
+    instrument_app,
+)
 
 logger = get_logger(__name__)
 
@@ -114,6 +119,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         dependencies=[Depends(api_key_scheme)],
     )
 
+    # Reject oversized request bodies before they're buffered into memory. Added before
+    # RequestContextMiddleware: Starlette inserts each added middleware at the front of the stack,
+    # so the later-added RequestContextMiddleware stays outermost and still access-logs rejections.
+    app.add_middleware(BodySizeLimitMiddleware, max_bytes=settings.mongo.max_request_bytes)
     # Add request context to the logger
     app.add_middleware(RequestContextMiddleware)
     # Emit server-side request spans/metrics (no-op when telemetry is disabled).
