@@ -13,9 +13,11 @@ from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from mpcontribs_api.config import Settings
+from mpcontribs_api.exceptions import PayloadTooLargeError, error_body
 from mpcontribs_api.logging import build_resource, get_logger
 
 if TYPE_CHECKING:
@@ -149,6 +151,86 @@ class RequestContextMiddleware:
             response_time=duration_ns // 1000,  # microseconds, matches the old gunicorn %(D)s
             process=_PROCESS,
         )
+
+
+class _BodyTooLarge(BaseException):
+    """Internal signal that the streamed body exceeded the limit.
+
+    Derives from ``BaseException`` (not ``Exception``) on purpose: FastAPI's request-body parser
+    wraps body reads in ``except Exception`` and would otherwise convert our error into a generic
+    ``400``. A ``BaseException`` slips past that (and past Starlette's exception middleware) so it
+    propagates back to ``BodySizeLimitMiddleware``, which turns it into the uniform ``413``.
+    """
+
+
+class BodySizeLimitMiddleware:
+    """Reject request bodies larger than ``max_bytes`` so one caller can't OOM the worker.
+
+    Two enforcement points, because a client can lie about (or omit) ``Content-Length``:
+
+    - **Declared size:** if the ``Content-Length`` header exceeds the limit, respond ``413``
+      immediately, before the body is read. This is the common case (the mpcontribs client and
+      any ``requests``-based caller set ``Content-Length``) and avoids buffering the upload at all.
+    - **Actual size:** otherwise wrap ``receive`` and accumulate the bytes actually delivered
+      (chunked transfers, or a lying header); once the running total exceeds the limit, abort. The
+      abort is signalled by a ``BaseException`` raised from the wrapped ``receive`` (see
+      :class:`_BodyTooLarge` for why) and caught here, so the response is the same uniform ``413``
+      as the declared-size path, and the body is never fully buffered.
+
+    Registered inside ``RequestContextMiddleware`` so rejected requests are still access-logged.
+    """
+
+    def __init__(self, app: ASGIApp, max_bytes: int) -> None:
+        self.app = app
+        self.max_bytes = max_bytes
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        headers = dict(scope["headers"])
+        declared = self._declared_length(headers.get(b"content-length"))
+        if declared is not None and declared > self.max_bytes:
+            await self._reject(scope, receive, send)
+            return
+
+        received = 0
+
+        async def limited_receive() -> Message:
+            nonlocal received
+            message = await receive()
+            if message["type"] == "http.request":
+                received += len(message.get("body", b""))
+                if received > self.max_bytes:
+                    raise _BodyTooLarge
+            return message
+
+        try:
+            await self.app(scope, limited_receive, send)
+        except _BodyTooLarge:
+            # Overflow detected mid-body-read: the app hasn't started responding yet, so we own the
+            # response and emit the 413 ourselves.
+            await self._reject(scope, receive, send)
+
+    @staticmethod
+    def _declared_length(raw: bytes | None) -> int | None:
+        if raw is None:
+            return None
+        try:
+            return int(raw)
+        except ValueError:
+            return None
+
+    def _message(self) -> str:
+        return f"Request body exceeds the maximum allowed size of {self.max_bytes} bytes."
+
+    async def _reject(self, scope: Scope, receive: Receive, send: Send) -> None:
+        response = JSONResponse(
+            status_code=PayloadTooLargeError.status_code,
+            content=error_body(PayloadTooLargeError.error_code, self._message()),
+        )
+        await response(scope, receive, send)
 
 
 def configure_tracing(settings: Settings) -> None:
