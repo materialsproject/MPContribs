@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@babel/core": "^7.23.2",
-    "@babel/preset-env": "^7.23.2",
+    "@babel/preset-env": "^8.0.2",
     "@fortawesome/fontawesome-free": "^7.3.0",
     "@vizuaalog/bulmajs": "^0.12.2",
     "babel-loader": "^10.1.1",
