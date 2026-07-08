@@ -157,6 +157,21 @@ class MongoSettings(BaseModel):
         return self
 
 
+class MPContribsSettings(BaseModel):
+    max_contrib_data_depth: int = Field(
+        default=7, description="The max number of levels allowed in a Contribution's data dictionary."
+    )
+    max_columns: int = Field(
+        default=160,
+        description="The maximum allowed number of columns for a contribution (len(Contribution.data)), "
+        "which also gets reflected in Project.columns",
+    )
+    max_components: int = Field(
+        default=10,
+        description="The maximum allowed number of a single Component type (Structure, Table, Attachment) on a single Contribution",
+    )
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
