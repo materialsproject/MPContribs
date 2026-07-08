@@ -50,6 +50,8 @@ dependencies = [
     "structlog>=25.5.0",
     "supervisor>=4.3.0",
     "types-aiobotocore[s3]>=3.7.0",
+    "pint>=0.25.3",
+    "uncertainties>=3.2.3",
 ]
 
 [project.urls]
