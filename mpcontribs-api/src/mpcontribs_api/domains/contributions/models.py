@@ -81,6 +81,7 @@ class ContributionBase(BaseDocumentWithInput[PydanticObjectId]):
     project: str
     identifier: str
     formula: str
+    is_public: bool = False
     data: Annotated[
         dict[str, Any],
         BeforeValidator(_validate_data_depth),
@@ -206,6 +207,7 @@ class ContributionPatch(SparseFieldsModel):
     version: int | None = None
     formula: str | None = None
     needs_build: Annotated[bool | None, deprecated("'needs_build' is deprecated.")] = None
+    is_public: bool | None = None
     data: Annotated[
         dict[str, Any] | None,
         BeforeValidator(_validate_data_depth),
