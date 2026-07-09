@@ -58,8 +58,11 @@ defusedxml==0.7.1
     # via nbconvert
 django==3.2.25
     # via
+    #   django-extensions
     #   django-settings-file
     #   mpcontribs-portal (MPContribs/mpcontribs-portal/pyproject.toml)
+django-extensions==3.2.3
+    # via mpcontribs-portal (MPContribs/mpcontribs-portal/pyproject.toml)
 django-settings-file==2.10.1
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/pyproject.toml)
 django-webpack4-loader==0.0.5
