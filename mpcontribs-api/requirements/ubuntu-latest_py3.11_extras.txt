@@ -4,7 +4,7 @@
 #
 #    pip-compile --all-extras --output-file=requirements/ubuntu-latest_py3.11_extras.txt
 #
-anyio==4.13.0
+anyio==4.14.1
     # via jupyter-server
 apispec==5.2.2
     # via
@@ -30,41 +30,41 @@ attrs==26.1.0
     # via
     #   jsonschema
     #   referencing
-backports-zstd==1.5.0
+backports-zstd==1.6.0
     # via flask-compress
-beautifulsoup4==4.14.3
+beautifulsoup4==4.15.0
     # via nbconvert
 bibtexparser==1.4.4
     # via pymatgen-core
-bleach[css]==6.3.0
+bleach[css]==6.4.0
     # via nbconvert
 blinker==1.9.0
     # via
     #   mpcontribs-api
     #   mpcontribs-api (pyproject.toml)
-boltons==25.0.0
+boltons==26.0.0
     # via
     #   mpcontribs-api
     #   mpcontribs-api (pyproject.toml)
-boto3==1.43.9
+boto3==1.43.45
     # via flask-mongorest-mpcontribs
-botocore==1.43.9
+botocore==1.43.45
     # via
     #   boto3
     #   s3transfer
 brotli==1.2.0
     # via flask-compress
-bytecode==0.17.0
+bytecode==0.18.1
     # via ddtrace
-certifi==2026.4.22
+certifi==2026.6.17
     # via requests
-cffi==2.0.0
+cffi==2.1.0
     # via
     #   argon2-cffi-bindings
     #   cryptography
-charset-normalizer==3.4.7
+charset-normalizer==3.4.9
     # via requests
-click==8.4.0
+click==8.4.2
     # via
     #   flask
     #   rq
@@ -76,7 +76,7 @@ cramjam==2.11.0
     # via python-snappy
 crontab==1.0.5
     # via rq-scheduler
-cryptography==48.0.0
+cryptography==49.0.0
     # via pyopenssl
 css-html-js-minify==2.5.5
     # via
@@ -84,7 +84,7 @@ css-html-js-minify==2.5.5
     #   mpcontribs-api (pyproject.toml)
 cycler==0.12.1
     # via matplotlib
-dateparser==1.4.0
+dateparser==1.4.1
     # via
     #   mpcontribs-api
     #   mpcontribs-api (pyproject.toml)
@@ -92,7 +92,7 @@ ddtrace==4.3.0
     # via
     #   mpcontribs-api
     #   mpcontribs-api (pyproject.toml)
-debugpy==1.8.20
+debugpy==1.8.21
     # via ipykernel
 decorator==5.3.1
     # via ipython
@@ -113,7 +113,7 @@ executing==2.2.1
     # via stack-data
 fastjsonschema==2.21.2
     # via nbformat
-fastnumbers==5.1.1
+fastnumbers==5.2.0
     # via flask-mongorest-mpcontribs
 filetype==1.2.0
     # via
@@ -123,7 +123,6 @@ flake8==7.3.0
     # via
     #   mpcontribs-api
     #   mpcontribs-api (pyproject.toml)
-    #   pytest-flake8
 flasgger-tschaume==0.9.7
     # via
     #   mpcontribs-api
@@ -168,28 +167,26 @@ fqdn==1.5.1
     # via jsonschema
 freezegun==1.5.5
     # via rq-scheduler
-gevent==26.4.0
+gevent==26.5.0
     # via gunicorn
-greenlet==3.5.0
+greenlet==3.5.3
     # via gevent
 gunicorn[gevent]==24.1.1
     # via
     #   mpcontribs-api
     #   mpcontribs-api (pyproject.toml)
-idna==3.15
+idna==3.18
     # via
     #   anyio
     #   jsonschema
     #   requests
-importlib-metadata==8.7.1
-    # via opentelemetry-api
 iniconfig==2.3.0
     # via pytest
 ipykernel==6.29.5
     # via
     #   nbclassic
     #   notebook
-ipython==9.13.0
+ipython==9.15.0
     # via ipykernel
 ipython-genutils==0.2.0
     # via
@@ -247,7 +244,7 @@ jupyter-core==5.9.1
     #   notebook
 jupyter-events==0.12.1
     # via jupyter-server
-jupyter-server==2.18.2
+jupyter-server==2.20.0
     # via notebook-shim
 jupyter-server-terminals==0.5.4
     # via jupyter-server
@@ -257,7 +254,7 @@ kiwisolver==1.5.0
     # via matplotlib
 lark==1.3.1
     # via rfc3987-syntax
-lxml==6.1.0
+lxml==6.1.1
     # via pymatgen-core
 markupsafe==3.0.3
     # via
@@ -272,7 +269,7 @@ marshmallow==3.26.2
     #   mpcontribs-api (pyproject.toml)
 marshmallow-mongoengine==0.31.2
     # via flask-mongorest-mpcontribs
-matplotlib==3.10.9
+matplotlib==3.11.0
     # via pymatgen-core
 matplotlib-inline==0.2.2
     # via
@@ -282,7 +279,7 @@ mccabe==0.7.0
     # via flake8
 mimerender-pr36==0.0.2
     # via flask-mongorest-mpcontribs
-mistune==3.2.1
+mistune==3.3.3
     # via
     #   flasgger-tschaume
     #   nbconvert
@@ -293,7 +290,7 @@ mongoengine==0.29.3
     #   marshmallow-mongoengine
 monty==2026.5.18
     # via pymatgen-core
-more-itertools==11.0.2
+more-itertools==11.1.0
     # via
     #   mpcontribs-api
     #   mpcontribs-api (pyproject.toml)
@@ -301,11 +298,11 @@ mpcontribs-api[dev] @ file:///home/runner/work/MPContribs/MPContribs/mpcontribs-
     # via mpcontribs-api (pyproject.toml)
 mpmath==1.3.0
     # via sympy
-narwhals==2.21.2
+narwhals==2.23.0
     # via plotly
 nbclassic==1.3.3
     # via notebook
-nbclient==0.10.4
+nbclient==0.11.0
     # via nbconvert
 nbconvert==7.17.1
     # via
@@ -333,7 +330,7 @@ notebook==6.5.7
     #   mpcontribs-api (pyproject.toml)
 notebook-shim==0.2.4
     # via nbclassic
-numpy==2.4.5
+numpy==2.4.6
     # via
     #   contourpy
     #   matplotlib
@@ -344,7 +341,7 @@ numpy==2.4.5
     #   pymatgen-core
     #   scipy
     #   spglib
-opentelemetry-api==1.41.1
+opentelemetry-api==1.43.0
     # via ddtrace
 orjson==3.11.9
     # via
@@ -373,17 +370,17 @@ parso==0.8.7
     # via jedi
 pexpect==4.9.0
     # via ipython
-pillow==12.2.0
+pillow==12.3.0
     # via matplotlib
 pint==0.25.3
     # via
     #   mpcontribs-api
     #   mpcontribs-api (pyproject.toml)
-platformdirs==4.9.6
+platformdirs==4.10.0
     # via
     #   jupyter-core
     #   pint
-plotly==6.7.0
+plotly==6.9.0
     # via pymatgen-core
 pluggy==1.6.0
     # via pytest
@@ -425,13 +422,13 @@ pymatgen==2026.5.4
     # via
     #   mpcontribs-api
     #   mpcontribs-api (pyproject.toml)
-pymatgen-core==2026.5.17
+pymatgen-core==2026.5.18
     # via pymatgen
 pymongo==4.17.0
     # via
     #   flask-mongorest-mpcontribs
     #   mongoengine
-pyopenssl==26.2.0
+pyopenssl==26.3.0
     # via
     #   mpcontribs-api
     #   mpcontribs-api (pyproject.toml)
@@ -439,17 +436,12 @@ pyparsing==3.3.2
     # via
     #   bibtexparser
     #   matplotlib
-pytest==9.0.3
+pytest==9.1.1
     # via
     #   mpcontribs-api
     #   mpcontribs-api (pyproject.toml)
-    #   pytest-flake8
     #   pytest-pycodestyle
     #   pytest-xdist
-pytest-flake8==1.3.0
-    # via
-    #   mpcontribs-api
-    #   mpcontribs-api (pyproject.toml)
 pytest-pycodestyle==2.5.0
     # via
     #   mpcontribs-api
@@ -489,7 +481,7 @@ pyzmq==27.1.0
     #   jupyter-client
     #   jupyter-server
     #   notebook
-redis==7.4.0
+redis==8.0.1
     # via
     #   flask-rq2
     #   flask-sse
@@ -499,7 +491,7 @@ referencing==0.37.0
     #   jsonschema
     #   jsonschema-specifications
     #   jupyter-events
-regex==2026.5.9
+regex==2026.6.28
     # via dateparser
 requests==2.34.2
     # via
@@ -515,7 +507,7 @@ rfc3986-validator==0.1.1
     #   jupyter-events
 rfc3987-syntax==1.1.0
     # via jsonschema
-rpds-py==0.30.0
+rpds-py==2026.6.3
     # via
     #   jsonschema
     #   referencing
@@ -529,7 +521,7 @@ rq-scheduler==0.14.0
     # via flask-rq2
 ruamel-yaml==0.19.1
     # via monty
-s3transfer==0.17.0
+s3transfer==0.19.0
     # via boto3
 scipy==1.17.1
     # via pymatgen-core
@@ -547,7 +539,7 @@ six==1.17.0
     #   flask-sse
     #   python-dateutil
     #   rfc3339-validator
-soupsieve==2.8.3
+soupsieve==2.8.4
     # via beautifulsoup4
 spglib==2.7.0
     # via pymatgen-core
@@ -566,18 +558,18 @@ terminado==0.18.1
     #   jupyter-server
     #   jupyter-server-terminals
     #   notebook
-tinycss2==1.4.0
+tinycss2==1.5.1
     # via bleach
-tornado==6.5.5
+tornado==6.5.7
     # via
     #   ipykernel
     #   jupyter-client
     #   jupyter-server
     #   notebook
     #   terminado
-tqdm==4.67.3
+tqdm==4.68.4
     # via pymatgen-core
-traitlets==5.15.0
+traitlets==5.15.1
     # via
     #   ipykernel
     #   ipython
@@ -590,7 +582,7 @@ traitlets==5.15.0
     #   nbconvert
     #   nbformat
     #   notebook
-typing-extensions==4.15.0
+typing-extensions==4.16.0
     # via
     #   anyio
     #   beautifulsoup4
@@ -604,7 +596,7 @@ typing-extensions==4.15.0
     #   spglib
 tzdata==2026.2
     # via arrow
-tzlocal==5.3.1
+tzlocal==5.4.4
     # via dateparser
 uncertainties==3.2.3
     # via
@@ -617,7 +609,7 @@ urllib3==2.7.0
     # via
     #   botocore
     #   requests
-wcwidth==0.7.0
+wcwidth==0.8.2
     # via prompt-toolkit
 webcolors==25.10.0
     # via jsonschema
@@ -634,13 +626,11 @@ werkzeug==3.1.8
     # via
     #   flasgger-tschaume
     #   flask
-wrapt==2.1.2
+wrapt==2.2.2
     # via ddtrace
-zipp==3.23.1
-    # via importlib-metadata
 zope-event==6.2
     # via gevent
-zope-interface==8.4
+zope-interface==8.5
     # via gevent
 zstandard==0.25.0
     # via
