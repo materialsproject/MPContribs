@@ -51,7 +51,7 @@ module.exports = {
         ],
         extensions: ['.js'],
         alias: {
-            "jquery": 'jquery/src/jquery',
+            "jquery": 'jquery',
             "typy": 'typy/lib/index',
             "underscore": 'underscore/underscore',
             "lunr": 'lunr.js/lunr',
