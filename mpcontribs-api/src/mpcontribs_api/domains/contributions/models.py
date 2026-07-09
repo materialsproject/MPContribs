@@ -110,7 +110,6 @@ class ContributionBase(BaseDocumentWithInput[PydanticObjectId]):
 class Contribution(ContributionBase):
     """Models what is actually stored in the database."""
 
-    is_public: bool
     # Server-owned: the service resolves the real version (see ContributionService._split_non_unique)
     # and stamps it on the doc. Defaults to 1 so the no-version (unique-identifier) case is implicit.
     version: int = 1
@@ -195,7 +194,6 @@ class ContributionOut(DocumentOut[PydanticObjectId]):
             "formula",
             "is_public",
             "last_modified",
-            "needs_build",
         ]
 
 
@@ -206,7 +204,6 @@ class ContributionPatch(SparseFieldsModel):
     identifier: str | None = None
     version: int | None = None
     formula: str | None = None
-    needs_build: Annotated[bool | None, deprecated("'needs_build' is deprecated.")] = None
     is_public: bool | None = None
     data: Annotated[
         dict[str, Any] | None,
