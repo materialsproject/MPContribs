@@ -168,7 +168,13 @@ class MPContribsSettings(BaseModel):
     )
     max_components: int = Field(
         default=10,
-        description="The maximum allowed number of a single Component type (Structure, Table, Attachment) on a single Contribution",
+        description="The maximum allowed number of a single Component type (Structure, Table, Attachment) on a single "
+        "Contribution",
+    )
+    float_precision: int = Field(
+        default=6,
+        description="The precision with which to store floats in MongoDB. " 
+            "Primarily used to handle Contribution.data values.",
     )
 
 
@@ -184,6 +190,9 @@ class Settings(BaseSettings):
     # MPContribs_mongo__*
     # requires uri and db_name
     mongo: MongoSettings
+
+    # MPContribs_mpcontribs__*
+    mpcontribs: MPContribsSettings = Field(default_factory=MPContribsSettings)
 
     # MPContribs_aws__*
     aws: AwsSettings = Field(default_factory=AwsSettings)
