@@ -1,6 +1,7 @@
 import re
 from datetime import UTC, datetime
 from typing import Annotated, Any
+from warnings import deprecated
 
 from beanie import (
     Insert,
@@ -86,8 +87,6 @@ class ContributionBase(BaseDocumentWithInput[PydanticObjectId]):
         BeforeValidator(_validate_keys),
     ]
 
-    # TODO: Verify that this should default to True and be passed by users
-    needs_build: bool = False
     last_modified: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
     class Settings:
@@ -117,7 +116,7 @@ class Contribution(ContributionBase):
     structures: list[Link[Structure]] | None = None
     tables: list[Link[Table]] | None = None
     attachments: list[Link[Attachment]] | None = None
-    # needs_build: bool = False
+    needs_build: Annotated[bool | None, deprecated("'needs_build' is deprecated.")] = False
 
     @classmethod
     def from_input_model(cls, data: ContributionIn) -> Contribution:
@@ -177,7 +176,7 @@ class ContributionOut(DocumentOut[PydanticObjectId]):
     formula: str | None = None
     is_public: bool | None = None
     last_modified: datetime | None = None
-    needs_build: bool | None = None
+    needs_build: Annotated[bool | None, deprecated("'needs_build' is deprecated.")] = None
     # No input validators on the read path: stored documents are trusted, and re-validating here
     # would 500 on historical data that missed the correction (see carrier_transport contribs)
     data: dict[str, Any] | None = None
@@ -206,7 +205,7 @@ class ContributionPatch(SparseFieldsModel):
     identifier: str | None = None
     version: int | None = None
     formula: str | None = None
-    needs_build: bool | None = None
+    needs_build: Annotated[bool | None, deprecated("'needs_build' is deprecated.")] = None
     data: Annotated[
         dict[str, Any] | None,
         BeforeValidator(_validate_data_depth),
