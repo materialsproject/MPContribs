@@ -87,7 +87,7 @@ class ContributionBase(BaseDocumentWithInput[PydanticObjectId]):
     ]
 
     # TODO: Verify that this should default to True and be passed by users
-    needs_build: bool = True
+    needs_build: bool = False
     last_modified: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
     class Settings:
@@ -117,7 +117,7 @@ class Contribution(ContributionBase):
     structures: list[Link[Structure]] | None = None
     tables: list[Link[Table]] | None = None
     attachments: list[Link[Attachment]] | None = None
-    # needs_build: bool = True
+    # needs_build: bool = False
 
     @classmethod
     def from_input_model(cls, data: ContributionIn) -> Contribution:
