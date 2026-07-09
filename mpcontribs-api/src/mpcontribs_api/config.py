@@ -173,8 +173,8 @@ class MPContribsSettings(BaseModel):
     )
     float_precision: int = Field(
         default=6,
-        description="The precision with which to store floats in MongoDB. " 
-            "Primarily used to handle Contribution.data values.",
+        description="The precision with which to store floats in MongoDB. "
+        "Primarily used to handle Contribution.data values.",
     )
 
 
