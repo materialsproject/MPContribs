@@ -75,6 +75,8 @@ def _validate_nested_keys(value: Any) -> None:
 
 
 class ContributionBase(BaseDocumentWithInput[PydanticObjectId]):
+    """Shared settings and fields for Contribution, ContributionIn, and ContributionOut."""
+
     project: str
     identifier: str
     formula: str
@@ -106,6 +108,8 @@ class ContributionBase(BaseDocumentWithInput[PydanticObjectId]):
 
 
 class Contribution(ContributionBase):
+    """Models what is actually stored in the database."""
+
     is_public: bool
     # Server-owned: the service resolves the real version (see ContributionService._split_non_unique)
     # and stamps it on the doc. Defaults to 1 so the no-version (unique-identifier) case is implicit.
@@ -135,6 +139,11 @@ class Contribution(ContributionBase):
 
 
 class ContributionIn(ContributionBase):
+    """Fields that users are allowed to submit when adding a Contribution.
+
+    version will be inferred if left as None
+    """
+
     # Only meaningful on upsert/update of a non-unique-identifier project, where it selects which
     # version to target. Ignored on insert (the service auto-assigns) and for unique-identifier
     # projects (inferred as 1).
@@ -157,6 +166,11 @@ class ContributionIn(ContributionBase):
 
 
 class ContributionOut(DocumentOut[PydanticObjectId]):
+    """Models what the users are allowed to see in a return.
+
+    Users can specify further what they want to see if not everything is of interest
+    """
+
     project: str | None = None
     identifier: str | None = None
     version: int | None = None
@@ -186,6 +200,8 @@ class ContributionOut(DocumentOut[PydanticObjectId]):
 
 
 class ContributionPatch(SparseFieldsModel):
+    """Fields that can be specified for partial updates to a Contribution."""
+
     project: str | None = None
     identifier: str | None = None
     version: int | None = None
@@ -202,6 +218,11 @@ class ContributionPatch(SparseFieldsModel):
 
 
 class ContributionFilter(BaseFilter):
+    """How users can filter searches for Contributions.
+
+    Includes filters for linked documents (Components)
+    """
+
     id: PydanticObjectId | None = None
     id__in: list[PydanticObjectId] | None = None
     id__neq: PydanticObjectId | None = None
