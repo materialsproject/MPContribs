@@ -104,6 +104,7 @@ def _make_mongo_settings(
     max_components_per_contribution: int = 500,
     max_concurrent_transactions: int = 8,
     component_insert_chunk_size: int = 100,
+    bulk_write_limit: int = 1000,
 ) -> MongoSettings:
     return MongoSettings.model_validate({
         "uri": "mongodb://test",
@@ -112,6 +113,7 @@ def _make_mongo_settings(
         "max_components_per_contribution": max_components_per_contribution,
         "max_concurrent_transactions": max_concurrent_transactions,
         "component_insert_chunk_size": component_insert_chunk_size,
+        "bulk_write_limit": bulk_write_limit,
     })
 
 
@@ -467,7 +469,7 @@ class TestContributionVersioning:
     async def test_insert_unique_existing_key_conflicts(self):
         svc, contrib_repo, *_ = _make_service()  # unique_identifiers=True by default
         contrib_repo.insert_many_contributions.return_value = None
-        contrib_repo.max_versions.return_value = {("proj", "mp-1"): 1}
+        contrib_repo.max_versions.return_value = {("proj", "mp-1", ""): 1}
 
         summary = await svc.insert_contributions([_contrib_in(identifier="mp-1")])
 
@@ -479,7 +481,7 @@ class TestContributionVersioning:
     async def test_insert_non_unique_assigns_max_plus_one(self):
         svc, contrib_repo, *_ = _make_service(unique_identifiers=False)
         contrib_repo.insert_many_contributions.return_value = None
-        contrib_repo.max_versions.return_value = {("proj", "mp-1"): 3}
+        contrib_repo.max_versions.return_value = {("proj", "mp-1", ""): 3}
 
         summary = await svc.insert_contributions([_contrib_in(identifier="mp-1")])
 
@@ -500,7 +502,7 @@ class TestContributionVersioning:
     async def test_insert_non_unique_same_key_twice_sequences_versions(self):
         svc, contrib_repo, *_ = _make_service(unique_identifiers=False)
         contrib_repo.insert_many_contributions.return_value = None
-        contrib_repo.max_versions.return_value = {("proj", "dup"): 5}
+        contrib_repo.max_versions.return_value = {("proj", "dup", ""): 5}
 
         contribs = [_contrib_in(identifier="dup"), _contrib_in(identifier="dup")]
         summary = await svc.insert_contributions(contribs)
@@ -524,17 +526,56 @@ class TestContributionVersioning:
         # A supplied version is ignored for unique-identifier projects (inferred as 1).
         await svc.upsert_contributions([_contrib_in(identifier="mp-1", version=9)])
 
-        assert contrib_repo.upsert_contribution_by_identifiers.call_args.args[2] == 1
+        assert contrib_repo.upsert_contribution_by_identifiers.call_args.args[0]["version"] == 1
         contrib_repo.max_versions.assert_not_called()
 
-    async def test_upsert_non_unique_requires_version(self):
+    async def test_upsert_non_unique_defaults_version_to_one_when_no_existing_row(self):
+        # No row exists yet -> unambiguous insert -> default to version 1 rather than rejecting.
         svc, contrib_repo, *_ = _make_service(unique_identifiers=False)
+        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
+        contrib_repo.max_versions.return_value = {}  # nothing exists
+
+        summary = await svc.upsert_contributions([_contrib_in(identifier="mp-1")])  # no version
+
+        assert len(summary.succeeded) == 1
+        assert summary.failed == []
+        assert contrib_repo.upsert_contribution_by_identifiers.call_args.args[0]["version"] == 1
+
+    async def test_upsert_non_unique_unversioned_with_existing_row_is_ambiguous(self):
+        # A row already exists for this identity -> unversioned upsert can't tell update from insert
+        # -> reject, requiring an explicit version.
+        svc, contrib_repo, *_ = _make_service(unique_identifiers=False)
+        contrib_repo.max_versions.return_value = {("proj", "mp-1", ""): 2}
 
         summary = await svc.upsert_contributions([_contrib_in(identifier="mp-1")])  # no version
 
         assert summary.succeeded == []
         assert [f.error_code for f in summary.failed] == ["validation_error"]
+        assert "version" in summary.failed[0].message
         contrib_repo.upsert_contribution_by_identifiers.assert_not_called()
+
+    async def test_upsert_non_unique_with_existing_row_and_version_targets_it(self):
+        # With an existing row, supplying the version resolves the ambiguity and proceeds.
+        svc, contrib_repo, *_ = _make_service(unique_identifiers=False)
+        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
+        contrib_repo.max_versions.return_value = {("proj", "mp-1", ""): 2}
+
+        summary = await svc.upsert_contributions([_contrib_in(identifier="mp-1", version=2)])
+
+        assert len(summary.succeeded) == 1
+        assert contrib_repo.upsert_contribution_by_identifiers.call_args.args[0]["version"] == 2
+
+    async def test_upsert_unique_unversioned_with_existing_row_is_not_ambiguous(self):
+        # Unique-identifier projects have at most one row per identity, so upsert stays unambiguous
+        # (version 1) even when a row exists; max_versions is not even consulted.
+        svc, contrib_repo, *_ = _make_service()  # unique by default
+        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
+
+        summary = await svc.upsert_contributions([_contrib_in(identifier="mp-1")])  # no version
+
+        assert len(summary.succeeded) == 1
+        assert contrib_repo.upsert_contribution_by_identifiers.call_args.args[0]["version"] == 1
+        contrib_repo.max_versions.assert_not_called()
 
     async def test_upsert_non_unique_passes_supplied_version(self):
         svc, contrib_repo, *_ = _make_service(unique_identifiers=False)
@@ -542,7 +583,96 @@ class TestContributionVersioning:
 
         await svc.upsert_contributions([_contrib_in(identifier="mp-1", version=7)])
 
-        assert contrib_repo.upsert_contribution_by_identifiers.call_args.args[2] == 7
+        assert contrib_repo.upsert_contribution_by_identifiers.call_args.args[0]["version"] == 7
+
+
+# ---------------------------------------------------------------------------
+# Annotated-key pivot (expansion) through the service
+# ---------------------------------------------------------------------------
+
+
+def _pivoting_contrib(identifier="mp-1", project="proj") -> ContributionIn:
+    """A submission whose two condition signatures pivot into two contributions."""
+    return ContributionIn(
+        _id=_oid(),
+        project=project,
+        identifier=identifier,
+        formula="Fe2O3",
+        data={
+            "conductivity (S/cm, T=300K)": 4.2,
+            "conductivity (S/cm, T=400K)": 5.1,
+            "bandgap (eV)": 1.1,
+        },
+    )
+
+
+class TestContributionPivotThroughService:
+    async def test_insert_pivots_one_submission_into_many_docs(self):
+        svc, contrib_repo, *_ = _make_service()  # unique_identifiers=True
+        contrib_repo.insert_many_contributions.return_value = None
+
+        summary = await svc.insert_contributions([_pivoting_contrib()])
+
+        # total reflects the submitted batch; succeeded reflects the stored (pivoted) docs.
+        assert summary.total == 1
+        assert len(summary.succeeded) == 2
+        docs = contrib_repo.insert_many_contributions.call_args[0][0]
+        assert len({d.condition_key for d in docs}) == 2
+        assert all(d.condition_key for d in docs)  # non-empty condition_key on each pivoted doc
+        # Each doc carries its conditions as columns plus the broadcast bandgap.
+        for d in docs:
+            assert set(d.data) == {"T", "conductivity", "bandgap"}
+
+    async def test_insert_failure_maps_to_original_submission_index(self):
+        # Non-unique project so intra-batch pivot rows don't self-conflict; a Mongo writeError on the
+        # 3rd expanded doc (2nd submission's 2nd row) must report against original index 1.
+        svc, contrib_repo, *_ = _make_service(unique_identifiers=False)
+        contrib_repo.insert_many_contributions.side_effect = BulkWriteError(
+            {"writeErrors": [{"index": 2, "code": 11000, "errmsg": "duplicate key"}]}
+        )
+        plain = ContributionIn(_id=_oid(), project="proj", identifier="mp-a", formula="F", data={})
+        summary = await svc.insert_contributions([plain, _pivoting_contrib(identifier="mp-b")])
+
+        assert summary.total == 2
+        assert [f.index for f in summary.failed] == [1]
+        assert len(summary.succeeded) == 2  # plain + first pivoted row
+
+    async def test_malformed_submission_fails_only_that_item(self):
+        svc, contrib_repo, *_ = _make_service()
+        contrib_repo.insert_many_contributions.return_value = None
+        good = ContributionIn(_id=_oid(), project="proj", identifier="ok", formula="F", data={"bandgap (eV)": 1.1})
+        # Collision (same name+signature, different unit) is caught in expansion, not at model parse.
+        bad = ContributionIn(
+            _id=_oid(),
+            project="proj",
+            identifier="bad",
+            formula="F",
+            data={"x (S/cm, T=300K)": 1, "x (mS/cm, T=300K)": 2},
+        )
+        summary = await svc.insert_contributions([good, bad])
+
+        assert summary.total == 2
+        assert len(summary.succeeded) == 1
+        assert [f.index for f in summary.failed] == [1]
+        assert summary.failed[0].error_code == "validation_error"
+
+    async def test_expanded_count_over_limit_raises(self):
+        settings = _make_mongo_settings(bulk_write_limit=1)
+        svc, *_ = _make_service(settings=settings)
+        # One submission expands to 2 rows > limit of 1.
+        with pytest.raises(ValidationError, match="expands to"):
+            await svc.insert_contributions([_pivoting_contrib()])
+
+    async def test_upsert_passes_condition_key_to_repo(self):
+        svc, contrib_repo, *_ = _make_service()  # unique -> version 1, condition_key differentiates
+        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
+
+        await svc.upsert_contributions([_pivoting_contrib()])
+
+        assert contrib_repo.upsert_contribution_by_identifiers.call_count == 2
+        for call in contrib_repo.upsert_contribution_by_identifiers.call_args_list:
+            assert call.args[0]["version"] == 1  # resolved version travels in the identifiers dict
+            assert call.args[2]  # non-empty condition_key
 
 
 # ---------------------------------------------------------------------------
@@ -629,7 +759,8 @@ class TestUpsertContributionsAtomic:
         await svc.upsert_contributions([contrib])
 
         call = contrib_repo.upsert_contribution_by_identifiers.call_args
-        assert call.args[0] == {"project": "my-proj", "identifier": "mp-99"}
+        # identifiers() now carries the resolved version alongside project/identifier.
+        assert call.args[0] == {"project": "my-proj", "identifier": "mp-99", "version": 1}
         assert call.args[1] is contrib
 
     async def test_returns_repo_results_in_input_order(self):
@@ -637,7 +768,7 @@ class TestUpsertContributionsAtomic:
         docs = [MagicMock(spec=Contribution, name=f"doc-{i}") for i in range(3)]
         returned = {}
 
-        async def _upsert(identifiers, contrib, version):
+        async def _upsert(identifiers, contrib, condition_key=""):
             doc = docs[int(contrib.identifier.split("-")[1])]
             returned[contrib.identifier] = doc
             return doc
@@ -677,7 +808,7 @@ class TestUpsertContributionsAtomic:
     async def test_one_failure_is_reported_not_raised(self):
         svc, contrib_repo, *_ = _make_service()
 
-        async def _upsert(identifiers, contrib, version):
+        async def _upsert(identifiers, contrib, condition_key=""):
             if contrib.identifier == "mp-1":
                 raise ConflictError("boom")
             return MagicMock(spec=Contribution)
