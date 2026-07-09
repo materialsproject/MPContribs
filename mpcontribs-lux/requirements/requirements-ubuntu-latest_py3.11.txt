@@ -68,7 +68,7 @@ pillow==12.2.0
     # via matplotlib
 plotly==6.5.0
     # via pymatgen
-pyarrow==24.0.0
+pyarrow==23.0.1
     # via mpcontribs-lux (pyproject.toml)
 pybtex==0.25.1
     # via emmet-core

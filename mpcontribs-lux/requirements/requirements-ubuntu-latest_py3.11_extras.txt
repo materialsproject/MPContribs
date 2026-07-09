@@ -107,7 +107,7 @@ pluggy==1.6.0
     #   pytest-cov
 pre-commit==4.5.0
     # via mpcontribs-lux (pyproject.toml)
-pyarrow==24.0.0
+pyarrow==23.0.1
     # via mpcontribs-lux (pyproject.toml)
 pybtex==0.25.1
     # via emmet-core
