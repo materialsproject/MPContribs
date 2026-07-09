@@ -18,8 +18,6 @@ Design notes:
   ``T=26.85degC``) collapse to the same key rather than splitting into separate pivoted rows.
 """
 
-from __future__ import annotations
-
 import re
 from typing import Any
 

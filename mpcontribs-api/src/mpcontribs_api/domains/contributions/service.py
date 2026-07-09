@@ -21,6 +21,7 @@ from mpcontribs_api.domains._shared.bulk import (
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
 from mpcontribs_api.domains.attachments.repository import MongoDbAttachmentRepository
 from mpcontribs_api.domains.contributions.models import Contribution, ContributionFilter, ContributionIn
+from mpcontribs_api.domains.contributions.pivot import expand_contribution
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
 from mpcontribs_api.domains.structures.models import Structure
@@ -34,16 +35,33 @@ logger = structlog.get_logger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
+class PreparedInput:
+    """One expanded (pivoted) contribution paired with its original batch index and condition_key.
+
+    Expansion can turn a single submitted contribution into many rows (see
+    :func:`mpcontribs_api.domains.contributions.pivot.expand_contribution`); every row keeps the
+    ``index`` of the submission it came from so per-item failures report against the original batch
+    position, and carries the server-computed ``condition_key`` that (with project+identifier)
+    identifies it.
+    """
+
+    index: int
+    contribution: ContributionIn
+    condition_key: str
+
+
+@dataclass(frozen=True, slots=True)
 class ResolvedWrite:
     """A contribution that passed validation, paired with its server-resolved version.
 
     Produced by the split pipeline so the resolved version travels with its contribution (and its
-    original batch index)
+    original batch index and condition_key).
     """
 
     index: int
     contribution: ContributionIn
     version: int
+    condition_key: str = ""
 
 
 class ContributionService:
@@ -114,31 +132,54 @@ class ContributionService:
         )
         return BulkWriteSummary[Contribution](total=len(contributions), succeeded=succeeded, failed=failed)
 
+    def _expand_batch(
+        self,
+        contributions: list[ContributionIn],
+    ) -> tuple[list[BulkFailure], list[PreparedInput]]:
+        """Annotate units and pivot each submission on its conditions, keeping the original index.
+
+        A submission may expand into several rows (one per condition signature) or be rejected as a
+        whole (malformed annotation, colliding columns, or components on a pivoting submission). A
+        rejection becomes a single ``BulkFailure`` against the submission's original index; every
+        surviving row carries that index and its ``condition_key`` forward.
+        """
+        failures: list[BulkFailure] = []
+        prepared: list[PreparedInput] = []
+        for i, contrib in enumerate(contributions):
+            try:
+                rows = expand_contribution(contrib)
+            except AppError as exc:
+                failures.append(bulk_failure_from_exception(i, contrib.identifiers(), exc))
+                logger.info("contribution expansion rejected", index=i, identifiers=contrib.identifiers())
+                continue
+            for row in rows:
+                prepared.append(PreparedInput(index=i, contribution=row.contribution, condition_key=row.condition_key))
+        return failures, prepared
+
     def _split_unauthorized(
         self,
-        indices: Iterable[int],
-        contributions: list[ContributionIn],
-    ) -> tuple[list[BulkFailure], list[int]]:
+        items: Iterable[PreparedInput],
+    ) -> tuple[list[BulkFailure], list[PreparedInput]]:
         """Reject contributions whose ``project`` the current user is not permitted to write.
 
         Authorized iff the user is an admin (writes anything) or the contribution's ``project`` is
         one of the user's groups. Anonymous users are blocked at the router, but carry no groups and
         are not admins, so they fall through to authorized-for-nothing here (defense-in-depth).
 
-        Partitions ``indices`` into unauthorized ``BulkFailure`` entries and the remaining authorized
-        indices that should proceed. Mirrors ``_split_oversize`` (same shape) so callers can chain
-        the splits and keep each index in exactly one bucket, preserving input ordering.
+        Partitions ``items`` into unauthorized ``BulkFailure`` entries and the remaining authorized
+        items that should proceed. Mirrors ``_split_oversize`` (same shape) so callers can chain
+        the splits and keep each item in exactly one bucket, preserving input ordering.
         """
         unauthorized: list[BulkFailure] = []
-        remaining: list[int] = []
-        for i in indices:
-            contrib = contributions[i]
+        remaining: list[PreparedInput] = []
+        for item in items:
+            contrib = item.contribution
             if self._user.can_write(contrib.project):
-                remaining.append(i)
+                remaining.append(item)
             else:
                 unauthorized.append(
                     BulkFailure(
-                        index=i,
+                        index=item.index,
                         identifier=contrib.identifiers(),
                         error_code=PermissionError.error_code,
                         message=f"not authorized to write to project '{contrib.project}'",
@@ -152,8 +193,7 @@ class ContributionService:
 
     async def _split_non_unique(
         self,
-        indices: Iterable[int],
-        contributions: list[ContributionIn],
+        items: Iterable[PreparedInput],
         *,
         is_upsert: bool,
     ) -> tuple[list[BulkFailure], list[ResolvedWrite]]:
@@ -166,36 +206,52 @@ class ContributionService:
           as a conflict. On upsert the version is inferred as 1 (any supplied value is ignored).
         - **False**: many versions may share (project, identifier). On insert the version is
           auto-assigned as ``max(existing) + 1``, sequencing intra-batch duplicates. On upsert the
-          caller must supply ``version`` to pick the target row, else the item is rejected.
+          caller may supply ``version`` to pick the target row; if omitted it defaults to 1 **only
+          when no row yet exists** for that (project, identifier, condition_key) — an unambiguous
+          insert. If a row already exists, an unversioned upsert is ambiguous (update which version
+          vs insert a new one) and is rejected, requiring the caller to specify ``version``.
 
-        Iterates ``indices`` in input order so intra-batch duplicates sequence deterministically.
+        Iterates ``items`` in input order so intra-batch duplicates sequence deterministically.
+        Uniqueness and versioning key on (project, identifier, condition_key) so pivoted rows that
+        differ only by condition are independent identities.
 
         Returns:
             tuple of (rejections, a ``ResolvedWrite`` per survivor pairing it with its version)
         """
-        indices = list(indices)
+        items = list(items)
         failures: list[BulkFailure] = []
         plan: list[ResolvedWrite] = []
-        if not indices:
+        if not items:
             return failures, plan
 
-        # One round-trip each for the per-project uniqueness flags and (insert only) the current
-        # max version per key, instead of a query per contribution.
-        unique_map = await self._projects.unique_identifiers_by_id(sorted({contributions[i].project for i in indices}))
-        max_map: dict[tuple[str, str], int] = {}
-        if not is_upsert:
-            keys = sorted({(contributions[i].project, contributions[i].identifier) for i in indices})
+        # One round-trip each for the per-project uniqueness flags and the current max version per
+        # key, instead of a query per contribution. Insert needs the max for every key (assign next
+        # version / reject unique-project dupes); upsert needs it only for non-unique projects, where
+        # the presence of an existing row makes an unversioned upsert ambiguous (see below).
+        unique_map = await self._projects.unique_identifiers_by_id(sorted({it.contribution.project for it in items}))
+        max_map: dict[tuple[str, str, str], int] = {}
+        if is_upsert:
+            keys = sorted(
+                {
+                    (it.contribution.project, it.contribution.identifier, it.condition_key)
+                    for it in items
+                    if unique_map.get(it.contribution.project) is False
+                }
+            )
+        else:
+            keys = sorted({(it.contribution.project, it.contribution.identifier, it.condition_key) for it in items})
+        if keys:
             max_map = await self._contributions.max_versions(keys)
 
-        seen: dict[tuple[str, str], int] = defaultdict(int)
-        for i in indices:
-            contrib = contributions[i]
-            key = (contrib.project, contrib.identifier)
+        seen: dict[tuple[str, str, str], int] = defaultdict(int)
+        for item in items:
+            contrib = item.contribution
+            key = (contrib.project, contrib.identifier, item.condition_key)
 
             if contrib.project not in unique_map:
                 failures.append(
                     BulkFailure(
-                        index=i,
+                        index=item.index,
                         identifier=contrib.identifiers(),
                         error_code=ValidationError.error_code,
                         message=f"project '{contrib.project}' not found or not accessible",
@@ -211,34 +267,43 @@ class ContributionService:
             unique = unique_map[contrib.project]
             if is_upsert:
                 if unique:
+                    # At most one row per (project, identifier, condition_key); upsert is unambiguous.
                     version = 1
                 elif contrib.version is not None:
                     version = contrib.version
-                else:
+                elif key in max_map or seen[key] > 0:
+                    # Non-unique project with a row already present (in the DB, or planned earlier in
+                    # this batch): an unversioned upsert is ambiguous — update which version, or
+                    # insert a new one? Require the caller to specify a version to disambiguate.
                     failures.append(
                         BulkFailure(
-                            index=i,
+                            index=item.index,
                             identifier=contrib.identifiers(),
                             error_code=ValidationError.error_code,
                             message=(
-                                f"project '{contrib.project}' allows multiple versions; a 'version' "
-                                "is required to identify which contribution to update"
+                                f"project '{contrib.project}' already has a contribution for identifier "
+                                f"'{contrib.identifier}'; specify a 'version' to disambiguate updating an "
+                                "existing version from inserting a new one"
                             ),
                         )
                     )
                     logger.info(
-                        "ambiguous contribution version in project allowing multiple versions",
+                        "ambiguous unversioned upsert with existing contributions",
                         project=contrib.project,
                         identifiers=contrib.identifiers(),
                     )
                     continue
+                else:
+                    # No existing row for this identity: an unversioned upsert is an unambiguous
+                    # insert, so default to version 1 (backwards compatible).
+                    version = 1
             elif unique:
                 # Insert into a unique-identifier project: the first occurrence wins, anything that
                 # already exists (in the DB or earlier in this batch) is a conflict.
                 if key in max_map or seen[key] > 0:
                     failures.append(
                         BulkFailure(
-                            index=i,
+                            index=item.index,
                             identifier=contrib.identifiers(),
                             error_code=ConflictError.error_code,
                             message=(
@@ -258,32 +323,33 @@ class ContributionService:
                 # sequencing duplicates within this batch (max+1, max+2, ...).
                 version = max_map.get(key, 0) + 1 + seen[key]
 
-            plan.append(ResolvedWrite(index=i, contribution=contrib, version=version))
+            plan.append(
+                ResolvedWrite(index=item.index, contribution=contrib, version=version, condition_key=item.condition_key)
+            )
             seen[key] += 1
 
         return failures, plan
 
     def _split_oversize(
         self,
-        indices: Iterable[int],
-        contributions: list[ContributionIn],
-    ) -> tuple[list[BulkFailure], list[int]]:
+        items: Iterable[PreparedInput],
+    ) -> tuple[list[BulkFailure], list[PreparedInput]]:
         """Reject contributions whose component count exceeds the per-contribution ceiling.
 
-        Partitions ``indices`` into oversize ``BulkFailure`` entries and the remaining indices that
+        Partitions ``items`` into oversize ``BulkFailure`` entries and the remaining items that
         should proceed to Mongo. Doing this upfront avoids burning a transaction slot on a request
         guaranteed to exceed transactionLifetimeLimitSeconds.
         """
         cap = self._settings.max_components_per_contribution
         oversize: list[BulkFailure] = []
-        remaining: list[int] = []
-        for i in indices:
-            contrib = contributions[i]
+        remaining: list[PreparedInput] = []
+        for item in items:
+            contrib = item.contribution
             count = contrib.component_count()
             if count > cap:
                 oversize.append(
                     BulkFailure(
-                        index=i,
+                        index=item.index,
                         identifier=contrib.identifiers(),
                         error_code=ValidationError.error_code,
                         message=f"contribution has {count} components, exceeds cap of {cap}. "
@@ -292,7 +358,7 @@ class ContributionService:
                 )
                 logger.info("Attemped to add contribution with too many components.", num_components=count, max=cap)
             else:
-                remaining.append(i)
+                remaining.append(item)
         return oversize, remaining
 
     async def _split_contributions(
@@ -300,22 +366,36 @@ class ContributionService:
     ) -> tuple[list[BulkFailure], list[ResolvedWrite]]:
         """Common method for validating contribution write failure logic and resolving versions.
 
-        Runs the cheap, local, index-based filters first (authorization, then component-count cap)
-        so guaranteed failures never reach the DB; ``_split_non_unique`` runs last and turns the
-        remaining indices into a write plan carrying each resolved version.
+        Expands (annotates units + pivots on conditions) each submission first, then runs the cheap,
+        local, index-based filters (authorization, then component-count cap) so guaranteed failures
+        never reach the DB; ``_split_non_unique`` runs last and turns the remaining items into a
+        write plan carrying each resolved version and condition_key. Failures report against the
+        original submission index even though one submission may have produced several rows.
 
         Returns:
             tuple of (failures and their reasons, a ``ResolvedWrite`` per contribution to write)
         """
+        # Annotate units and pivot each submission on its conditions (1 submission -> N rows).
+        expand_failures, prepared = self._expand_batch(contributions)
+        # Bound the *expanded* row count: a small batch can pivot into many rows, so the router's
+        # raw-count gate isn't enough on its own (advertised at GET /api/v1/limits).
+        limit = self._settings.bulk_write_limit
+        if len(prepared) > limit:
+            raise ValidationError(
+                f"Submission expands to {len(prepared)} contributions, exceeding the per-request limit of {limit}. "
+                "Chunk the request (see GET /api/v1/limits) or use the async bulk ingestion endpoint.",
+                expanded_count=len(prepared),
+                limit=limit,
+            )
         # Per-item project authorization (see _split_unauthorized for the per-item vs fail-fast
         # decision). Only authorized items reach Mongo; the rest are reported in ``failed``.
-        unauthorized_failures, authorized_indices = self._split_unauthorized(range(len(contributions)), contributions)
+        unauthorized_failures, authorized = self._split_unauthorized(prepared)
         # Reject contributions that have too many components associated with them.
-        oversize_failures, sized_indices = self._split_oversize(authorized_indices, contributions)
+        oversize_failures, sized = self._split_oversize(authorized)
         # Verify identifiers/uniqueness within a project and resolve each version, depending on
         # project.unique_identifiers and whether this is an insert or upsert.
-        non_unique_failures, plan = await self._split_non_unique(sized_indices, contributions, is_upsert=is_upsert)
-        return (unauthorized_failures + oversize_failures + non_unique_failures, plan)
+        non_unique_failures, plan = await self._split_non_unique(sized, is_upsert=is_upsert)
+        return (expand_failures + unauthorized_failures + oversize_failures + non_unique_failures, plan)
 
     async def _insert_no_components(
         self,
@@ -333,6 +413,7 @@ class ContributionService:
         for item in items:
             doc = Contribution.from_input_model(item.contribution)
             doc.version = item.version
+            doc.condition_key = item.condition_key
             docs.append(doc)
         try:
             await self._contributions.insert_many_contributions(docs)
@@ -401,7 +482,7 @@ class ContributionService:
             async with self._client.start_session() as session:
 
                 async def _txn(s: AsyncClientSession) -> Contribution:
-                    return await self._do_insert(contrib, s, item.version)
+                    return await self._do_insert(contrib, s, item.version, item.condition_key)
 
                 return await session.with_transaction(_txn)
         except AppError as exc:
@@ -412,7 +493,9 @@ class ContributionService:
             )
             return bulk_failure_from_exception(item.index, contrib.identifiers(), exc)
 
-    async def _do_insert(self, contrib: ContributionIn, session: AsyncClientSession, version: int) -> Contribution:
+    async def _do_insert(
+        self, contrib: ContributionIn, session: AsyncClientSession, version: int, condition_key: str = ""
+    ) -> Contribution:
         """Insert components then the contribution itself, all in the given session.
 
         Components are inserted sequentially because a session is single-threaded — sharing it
@@ -423,6 +506,7 @@ class ContributionService:
 
         doc = Contribution.from_input_model(contrib)
         doc.version = version
+        doc.condition_key = condition_key
         doc.structures = cast(list[Link[Structure]] | None, structures or None)
         doc.tables = cast(list[Link[Table]] | None, tables or None)
         return await self._contributions.insert_contribution(doc, session=session)
@@ -466,10 +550,13 @@ class ContributionService:
 
         async def _bounded_upsert(item: ResolvedWrite) -> Contribution | BulkFailure:
             contrib = item.contribution
+            # identifiers() carries the raw request version; override it with the version the service
+            # resolved (unique -> 1, non-unique -> supplied/defaulted) so the repo targets the right row.
+            identifiers = {**contrib.identifiers(), "version": item.version}
             async with sem:
                 try:
                     return await self._contributions.upsert_contribution_by_identifiers(
-                        contrib.identifiers(), contrib, item.version
+                        identifiers, contrib, item.condition_key
                     )
                 except Exception as exc:
                     logger.error(

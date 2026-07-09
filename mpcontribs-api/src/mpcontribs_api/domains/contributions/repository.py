@@ -112,13 +112,15 @@ class MongoDbContributionRepository(
             self.document_model.identifier == identifier,
         )
 
-    async def max_versions(self, keys: list[tuple[str, str]]) -> dict[tuple[str, str], int]:
-        """Return ``{(project, identifier): max_version}`` for the given keys, scoped to the user.
+    async def max_versions(self, keys: list[tuple[str, str, str]]) -> dict[tuple[str, str, str], int]:
+        """Return ``{(project, identifier, condition_key): max_version}`` for the given keys.
 
         Presence of a key in the result also signals that at least one contribution already exists
         for it, which the contribution write path uses to enforce uniqueness on unique-identifier
         projects and to compute the next version on non-unique ones. Keys with no existing
-        contributions are absent from the result.
+        contributions are absent from the result. ``condition_key`` is part of identity so pivoted
+        rows (same project/identifier, different conditions) version independently; legacy docs use
+        the ``""`` default (matched via ``$ifNull``).
 
         A single aggregation answers the whole batch so the write path avoids one round-trip per
         contribution. Scope is merged into ``$match`` (mirroring :meth:`referenced_component_ids`);
@@ -126,32 +128,44 @@ class MongoDbContributionRepository(
         max for keys they may write.
 
         Args:
-            keys: (project, identifier) pairs to look up
+            keys: (project, identifier, condition_key) triples to look up
 
         Returns:
-            dict[tuple[str, str], int]: highest existing version per requested key
+            dict[tuple[str, str, str], int]: highest existing version per requested key
         """
         if not keys:
             return {}
-        match: dict[str, Any] = {"$or": [{"project": p, "identifier": i} for p, i in keys]}
-        if self._scope:
-            match = {"$and": [self._scope, match]}
-        pipeline: list[dict[str, Any]] = [
-            {"$match": match},
-            {
-                "$group": {
-                    "_id": {"project": "$project", "identifier": "$identifier"},
-                    "max_version": {"$max": "$version"},
-                }
-            },
-        ]
-        collection = self.document_model.get_pymongo_collection()
-        result: dict[tuple[str, str], int] = {}
-        async for doc in await collection.aggregate(pipeline):
+        # $ifNull is an aggregation expression, not a query operator; express the condition_key match
+        # via $expr so legacy docs lacking the field (treated as "") are matched correctly.
+        or_clause: dict[str, Any] = {
+            "$or": [
+                {"project": p, "identifier": i, "$expr": {"$eq": [{"$ifNull": ["$condition_key", ""]}, c]}}
+                for p, i, c in keys
+            ]
+        }
+        # Beanie combines find() args with $and and prepends them as $match, so the user scope
+        # is merged automatically (mirroring the manual merge in :meth:`referenced_component_ids`).
+        query = (
+            self.document_model.find(self._scope, or_clause)
+            if self._scope
+            else self.document_model.find(or_clause)
+        )
+        group: dict[str, Any] = {
+            "$group": {
+                "_id": {
+                    "project": "$project",
+                    "identifier": "$identifier",
+                    "condition_key": {"$ifNull": ["$condition_key", ""]},
+                },
+                "max_version": {"$max": "$version"},
+            }
+        }
+        result: dict[tuple[str, str, str], int] = {}
+        async for doc in query.aggregate([group]):
             gid = doc["_id"]
             # Versions are >= 1; coalesce a null $max (legacy docs without the field) to 0 while
             # still recording the key's presence (existence check for unique-identifier projects).
-            result[(gid["project"], gid["identifier"])] = doc.get("max_version") or 0
+            result[(gid["project"], gid["identifier"], gid.get("condition_key", ""))] = doc.get("max_version") or 0
         return result
 
     async def referenced_component_ids(
@@ -233,37 +247,42 @@ class MongoDbContributionRepository(
 
     async def upsert_contribution_by_identifiers(
         self,
-        identifiers: dict[str, str],
+        identifiers: dict[str, str | int],
         contribution: ContributionIn,
-        version: int,
+        condition_key: str = "",
     ) -> Contribution:
         """Atomically upsert a Contribution by its identifying fields and resolved version.
 
-        Relies on the unique index over (project, identifier, version) so that concurrent requests
-        targeting the same key cannot both win the insert branch. Fields the caller did not set are
-        not touched (partial update). On insert a fresh Contribution document is written with
-        ``is_public=False``.
+        Relies on the unique index over (project, identifier, condition_key, version) so that
+        concurrent requests targeting the same key cannot both win the insert branch. Fields the
+        caller did not set are not touched (partial update). On insert a fresh Contribution document
+        is written with ``is_public=False``.
 
         Args:
-            identifiers: the fields ContributionIn.identifiers() returns (project, identifier)
+            identifiers: the fields ContributionIn.identifiers() returns (project, identifier, version)
             contribution: the input payload to upsert
-            version: the version resolved by the service (1 for unique-identifier projects, or the
-                caller-supplied version for non-unique ones); selects which row to update
+            condition_key: the server-computed pivot identity; selects which pivoted row to update
+                ("" when the submission carried no conditions)
 
         Returns:
             Contribution: the document as it stands after the operation
         """
+        project = str(identifiers["project"])
+        identifier = str(identifiers["identifier"])
+        version = int(identifiers["version"])  # service-resolved; always an int here
         # Make sure the user is allowed to upsert a contribution under the provided project
-        if not self._user.can_write(identifiers["project"]):
-            raise PermissionError(f"not authorized to write to project '{identifiers['project']}'")
+        if not self._user.can_write(project):
+            raise PermissionError(f"not authorized to write to project '{project}'")
 
         doc = self.document_model.from_input_model(contribution)
         doc.version = version
+        doc.condition_key = condition_key
         update_data = doc.model_dump(exclude={"id"}, exclude_none=True)
         query = self.document_model.find_one(
             self._scope,
-            self.document_model.project == identifiers["project"],
-            self.document_model.identifier == identifiers["identifier"],
+            self.document_model.project == project,
+            self.document_model.identifier == identifier,
+            self.document_model.condition_key == condition_key,
             self.document_model.version == version,
         ).upsert(
             Set(update_data),

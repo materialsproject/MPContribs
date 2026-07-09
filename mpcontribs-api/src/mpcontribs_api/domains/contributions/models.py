@@ -21,6 +21,7 @@ from mpcontribs_api.domains._shared.filters import BaseFilter
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
 from mpcontribs_api.domains._shared.types import ShortStr
 from mpcontribs_api.domains.attachments.models import Attachment, AttachmentFilter, AttachmentIn
+from mpcontribs_api.domains.contributions.pivot import parse_annotated_key
 from mpcontribs_api.domains.structures.models import Structure, StructureFilter, StructureIn
 from mpcontribs_api.domains.tables.models import Table, TableFilter, TableIn
 from mpcontribs_api.exceptions import ValidationError
@@ -48,19 +49,57 @@ def _validate_data_depth(data: dict[str, Any] | None) -> dict[str, Any] | None:
 _DATA_PUNCTUATION_PATTERN = re.compile(r"(?![^|]*\|[^|]*\|)[^\x21-\x29\x2B-\x2E\x3A-\x40\x5B-\x5E\x60\x7B\x7D-\x7E]*")
 
 
-def _validate_keys(data: dict[str, Any] | None) -> dict[str, Any] | None:
-    if data is None:
-        return None
-    keys = list(data.keys())
-    if not all(isinstance(k, str) and k.isascii() for k in keys):
+def _validate_plain_key(key: Any) -> None:
+    """Validate a single plain key token (a path segment or a condition name)."""
+    if not isinstance(key, str) or not key.isascii():
         raise ValidationError("Non-ASCII key found in Contribution.data. All dict keys must be only ASCII")
-    if any(k == "" for k in keys):
+    if key == "":
         raise ValidationError("Empty key found in Contribution.data. Keys must be non-empty.")
-    if any(_DATA_PUNCTUATION_PATTERN.fullmatch(k) is None for k in keys):
+    if _DATA_PUNCTUATION_PATTERN.fullmatch(key) is None:
         raise ValidationError(
             "Punctuation found in Contribution.data keys. Only '_', '*', '/', and at most 1 '|' permitted."
         )
+
+
+def _validate_keys(data: dict[str, Any] | None) -> dict[str, Any] | None:
+    """Strict plain-key validation for a single dict level (used for nested levels)."""
+    if data is None:
+        return None
+    for key in data:
+        _validate_plain_key(key)
     # Recurse into nested dicts, including dicts nested inside lists.
+    for v in data.values():
+        _validate_nested_keys(v)
+    return data
+
+
+def _validate_data_keys(data: dict[str, Any] | None) -> dict[str, Any] | None:
+    """Top-level ``data`` key validation, allowing the annotated pattern.
+
+    Each top-level key may be either a plain key or the annotated form
+    ``name (unit, cond1=..., cond2=...)``. The name's dotted segments and every condition name are
+    held to the same plain-key rules (units are unconstrained); nested levels stay strictly plain.
+    Expansion (see :mod:`mpcontribs_api.domains.contributions.pivot`) later rewrites annotated keys
+    into plain ones, so stored keys always satisfy :func:`_validate_keys`.
+    """
+    if data is None:
+        return None
+    for raw_key in data:
+        if not isinstance(raw_key, str):
+            raise ValidationError("Non-ASCII key found in Contribution.data. All dict keys must be only ASCII")
+        try:
+            parsed = parse_annotated_key(raw_key)
+        except ValueError as err:
+            raise ValidationError(f"Malformed annotated key in Contribution.data: {err}") from err
+        if not parsed.is_annotated:
+            # A plain key keeps the original strict rule (no '.' nesting); only annotated keys may
+            # use dotted paths, whose segments are validated individually below.
+            _validate_plain_key(raw_key)
+            continue
+        for segment in parsed.segments:
+            _validate_plain_key(segment)
+        for condition_name in parsed.conditions:
+            _validate_plain_key(condition_name)
     for v in data.values():
         _validate_nested_keys(v)
     return data
@@ -81,7 +120,7 @@ class ContributionBase(BaseDocumentWithInput[PydanticObjectId]):
     data: Annotated[
         dict[str, Any],
         BeforeValidator(_validate_data_depth),
-        BeforeValidator(_validate_keys),
+        BeforeValidator(_validate_data_keys),
     ]
 
     # TODO: Verify that this should default to True and be passed by users
@@ -92,9 +131,17 @@ class ContributionBase(BaseDocumentWithInput[PydanticObjectId]):
         name = "contributions"
         keep_nulls = False
         indexes = [
+            # condition_key is part of identity so pivoted rows (same project/identifier, different
+            # conditions) coexist; legacy docs use the "" default. See ContributionService and
+            # mpcontribs_api.domains.contributions.pivot.
             IndexModel(
-                keys=[("project", ASCENDING), ("identifier", ASCENDING), ("version", ASCENDING)],
-                name="project_identifier_version",
+                keys=[
+                    ("project", ASCENDING),
+                    ("identifier", ASCENDING),
+                    ("condition_key", ASCENDING),
+                    ("version", ASCENDING),
+                ],
+                name="project_identifier_conditionkey_version",
                 unique=True,
             ),
             # Multikey indexes over each Link field's DBRef id so the component-delete
@@ -110,6 +157,10 @@ class Contribution(ContributionBase):
     # Server-owned: the service resolves the real version (see ContributionService._split_non_unique)
     # and stamps it on the doc. Defaults to 1 so the no-version (unique-identifier) case is implicit.
     version: int = 1
+    # Server-owned: a deterministic canonical string of the pivot conditions (see
+    # mpcontribs_api.domains.contributions.pivot). "" means no conditions (every legacy doc). Part of
+    # the unique index so pivoted rows can share (project, identifier).
+    condition_key: str = ""
     structures: list[Link[Structure]] | None = None
     tables: list[Link[Table]] | None = None
     attachments: list[Link[Attachment]] | None = None
@@ -137,7 +188,9 @@ class Contribution(ContributionBase):
 class ContributionIn(ContributionBase):
     # Only meaningful on upsert/update of a non-unique-identifier project, where it selects which
     # version to target. Ignored on insert (the service auto-assigns) and for unique-identifier
-    # projects (inferred as 1).
+    # projects (inferred as 1). Kept optional (``None`` == "not supplied") so the service can tell an
+    # omitted version from an explicit ``1`` and require one only in the ambiguous upsert case (see
+    # ContributionService._split_non_unique); it resolves ``None`` -> 1 when unambiguous.
     version: int | None = None
     structures: list[StructureIn] | None = None
     tables: list[TableIn] | None = None
@@ -151,15 +204,24 @@ class ContributionIn(ContributionBase):
         """Returns the total number of components (structures, tables, attachments) in the contribution"""
         return len(self.structures or []) + len(self.tables or []) + len(self.attachments or [])
 
-    def identifiers(self) -> dict[str, str]:
-        """Returns a dict of unique identifiers for a contribution (outside of id)."""
-        return {"project": self.project, "identifier": self.identifier}
+    def identifiers(self) -> dict[str, str | int | None]:
+        """Returns a dict of unique identifiers for a contribution (outside of id).
+
+        ``version`` is the raw request value (``None`` when omitted); the service overrides it with
+        the resolved version before using it to target a row (see ContributionService).
+        """
+        return {
+            "project": self.project,
+            "identifier": self.identifier,
+            "version": self.version,
+        }
 
 
 class ContributionOut(DocumentOut[PydanticObjectId]):
     project: str | None = None
     identifier: str | None = None
     version: int | None = None
+    condition_key: str | None = None
     formula: str | None = None
     is_public: bool | None = None
     last_modified: datetime | None = None
@@ -178,6 +240,7 @@ class ContributionOut(DocumentOut[PydanticObjectId]):
             "project",
             "identifier",
             "version",
+            "condition_key",
             "formula",
             "is_public",
             "last_modified",

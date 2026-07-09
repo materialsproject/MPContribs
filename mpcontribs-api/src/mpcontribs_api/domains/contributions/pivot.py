@@ -1,22 +1,3 @@
-"""Annotated-key parsing and contribution pivoting.
-
-A contribution may be submitted with ``data`` keys in the annotated form::
-
-    "name (unit, cond1=val1, cond2=val2, ...)"
-
-- ``name`` is the (dotted, nestable) data path.
-- ``unit`` is the single token without ``=`` (optional).
-- the ``key=value`` items are *conditions*.
-
-:func:`parse_annotated_key` splits a raw key into those parts. :func:`expand_contribution` uses them
-to (a) annotate each leaf value with its unit (canonicalized to SI, see
-:mod:`mpcontribs_api.domains._shared.units`) and (b) *pivot* the contribution: columns are grouped by
-their exact condition signature and each distinct signature becomes its own contribution, with
-condition-less columns broadcast into every resulting row. One submitted contribution can therefore
-become many stored contributions, each carrying its conditions as ordinary data columns plus a
-server-owned ``condition_key`` (see :func:`mpcontribs_api.domains._shared.units.condition_key`).
-"""
-
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 

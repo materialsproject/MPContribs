@@ -34,6 +34,9 @@ def _enforce_bulk_limit(contributions: list[ContributionIn]) -> None:
     list. Callers over the limit should chunk (the limit is advertised at ``GET /api/v1/limits``)
     or use the async bulk ingestion endpoint. Complements the body-size middleware, which bounds
     bytes rather than item count.
+
+    This bounds the *submitted* item count; the service re-applies the same limit to the *expanded*
+    row count after annotated-key pivoting (one submission can expand into many contributions).
     """
     limit = get_settings().mongo.bulk_write_limit
     count = len(contributions)
