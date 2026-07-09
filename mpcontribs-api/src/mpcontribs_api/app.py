@@ -64,6 +64,7 @@ async def _setup_mongo(app: FastAPI, settings: Settings, stack: AsyncExitStack) 
             Structure,
             Table,
         ],
+        allow_index_dropping=True,  # allow old indices to be dropped from MongoDB when not specified in this package
     )
 
 
