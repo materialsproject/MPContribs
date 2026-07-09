@@ -56,7 +56,7 @@ decorator==5.3.1
     # via ipython
 defusedxml==0.7.1
     # via nbconvert
-django==6.0.6
+django==6.0.7
     # via
     #   django-extensions
     #   django-settings-file
@@ -237,7 +237,7 @@ parso==0.8.7
     # via jedi
 pexpect==4.9.0
     # via ipython
-pillow==12.2.0
+pillow==12.3.0
     # via matplotlib
 pint==0.25.3
     # via mpcontribs-client
@@ -342,7 +342,7 @@ six==1.17.0
     #   bravado-core
     #   python-dateutil
     #   rfc3339-validator
-soupsieve==2.8.3
+soupsieve==2.8.4
     # via beautifulsoup4
 spglib==2.7.0
     # via pymatgen-core
