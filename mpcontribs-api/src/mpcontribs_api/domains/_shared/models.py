@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field, model_validator
 from pymongo.results import DeleteResult
 
 from mpcontribs_api import pagination
-from mpcontribs_api.domains._shared.types import MD5Hash
+from mpcontribs_api.domains._shared.types import MD5Hash, NFKCStr
 from mpcontribs_api.projection import SparseFieldsModel
 
 
@@ -84,7 +84,8 @@ class ComponentIn(BaseModel):
     fields for their resource.
     """
 
-    name: str
+    # NFKC-normalized so compatibility-equivalent spellings of a name collapse to one stored form.
+    name: NFKCStr
 
 
 class Component(BaseDocumentWithInput[PydanticObjectId]):
@@ -95,7 +96,7 @@ class Component(BaseDocumentWithInput[PydanticObjectId]):
     never define a component's content identity.
     """
 
-    name: str
+    name: NFKCStr
     # Server-computed; the placeholder default is overwritten by ``_recompute_md5`` on validation.
     md5: MD5Hash = Field(default="0" * 32)
 

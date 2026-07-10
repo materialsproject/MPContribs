@@ -28,6 +28,7 @@ from uncertainties import UFloat, ufloat_fromstr
 from uncertainties.core import AffineScalarFunc
 
 from mpcontribs_api.config import get_settings
+from mpcontribs_api.domains._shared.types import nfc_normalize
 from mpcontribs_api.exceptions import UnitError
 
 settings = get_settings()
@@ -143,6 +144,10 @@ def annotate_value(value: Any, unit: str | None) -> dict[str, Any]:
     Raises:
         UnitError: if the magnitude cannot be parsed.
     """
+    # NFC-normalize the unit so canonically-equivalent spellings (e.g. the OHM SIGN U+2126 vs the
+    # Greek capital omega) collapse to one form before Pint parsing, display rendering, and storage.
+    if unit:
+        unit = nfc_normalize(unit)
     magnitude = _parse_magnitude(value)
     nominal, error = _split_ufloat(magnitude)
     # display always reflects the submitted (pre-canonicalization) magnitude/unit.

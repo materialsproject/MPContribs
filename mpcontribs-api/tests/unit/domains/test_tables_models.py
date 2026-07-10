@@ -10,6 +10,7 @@ from mpcontribs_api.domains.tables.models import (
     TableIn,
     TableOut,
     TablePatch,
+    frame_to_storage,
 )
 from mpcontribs_api.exceptions import ValidationError as AppValidationError
 
@@ -73,6 +74,43 @@ class TestAttributes:
         attrs = Attributes(**ATTRS)
         assert attrs.title == "Band gaps"
         assert attrs.labels.variable == "doping"
+
+
+# ---------------------------------------------------------------------------
+# Unicode normalization: NFKC names, NFC column labels
+# ---------------------------------------------------------------------------
+
+# OHM SIGN (U+2126) NFC-folds onto the Greek omega (U+03A9); MICRO SIGN (U+00B5) NFKC-folds onto mu.
+OHM_SIGN = "Ω"
+GREEK_OMEGA = "Ω"
+MICRO_SIGN = "µ"
+GREEK_MU = "μ"
+
+
+class TestTableNormalization:
+    def test_component_name_nfkc_normalized(self):
+        # Component names use NFKC (case preserved): the micro sign folds onto the Greek mu.
+        table = Table.from_input(TableIn(**_table_in_payload(name=MICRO_SIGN + "Table")))
+        assert table.name == GREEK_MU + "Table"
+
+    def test_labels_nfc_normalized(self):
+        labels = Labels(index=OHM_SIGN, value="gap", variable="doping")
+        assert labels.index == GREEK_OMEGA
+
+    def test_attributes_title_nfc_normalized(self):
+        attrs = Attributes(title=OHM_SIGN, labels=ATTRS["labels"])
+        assert attrs.title == GREEK_OMEGA
+
+    def test_frame_column_labels_nfc_normalized(self):
+        frame = pl.DataFrame({"T": ["1"], OHM_SIGN: ["2"]})
+        _index, columns, _data = frame_to_storage(frame)
+        assert columns == [GREEK_OMEGA]
+
+    def test_frame_cell_values_not_normalized(self):
+        # Only column labels are folded; the ohm sign as a data *value* is preserved as submitted.
+        frame = pl.DataFrame({"T": ["1"], "resistance": [OHM_SIGN]})
+        _index, _columns, data = frame_to_storage(frame)
+        assert data == [[OHM_SIGN]]
 
 
 # ---------------------------------------------------------------------------

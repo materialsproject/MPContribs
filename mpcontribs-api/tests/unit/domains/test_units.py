@@ -46,6 +46,17 @@ class TestAnnotateValue:
         assert leaf["unit"] == "widgets"
         assert leaf["input_unit"] == "widgets"
 
+    def test_unit_nfc_normalized(self):
+        # A unit spelled with the OHM SIGN (U+2126) is NFC-folded onto the Greek omega (U+03A9)
+        # before it is stored or rendered, so the two spellings collapse to one stored form.
+        ohm_sign, greek_omega = "Ω", "Ω"
+        assert ohm_sign != greek_omega
+        leaf = annotate_value(1.0, ohm_sign)
+        assert leaf["input_unit"] == greek_omega
+        assert ohm_sign not in leaf["display"]
+        # Both spellings produce the identical stored/canonical leaf.
+        assert leaf == annotate_value(1.0, greek_omega)
+
     def test_offset_unit_canonicalizes_to_kelvin(self):
         # degC magnitude passed separately is convertible (unlike the string form).
         leaf = annotate_value(26.85, "degC")

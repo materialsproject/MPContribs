@@ -3,7 +3,7 @@ from pydantic import field_validator
 
 from mpcontribs_api.domains._shared.filters import BaseFilter
 from mpcontribs_api.domains._shared.models import Component, ComponentIn, DocumentOut
-from mpcontribs_api.domains._shared.types import FileLike, MD5Hash, MimeFormat
+from mpcontribs_api.domains._shared.types import FileLike, MD5Hash, MimeFormat, NFKCStr
 from mpcontribs_api.exceptions import ValidationError
 from mpcontribs_api.projection import SparseFieldsModel
 
@@ -73,10 +73,10 @@ class AttachmentFilter(BaseFilter):
     md5__in: list[MD5Hash] | None = None
     md5__neq: MD5Hash | None = None
 
-    name: str | None = None
-    name__in: list[str] | None = None
-    name__neq: str | None = None
-    name__ilike: str | None = None
+    name: NFKCStr | None = None
+    name__in: list[NFKCStr] | None = None
+    name__neq: NFKCStr | None = None
+    name__ilike: NFKCStr | None = None
 
     mime: MimeFormat | None = None
     mime__in: list[MimeFormat] | None = None

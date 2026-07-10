@@ -115,11 +115,31 @@ PolarsFrame = Annotated[
 ]
 
 
-def _nfkc_normalize(value: str) -> str:
-    return unicodedata.normalize("NFKC", value).casefold()
+def _nfkc_casefold(value: str) -> str:
+    """NFKC + casefold: the case-insensitive, compatibility-folded form used for search/matching."""
+    return nfkc_normalize(value).casefold()
 
 
-def _nfc_normalize(value: str) -> str:
+def nfkc_normalize(value: str) -> str:
+    """Return ``value`` in Unicode NFKC (compatibility composition) form, preserving case.
+
+    NFKC folds *compatibility* variants onto a canonical form — the MICRO SIGN U+00B5 becomes the
+    Greek mu, the ``ﬁ`` ligature becomes ``fi``, full-width characters become half-width, and so on.
+    Unlike :func:`_nfkc_casefold` it does not casefold, so human-facing labels keep their original
+    case. It is a superset of :func:`nfc_normalize` (NFKC output is already NFC-stable).
+    """
+    return unicodedata.normalize("NFKC", value)
+
+
+def nfc_normalize(value: str) -> str:
+    """Return ``value`` in Unicode NFC (canonical composition) form.
+
+    NFC folds canonically-equivalent codepoints onto one representative — e.g. the OHM SIGN
+    (U+2126) and Ångström sign (U+212B) collapse onto the Greek capital omega and ``Å``. This keeps
+    equivalent spellings of units, labels, and query terms comparable byte-for-byte. It is a no-op on
+    pure ASCII. NFC is deliberately *not* NFKC: it does not casefold or apply compatibility folding
+    (so the MICRO SIGN U+00B5 and Greek mu U+03BC stay distinct).
+    """
     return unicodedata.normalize("NFC", value)
 
 
@@ -162,11 +182,14 @@ def to_snake_case(name: str) -> str:
 # Converts strs to snake case
 SnakeCaseStr = Annotated[str, BeforeValidator(func=to_snake_case)]
 
-# Converts strs to searchable form (remove unicode, casefold)
-SearchStr = Annotated[str, BeforeValidator(func=_nfkc_normalize)]
+# Converts strs to searchable form (NFKC compatibility fold + casefold)
+SearchStr = Annotated[str, BeforeValidator(func=_nfkc_casefold)]
+
+# NFKC-normalizes strs (compatibility fold, case preserved) — for human-facing labels/names
+NFKCStr = Annotated[str, BeforeValidator(func=nfkc_normalize)]
 
 # Converts strs to pretty display form (keeps unicode and most formatting)
-DisplayStr = Annotated[str, BeforeValidator(func=_nfc_normalize)]
+DisplayStr = Annotated[str, BeforeValidator(func=nfc_normalize)]
 
 
 # Contribution.data key grammar, coercion, and validation

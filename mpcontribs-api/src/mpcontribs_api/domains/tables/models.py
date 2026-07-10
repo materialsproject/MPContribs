@@ -12,18 +12,19 @@ from pydantic import (
 
 from mpcontribs_api.domains._shared.filters import BaseFilter
 from mpcontribs_api.domains._shared.models import Component, ComponentIn, DocumentOut
-from mpcontribs_api.domains._shared.types import MD5Hash, PolarsFrame
+from mpcontribs_api.domains._shared.types import DisplayStr, MD5Hash, NFKCStr, PolarsFrame, nfc_normalize
 from mpcontribs_api.projection import SparseFieldsModel
 
 
 class Labels(BaseModel):
-    index: str
-    value: str
-    variable: str
+    # Column labels are NFC-normalized so equivalent Unicode spellings render/compare consistently.
+    index: DisplayStr
+    value: DisplayStr
+    variable: DisplayStr
 
 
 class Attributes(BaseModel):
-    title: str
+    title: DisplayStr
     labels: Labels
 
 
@@ -37,7 +38,8 @@ def frame_to_storage(frame: pl.DataFrame) -> tuple[list[str], list[str], list[li
     index_col, *data_cols = frame.columns
     index = [str(v) for v in frame[index_col].to_list()]
     data = [[str(v) for v in row] for row in frame.select(data_cols).iter_rows()]
-    return index, list(data_cols), data
+    # NFC-normalize the column labels (not the cell values) so equivalent spellings store identically.
+    return index, [nfc_normalize(str(c)) for c in data_cols], data
 
 
 def storage_to_frame(index_label: str, index: list[str], columns: list[str], data: list[list[str]]) -> pl.DataFrame:
@@ -106,10 +108,10 @@ class TableFilter(BaseFilter):
     md5__in: list[MD5Hash] | None = None
     md5__neq: MD5Hash | None = None
 
-    name: str | None = None
-    name__in: list[str] | None = None
-    name__neq: str | None = None
-    name__ilike: str | None = None
+    name: NFKCStr | None = None
+    name__in: list[NFKCStr] | None = None
+    name__neq: NFKCStr | None = None
+    name__ilike: NFKCStr | None = None
 
     # Columns
     # Attrs

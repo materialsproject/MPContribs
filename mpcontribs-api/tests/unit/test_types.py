@@ -3,7 +3,23 @@ from pydantic import BaseModel
 from pydantic import ValidationError as PydanticValidationError
 
 from mpcontribs_api.exceptions import ValidationError as AppValidationError
-from mpcontribs_api.domains._shared.types import PrefixedEmail, ShortStr, _validate_prefixed_email
+from mpcontribs_api.domains._shared.types import (
+    DisplayStr,
+    NFKCStr,
+    PrefixedEmail,
+    SearchStr,
+    ShortStr,
+    _validate_prefixed_email,
+    nfc_normalize,
+    nfkc_normalize,
+)
+
+# Unicode fixtures used across the normalization tests.
+OHM_SIGN = "Ω"  # U+2126, NFC-folds onto the Greek capital omega
+GREEK_OMEGA = "Ω"  # U+03A9
+MICRO_SIGN = "µ"  # U+00B5, NFKC-folds onto the Greek small mu (NFC leaves it alone)
+GREEK_MU = "μ"  # U+03BC
+FI_LIGATURE = "ﬁ"  # U+FB01, NFKC-folds to "fi"
 
 
 class ShortStrModel(BaseModel):
@@ -12,6 +28,42 @@ class ShortStrModel(BaseModel):
 
 class PrefixedEmailModel(BaseModel):
     email: PrefixedEmail
+
+
+class NormModel(BaseModel):
+    nfc: DisplayStr | None = None
+    nfkc: NFKCStr | None = None
+    search: SearchStr | None = None
+
+
+class TestUnicodeNormalization:
+    def test_nfc_folds_ohm_sign_onto_omega(self):
+        assert nfc_normalize(OHM_SIGN) == GREEK_OMEGA
+
+    def test_nfc_is_noop_on_ascii(self):
+        assert nfc_normalize("bandgap") == "bandgap"
+
+    def test_nfc_does_not_fold_micro_sign(self):
+        # NFC is canonical-only: the compatibility micro/mu pair stays distinct (that needs NFKC).
+        assert nfc_normalize(MICRO_SIGN) == MICRO_SIGN
+        assert nfc_normalize(MICRO_SIGN) != GREEK_MU
+
+    def test_nfkc_folds_micro_sign_onto_mu(self):
+        assert nfkc_normalize(MICRO_SIGN) == GREEK_MU
+
+    def test_nfkc_folds_ligature_but_preserves_case(self):
+        assert nfkc_normalize(FI_LIGATURE) == "fi"
+        assert nfkc_normalize("MyTable") == "MyTable"  # case preserved, unlike SearchStr
+
+    def test_displaystr_applies_nfc(self):
+        assert NormModel(nfc=OHM_SIGN).nfc == GREEK_OMEGA
+
+    def test_nfkcstr_applies_nfkc_without_casefold(self):
+        model = NormModel(nfkc=MICRO_SIGN + "Table")
+        assert model.nfkc == GREEK_MU + "Table"
+
+    def test_searchstr_applies_nfkc_and_casefold(self):
+        assert NormModel(search=MICRO_SIGN + "Table").search == GREEK_MU + "table"
 
 
 class TestShortStr:
