@@ -10,7 +10,7 @@ from mpcontribs_api.domains._shared.types import (
 )
 from mpcontribs_api.domains.contributions.models import ContributionIn
 from mpcontribs_api.domains.contributions.pivot import expand_contribution
-from mpcontribs_api.exceptions import ValidationError
+from mpcontribs_api.exceptions import DataKeyError, ValidationError
 
 
 def _contrib_in(data, **overrides) -> ContributionIn:
@@ -36,14 +36,14 @@ class TestToSnakeCase:
         [
             ("BandGap", "band_gap"),
             ("Seebeck coef", "seebeck_coef"),
-            ("pH-value", "p_h_value"),
+            ("pH-value", "ph_value"),
             ("T", "t"),
             ("carrier_transport", "carrier_transport"),
             ("already_snake", "already_snake"),
             ("  spaced  key  ", "spaced_key"),
             ("multiple___underscores", "multiple_underscores"),
             ("2theta", "2theta"),
-            ("HTTPServer", "httpserver"),  # no lowercase boundary -> no split
+            ("HTTPServer", "http_server"),  # no lowercase boundary -> no split
         ],
     )
     def test_coercion(self, raw, expected):
@@ -56,7 +56,7 @@ class TestToSnakeCase:
 class TestCoerceKeys:
     def test_recurses_dicts_and_lists(self):
         out = coerce_keys({"Band Gap": {"pH-Value": 1}, "List": [{"Inner Key": 2}]})
-        assert out == {"band_gap": {"p_h_value": 1}, "list": [{"inner_key": 2}]}
+        assert out == {"band_gap": {"ph_value": 1}, "list": [{"inner_key": 2}]}
 
     def test_leaves_values_untouched(self):
         # only keys are coerced; string/number values pass through verbatim
@@ -112,19 +112,19 @@ class TestParseAnnotatedKey:
         assert pk.segments == ("a", "b", "c")
 
     def test_unbalanced_parens_raises(self):
-        with pytest.raises(ValueError):
+        with pytest.raises(DataKeyError):
             parse_annotated_key("x (eV")
 
     def test_empty_name_raises(self):
-        with pytest.raises(ValueError):
+        with pytest.raises(DataKeyError):
             parse_annotated_key(" (eV)")
 
     def test_multiple_units_raises(self):
-        with pytest.raises(ValueError):
+        with pytest.raises(DataKeyError):
             parse_annotated_key("x (eV, meV)")
 
     def test_duplicate_condition_raises(self):
-        with pytest.raises(ValueError):
+        with pytest.raises(DataKeyError):
             parse_annotated_key("x (eV, T=300K, T=400K)")
 
 

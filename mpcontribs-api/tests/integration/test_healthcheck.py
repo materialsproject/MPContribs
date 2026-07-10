@@ -58,7 +58,7 @@ class TestHealthcheckHealthy:
 
     def test_body_reports_healthy(self, health_app):
         r = _client(health_app, _make_db(ping_ok=True), _make_s3(head_ok=True)).get("/healthcheck")
-        assert r.json() == {"version": "0.0.0-test", "status": "healthy", "mongo": "ok", "s3": "ok"}
+        assert r.json() == {"version": "0.0.0-dev", "status": "healthy", "mongo": "ok", "s3": "ok"}
 
     def test_pings_mongo(self, health_app):
         db = _make_db(ping_ok=True)
