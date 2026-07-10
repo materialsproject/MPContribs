@@ -1,6 +1,6 @@
 from collections.abc import AsyncIterable
 from contextlib import AbstractAsyncContextManager
-from typing import Any
+from typing import Any, cast
 
 from beanie import PydanticObjectId, UpdateResponse
 from beanie.operators import Set
@@ -63,10 +63,6 @@ class MongoDbContributionRepository(
         """Find a single contribution by id, scoped to the current user. See ``get_by_id``."""
         return await self.get_by_id(self._convert_object_id(id), fields)
 
-    async def patch_contribution_by_id(self, id: str, update: ContributionPatch):
-        """Partially update a contribution by id, scoped to the current user. See ``patch``."""
-        return await self.patch(self._convert_object_id(id), update)
-
     async def delete_contribution_by_id(self, id: str) -> None:
         """Delete a contribution by id, scoped to the current user. See ``delete_by_id``."""
         await self.delete_by_id(self._convert_object_id(id))
@@ -112,6 +108,59 @@ class MongoDbContributionRepository(
             self.document_model.identifier == identifier,
         )
 
+    async def get_contribution_document(self, id: str) -> Contribution | None:
+        """Return the full (unprojected) Contribution document by id, scoped to the current user.
+
+        Unlike :meth:`get_contribution_by_id` (which projects to ``ContributionOut``), this returns
+        the stored ``Contribution`` so callers can read server-owned identity fields (``version``,
+        ``condition_key``) — needed by the patch path to locate the pivoted rows to update.
+        """
+        return await self.document_model.find_one(self._scope, self.document_model.id == self._convert_object_id(id))
+
+    async def _find_one_and_set(
+        self,
+        *criteria: Any,
+        update_data: dict[str, Any],
+        on_insert: Contribution | None = None,
+    ) -> Contribution | None:
+        """Scoped ``findOneAndUpdate`` returning the resulting document (``NEW_DOCUMENT``).
+
+        Applies ``$set`` of ``update_data`` to the single in-scope row matching ``criteria``. When
+        ``on_insert`` is given the operation upserts (writing ``on_insert`` if nothing matches) and
+        always returns a document; otherwise it is a plain update that returns ``None`` on no match.
+        Shared by :meth:`patch_pivot_row` and both upsert methods so the query mechanics live once.
+        """
+        query = self.document_model.find_one(self._scope, *criteria)
+        result = (
+            query.upsert(Set(update_data), on_insert=on_insert, response_type=UpdateResponse.NEW_DOCUMENT)
+            if on_insert is not None
+            else query.update(Set(update_data), response_type=UpdateResponse.NEW_DOCUMENT)
+        )
+        return await result  # pyright: ignore[reportGeneralTypeIssues] # beanie UpdateQuery is awaitable, but pyright doesn't see it
+
+    async def patch_pivot_row(
+        self,
+        project: str,
+        identifier: str,
+        version: int,
+        condition_key: str,
+        update_data: dict[str, Any],
+    ) -> Contribution | None:
+        """Apply ``update_data`` to the single scoped row identified by its full pivot identity.
+
+        Targets the row by (project, identifier, version, condition_key) — the unique-index key — so
+        a patch updates exactly one pivoted contribution and never changes which row it is. Returns
+        the updated document, or ``None`` when no in-scope row matches (the caller decides whether a
+        missing row is an error).
+        """
+        return await self._find_one_and_set(
+            self.document_model.project == project,
+            self.document_model.identifier == identifier,
+            self.document_model.version == version,
+            self.document_model.condition_key == condition_key,
+            update_data=update_data,
+        )
+
     async def max_versions(self, keys: list[tuple[str, str, str]]) -> dict[tuple[str, str, str], int]:
         """Return ``{(project, identifier, condition_key): max_version}`` for the given keys.
 
@@ -145,11 +194,7 @@ class MongoDbContributionRepository(
         }
         # Beanie combines find() args with $and and prepends them as $match, so the user scope
         # is merged automatically (mirroring the manual merge in :meth:`referenced_component_ids`).
-        query = (
-            self.document_model.find(self._scope, or_clause)
-            if self._scope
-            else self.document_model.find(or_clause)
-        )
+        query = self.document_model.find(self._scope, or_clause) if self._scope else self.document_model.find(or_clause)
         group: dict[str, Any] = {
             "$group": {
                 "_id": {
@@ -168,6 +213,42 @@ class MongoDbContributionRepository(
             result[(gid["project"], gid["identifier"], gid.get("condition_key", ""))] = doc.get("max_version") or 0
         return result
 
+    async def _scan_referenced_ids(
+        self,
+        ref_field: str,
+        match: dict[str, Any],
+        *,
+        scoped: bool,
+        target: set[PydanticObjectId] | None = None,
+    ) -> set[PydanticObjectId]:
+        """Return component ids referenced through ``ref_field`` by matching contributions.
+
+        Beanie stores each ``Link`` as a DBRef (``{"$ref": ..., "$id": ObjectId}``), so a component
+        is referenced when its id appears under ``<ref_field>.$id``. ``match`` is the query applied
+        to that path ("$in" a candidate list, or "$exists" to enumerate all). When ``target`` is
+        given only ids in it are kept (the candidate-subset case); otherwise every referenced id is
+        returned. ``scoped`` merges the user scope into the query (access gate) when ``True``.
+
+        Args:
+            ref_field: the contribution link field to inspect ("structures" | "tables" |
+                "attachments"). Always a fixed class-attr at the call site, never user input.
+            match: the query predicate for ``<ref_field>.$id``
+            scoped: when ``True`` the user scope is applied; when ``False`` the check spans every
+                contribution (global integrity check)
+            target: optional candidate set; when given, only ids in it are returned
+        """
+        query: dict[str, Any] = {f"{ref_field}.$id": match}
+        if scoped and self._scope:
+            query = {"$and": [self._scope, query]}
+        referenced: set[PydanticObjectId] = set()
+        collection = self.document_model.get_pymongo_collection()
+        async for doc in collection.find(query, {ref_field: 1}):
+            for ref in doc.get(ref_field) or []:
+                rid = ref.id if hasattr(ref, "id") else ref.get("$id")
+                if rid is not None and (target is None or rid in target):
+                    referenced.add(rid)
+        return referenced
+
     async def referenced_component_ids(
         self,
         ref_field: str,
@@ -177,37 +258,12 @@ class MongoDbContributionRepository(
     ) -> set[PydanticObjectId]:
         """Return the subset of ``ids`` referenced by contributions through ``ref_field``.
 
-        Beanie stores each ``Link`` as a DBRef (``{"$ref": ..., "$id": ObjectId}``), so a
-        component is referenced when its id appears under ``<ref_field>.$id`` on any matching
-        contribution.
-
-        Args:
-            ref_field: the contribution link field to inspect ("structures" | "tables" |
-                "attachments"). Always a fixed class-attr at the call site, never user input.
-            ids: candidate component ids to test
-            scoped: when ``True`` the user scope is applied (access gate / reachability); when
-                ``False`` the check spans every contribution (global integrity check)
-
-        Returns:
-            set[PydanticObjectId]: the ids in ``ids`` that are still referenced
+        Access-gate / reachability check for a known candidate list. See :meth:`_scan_referenced_ids`.
         """
         if not ids:
             return set()
-        key = f"{ref_field}.$id"
-        query: dict[str, Any] = {key: {"$in": ids}}
-        if scoped and self._scope:
-            query = {"$and": [self._scope, query]}
-        target = set(ids)
-        referenced: set[PydanticObjectId] = set()
-        collection = self.document_model.get_pymongo_collection()
-        async for doc in collection.find(query, {ref_field: 1}):
-            for ref in doc.get(ref_field) or []:
-                rid = ref.id if hasattr(ref, "id") else ref.get("$id")
-                if rid in target:
-                    referenced.add(rid)
-        return referenced
+        return await self._scan_referenced_ids(ref_field, {"$in": ids}, scoped=scoped, target=set(ids))
 
-    # TODO: should return document with update
     async def list_referenced_component_ids(
         self,
         ref_field: str,
@@ -217,33 +273,9 @@ class MongoDbContributionRepository(
         """Return every component id referenced through ``ref_field`` by matching contributions.
 
         Unlike :meth:`referenced_component_ids`, this takes no candidate list — it enumerates all
-        ids reachable from contributions in scope.
-
-        Args:
-            ref_field: the contribution link field to inspect ("structures" | "tables" |
-                "attachments"). Always a fixed class-attr at the call site, never user input.
-            scoped: when ``True`` the user scope is applied (access gate); when ``False`` the
-                check spans every contribution.
-
-        Returns:
-            set[PydanticObjectId]: all component ids referenced via ``ref_field``
+        ids reachable from contributions in scope. See :meth:`_scan_referenced_ids`.
         """
-        key = f"{ref_field}.$id"
-        query: dict[str, Any] = {key: {"$exists": True}}
-        if scoped and self._scope:
-            query = {"$and": [self._scope, query]}
-        referenced: set[PydanticObjectId] = set()
-        collection = self.document_model.get_pymongo_collection()
-        async for doc in collection.find(query, {ref_field: 1}):
-            for ref in doc.get(ref_field) or []:
-                rid = ref.id if hasattr(ref, "id") else ref.get("$id")
-                if rid is not None:
-                    referenced.add(rid)
-        return referenced
-
-    async def update_contribution(self, doc: Contribution, update_data: dict[str, Any]) -> None:
-        """Apply a partial update to an existing Contribution document."""
-        await doc.update(Set(update_data))
+        return await self._scan_referenced_ids(ref_field, {"$exists": True}, scoped=scoped)
 
     async def upsert_contribution_by_identifiers(
         self,
@@ -277,21 +309,17 @@ class MongoDbContributionRepository(
         doc = self.document_model.from_input_model(contribution)
         doc.version = version
         doc.condition_key = condition_key
-        update_data = doc.model_dump(exclude={"id"}, exclude_none=True)
-        query = self.document_model.find_one(
-            self._scope,
+        result = await self._find_one_and_set(
             self.document_model.project == project,
             self.document_model.identifier == identifier,
             self.document_model.condition_key == condition_key,
             self.document_model.version == version,
-        ).upsert(
-            Set(update_data),
+            update_data=doc.model_dump(exclude={"id"}, exclude_none=True),
             on_insert=doc,
-            response_type=UpdateResponse.NEW_DOCUMENT,
         )
-        return await query  # pyright: ignore[reportGeneralTypeIssues] # beanie UpdateQuery is awaitable, but pyright doesn't see it
+        return cast(Contribution, result)  # upsert always returns the resulting document
 
-    async def upsert_contribution_by_id(self, id: str, contribution: ContributionIn):
+    async def upsert_contribution_by_id(self, id: str, contribution: ContributionIn) -> Contribution:
         """Upserts a single Contribution.
 
         If Contributions with identical identifiers exist, update, otherwise insert
@@ -303,15 +331,12 @@ class MongoDbContributionRepository(
         Returns:
             ContributionOut: the upserted document"""
         doc = self.document_model.from_input_model(contribution)
-        query = self.document_model.find_one(
-            self._scope,
+        result = await self._find_one_and_set(
             self.document_model.id == self._convert_object_id(id),
-        ).upsert(
-            Set(doc.model_dump(exclude={"id"}, exclude_none=True)),
+            update_data=doc.model_dump(exclude={"id"}, exclude_none=True),
             on_insert=doc,
-            response_type=UpdateResponse.NEW_DOCUMENT,
         )
-        return await query  # pyright: ignore[reportGeneralTypeIssues] # beanie UpdateQuery is awaitable, but pyright doesn't see it
+        return cast(Contribution, result)  # upsert always returns the resulting document
 
     async def download_contributions(
         self,
