@@ -1,6 +1,5 @@
-import re
 from datetime import UTC, datetime
-from typing import Annotated, Any
+from typing import Any
 
 from beanie import (
     Insert,
@@ -14,114 +13,25 @@ from beanie import (
 )
 from bson.errors import InvalidId
 from fastapi_filter import FilterDepends, with_prefix
-from pydantic import BeforeValidator, Field, field_validator
+from pydantic import Field, field_validator
 from pymongo import ASCENDING, IndexModel
 
+from mpcontribs_api._openapi import CONTRIBUTION_DATA_INPUT_DESCRIPTION, CONTRIBUTION_DATA_OUTPUT_DESCRIPTION
 from mpcontribs_api.domains._shared.filters import BaseFilter
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
-from mpcontribs_api.domains._shared.types import ShortStr
+from mpcontribs_api.domains._shared.types import ContributionData, DisplayStr, SearchStr, ShortStr
 from mpcontribs_api.domains.attachments.models import Attachment, AttachmentFilter, AttachmentIn
-from mpcontribs_api.domains.contributions.pivot import parse_annotated_key
 from mpcontribs_api.domains.structures.models import Structure, StructureFilter, StructureIn
 from mpcontribs_api.domains.tables.models import Table, TableFilter, TableIn
 from mpcontribs_api.exceptions import ValidationError
 from mpcontribs_api.projection import SparseFieldsModel
 
 
-def _get_dict_depth(x) -> int:
-    if isinstance(x, dict):
-        return 1 + max((_get_dict_depth(v) for v in x.values()), default=0)
-    elif isinstance(x, list):
-        return max((_get_dict_depth(item) for item in x), default=0)
-    return 0
-
-
-def _validate_data_depth(data: dict[str, Any] | None) -> dict[str, Any] | None:
-    if data is None:
-        return None
-    depth = _get_dict_depth(data)
-    if depth > 7:
-        raise ValidationError("Depth of Contribution.data must be <= 7.", depth=depth)
-    return data
-
-
-# Forbid punctuation, excluding: '*', '/' and exactly 1 '|' anywhere in string
-_DATA_PUNCTUATION_PATTERN = re.compile(r"(?![^|]*\|[^|]*\|)[^\x21-\x29\x2B-\x2E\x3A-\x40\x5B-\x5E\x60\x7B\x7D-\x7E]*")
-
-
-def _validate_plain_key(key: Any) -> None:
-    """Validate a single plain key token (a path segment or a condition name)."""
-    if not isinstance(key, str) or not key.isascii():
-        raise ValidationError("Non-ASCII key found in Contribution.data. All dict keys must be only ASCII")
-    if key == "":
-        raise ValidationError("Empty key found in Contribution.data. Keys must be non-empty.")
-    if _DATA_PUNCTUATION_PATTERN.fullmatch(key) is None:
-        raise ValidationError(
-            "Punctuation found in Contribution.data keys. Only '_', '*', '/', and at most 1 '|' permitted."
-        )
-
-
-def _validate_keys(data: dict[str, Any] | None) -> dict[str, Any] | None:
-    """Strict plain-key validation for a single dict level (used for nested levels)."""
-    if data is None:
-        return None
-    for key in data:
-        _validate_plain_key(key)
-    # Recurse into nested dicts, including dicts nested inside lists.
-    for v in data.values():
-        _validate_nested_keys(v)
-    return data
-
-
-def _validate_data_keys(data: dict[str, Any] | None) -> dict[str, Any] | None:
-    """Top-level ``data`` key validation, allowing the annotated pattern.
-
-    Each top-level key may be either a plain key or the annotated form
-    ``name (unit, cond1=..., cond2=...)``. The name's dotted segments and every condition name are
-    held to the same plain-key rules (units are unconstrained); nested levels stay strictly plain.
-    Expansion (see :mod:`mpcontribs_api.domains.contributions.pivot`) later rewrites annotated keys
-    into plain ones, so stored keys always satisfy :func:`_validate_keys`.
-    """
-    if data is None:
-        return None
-    for raw_key in data:
-        if not isinstance(raw_key, str):
-            raise ValidationError("Non-ASCII key found in Contribution.data. All dict keys must be only ASCII")
-        try:
-            parsed = parse_annotated_key(raw_key)
-        except ValueError as err:
-            raise ValidationError(f"Malformed annotated key in Contribution.data: {err}") from err
-        if not parsed.is_annotated:
-            # A plain key keeps the original strict rule (no '.' nesting); only annotated keys may
-            # use dotted paths, whose segments are validated individually below.
-            _validate_plain_key(raw_key)
-            continue
-        for segment in parsed.segments:
-            _validate_plain_key(segment)
-        for condition_name in parsed.conditions:
-            _validate_plain_key(condition_name)
-    for v in data.values():
-        _validate_nested_keys(v)
-    return data
-
-
-def _validate_nested_keys(value: Any) -> None:
-    if isinstance(value, dict):
-        _validate_keys(value)
-    elif isinstance(value, list):
-        for item in value:
-            _validate_nested_keys(item)
-
-
 class ContributionBase(BaseDocumentWithInput[PydanticObjectId]):
-    project: str
-    identifier: str
-    formula: str
-    data: Annotated[
-        dict[str, Any],
-        BeforeValidator(_validate_data_depth),
-        BeforeValidator(_validate_data_keys),
-    ]
+    project: ShortStr
+    identifier: SearchStr
+    formula: DisplayStr
+    data: ContributionData = Field(description=CONTRIBUTION_DATA_INPUT_DESCRIPTION)
 
     # TODO: Verify that this should default to True and be passed by users
     needs_build: bool = True
@@ -228,7 +138,7 @@ class ContributionOut(DocumentOut[PydanticObjectId]):
     needs_build: bool | None = None
     # No input validators on the read path: stored documents are trusted, and re-validating here
     # would 500 on historical data that missed the correction (see carrier_transport contribs)
-    data: dict[str, Any] | None = None
+    data: dict[str, Any] | None = Field(default=None, description=CONTRIBUTION_DATA_OUTPUT_DESCRIPTION)
     structures: list[Link[Structure]] | None = None
     tables: list[Link[Table]] | None = None
     attachments: list[Link[Attachment]] | None = None
@@ -249,16 +159,12 @@ class ContributionOut(DocumentOut[PydanticObjectId]):
 
 
 class ContributionPatch(SparseFieldsModel):
-    project: str | None = None
-    identifier: str | None = None
+    project: ShortStr | None = None
+    identifier: SearchStr | None = None
     version: int | None = None
-    formula: str | None = None
+    formula: DisplayStr | None = None
     needs_build: bool | None = None
-    data: Annotated[
-        dict[str, Any] | None,
-        BeforeValidator(_validate_data_depth),
-        BeforeValidator(_validate_keys),
-    ] = None
+    data: ContributionData = Field(default=None, description=CONTRIBUTION_DATA_INPUT_DESCRIPTION)
     structures: list[Link[Structure]] | None = None
     tables: list[Link[Table]] | None = None
     attachments: list[Link[Attachment]] | None = None
