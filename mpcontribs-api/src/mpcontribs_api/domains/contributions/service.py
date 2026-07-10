@@ -20,15 +20,20 @@ from mpcontribs_api.domains._shared.bulk import (
 )
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
 from mpcontribs_api.domains.attachments.repository import MongoDbAttachmentRepository
-from mpcontribs_api.domains.contributions.models import Contribution, ContributionFilter, ContributionIn
-from mpcontribs_api.domains.contributions.pivot import expand_contribution
+from mpcontribs_api.domains.contributions.models import (
+    Contribution,
+    ContributionFilter,
+    ContributionIn,
+    ContributionPatch,
+)
+from mpcontribs_api.domains.contributions.pivot import expand_contribution, expand_data
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
 from mpcontribs_api.domains.structures.models import Structure
 from mpcontribs_api.domains.structures.repository import MongoDbStructureRepository
 from mpcontribs_api.domains.tables.models import Table
 from mpcontribs_api.domains.tables.repository import MongoDbTableRepository
-from mpcontribs_api.exceptions import AppError, ConflictError, PermissionError, ValidationError
+from mpcontribs_api.exceptions import AppError, ConflictError, NotFoundError, PermissionError, ValidationError
 from mpcontribs_api.pagination import CursorParams
 
 logger = structlog.get_logger(__name__)
@@ -101,8 +106,10 @@ class ContributionService:
 
         Contributions carrying no components are inserted in one ``insert_many`` (no transaction);
         contributions with components run inside their own MongoDB transaction so the contribution
-        and its components commit or roll back together. Concurrent transactions are bounded by
-        ``settings.mongo.max_concurrent_transactions``. Per-item failures are returned in the
+        and its components commit or roll back together. When a submission pivots into several rows
+        that share components, all of those rows are written in one transaction and link to the
+        components inserted once (deduplicated by content hash). Concurrent transactions are bounded
+        by ``settings.mongo.max_concurrent_transactions``. Per-item failures are returned in the
         summary's ``failed`` list; the request as a whole does not raise on partial failure.
 
         Version is server-assigned per contribution: unique-identifier projects reject a duplicate
@@ -139,9 +146,10 @@ class ContributionService:
         """Annotate units and pivot each submission on its conditions, keeping the original index.
 
         A submission may expand into several rows (one per condition signature) or be rejected as a
-        whole (malformed annotation, colliding columns, or components on a pivoting submission). A
-        rejection becomes a single ``BulkFailure`` against the submission's original index; every
-        surviving row carries that index and its ``condition_key`` forward.
+        whole (malformed annotation or colliding columns). Any components on the submission ride
+        along on every resulting row (see :func:`...pivot.expand_contribution`). A rejection becomes
+        a single ``BulkFailure`` against the submission's original index; every surviving row carries
+        that index and its ``condition_key`` forward.
         """
         failures: list[BulkFailure] = []
         prepared: list[PreparedInput] = []
@@ -451,65 +459,88 @@ class ContributionService:
         self,
         items: list[ResolvedWrite],
     ) -> tuple[list[tuple[int, Contribution]], list[BulkFailure]]:
-        """Per-contribution transaction path, bounded by ``max_concurrent_transactions``."""
+        """Per-submission transaction path, bounded by ``max_concurrent_transactions``.
+
+        Rows that pivoted out of the same submission share an ``index`` and carry identical component
+        inputs (see :func:`mpcontribs_api.domains.contributions.pivot.expand_contribution`), so they
+        are grouped and written together in one transaction: the shared components are inserted once
+        (deduplicated by content hash in the components repo) and every row in the group links to the
+        resulting ids. A submission that did not pivot is simply a group of one, preserving the
+        previous one-transaction-per-row shape.
+        """
         if not items:
             return [], []
+        # Group by the original submission index (preserving first-seen order so the summary keeps
+        # input ordering after the outer sort); pivoted rows of one submission share components.
+        groups: dict[int, list[ResolvedWrite]] = defaultdict(list)
+        for item in items:
+            groups[item.index].append(item)
         sem = asyncio.Semaphore(self._settings.max_concurrent_transactions)
 
-        async def _bounded(item: ResolvedWrite) -> Contribution | BulkFailure:
+        async def _bounded(group: list[ResolvedWrite]) -> list[Contribution] | BulkFailure:
             async with sem:
-                return await self._insert_one_with_components(item)
+                return await self._insert_group_with_components(group)
 
-        results = await asyncio.gather(*[_bounded(item) for item in items])
+        grouped = list(groups.values())
+        results = await asyncio.gather(*[_bounded(group) for group in grouped])
         succeeded: list[tuple[int, Contribution]] = []
         failed: list[BulkFailure] = []
-        for item, outcome in zip(items, results, strict=True):
+        for group, outcome in zip(grouped, results, strict=True):
             if isinstance(outcome, BulkFailure):
                 failed.append(outcome)
             else:
-                succeeded.append((item.index, outcome))
+                succeeded.extend((group[0].index, doc) for doc in outcome)
         return succeeded, failed
 
-    async def _insert_one_with_components(self, item: ResolvedWrite) -> Contribution | BulkFailure:
-        """Run a single contribution + its components inside a transaction.
+    async def _insert_group_with_components(self, group: list[ResolvedWrite]) -> list[Contribution] | BulkFailure:
+        """Run one submission's pivoted rows + their shared components inside a transaction.
 
         Uses ``session.with_transaction`` so transient txn errors (write conflicts, primary step-
-        downs) get pymongo's retry treatment. Any exception is converted to a ``BulkFailure`` so
-        the surrounding ``asyncio.gather`` sees a normal return value for every coroutine.
+        downs) get pymongo's retry treatment, and so the components and every pivoted row of the
+        submission commit or roll back together. Any exception is converted to a single
+        ``BulkFailure`` against the submission's index so the surrounding ``asyncio.gather`` sees a
+        normal return value for every coroutine.
         """
-        contrib = item.contribution
+        index = group[0].index
+        contrib = group[0].contribution
         try:
             async with self._client.start_session() as session:
 
-                async def _txn(s: AsyncClientSession) -> Contribution:
-                    return await self._do_insert(contrib, s, item.version, item.condition_key)
+                async def _txn(s: AsyncClientSession) -> list[Contribution]:
+                    return await self._do_insert_group(group, s)
 
                 return await session.with_transaction(_txn)
         except AppError as exc:
-            return bulk_failure_from_exception(item.index, contrib.identifiers(), exc)
+            return bulk_failure_from_exception(index, contrib.identifiers(), exc)
         except Exception as exc:
-            logger.error(
-                "insert_contribution_failed", index=item.index, identifier=contrib.identifiers(), exc_info=True
-            )
-            return bulk_failure_from_exception(item.index, contrib.identifiers(), exc)
+            logger.error("insert_contribution_failed", index=index, identifier=contrib.identifiers(), exc_info=True)
+            return bulk_failure_from_exception(index, contrib.identifiers(), exc)
 
-    async def _do_insert(
-        self, contrib: ContributionIn, session: AsyncClientSession, version: int, condition_key: str = ""
-    ) -> Contribution:
-        """Insert components then the contribution itself, all in the given session.
+    async def _do_insert_group(self, group: list[ResolvedWrite], session: AsyncClientSession) -> list[Contribution]:
+        """Insert the submission's shared components once, then every pivoted row, all in ``session``.
 
-        Components are inserted sequentially because a session is single-threaded — sharing it
-        across concurrent awaits would corrupt the wire protocol.
+        Every row in ``group`` came from the same submission and carries identical component inputs,
+        so the components are inserted a single time — the components repo deduplicates by content
+        hash and returns the already-stored document (its id) when the content exists — and each
+        row's contribution links to those shared ids. Components are inserted sequentially because a
+        session is single-threaded — sharing it across concurrent awaits would corrupt the wire
+        protocol.
         """
-        structures = await self._structures.insert_components(contrib.structures or [], session=session)
-        tables = await self._tables.insert_components(contrib.tables or [], session=session)
+        template = group[0].contribution
+        structures = await self._structures.insert_components(template.structures or [], session=session)
+        tables = await self._tables.insert_components(template.tables or [], session=session)
+        struct_links = cast(list[Link[Structure]] | None, structures or None)
+        table_links = cast(list[Link[Table]] | None, tables or None)
 
-        doc = Contribution.from_input_model(contrib)
-        doc.version = version
-        doc.condition_key = condition_key
-        doc.structures = cast(list[Link[Structure]] | None, structures or None)
-        doc.tables = cast(list[Link[Table]] | None, tables or None)
-        return await self._contributions.insert_contribution(doc, session=session)
+        inserted: list[Contribution] = []
+        for item in group:
+            doc = Contribution.from_input_model(item.contribution)
+            doc.version = item.version
+            doc.condition_key = item.condition_key
+            doc.structures = struct_links
+            doc.tables = table_links
+            inserted.append(await self._contributions.insert_contribution(doc, session=session))
+        return inserted
 
     async def upsert_contributions(self, contributions: list[ContributionIn]) -> BulkWriteSummary[Contribution]:
         """Upsert contributions by their identifying fields, reporting per-item outcomes.
@@ -568,6 +599,82 @@ class ContributionService:
         succeeded = [r for r in results if not isinstance(r, BulkFailure)]
         failed = failures + [r for r in results if isinstance(r, BulkFailure)]
         return BulkWriteSummary[Contribution](total=len(contributions), succeeded=succeeded, failed=failed)
+
+    async def patch_contribution(self, id: str, patch: ContributionPatch) -> list[Contribution]:
+        """Partially update a contribution, fanning condition-bearing ``data`` onto its pivoted rows.
+
+        The ``{id}`` in the path anchors the update: its stored ``(project, identifier, version)`` is
+        the identity all matched rows share. ``data`` is run through the same annotated-key machinery
+        as inserts (:func:`expand_data`), so units are canonicalized and conditions become columns.
+
+        - **No conditions in ``data``** (or no ``data`` at all): a plain partial update of the target
+          row itself. Units are still annotated; the row's ``condition_key`` is unchanged.
+        - **Conditions present:** the patch *fans out*. Each condition signature is applied to the
+          existing sibling row that already carries the matching ``condition_key`` (under the target's
+          project/identifier/version). A ``condition_key`` is never rewritten, and no new rows are
+          created: a signature with no matching stored row is rejected.
+
+        Non-``data`` fields set on the patch are applied to every row the patch touches.
+
+        Args:
+            id: the id of a contribution the caller may see; anchors the (project, identifier, version)
+            patch: the partial update; ``data`` may carry unit/condition annotations
+
+        Returns:
+            list[Contribution]: the updated document(s), one per row the patch touched
+
+        Raises:
+            NotFoundError: if no in-scope contribution has that id
+            PermissionError: if the caller may not write the target's project
+            ValidationError: on a malformed/oversize ``data`` annotation, or a condition signature
+                with no matching stored row
+        """
+        target = await self._contributions.get_contribution_document(id)
+        if target is None:
+            raise NotFoundError(f"Contribution with id {id} not found", id=id)
+        if not self._user.can_write(target.project):
+            raise PermissionError(f"not authorized to write to project '{target.project}'")
+
+        # Non-data fields patch through unchanged
+        # data is handled separately because it may expand into several rows.
+        scalar_update = patch.model_dump(exclude_unset=True, exclude={"data"})
+
+        # No data change: behave like a plain single-row patch of the target (no-op if nothing set).
+        if patch.data is None:
+            if not scalar_update:
+                return [target]
+            updated = await self._contributions.patch_pivot_row(
+                target.project, target.identifier, target.version, target.condition_key, scalar_update
+            )
+            return [updated] if updated is not None else []
+
+        rows = expand_data(patch.data)
+
+        # No conditions: single row targeting the {id} contribution itself (units annotated in place).
+        if not any(row.condition_key for row in rows):
+            update_data = {**scalar_update, "data": rows[0].data}
+            updated = await self._contributions.patch_pivot_row(
+                target.project, target.identifier, target.version, target.condition_key, update_data
+            )
+            return [updated] if updated is not None else []
+
+        # Conditions present: fan each signature onto the sibling row that already carries it. Missing
+        # rows are rejected — a patch matches existing pivots, it never mints new condition_keys.
+        updated_rows: list[Contribution] = []
+        for row in rows:
+            update_data = {**scalar_update, "data": row.data}
+            updated = await self._contributions.patch_pivot_row(
+                target.project, target.identifier, target.version, row.condition_key, update_data
+            )
+            if updated is None:
+                raise ValidationError(
+                    f"no existing contribution for project '{target.project}', identifier "
+                    f"'{target.identifier}', version {target.version} with condition_key "
+                    f"'{row.condition_key}'; a patch updates existing pivoted rows and cannot create new ones",
+                    condition_key=row.condition_key,
+                )
+            updated_rows.append(updated)
+        return updated_rows
 
     async def delete_contributions(self, filter: ContributionFilter) -> BulkDeleteSummary:
         """Delete a contribution and all of its child components
