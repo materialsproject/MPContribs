@@ -23,6 +23,7 @@ from typing import Any
 
 import pint
 import pint.errors
+from pydantic import BaseModel
 from uncertainties import UFloat, ufloat_fromstr
 from uncertainties.core import AffineScalarFunc
 
@@ -90,6 +91,41 @@ def _split_ufloat(magnitude: float | UFloat) -> tuple[float, float | None]:
     return float(magnitude), None
 
 
+class AnnotatedData(BaseModel):
+    """The canonical shape of an annotated ``Contribution.data`` leaf.
+
+    ``value``/``unit`` hold the SI-canonical form (or the submitted form when the unit is
+    unrecognized/dimensionless); ``input_value``/``input_unit`` always hold the submitted form.
+    ``error`` is the (SI-propagated) standard deviation, present only when the magnitude carried an
+    uncertainty. ``display`` is a human-readable rendering of the *submitted* magnitude/unit.
+
+    This model is the single source of truth for the leaf shape; :func:`annotate_value` builds one
+    and returns ``model_dump(exclude_none=True)`` so the value stored in ``data`` stays a plain dict
+    (``None`` fields are omitted). Units are stored verbatim — never casefolded — so Pint can round
+    trip them.
+    """
+
+    value: float
+    unit: str | None = None
+    input_value: float
+    input_unit: str | None = None
+    error: float | None = None
+    display: str
+
+
+def _format_number(x: float) -> str:
+    """Render a float without trailing zeros (``5.0`` -> ``"5"``, ``4.2`` -> ``"4.2"``)."""
+    return format(x, "g")
+
+
+def _format_display(nominal: float, error: float | None, unit: str | None) -> str:
+    """Render the submitted magnitude/unit for display, e.g. ``"4.2 eV"``, ``"4.2+/-0.3 eV"``, ``"5"``."""
+    mag = _format_number(nominal)
+    if error is not None:
+        mag = f"{mag}+/-{_format_number(error)}"
+    return f"{mag} {unit}" if unit else mag
+
+
 def annotate_value(value: Any, unit: str | None) -> dict[str, Any]:
     """Annotate a submitted leaf value with its unit, canonicalized to SI when possible.
 
@@ -98,37 +134,40 @@ def annotate_value(value: Any, unit: str | None) -> dict[str, Any]:
         unit: the unit string parsed from the annotated key, or ``None``/empty for unit-less
 
     Returns:
-        A leaf dict always carrying ``value``/``unit`` (canonical SI when convertible, else the
-        submitted form) and ``input_value``/``input_unit`` (always the submitted form). When the
-        magnitude carried an uncertainty, ``error`` holds the standard deviation. ``unit`` is
-        ``None`` for a unit-less value.
+        The :class:`AnnotatedData` leaf as a dict (``model_dump(exclude_none=True)``): ``value``/
+        ``unit`` are canonical SI when convertible else the submitted form, ``input_value``/
+        ``input_unit`` are always the submitted form, ``error`` is present only for an uncertain
+        magnitude, and ``display`` renders the submitted form. ``None`` fields (unit-less, no error)
+        are omitted.
 
     Raises:
         UnitError: if the magnitude cannot be parsed.
     """
     magnitude = _parse_magnitude(value)
     nominal, error = _split_ufloat(magnitude)
+    # display always reflects the submitted (pre-canonicalization) magnitude/unit.
+    display = _format_display(nominal, error, unit)
 
-    leaf = {"value": nominal, "unit": unit, "input_value": nominal, "input_unit": unit}
-    if error is not None:
-        leaf["error"] = error
+    # Canonicalize to SI base units when Pint recognizes the unit; otherwise keep the submitted form.
+    canon_value, canon_unit, canon_error = nominal, unit, error
+    if unit:
+        try:
+            quantity = _UREG.Quantity(magnitude, unit).to_base_units()
+        except pint.errors.PintError, AssertionError, ValueError:
+            pass
+        else:
+            canon_value, canon_error = _split_ufloat(quantity.magnitude)
+            canon_unit = _format_unit(quantity.units)
 
-    # Unit-less: nothing to canonicalize.
-    if not unit:
-        return leaf
-
-    # Canonicalize to SI base units when Pint recognizes the unit; otherwise store as submitted.
-    try:
-        quantity = _UREG.Quantity(magnitude, unit).to_base_units()
-    except pint.errors.PintError, AssertionError, ValueError:
-        return leaf
-
-    canon_nominal, canon_error = _split_ufloat(quantity.magnitude)
-    leaf["value"] = canon_nominal
-    leaf["unit"] = _format_unit(quantity.units)
-    if canon_error is not None:
-        leaf["error"] = canon_error
-    return leaf
+    leaf = AnnotatedData(
+        value=canon_value,
+        unit=canon_unit,
+        input_value=nominal,
+        input_unit=unit,
+        error=canon_error,
+        display=display,
+    )
+    return leaf.model_dump(exclude_none=True)
 
 
 def _format_unit(units: Any) -> str:
@@ -177,4 +216,4 @@ def condition_key(conditions: dict[str, dict[str, Any] | str]) -> str:
     """
     if not conditions:
         return ""
-    return "|".join(f"{name}={_identity_scalar(conditions[name])}" for name in sorted(conditions))
+    return ", ".join(f"{name}={_identity_scalar(conditions[name])}" for name in sorted(conditions))
