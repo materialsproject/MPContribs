@@ -139,5 +139,5 @@ async def upsert_contribution_by_id(repo: ContributionDep, id: str, contribution
 
 
 @router.patch("/{id}", dependencies=[Depends(require_user)])
-async def patch_contribution_by_id(repo: ContributionDep, id: str, update: ContributionPatch):
-    return await repo.patch_contribution_by_id(id=id, update=update)
+async def patch_contribution_by_id(service: ContributionServiceDep, id: str, update: ContributionPatch):
+    return await service.patch_contribution(id=id, patch=update)
