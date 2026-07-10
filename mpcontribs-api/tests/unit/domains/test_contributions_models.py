@@ -108,18 +108,16 @@ class TestContributionBase:
             _make_contribution_in(data=invalid_nesting)
 
     def test_data_key_validation(self):
-        valid_punctuation = {"test*/|": "pass"}
-        invalid_punctuation = {"test.": "fail"}
-        too_many_pipes = {"test||": "fail"}
-        non_ascii = {"ΔE": "fail"}
-        _make_contribution_in(data=valid_punctuation)
-        assert True
-        with pytest.raises(ValidationError, match="Punctuation found in Contribution.data keys"):
-             _make_contribution_in(data=invalid_punctuation)
-        with pytest.raises(ValidationError, match="Punctuation found in Contribution.data keys"):
-            _make_contribution_in(data=too_many_pipes)
+        # Punctuation/spaces/casing are no longer rejected at the ContributionIn level: keys are
+        # coerced to snake_case later (in expand_contribution), so validation only checks that a key
+        # is ASCII and can be coerced to a non-empty token.
+        _make_contribution_in(data={"test.": "pass"})
+        _make_contribution_in(data={"Band Gap": "pass"})
+        _make_contribution_in(data={"test||": "pass"})
         with pytest.raises(ValidationError, match="Non-ASCII key found in Contribution.data"):
-            _make_contribution_in(data=non_ascii)
+            _make_contribution_in(data={"ΔE": "fail"})
+        with pytest.raises(ValidationError, match="reduces to an empty string"):
+            _make_contribution_in(data={"***": "fail"})
 
     # There isn't currently value validation. This is to check that that is true
     def test_data_value_validation(self):
@@ -214,6 +212,22 @@ class TestContributionPatch:
     def test_data_can_be_set(self):
         patch = ContributionPatch(data={"new_key": 42})
         assert patch.data == {"new_key": 42}
+
+    def test_data_keys_validated_not_coerced(self):
+        # ContributionPatch only *validates* keys; it no longer rewrites them. snake_case coercion
+        # and unit annotation happen in the service (expand_data), not at the model layer.
+        patch = ContributionPatch(data={"Band Gap": 1, "nested": {"pH-Value": 7}})
+        assert patch.data == {"Band Gap": 1, "nested": {"pH-Value": 7}}
+
+    def test_data_annotated_key_accepted(self):
+        # Annotated keys (unit + conditions) pass model validation unchanged; the service expands them.
+        patch = ContributionPatch(data={"conductivity (S/cm, T=300K)": 1.2})
+        assert patch.data == {"conductivity (S/cm, T=300K)": 1.2}
+
+    def test_data_uncoercible_key_rejected(self):
+        # A key that reduces to an empty string after coercion is still rejected at validation time.
+        with pytest.raises(ValidationError, match="empty string after snake_case coercion"):
+            ContributionPatch(data={"***": 1})
 
 
 # ---------------------------------------------------------------------------

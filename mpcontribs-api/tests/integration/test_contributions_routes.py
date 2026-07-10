@@ -140,8 +140,10 @@ class TestContributionByIdRouting:
         contribution_repo.get_contribution_by_id.return_value = SAMPLE_OUT
         assert client.get(f"/api/v1/contributions/{PydanticObjectId()}").status_code == 200
 
-    def test_patch_by_id_conventional_path(self, client, contribution_repo):
-        contribution_repo.patch_contribution_by_id.return_value = SAMPLE_OUT
+    def test_patch_by_id_conventional_path(self, client, contribution_service):
+        # PATCH is routed through the service (it may fan a condition-bearing patch across the
+        # contribution's pivoted rows), so it returns a list of updated documents.
+        contribution_service.patch_contribution.return_value = [SAMPLE_OUT]
         r = client.patch(f"/api/v1/contributions/{PydanticObjectId()}", json={"formula": "H2O"})
         assert r.status_code == 200
 
@@ -287,12 +289,12 @@ class TestContributionMutationsRequireAuth:
         assert r.status_code == 401
         contribution_repo.upsert_contribution_by_id.assert_not_called()
 
-    def test_patch_by_id_anon_401(self, client, contribution_repo):
+    def test_patch_by_id_anon_401(self, client, contribution_service):
         r = client.patch(
             f"/api/v1/contributions/{PydanticObjectId()}", json={"formula": "H2O"}, headers=FORCE_ANON_HEADERS
         )
         assert r.status_code == 401
-        contribution_repo.patch_contribution_by_id.assert_not_called()
+        contribution_service.patch_contribution.assert_not_called()
 
     def test_get_collection_still_open_to_anon(self, client, contribution_repo):
         from mpcontribs_api.pagination import Page

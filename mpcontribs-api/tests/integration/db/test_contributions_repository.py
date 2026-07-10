@@ -7,7 +7,6 @@ from mpcontribs_api.domains.contributions.models import (
     ContributionFilter,
     ContributionIn,
     ContributionOut,
-    ContributionPatch,
 )
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
 from mpcontribs_api.exceptions import NotFoundError, ValidationError
@@ -344,74 +343,52 @@ class TestFindOneContribution:
 
 
 # ---------------------------------------------------------------------------
-# update_contribution
+# patch_pivot_row (scoped find-one-and-update by pivot identity)
 # ---------------------------------------------------------------------------
 
 
-class TestUpdateContribution:
+class TestPatchPivotRow:
     async def test_updates_single_field(self, db):
-        doc = await _insert(identifier="upd-formula")
-        await _repo(ADMIN).update_contribution(doc, {"formula": "SiO2"})
+        doc = await _insert(identifier="patch-formula")
+        updated = await _repo(ADMIN).patch_pivot_row(
+            doc.project, doc.identifier, doc.version, doc.condition_key, {"formula": "SiO2"}
+        )
+        assert updated is not None and updated.formula == "SiO2"
         found = await Contribution.find_one(Contribution.id == doc.id)
         assert found.formula == "SiO2"
 
     async def test_updates_data_field(self, db):
-        doc = await _insert(identifier="upd-data")
-        await _repo(ADMIN).update_contribution(doc, {"data": {"energy": -5.0}})
+        doc = await _insert(identifier="patch-data")
+        await _repo(ADMIN).patch_pivot_row(
+            doc.project, doc.identifier, doc.version, doc.condition_key, {"data": {"energy": -5.0}}
+        )
         found = await Contribution.find_one(Contribution.id == doc.id)
         assert found.data == {"energy": -5.0}
 
     async def test_unrelated_fields_unchanged(self, db):
-        doc = await _insert(identifier="upd-preserve", formula="Fe2O3")
-        await _repo(ADMIN).update_contribution(doc, {"needs_build": False})
-        found = await Contribution.find_one(Contribution.id == doc.id)
-        assert found.formula == "Fe2O3"
-
-    async def test_update_sets_last_modified(self, db):
-        doc = await _insert(identifier="upd-lm")
-        original_lm = doc.last_modified
-        await _repo(ADMIN).update_contribution(doc, {"formula": "Al2O3"})
-        found = await Contribution.find_one(Contribution.id == doc.id)
-        # MongoDB may return naive UTC datetimes; strip timezone before comparing.
-        def _naive(dt):
-            return dt.replace(tzinfo=None) if dt.tzinfo else dt
-        assert _naive(found.last_modified) >= _naive(original_lm)
-
-
-# ---------------------------------------------------------------------------
-# patch_contribution_by_id
-# ---------------------------------------------------------------------------
-
-
-class TestPatchContributionById:
-    async def test_updates_formula(self, db):
-        doc = await _insert(identifier="patch-formula")
-        await _repo(ADMIN).patch_contribution_by_id(str(doc.id), ContributionPatch(formula="Li2O"))
-        found = await Contribution.find_one(Contribution.id == doc.id)
-        assert found.formula == "Li2O"
-
-    async def test_unset_fields_not_overwritten(self, db):
         doc = await _insert(identifier="patch-preserve", formula="Fe2O3")
-        await _repo(ADMIN).patch_contribution_by_id(str(doc.id), ContributionPatch(needs_build=False))
+        await _repo(ADMIN).patch_pivot_row(
+            doc.project, doc.identifier, doc.version, doc.condition_key, {"needs_build": False}
+        )
         found = await Contribution.find_one(Contribution.id == doc.id)
         assert found.formula == "Fe2O3"
 
-    async def test_empty_patch_is_a_noop(self, db):
-        doc = await _insert(identifier="patch-empty", formula="Fe2O3")
-        result = await _repo(ADMIN).patch_contribution_by_id(str(doc.id), ContributionPatch())
-        assert result is not None
-        found = await Contribution.find_one(Contribution.id == doc.id)
-        assert found.formula == "Fe2O3"
+    async def test_no_matching_row_returns_none(self, db):
+        doc = await _insert(identifier="patch-nomatch")
+        result = await _repo(ADMIN).patch_pivot_row(
+            doc.project, doc.identifier, doc.version, "conditions.temperature", {"formula": "X"}
+        )
+        assert result is None
 
-    async def test_raises_validation_error_for_bad_id(self, db):
-        with pytest.raises(ValidationError):
-            await _repo(ADMIN).patch_contribution_by_id("bad-id", ContributionPatch(formula="X"))
-
-    async def test_anon_cannot_patch_private_doc(self, db):
-        from mpcontribs_api.exceptions import NotFoundError
+    async def test_anon_cannot_patch_private_row(self, db):
         doc = await _insert(identifier="patch-anon-priv", is_public=False)
-        with pytest.raises(NotFoundError):
-            await _repo(ANON).patch_contribution_by_id(str(doc.id), ContributionPatch(formula="X"))
+        # Scope hides the private row from anonymous callers, so nothing matches to update.
+        result = await _repo(ANON).patch_pivot_row(
+            doc.project, doc.identifier, doc.version, doc.condition_key, {"formula": "X"}
+        )
+        assert result is None
+        still_there = await Contribution.find_one(Contribution.id == doc.id)
+        assert still_there.formula == "Fe2O3"
 
 
 # ---------------------------------------------------------------------------

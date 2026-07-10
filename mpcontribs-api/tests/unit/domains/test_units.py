@@ -1,8 +1,10 @@
 import math
 
 import pytest
+from pydantic import ValidationError as PydanticValidationError
 
 from mpcontribs_api.domains._shared.units import (
+    AnnotatedData,
     UnitError,
     annotate_value,
     condition_key,
@@ -23,10 +25,20 @@ class TestAnnotateValue:
         assert math.isclose(leaf["value"], 4.2 * 1.602176634e-19, rel_tol=1e-9)
         assert leaf["unit"] != "eV"  # canonicalized to base units
         assert "error" not in leaf
+        # display renders the submitted (pre-canonicalization) form
+        assert leaf["display"] == "4.2 eV"
+
+    def test_display_renders_submitted_form(self):
+        assert annotate_value(4.2, "eV")["display"] == "4.2 eV"
+        assert annotate_value("4.2(3)", "eV")["display"] == "4.2+/-0.3 eV"
+        assert annotate_value(5, None)["display"] == "5"
+        # unrecognized unit still renders verbatim
+        assert annotate_value(1.0, "widgets")["display"] == "1 widgets"
 
     def test_unitless_value(self):
+        # exclude_none drops unit/input_unit for a unit-less leaf; display is always present.
         leaf = annotate_value(5, None)
-        assert leaf == {"value": 5.0, "unit": None, "input_value": 5.0, "input_unit": None}
+        assert leaf == {"value": 5.0, "input_value": 5.0, "display": "5"}
 
     def test_unknown_unit_stored_as_submitted(self):
         leaf = annotate_value(1.0, "widgets")
@@ -76,7 +88,8 @@ class TestParseConditionValue:
     def test_bare_numeric(self):
         leaf = parse_condition_value("5")
         assert leaf["value"] == 5.0
-        assert leaf["unit"] is None
+        # unit is omitted (exclude_none) for a unit-less leaf
+        assert leaf.get("unit") is None
 
     def test_categorical_returned_verbatim(self):
         assert parse_condition_value("cubic") == "cubic"
@@ -117,3 +130,26 @@ class TestConditionKey:
 
     def test_categorical_in_key(self):
         assert condition_key({"phase": "cubic"}) == "phase=cubic"
+
+
+# ---------------------------------------------------------------------------
+# AnnotatedData — the leaf shape model
+# ---------------------------------------------------------------------------
+
+
+class TestAnnotatedData:
+    def test_unit_and_error_optional(self):
+        leaf = AnnotatedData(value=5.0, input_value=5.0, display="5")
+        assert leaf.unit is None
+        assert leaf.input_unit is None
+        assert leaf.error is None
+
+    def test_unit_case_preserved(self):
+        # units must never be casefolded (eV stays eV, not ev)
+        leaf = AnnotatedData(value=1.0, unit="eV", input_value=1.0, input_unit="eV", display="1 eV")
+        assert leaf.unit == "eV"
+        assert leaf.input_unit == "eV"
+
+    def test_display_required(self):
+        with pytest.raises(PydanticValidationError):
+            AnnotatedData(value=5.0, input_value=5.0)

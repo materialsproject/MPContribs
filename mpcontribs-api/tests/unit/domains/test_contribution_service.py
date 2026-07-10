@@ -10,7 +10,7 @@ from pymongo.errors import BulkWriteError
 from mpcontribs_api.authz import ADMIN_GROUP, User
 from mpcontribs_api.config import MongoSettings
 from mpcontribs_api.domains.attachments.models import Attachment, AttachmentIn
-from mpcontribs_api.domains.contributions.models import Contribution, ContributionIn
+from mpcontribs_api.domains.contributions.models import Contribution, ContributionIn, ContributionPatch
 from mpcontribs_api.domains.contributions.service import ContributionService
 from mpcontribs_api.domains.structures.models import (
     Lattice,
@@ -21,7 +21,7 @@ from mpcontribs_api.domains.structures.models import (
     StructureIn,
 )
 from mpcontribs_api.domains.tables.models import Attributes, Labels, Table, TableIn
-from mpcontribs_api.exceptions import ConflictError, ValidationError
+from mpcontribs_api.exceptions import ConflictError, NotFoundError, PermissionError, ValidationError
 
 pytestmark = pytest.mark.asyncio
 
@@ -88,13 +88,13 @@ def _structure_in(**overrides) -> StructureIn:
     return StructureIn(**defaults)
 
 
-def _contrib_in(project="proj", identifier="mp-1", formula="Fe2O3", **kwargs) -> ContributionIn:
+def _contrib_in(project="proj", identifier="mp-1", formula="Fe2O3", data=None, **kwargs) -> ContributionIn:
     return ContributionIn(
         _id=_oid(),
         project=project,
         identifier=identifier,
         formula=formula,
-        data={},
+        data={} if data is None else data,
         **kwargs,
     )
 
@@ -226,8 +226,8 @@ class TestInsertContributionsPreChecks:
         svc, contrib_repo, _, _, _, client = _make_service()
         contrib_repo.insert_many_contributions.return_value = None
         contribs = [
-            _contrib_in(project="p", identifier="dup"),
-            _contrib_in(project="p", identifier="dup"),
+            _contrib_in(project="prj", identifier="dup"),
+            _contrib_in(project="prj", identifier="dup"),
         ]
         summary = await svc.insert_contributions(contribs)
 
@@ -413,6 +413,43 @@ class TestInsertContributionsTransactionPath:
         captured_by_id = {c.identifier: c for c in captured}
         assert captured_by_id["a"].structures == [struct_a]
         assert captured_by_id["b"].structures == [struct_b]
+
+    async def test_pivoting_submission_shares_components_across_rows(self):
+        svc, contrib_repo, struct_repo, table_repo, attach_repo, client = _make_service()
+
+        shared = _fake_structure()
+        struct_repo.insert_components.return_value = [shared]
+        table_repo.insert_components.return_value = []
+        attach_repo.insert_components.return_value = []
+
+        captured: list[Contribution] = []
+
+        async def _insert(doc, session=None):
+            captured.append(doc)
+            return doc
+
+        contrib_repo.insert_contribution.side_effect = _insert
+
+        # One submission that pivots into two rows (T=300K / T=400K) and carries a structure.
+        contrib = _contrib_in(
+            identifier="mp-1",
+            data={"x (eV, T=300K)": 1, "x (eV, T=400K)": 2},
+            structures=[_structure_in()],
+        )
+        summary = await svc.insert_contributions([contrib])
+
+        # Components inserted once for the whole submission; both rows written in one transaction.
+        assert struct_repo.insert_components.call_count == 1
+        assert client.start_session.call_count == 1
+        assert contrib_repo.insert_contribution.call_count == 2
+        # Both pivoted rows link to the same shared structure and carry distinct condition keys.
+        assert len(captured) == 2
+        assert all(doc.structures == [shared] for doc in captured)
+        assert len({doc.condition_key for doc in captured}) == 2
+        # Summary is sized to the single submission but reports both pivoted rows as succeeded.
+        assert summary.total == 1
+        assert len(summary.succeeded) == 2
+        assert summary.failed == []
 
 
 # ---------------------------------------------------------------------------
@@ -619,9 +656,10 @@ class TestContributionPivotThroughService:
         docs = contrib_repo.insert_many_contributions.call_args[0][0]
         assert len({d.condition_key for d in docs}) == 2
         assert all(d.condition_key for d in docs)  # non-empty condition_key on each pivoted doc
-        # Each doc carries its conditions as columns plus the broadcast bandgap.
+        # Each doc carries its conditions as columns plus the broadcast bandgap; the condition name
+        # is snake_case-coerced (T -> t).
         for d in docs:
-            assert set(d.data) == {"T", "conductivity", "bandgap"}
+            assert set(d.data) == {"t", "conductivity", "bandgap"}
 
     async def test_insert_failure_maps_to_original_submission_index(self):
         # Non-unique project so intra-batch pivot rows don't self-conflict; a Mongo writeError on the
@@ -726,7 +764,6 @@ class TestUpsertContributionsGuard:
         contrib_repo.upsert_contribution_by_identifiers.assert_not_called()
         contrib_repo.find_one_contribution.assert_not_called()
         contrib_repo.insert_contribution.assert_not_called()
-        contrib_repo.update_contribution.assert_not_called()
 
 
 # ---------------------------------------------------------------------------
@@ -748,7 +785,6 @@ class TestUpsertContributionsAtomic:
         assert contrib_repo.upsert_contribution_by_identifiers.call_count == 3
         # The legacy read-then-write path must not be used
         contrib_repo.find_one_contribution.assert_not_called()
-        contrib_repo.update_contribution.assert_not_called()
         contrib_repo.insert_contribution.assert_not_called()
 
     async def test_passes_identifiers_dict_and_input_to_repo(self):
@@ -797,8 +833,8 @@ class TestUpsertContributionsAtomic:
         contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
 
         contribs = [
-            _contrib_in(project="p", identifier="same"),
-            _contrib_in(project="p", identifier="same"),
+            _contrib_in(project="prj", identifier="same"),
+            _contrib_in(project="prj", identifier="same"),
         ]
         summary = await svc.upsert_contributions(contribs)
 
@@ -1189,3 +1225,106 @@ class TestDeleteContributionsNoneComponents:
         struct_repo.delete_by_ids.assert_not_called()
         table_repo.delete_by_ids.assert_not_called()
         attach_repo.delete_by_ids.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# patch_contribution — annotate + fan condition-bearing data onto pivoted rows
+# ---------------------------------------------------------------------------
+
+
+def _target_doc(project="mp-team", identifier="mp-1", version=1, condition_key="") -> MagicMock:
+    """A stored Contribution the patch path anchors on (only identity attrs are read)."""
+    doc = MagicMock(spec=Contribution)
+    doc.project = project
+    doc.identifier = identifier
+    doc.version = version
+    doc.condition_key = condition_key
+    return doc
+
+
+class TestPatchContribution:
+    async def test_not_found_raises(self):
+        svc, contrib_repo, *_ = _make_service()
+        contrib_repo.get_contribution_document.return_value = None
+        with pytest.raises(NotFoundError):
+            await svc.patch_contribution(str(_oid()), ContributionPatch(formula="H2O"))
+
+    async def test_unauthorized_project_raises(self):
+        # Non-admin whose groups don't include the target's project cannot patch it.
+        user = User(username="google:alice@example.com", groups=frozenset({"other-team"}))
+        svc, contrib_repo, *_ = _make_service(user=user)
+        contrib_repo.get_contribution_document.return_value = _target_doc(project="mp-team")
+        with pytest.raises(PermissionError):
+            await svc.patch_contribution(str(_oid()), ContributionPatch(formula="H2O"))
+        contrib_repo.patch_pivot_row.assert_not_called()
+
+    async def test_empty_patch_is_noop_returns_target(self):
+        svc, contrib_repo, *_ = _make_service()
+        target = _target_doc()
+        contrib_repo.get_contribution_document.return_value = target
+        result = await svc.patch_contribution(str(_oid()), ContributionPatch())
+        assert result == [target]
+        contrib_repo.patch_pivot_row.assert_not_called()
+
+    async def test_scalar_only_patch_updates_target_row(self):
+        svc, contrib_repo, *_ = _make_service()
+        target = _target_doc(condition_key="")
+        contrib_repo.get_contribution_document.return_value = target
+        updated = _target_doc()
+        contrib_repo.patch_pivot_row.return_value = updated
+
+        result = await svc.patch_contribution(str(_oid()), ContributionPatch(formula="H2O", needs_build=False))
+
+        assert result == [updated]
+        contrib_repo.patch_pivot_row.assert_awaited_once()
+        args, _ = contrib_repo.patch_pivot_row.call_args
+        project, identifier, version, condition_key, update_data = args
+        assert (project, identifier, version, condition_key) == ("mp-team", "mp-1", 1, "")
+        assert update_data == {"formula": "H2O", "needs_build": False}
+        assert "data" not in update_data  # no data on the patch
+
+    async def test_data_without_conditions_annotates_and_patches_target(self):
+        svc, contrib_repo, *_ = _make_service()
+        target = _target_doc(condition_key="")
+        contrib_repo.get_contribution_document.return_value = target
+        contrib_repo.patch_pivot_row.return_value = _target_doc()
+
+        await svc.patch_contribution(str(_oid()), ContributionPatch(data={"bandgap (eV)": 4.2}))
+
+        contrib_repo.patch_pivot_row.assert_awaited_once()
+        args, _ = contrib_repo.patch_pivot_row.call_args
+        *_identity, condition_key, update_data = args
+        # No conditions -> the target row's own condition_key, data annotated in place.
+        assert condition_key == ""
+        leaf = update_data["data"]["bandgap"]
+        assert leaf["input_value"] == 4.2
+        assert leaf["input_unit"] == "eV"
+
+    async def test_data_with_conditions_fans_out_to_matching_rows(self):
+        svc, contrib_repo, *_ = _make_service()
+        contrib_repo.get_contribution_document.return_value = _target_doc()
+        # Each fanned signature resolves to an existing row.
+        contrib_repo.patch_pivot_row.side_effect = [_target_doc(), _target_doc()]
+
+        result = await svc.patch_contribution(
+            str(_oid()),
+            ContributionPatch(data={"conductivity (S/cm, T=300K)": 1.2, "conductivity (S/cm, T=400K)": 3.4}),
+        )
+
+        assert len(result) == 2
+        assert contrib_repo.patch_pivot_row.await_count == 2
+        condition_keys = {call.args[3] for call in contrib_repo.patch_pivot_row.call_args_list}
+        # Two distinct, non-empty condition signatures (one per temperature).
+        assert len(condition_keys) == 2
+        assert all(ck for ck in condition_keys)
+        for call in contrib_repo.patch_pivot_row.call_args_list:
+            data = call.args[4]["data"]
+            assert "t" in data and "conductivity" in data  # condition column + measurement
+
+    async def test_condition_signature_without_existing_row_rejected(self):
+        svc, contrib_repo, *_ = _make_service()
+        contrib_repo.get_contribution_document.return_value = _target_doc()
+        contrib_repo.patch_pivot_row.return_value = None  # no stored row carries this condition_key
+
+        with pytest.raises(ValidationError, match="cannot create new ones"):
+            await svc.patch_contribution(str(_oid()), ContributionPatch(data={"conductivity (S/cm, T=300K)": 1.2}))
