@@ -8,7 +8,7 @@ from mpcontribs_api.domains._shared.types import (
     to_snake_case,
     validate_contribution_data,
 )
-from mpcontribs_api.domains._shared.units import UnitError, annotate_value, condition_key, parse_condition_value
+from mpcontribs_api.domains._shared.units import AnnotatedData, UnitError, parse_condition_value
 from mpcontribs_api.exceptions import ValidationError
 
 if TYPE_CHECKING:
@@ -79,10 +79,9 @@ def expand_data(data: dict[str, Any]) -> list[ExpandedData]:
         ValidationError: on a malformed annotation, a path/column collision, or expanded data that
             violates the depth/key rules.
     """
-    try:
-        parsed = {raw_key: parse_annotated_key(raw_key) for raw_key in data}
-    except ValueError as err:
-        raise ValidationError(str(err)) from err
+    # parse_annotated_key raises DataKeyError (a ValidationError) on a malformed key; it propagates
+    # with its structured context and error_code intact and is rendered by the app error handlers.
+    parsed = {raw_key: parse_annotated_key(raw_key) for raw_key in data}
 
     if not any(pk.is_annotated for pk in parsed.values()):
         # Nothing annotated, but keys still get snake_case coercion (all-plain data). Return the
@@ -109,7 +108,7 @@ def expand_data(data: dict[str, Any]) -> list[ExpandedData]:
             if cname in parsed_conditions:
                 raise ValidationError(f"condition names collide after snake_case coercion: '{cname}'")
             parsed_conditions[cname] = parse_condition_value(val)
-        ckey = condition_key(parsed_conditions)
+        ckey = AnnotatedData.condition_key(parsed_conditions)
         groups.setdefault(ckey, []).append((raw_key, pk))
         # First signature seen for this canonical key wins the stored condition columns.
         group_conditions.setdefault(ckey, parsed_conditions)
@@ -122,9 +121,13 @@ def expand_data(data: dict[str, Any]) -> list[ExpandedData]:
 
     def _annotate_column(row_data: dict[str, Any], raw_key: str, pk: ParsedKey) -> None:
         try:
-            # Annotated leaves are produced (already canonical) by annotate_value; plain values keep
-            # their structure but have their nested keys coerced to snake_case.
-            leaf = annotate_value(data[raw_key], pk.unit) if pk.is_annotated else coerce_keys(data[raw_key])
+            # Annotated leaves are produced (already canonical) by the AnnotatedData factory; plain
+            # values keep their structure but have their nested keys coerced to snake_case.
+            leaf = (
+                AnnotatedData.from_submission(data[raw_key], pk.unit).as_dict()
+                if pk.is_annotated
+                else coerce_keys(data[raw_key])
+            )
         except UnitError as err:
             raise ValidationError(f"could not parse value for '{raw_key}': {err}") from err
         _set_nested(row_data, _coerce_segments(pk), leaf)
