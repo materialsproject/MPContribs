@@ -23,7 +23,7 @@ _EMAIL_RE = re.compile(r"^[^:@\s]+:[^:@\s]+@[^@\s]+\.[^@\s]+$")
 def _validate_prefixed_email(v: str) -> str:
     v = v.strip()
     if not _EMAIL_RE.match(v):
-        raise ValidationError("must match '<provider>:<name>@<domain>', e.g. 'google:name@gmail.com'")
+        raise ValidationError("email must match '<provider>:<name>@<domain>', e.g. 'google:name@gmail.com'", email=v)
     return v
 
 
@@ -116,7 +116,10 @@ PolarsFrame = Annotated[
 
 
 def _nfkc_casefold(value: str) -> str:
-    """NFKC + casefold: the case-insensitive, compatibility-folded form used for search/matching."""
+    """NFKC + casefold: the case-insensitive, compatibility-folded form used for search/matching.
+
+    Surrounding whitespace is stripped by :func:`nfkc_normalize` before casefolding.
+    """
     return nfkc_normalize(value).casefold()
 
 
@@ -127,8 +130,12 @@ def nfkc_normalize(value: str) -> str:
     Greek mu, the ``ﬁ`` ligature becomes ``fi``, full-width characters become half-width, and so on.
     Unlike :func:`_nfkc_casefold` it does not casefold, so human-facing labels keep their original
     case. It is a superset of :func:`nfc_normalize` (NFKC output is already NFC-stable).
+
+    Leading/trailing whitespace is stripped (NFKC first, so compatibility whitespace such as the
+    NBSP U+00A0 folds to a plain space and is then trimmed) so ``" Foo "`` and ``"Foo"`` collapse to
+    the same stored form.
     """
-    return unicodedata.normalize("NFKC", value)
+    return unicodedata.normalize("NFKC", value).strip()
 
 
 def nfc_normalize(value: str) -> str:
@@ -139,8 +146,12 @@ def nfc_normalize(value: str) -> str:
     equivalent spellings of units, labels, and query terms comparable byte-for-byte. It is a no-op on
     pure ASCII. NFC is deliberately *not* NFKC: it does not casefold or apply compatibility folding
     (so the MICRO SIGN U+00B5 and Greek mu U+03BC stay distinct).
+
+    Leading/trailing whitespace is stripped so equivalent spellings compare byte-for-byte. Note NFC
+    (unlike NFKC) does not fold compatibility whitespace, but :meth:`str.strip` trims all Unicode
+    whitespace regardless, so an NBSP-padded value is still trimmed.
     """
-    return unicodedata.normalize("NFC", value)
+    return unicodedata.normalize("NFC", value).strip()
 
 
 # Acronym boundary: an uppercase letter followed by an uppercase-then-lowercase

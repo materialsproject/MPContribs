@@ -38,6 +38,13 @@ class BaseFilter(Filter):
     String values are also NFC-normalized (see :func:`_normalize_query_values`) so queries match the
     NFC-normalized units, labels, and other display strings stored on the write path.
 
+    Store/query normalization invariant: this NFC pass is a global catch-all and only lines up with
+    fields stored at NFC or lighter. A field normalized *more* aggressively on write (e.g. a
+    ``SearchStr`` identifier that is NFKC-folded and casefolded, or an ``NFKCStr`` name) must declare
+    that same normalization type on its filter field so the query value is folded identically —
+    otherwise an exact/``__in``/``__neq`` lookup silently misses. See ``ContributionFilter.identifier``
+    (SearchStr) and the component ``name`` filters (NFKCStr) for the pattern.
+
     Domain filters should subclass this instead of fastapi-filter's ``Filter`` directly.
     """
 
