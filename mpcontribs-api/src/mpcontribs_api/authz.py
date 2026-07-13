@@ -15,6 +15,22 @@ api_key_scheme = APIKeyHeader(
 )
 
 
+# Dev-only impersonation schemes: locally there is no Kong to translate an API key
+# into identity headers, so expose the headers Kong would inject as Authorize fields.
+consumer_username_scheme = APIKeyHeader(
+    name="X-Consumer-Username",
+    scheme_name="X-Consumer-Username",
+    auto_error=False,
+    description="[dev only] Impersonate a Kong-authenticated username",
+)
+authenticated_groups_scheme = APIKeyHeader(
+    name="X-Authenticated-Groups",
+    scheme_name="X-Authenticated-Groups",
+    auto_error=False,
+    description="[dev only] Comma-separated groups (incl. your project / admin group)",
+)
+
+
 ADMIN_GROUP = settings.mongo.admin_group
 
 
