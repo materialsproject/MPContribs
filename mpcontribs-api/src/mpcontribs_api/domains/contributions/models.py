@@ -13,7 +13,7 @@ from beanie import (
 )
 from bson.errors import InvalidId
 from fastapi_filter import FilterDepends, with_prefix
-from pydantic import Field, field_validator
+from pydantic import BaseModel, Field, field_validator
 from pymongo import ASCENDING, IndexModel
 
 from mpcontribs_api._openapi import CONTRIBUTION_DATA_INPUT_DESCRIPTION, CONTRIBUTION_DATA_OUTPUT_DESCRIPTION
@@ -27,7 +27,7 @@ from mpcontribs_api.exceptions import ValidationError
 from mpcontribs_api.projection import SparseFieldsModel
 
 
-class ContributionBase(BaseDocumentWithInput[PydanticObjectId]):
+class ContributionBase(BaseModel):
     project: ShortStr
     identifier: SearchStr
     formula: DisplayStr
@@ -62,7 +62,7 @@ class ContributionBase(BaseDocumentWithInput[PydanticObjectId]):
         ]
 
 
-class Contribution(ContributionBase):
+class Contribution(ContributionBase, BaseDocumentWithInput[PydanticObjectId]):
     is_public: bool
     # Server-owned: the service resolves the real version (see ContributionService._split_non_unique)
     # and stamps it on the doc. Defaults to 1 so the no-version (unique-identifier) case is implicit.
@@ -81,14 +81,14 @@ class Contribution(ContributionBase):
         # Server-owned fields are not taken from input: is_public starts False, components are
         # inserted separately, last_modified is stamped by the before_event hook, and version is
         # resolved/stamped by the service (never trusted from the request body).
-        return cls.model_validate(
-            {
-                **data.model_dump(
-                    exclude={"is_public", "version", "structures", "tables", "attachments", "last_modified"}
-                ),
-                "is_public": False,
-            }
+        payload = data.model_dump(
+            exclude={"is_public", "version", "structures", "tables", "attachments", "last_modified"}
         )
+        # since we don't accept id from input, generate on our own
+        payload["_id"] = PydanticObjectId()
+        # default to private
+        payload["is_public"] = False
+        return cls.model_validate(obj=payload)
 
     @before_event(Insert, Replace, Update, Save, SaveChanges)
     def set_last_modified(self):
