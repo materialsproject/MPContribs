@@ -65,6 +65,39 @@ class TestUnicodeNormalization:
     def test_searchstr_applies_nfkc_and_casefold(self):
         assert NormModel(search=MICRO_SIGN + "Table").search == GREEK_MU + "table"
 
+    # -- whitespace stripping --------------------------------------------------
+    # Heterogeneous inputs (UI, client, raw REST) carry stray whitespace; every normalizer strips it
+    # so " Foo " and "Foo" collapse to the same stored/queried form.
+
+    def test_nfc_strips_surrounding_whitespace(self):
+        assert nfc_normalize("  Foo  ") == "Foo"
+
+    def test_nfkc_strips_surrounding_whitespace(self):
+        assert nfkc_normalize("\tMyTable\n") == "MyTable"
+
+    def test_nfc_strips_unicode_nbsp(self):
+        # str.strip() trims all Unicode whitespace incl. NBSP U+00A0, even though NFC does not fold it.
+        assert nfc_normalize(" bandgap ") == "bandgap"
+
+    def test_nfkc_folds_nbsp_between_words_but_strips_edges(self):
+        # NFKC folds NBSP -> plain space; an interior one survives (folded), edges are trimmed.
+        assert nfkc_normalize(" a b ") == "a b"
+
+    def test_displaystr_strips_whitespace(self):
+        assert NormModel(nfc="  spaced  ").nfc == "spaced"
+
+    def test_nfkcstr_strips_whitespace(self):
+        assert NormModel(nfkc="  MyTable  ").nfkc == "MyTable"
+
+    def test_searchstr_strips_and_casefolds_whitespace(self):
+        assert NormModel(search="  MySample  ").search == "mysample"
+
+    def test_normalizers_idempotent_on_whitespace(self):
+        # Normalizing an already-normalized value is a no-op (guards accidental double-strip drift).
+        for fn in (nfc_normalize, nfkc_normalize):
+            once = fn("  Foo Bar  ")
+            assert fn(once) == once
+
 
 class TestShortStr:
     def test_valid_3_chars(self):
