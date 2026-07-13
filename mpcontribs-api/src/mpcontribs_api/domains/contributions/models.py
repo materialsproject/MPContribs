@@ -175,10 +175,10 @@ class ContributionFilter(BaseFilter):
     id__in: list[PydanticObjectId] | None = None
     id__neq: PydanticObjectId | None = None
 
-    identifier: str | None = None
-    identifier__in: list[ShortStr] | None = None
-    identifier__neq: ShortStr | None = None
-    identifier__ilike: str | None = None
+    identifier: SearchStr | None = None
+    identifier__in: list[SearchStr] | None = None
+    identifier__neq: SearchStr | None = None
+    identifier__ilike: SearchStr | None = None
 
     version: str | None = None
     version__in: list[ShortStr] | None = None
