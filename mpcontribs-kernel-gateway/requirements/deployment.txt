@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=MPContribs/mpcontribs-kernel-gateway/requirements/deployment.txt MPContribs/mpcontribs-kernel-gateway/requirements.in python/requirements.txt
 #
-anyio==4.14.1
+anyio==4.14.2
     # via jupyter-server
 argon2-cffi==25.1.0
     # via jupyter-server
@@ -12,7 +12,7 @@ argon2-cffi-bindings==25.1.0
     # via argon2-cffi
 arrow==1.4.0
     # via isoduration
-asttokens==3.0.1
+asttokens==3.0.2
     # via stack-data
 attrs==26.1.0
     # via
@@ -190,7 +190,7 @@ msgpack==1.2.1
     # via
     #   bravado
     #   bravado-core
-narwhals==2.23.0
+narwhals==2.24.0
     # via plotly
 nbclient==0.11.0
     # via nbconvert
@@ -422,7 +422,7 @@ typing-extensions==4.16.0
     #   referencing
     #   spglib
     #   swagger-spec-validator
-tzdata==2026.2
+tzdata==2026.3
     # via arrow
 ujson==5.13.0
     # via mpcontribs-client

@@ -6,7 +6,7 @@
 #
 arrow==1.4.0
     # via isoduration
-asttokens==3.0.1
+asttokens==3.0.2
     # via stack-data
 attrs==26.1.0
     # via
@@ -100,7 +100,7 @@ msgpack==1.2.1
     # via
     #   bravado
     #   bravado-core
-narwhals==2.23.0
+narwhals==2.24.0
     # via plotly
 networkx==3.6.1
     # via pymatgen-core
@@ -248,7 +248,7 @@ typing-extensions==4.16.0
     #   referencing
     #   spglib
     #   swagger-spec-validator
-tzdata==2026.2
+tzdata==2026.3
     # via arrow
 ujson==5.13.0
     # via mpcontribs-client (MPContribs/mpcontribs-client/pyproject.toml)

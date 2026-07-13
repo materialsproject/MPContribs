@@ -8,7 +8,7 @@ arrow==1.4.0
     # via isoduration
 asgiref==3.11.1
     # via django
-asttokens==3.0.1
+asttokens==3.0.2
     # via stack-data
 attrs==26.1.0
     # via
@@ -24,9 +24,9 @@ boltons==26.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (MPContribs/mpcontribs-portal/pyproject.toml)
-boto3==1.43.45
+boto3==1.43.47
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/pyproject.toml)
-botocore==1.43.45
+botocore==1.43.47
     # via
     #   boto3
     #   s3transfer
@@ -189,7 +189,7 @@ msgpack==1.2.1
     # via
     #   bravado
     #   bravado-core
-narwhals==2.23.0
+narwhals==2.24.0
     # via plotly
 nbclient==0.11.0
     # via nbconvert
@@ -326,7 +326,7 @@ rpds-py==2026.6.3
     #   referencing
 ruamel-yaml==0.19.1
     # via monty
-s3transfer==0.19.0
+s3transfer==0.19.1
     # via boto3
 scipy==1.17.1
     # via
@@ -394,7 +394,7 @@ typing-extensions==4.16.0
     #   referencing
     #   spglib
     #   swagger-spec-validator
-tzdata==2026.2
+tzdata==2026.3
     # via arrow
 ujson==5.13.0
     # via mpcontribs-client
