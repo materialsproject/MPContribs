@@ -11,7 +11,11 @@ from types_aiobotocore_s3 import S3Client
 
 from mpcontribs_api._openapi import contact_info, license_info, openapi_tags
 from mpcontribs_api.api.v1.router import router as v1_router
-from mpcontribs_api.authz import api_key_scheme
+from mpcontribs_api.authz import (
+    api_key_scheme,
+    authenticated_groups_scheme,
+    consumer_username_scheme,
+)
 from mpcontribs_api.config import Settings, get_settings
 from mpcontribs_api.domains._redirects.router import router as redirects_router
 from mpcontribs_api.domains.attachments.models import Attachment
@@ -103,6 +107,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     configure_tracing(settings)
     configure_logging(settings)
 
+    # In prod, Kong injects identity headers; locally expose them as Authorize fields.
+    security_deps = [Depends(api_key_scheme)]
+    if settings.environment != "prod":
+        security_deps += [
+            Depends(consumer_username_scheme),
+            Depends(authenticated_groups_scheme),
+        ]
+
     app = FastAPI(
         title="mpcontribs-api",
         description="Operations to contribute, update and retrieve materials data on Materials Project",
@@ -117,7 +129,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         swagger_ui_parameters={
             "docExpansion": "none",
         },
-        dependencies=[Depends(api_key_scheme)],
+        dependencies=security_deps,
     )
 
     # Reject oversized request bodies before they're buffered into memory. Added before
