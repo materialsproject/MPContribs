@@ -72,14 +72,3 @@ def require_user(user: UserDep) -> User:
         raise AuthenticationError("authentication required")
     return user
 
-
-# AuthedDep = Annotated[User, Depends(require_user)]
-
-
-# def require_role(role: str):
-#     def checker(user: AuthedDep) -> User:
-#         if not user.has_role(role):
-#             raise PermissionError(required_role=role)
-#         return user
-
-#     return Annotated[User, Depends(checker)]
