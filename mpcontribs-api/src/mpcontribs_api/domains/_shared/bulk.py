@@ -27,7 +27,7 @@ class BulkWriteSummary[T](BaseModel):
     failed: list[BulkFailure]
 
 
-class BulkDeleteSummary[T](BaseModel):
+class BulkDeleteSummary(BaseModel):
     num_deleted: int
     num_children_deleted: int
 
