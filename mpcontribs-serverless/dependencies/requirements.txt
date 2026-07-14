@@ -32,7 +32,7 @@ ddtrace==4.3.0
     # via -r requirements.in
 decorator==5.1.1
     # via ipython
-dnspython==2.6.1
+dnspython==2.8.0
     # via
     #   pyisemail
     #   pymongo
@@ -115,7 +115,7 @@ pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pillow==12.2.0
+pillow==12.3.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-client
@@ -137,7 +137,7 @@ pyisemail==2.0.1
     # via mpcontribs-client
 pymatgen==2024.7.18
     # via mpcontribs-client
-pymongo==4.6.3
+pymongo==4.17.0
     # via mpcontribs-client
 pyparsing==3.0.9
     # via
