@@ -86,6 +86,11 @@ class AuthenticationError(AppError):
     log_level = logging.WARNING  # security-relevant: alertable, but not a server fault
 
 
+class DownloadError(AppError):
+    status_code = 415
+    error_code = "download_error"
+    log_level = logging.WARNING
+
 def error_body(error_code: str, message: str, **public_context) -> dict:
     body: dict[str, Any] = {"error": {"code": error_code, "message": message}}
     if public_context:
