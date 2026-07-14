@@ -207,15 +207,158 @@ class TestStructurePatch:
         assert patch.model_dump(exclude_unset=True) == {"name": "renamed"}
 
     def test_lattice_patchable(self):
-        patch = StructurePatch(lattice=_lattice_payload())
+        # require_all_data_fields forces the full data-field set to be present.
+        patch = StructurePatch(
+            lattice=_lattice_payload(),
+            sites=[_site_payload()],
+            charge=0.0,
+            cif="data_Fe2O3\n",
+        )
         assert patch.lattice is not None
         assert patch.lattice.volume == 1.0
 
     def test_sites_is_a_list(self):
         # Regression: sites must be list[Site], not a single Site.
-        patch = StructurePatch(sites=[_site_payload()])
+        patch = StructurePatch(
+            lattice=_lattice_payload(),
+            sites=[_site_payload()],
+            charge=0.0,
+            cif="data_Fe2O3\n",
+        )
         assert isinstance(patch.sites, list)
         assert patch.sites[0].label == "Fe"
+
+
+class TestStructurePatchRequireAllDataFields:
+    """Coverage for the ``require_all_data_fields`` model validator.
+
+    The data fields are {lattice, sites, charge, cif}. The rule: if any of them
+    is set, all of them must be set. ``name`` is metadata and is exempt.
+    """
+
+    def _all_data_fields(self, **overrides) -> dict:
+        payload = {
+            "lattice": _lattice_payload(),
+            "sites": [_site_payload()],
+            "charge": 0.0,
+            "cif": "data_Fe2O3\n",
+        }
+        payload.update(overrides)
+        return payload
+
+    # -- passing cases -------------------------------------------------------
+
+    def test_empty_patch_passes(self):
+        # No data fields set at all: nothing to enforce.
+        assert StructurePatch().model_dump(exclude_unset=True) == {}
+
+    def test_only_name_passes(self):
+        # name is not a data field, so a name-only patch is allowed.
+        patch = StructurePatch(name="renamed")
+        assert patch.name == "renamed"
+
+    def test_all_data_fields_set_passes(self):
+        patch = StructurePatch(**self._all_data_fields())
+        assert patch.lattice is not None
+        assert patch.sites is not None
+        assert patch.charge == 0.0
+        assert patch.cif == "data_Fe2O3\n"
+
+    def test_all_data_fields_plus_name_passes(self):
+        patch = StructurePatch(**self._all_data_fields(name="renamed"))
+        assert patch.name == "renamed"
+        assert patch.cif == "data_Fe2O3\n"
+
+    def test_all_data_fields_with_charge_zero_passes(self):
+        # 0.0 is a legitimate, "set" value and must not be treated as absent.
+        patch = StructurePatch(**self._all_data_fields(charge=0.0))
+        assert patch.charge == 0.0
+
+    # -- failing cases: exactly one field set --------------------------------
+
+    @pytest.mark.parametrize(
+        "field, value",
+        [
+            ("lattice", _lattice_payload()),
+            ("sites", [_site_payload()]),
+            ("charge", 1.0),
+            ("cif", "data_Fe2O3\n"),
+        ],
+    )
+    def test_single_data_field_raises(self, field, value):
+        with pytest.raises(AppValidationError):
+            StructurePatch(**{field: value})
+
+    def test_single_data_field_with_name_raises(self):
+        # name does not satisfy the "all data fields" requirement.
+        with pytest.raises(AppValidationError):
+            StructurePatch(name="renamed", charge=1.0)
+
+    # -- failing cases: some but not all -------------------------------------
+
+    def test_three_of_four_fields_raises(self):
+        # Everything except charge -> still incomplete.
+        payload = self._all_data_fields()
+        del payload["charge"]
+        with pytest.raises(AppValidationError):
+            StructurePatch(**payload)
+
+    def test_two_of_four_fields_raises(self):
+        with pytest.raises(AppValidationError):
+            StructurePatch(lattice=_lattice_payload(), cif="data_Fe2O3\n")
+
+    def test_explicit_none_charge_counts_as_set(self):
+        # Enforcement is by which fields were explicitly provided, not by value.
+        # An explicit charge=None satisfies the requirement.
+        patch = StructurePatch(
+            lattice=_lattice_payload(),
+            sites=[_site_payload()],
+            cif="data_Fe2O3\n",
+            charge=None,
+        )
+        assert patch.charge is None
+        assert "charge" in patch.model_fields_set
+
+    def test_omitted_charge_counts_as_unset(self):
+        # Omitting charge entirely (three-of-four provided) is still rejected.
+        with pytest.raises(AppValidationError):
+            StructurePatch(
+                lattice=_lattice_payload(),
+                sites=[_site_payload()],
+                cif="data_Fe2O3\n",
+            )
+
+    # -- failing cases: null non-nullable data fields ------------------------
+    #
+    # lattice, sites, and cif are required/non-null on the Structure document,
+    # so patching them to None is rejected even when all four are provided.
+
+    @pytest.mark.parametrize("field", ["lattice", "sites", "cif"])
+    def test_null_non_nullable_field_raises(self, field):
+        with pytest.raises(AppValidationError):
+            StructurePatch(**self._all_data_fields(**{field: None}))
+
+    def test_all_non_nullable_fields_null_raises(self):
+        with pytest.raises(AppValidationError):
+            StructurePatch(lattice=None, sites=None, charge=None, cif=None)
+
+    def test_null_non_nullable_error_message(self):
+        with pytest.raises(AppValidationError) as exc_info:
+            StructurePatch(**self._all_data_fields(cif=None))
+        assert "non-null" in exc_info.value.message
+
+    # -- error content -------------------------------------------------------
+
+    def test_error_message_and_context(self):
+        with pytest.raises(AppValidationError) as exc_info:
+            StructurePatch(charge=1.0)
+        err = exc_info.value
+        assert "lattice" in err.message
+        assert err.status_code == 422
+        assert err.error_code == "validation_error"
+        # The offending model is attached as context for logging.
+        assert "update" in err.context
+        assert isinstance(err.context["update"], StructurePatch)
 
 
 # ---------------------------------------------------------------------------

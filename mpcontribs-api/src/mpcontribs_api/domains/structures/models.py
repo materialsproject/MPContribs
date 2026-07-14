@@ -1,10 +1,13 @@
+from typing import Self
+
 from beanie import PydanticObjectId
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator
 from pymatgen.core import Element
 
 from mpcontribs_api.domains._shared.filters import BaseFilter
 from mpcontribs_api.domains._shared.models import Component, ComponentIn, DocumentOut
 from mpcontribs_api.domains._shared.types import MD5Hash, PolarsFrame
+from mpcontribs_api.exceptions import ValidationError
 from mpcontribs_api.projection import SparseFieldsModel
 
 
@@ -90,6 +93,20 @@ class StructurePatch(SparseFieldsModel):
     sites: list[Site] | None = None
     charge: float | None = None
     cif: str | None = None
+
+    @model_validator(mode="after")
+    def require_all_data_fields(self) -> Self:
+        """If any of {lattice, sites, charge, cif} are being updated, all must be specified.
+
+        charge is nullable; lattice, sites, and cif must be non-null when patched.
+        """
+        data_fields = frozenset({"lattice", "sites", "charge", "cif"})
+        set_fields = data_fields & self.model_fields_set
+        if set_fields and set_fields != data_fields:
+            raise ValidationError("must specify all {lattice, sites, charge, cif} if updating one.", update=self)
+        if set_fields and (self.lattice is None or self.sites is None or self.cif is None):
+            raise ValidationError("lattice, sites, and cif must be non-null.", update=self)
+        return self
 
 
 class StructureFilter(BaseFilter):
