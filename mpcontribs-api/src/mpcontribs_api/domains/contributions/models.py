@@ -106,6 +106,11 @@ class ContributionBase(BaseDocumentWithInput[PydanticObjectId]):
             IndexModel(keys=[("attachments.$id", ASCENDING)], name="ref_attachments"),
         ]
 
+    @classmethod
+    def identifier_fields(cls) -> frozenset[str]:
+        """A contribution is uniquely identified (within a version) by ``project`` + ``identifier``."""
+        return frozenset({"project", "identifier"})
+
 
 class Contribution(ContributionBase):
     """Models what is actually stored in the database."""
@@ -160,7 +165,11 @@ class ContributionIn(ContributionBase):
         return len(self.structures or []) + len(self.tables or []) + len(self.attachments or [])
 
     def identifiers(self) -> dict[str, str]:
-        """Returns a dict of unique identifiers for a contribution (outside of id)."""
+        """Returns this contribution's identifier values (see ``identifier_fields``).
+
+        Overrides the base to narrow the value type to ``str`` for the callers (bulk error
+        reporting, ``upsert_contribution_by_identifiers``) that key on it.
+        """
         return {"project": self.project, "identifier": self.identifier}
 
 

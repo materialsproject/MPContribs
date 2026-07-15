@@ -28,6 +28,22 @@ class BaseDocumentWithInput[TId](Document):
     id: TId = Field(alias="_id")  # pyright: ignore[reportGeneralTypeIssues, reportIncompatibleVariableOverride]
 
     @classmethod
+    def identifier_fields(cls) -> frozenset[str]:
+        """Field names that uniquely identify a document in this collection.
+
+        This is the natural/unique key a caller can supply without first knowing the Mongo ``_id``
+        (e.g. ``{"name", "owner"}`` for a project group). The repository pairs these names with
+        caller-supplied values to locate a single resource, and rejects any value dict whose keys
+        don't match this set. Defaults to the primary key; subclasses with a meaningful compound key
+        override it.
+        """
+        return frozenset({"id"})
+
+    def identifiers(self) -> dict[str, Any]:
+        """This document's identifier field values, keyed by :meth:`identifier_fields`."""
+        return {field: getattr(self, field) for field in self.identifier_fields()}
+
+    @classmethod
     def from_input_model(cls, data: Any) -> Self:
         """Translate a validated input payload into a full stored document."""
         return cls(**data.model_dump())
