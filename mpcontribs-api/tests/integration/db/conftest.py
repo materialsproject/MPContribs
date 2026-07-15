@@ -6,6 +6,7 @@ from pymongo import AsyncMongoClient
 from mpcontribs_api.config import get_settings
 from mpcontribs_api.domains.attachments.models import Attachment
 from mpcontribs_api.domains.contributions.models import Contribution
+from mpcontribs_api.domains.project_groups.models import ProjectGroup
 from mpcontribs_api.domains.projects.models import Project
 from mpcontribs_api.domains.structures.models import Structure
 from mpcontribs_api.domains.tables.models import Table
@@ -66,7 +67,7 @@ async def db(mongo_client):
     database = mongo_client[settings.mongo.db_name]
     await init_beanie(
         database=database,
-        document_models=[Project, Contribution, Structure, Table, Attachment],
+        document_models=[Project, ProjectGroup, Contribution, Structure, Table, Attachment],
     )
     yield database
 
@@ -97,3 +98,10 @@ async def clean_components(db):
     yield
     for collection in ("structures", "tables", "attachments"):
         await db[collection].delete_many({})
+
+
+@pytest_asyncio.fixture(autouse=True)
+async def clean_project_groups(db):
+    await db["project_groups"].delete_many({})
+    yield
+    await db["project_groups"].delete_many({})
