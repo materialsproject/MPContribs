@@ -1,4 +1,5 @@
 import re
+import unicodedata
 from enum import StrEnum
 from typing import Annotated
 
@@ -108,3 +109,91 @@ PolarsFrame = Annotated[
     ),
     WithJsonSchema({"type": "object"}, mode="serialization"),
 ]
+
+
+def _nfkc_casefold(value: str) -> str:
+    """NFKC + casefold: the case-insensitive, compatibility-folded form used for search/matching.
+
+    Surrounding whitespace is stripped by :func:`nfkc_normalize` before casefolding.
+    """
+    return nfkc_normalize(value).casefold()
+
+
+def nfkc_normalize(value: str) -> str:
+    """Return ``value`` in Unicode NFKC (compatibility composition) form, preserving case.
+
+    NFKC folds *compatibility* variants onto a canonical form — the MICRO SIGN U+00B5 becomes the
+    Greek mu, the ``ﬁ`` ligature becomes ``fi``, full-width characters become half-width, and so on.
+    Unlike :func:`_nfkc_casefold` it does not casefold, so human-facing labels keep their original
+    case. It is a superset of :func:`nfc_normalize` (NFKC output is already NFC-stable).
+
+    Leading/trailing whitespace is stripped (NFKC first, so compatibility whitespace such as the
+    NBSP U+00A0 folds to a plain space and is then trimmed) so ``" Foo "`` and ``"Foo"`` collapse to
+    the same stored form.
+    """
+    return unicodedata.normalize("NFKC", value).strip()
+
+
+def nfc_normalize(value: str) -> str:
+    """Return ``value`` in Unicode NFC (canonical composition) form.
+
+    NFC folds canonically-equivalent codepoints onto one representative — e.g. the OHM SIGN
+    (U+2126) and Ångström sign (U+212B) collapse onto the Greek capital omega and ``Å``. This keeps
+    equivalent spellings of units, labels, and query terms comparable byte-for-byte. It is a no-op on
+    pure ASCII. NFC is deliberately *not* NFKC: it does not casefold or apply compatibility folding
+    (so the MICRO SIGN U+00B5 and Greek mu U+03BC stay distinct).
+
+    Leading/trailing whitespace is stripped so equivalent spellings compare byte-for-byte. Note NFC
+    (unlike NFKC) does not fold compatibility whitespace, but :meth:`str.strip` trims all Unicode
+    whitespace regardless, so an NBSP-padded value is still trimmed.
+    """
+    return unicodedata.normalize("NFC", value).strip()
+
+
+# Acronym boundary: an uppercase letter followed by an uppercase-then-lowercase
+# pair. The trailing capital begins a new word, so ``HTTPResponse`` splits as
+# ``HTTP|Response``
+_ACRONYM_BOUNDARY = re.compile(r"(?<=[A-Z])(?=[A-Z][a-z])")
+
+# camelCase/PascalCase boundary: a lowercase letter or digit immediately followed
+# by an uppercase letter (``bandGap`` -> ``band|Gap``). The ``0-9`` in the lookbehind
+# also splits ``digit->UPPER`` (``Al2O3`` -> ``al2_o3``)
+_CAMEL_BOUNDARY = re.compile(r"(?<=[a-z0-9])(?=[A-Z])")
+
+# Any run of characters that isn't an ASCII letter or digit collapses to a single
+# underscore (spaces, hyphens, punctuation, etc.).
+_NON_ALNUM_RUN = re.compile(r"[^a-zA-Z0-9]+")
+
+_SPECIAL_TERMS = {
+    "pH": "ph",
+}
+_SPECIAL_RE = re.compile("|".join(re.escape(k) for k in _SPECIAL_TERMS)) if _SPECIAL_TERMS else None
+
+
+def to_snake_case(name: str) -> str:
+    """Coerce a single key token to canonical ``snake_case``.
+
+    Rewrites known irregular terms, splits ``camelCase``/``PascalCase`` and
+    acronym boundaries, lowercases, and collapses every run of non-alphanumeric
+    characters to a single underscore, trimming leading/trailing underscores.
+    """
+    s = name
+    if _SPECIAL_RE is not None:
+        s = _SPECIAL_RE.sub(lambda m: _SPECIAL_TERMS[m.group()], s)
+    s = _ACRONYM_BOUNDARY.sub("_", s)
+    s = _CAMEL_BOUNDARY.sub("_", s)
+    s = _NON_ALNUM_RUN.sub("_", s)
+    return s.strip("_").lower()
+
+
+# Converts strs to snake case
+SnakeCaseStr = Annotated[str, BeforeValidator(func=to_snake_case)]
+
+# Converts strs to searchable form (NFKC compatibility fold + casefold)
+SearchStr = Annotated[str, BeforeValidator(func=_nfkc_casefold)]
+
+# NFKC-normalizes strs (compatibility fold, case preserved) — for human-facing labels/names
+NFKCStr = Annotated[str, BeforeValidator(func=nfkc_normalize)]
+
+# Converts strs to pretty display form (keeps unicode and most formatting)
+DisplayStr = Annotated[str, BeforeValidator(func=nfc_normalize)]
