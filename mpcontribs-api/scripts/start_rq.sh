@@ -1,16 +1,20 @@
 #!/bin/bash
+#
+# RQ worker placeholder.
+#
+# The FastAPI rewrite has not yet ported the background worker (the old worker ran
+# `flask rq worker`, and Flask is gone). This stub exists so supervisord's `*-worker`
+# programs — referenced by supervisord.conf.jinja and started by main.py's `start("rq:*")`
+# — have a command to run and do not crash-loop or enter FATAL.
+#
+# It honors the same startup stagger as the api process, then blocks so supervisord sees a
+# healthy RUNNING process. Replace the `exec sleep infinity` below with the real worker
+# entrypoint once background processing is reimplemented.
 
 set -e
 zzz=$((DEPLOYMENT * 60))
 echo "$SUPERVISOR_PROCESS_NAME: waiting for $zzz seconds before start..."
-sleep $zzz
+sleep "$zzz"
 
-CMD="flask rq $1"
-set -x
-
-if [[ -n "$DD_TRACE_HOST" ]]; then
-  wait-for-it.sh "$DD_TRACE_HOST" -q -s -t 10 && CMD="ddtrace-run $CMD" || echo "WARNING: datadog agent unreachable"
-fi
-
-exec wait-for-it.sh "$JUPYTER_GATEWAY_HOST" -q -s -t 50 -- \
-  wait-for-it.sh "$MPCONTRIBS_API_HOST" -q -s -t 15 -- $CMD
+echo "$SUPERVISOR_PROCESS_NAME: RQ worker not yet ported to the FastAPI rewrite; idling."
+exec sleep infinity

@@ -1,14 +1,14 @@
 #!/usr/bin/env python
-import os
-import requests
-import boto3
 import logging
+import os
 
+import boto3
+import requests
 from supervisor.options import ClientOptions
 from supervisor.supervisorctl import Controller
 
 logger = logging.getLogger(__name__)
-client = boto3.client('ecs')
+client = boto3.client("ecs")
 
 
 def start(program):

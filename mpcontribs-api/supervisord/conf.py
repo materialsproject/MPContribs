@@ -1,39 +1,36 @@
 import os
+
 from jinja2 import Environment, FileSystemLoader
 
 DIR = os.path.abspath(os.path.dirname(__file__))
 PRODUCTION = int(os.environ.get("PRODUCTION", "1"))
-DEFAULT_NWORKERS = 2 if PRODUCTION else 1
-NWORKERS = int(os.environ.get("NWORKERS", DEFAULT_NWORKERS))
-KG_PORT = 10100
+# uvicorn worker count per API process. Same default in dev and prod; override via the NWORKERS env var.
+NWORKERS = int(os.environ.get("NWORKERS", "2"))
 
 deployments = {}
 
-for deployment in os.environ.get("DEPLOYMENTS", "ml:10002").split(","):
-    name, db, s3, tm, max_projects, api_port = deployment.split(":")
-    portal_port = 8080 + int(api_port) % 10000
+# DEPLOYMENTS entries are "name:db:s3:tm:max_projects:api_port" — the format is an external
+# deployment contract (also parsed by scripts/healthchecks.py). Only name, db, and api_port are
+# consumed today; s3/tm/max_projects are Flask/portal-era fields kept for format compatibility.
+for deployment in os.environ.get("DEPLOYMENTS", "ml:ml:ml:MP:3:10002").split(","):
+    name, db, _s3, _tm, _max_projects, api_port = deployment.split(":")
     deployments[name] = {
         "api_port": api_port,
-        "portal_port": portal_port,
         "db": db,
-        "s3": s3,
-        "tm": tm.upper(),
-        "max_projects": int(max_projects) if max_projects else 3
     }
 
 kwargs = {
     "production": PRODUCTION,
+    # MPCONTRIBS_ENVIRONMENT drives the new pydantic Settings (log format, debug mode).
+    "environment": "prod" if PRODUCTION else "dev",
+    # MPCONTRIBS_VERSION is required by Settings; sourced from the image build arg at container start.
+    "version": os.environ.get("CONTRIBS_VERSION", os.environ.get("MPCONTRIBS_VERSION", "0.0.0")),
     "deployments": deployments,
+    # Consumed by scripts/start.sh: both dev and prod run `uvicorn --workers $NWORKERS`.
     "nworkers": NWORKERS,
-    "reload": int(not PRODUCTION),
-    "node_env": "production" if PRODUCTION else "development",
-    "flask_log_level": "INFO" if PRODUCTION else "DEBUG",
-    "jupyter_gateway_host": f"localhost:{KG_PORT}" if PRODUCTION else f"kernel-gateway:{KG_PORT}",
-    "dd_agent_host": "localhost" if PRODUCTION else "datadog",
-    "mpcontribs_api_host": "localhost" if PRODUCTION else "contribs-apis",
+    # OTLP/gRPC receiver: the Datadog Agent sidecar in prod, the "datadog" compose service in dev.
+    "otel_endpoint": "localhost:4317" if PRODUCTION else "datadog:4317",
 }
-kwargs["flask_debug"] = kwargs["node_env"] == "development"
-kwargs["jupyter_gateway_url"] = "http://" + kwargs["jupyter_gateway_host"]
 
 env = Environment(loader=FileSystemLoader(DIR))
 template = env.get_template("supervisord.conf.jinja")

@@ -33,3 +33,6 @@ coverage.xml
 mpcontribs-api/supervisord.conf
 mpcontribs-portal/supervisord.conf
 **/.DS_Store
+.venv/
+.env
+.claude/
