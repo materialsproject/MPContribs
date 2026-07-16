@@ -21,6 +21,7 @@ from mpcontribs_api.domains._redirects.router import router as redirects_router
 from mpcontribs_api.domains.attachments.models import Attachment
 from mpcontribs_api.domains.contributions.models import Contribution
 from mpcontribs_api.domains.healthcheck.router import router as healthcheck_router
+from mpcontribs_api.domains.initiatives.models import Initiative
 from mpcontribs_api.domains.project_groups.models import ProjectGroup
 from mpcontribs_api.domains.projects.models import Project
 from mpcontribs_api.domains.structures.models import Structure
@@ -65,6 +66,7 @@ async def _setup_mongo(app: FastAPI, settings: Settings, stack: AsyncExitStack) 
         document_models=[
             Project,
             ProjectGroup,
+            Initiative,
             Contribution,
             Attachment,
             Structure,
