@@ -184,3 +184,16 @@ class TestInsertProjectGroup:
         doc = await ProjectGroup.find_one(ProjectGroup.name == "ins-no-projects")
         assert doc is not None
         assert doc.projects == []
+
+    async def test_duplicate_identifiers_raise_conflict(self, db):
+        # A ProjectGroup's identity is name + owner, not its server-assigned _id (a fresh ObjectId is
+        # minted per insert). insert_one must reject a second group with the same name+owner cleanly.
+        await _insert("ins-dup")
+        with pytest.raises(ConflictError):
+            await _insert("ins-dup")
+
+    async def test_same_name_different_owner_allowed(self, db):
+        # name alone is not the identity: the same name under a different owner is a distinct group.
+        await _insert("ins-shared-name", owner=ALICE_EMAIL)
+        other = await _insert("ins-shared-name", owner="google:bob@example.com")
+        assert other.owner == "google:bob@example.com"
