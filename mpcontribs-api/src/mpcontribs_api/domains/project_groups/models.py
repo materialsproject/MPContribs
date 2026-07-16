@@ -1,6 +1,6 @@
 from beanie import Link, PydanticObjectId
 from bson.errors import InvalidId
-from pydantic import Field, field_validator
+from pydantic import BaseModel, Field, field_validator
 from pymongo import ASCENDING, IndexModel
 
 from mpcontribs_api.domains._shared.filters import BaseFilter
@@ -75,6 +75,12 @@ class ProjectGroupPatch(SparseFieldsModel):
     owner: PrefixedEmail | None = None
     projects: list[Link[Project]] | None = None
     description: str | None = None
+
+
+class ProjectRefs(BaseModel):
+    """Request body for adding/removing projects from a group: the project ids to (un)link."""
+
+    project_ids: list[ShortStr] = Field(default_factory=list)
 
 
 class ProjectGroupFilter(BaseFilter):
