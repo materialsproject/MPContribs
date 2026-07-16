@@ -5,7 +5,7 @@ from collections.abc import Mapping
 from typing import Annotated, Any, ClassVar, Self
 
 from beanie import Document, PydanticObjectId
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from pymongo.results import DeleteResult
 
 from mpcontribs_api import pagination
@@ -59,8 +59,10 @@ class DocumentOut[TId](SparseFieldsModel):
 
     Mirrors :class:`BaseDocumentWithInput`: subclasses bind their id type as ``TId`` so each resource
     owns its id type, while the field (optional, since projections may omit it) and its alias wiring
-    are declared once here for the repository to read off any resource's output model.
-    """
+    are declared once here for the repository to read off any resource's output model."""
+
+    # lets POST/PUT responses correctly bring ``_id`` into ``id``, without it ``id`` ends up as None
+    model_config = ConfigDict(populate_by_name=True)
 
     id: Annotated[TId | None, Field(alias="_id", serialization_alias="id")] = None
 
