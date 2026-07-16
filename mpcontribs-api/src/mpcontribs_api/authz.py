@@ -33,6 +33,9 @@ authenticated_groups_scheme = APIKeyHeader(
 
 ADMIN_GROUP = settings.mongo.admin_group
 
+# prefix to user roles to disambiguate from project roles, which are bare ids
+INITIATIVE_ROLE_PREFIX = "initiative:"
+
 
 class User(BaseModel):
     """User definition derived from request headers.
@@ -64,7 +67,29 @@ class User(BaseModel):
     def is_admin(self) -> bool:
         return (not self.is_anonymous) and (ADMIN_GROUP in self.groups)
 
-    def has_role(self, role: str) -> bool:
+    @property
+    def project_roles(self) -> list[str]:
+        return [
+            role[len(INITIATIVE_ROLE_PREFIX) :] for role in self.groups if not role.startswith(INITIATIVE_ROLE_PREFIX)
+        ]
+
+    @property
+    def initiative_roles(self) -> list[str]:
+        """The initiative slugs this user collaborates on, decoded from their ``initiative:<slug>`` roles."""
+        return [role[len(INITIATIVE_ROLE_PREFIX) :] for role in self.groups if role.startswith(INITIATIVE_ROLE_PREFIX)]
+
+    def has_role(self, role: str, *, resource: str | None = None) -> bool:
+        """Determine whether a user has a role assigned to them.
+
+        Specifying resource as:
+        - ``INITIATIVE_ROLE_PREFIX`` looks for roles scoped to initiatives
+        - "project" looks for roles scoped to projects (no actual prefix implementation yet)
+        - None looks for roles by matching the entire string
+        """
+        if resource == INITIATIVE_ROLE_PREFIX[:-1]:
+            return role in self.initiative_roles
+        if resource == "project":
+            return role in self.project_roles
         return role in self.groups
 
     @property
@@ -74,6 +99,13 @@ class User(BaseModel):
             return frozenset()
         # exclude the admin sentinel so it never leaks into a $in / membership test
         return frozenset(g for g in self.groups if g != ADMIN_GROUP)
+
+    def can_manage(self, id: str, resource: str) -> bool:
+        """Determines whether a user can manage a resource.
+
+        If the user is known and either an admin or has a valid role assigned, they can manage
+        """
+        return (not self.is_anonymous) and (self.is_admin or self.has_role(role=id, resource=resource))
 
     def can_write(self, project: str) -> bool:
         """Single source of truth for write authorization."""
