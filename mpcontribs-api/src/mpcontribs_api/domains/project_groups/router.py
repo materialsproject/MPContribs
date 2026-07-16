@@ -4,14 +4,16 @@ from fastapi import APIRouter, Depends, Response, status
 from fastapi_filter import FilterDepends
 
 from mpcontribs_api.dependencies import require_user
+from mpcontribs_api.domains._shared.bulk import BulkWriteSummary
 from mpcontribs_api.domains._shared.models import DeleteResponse
 from mpcontribs_api.domains._shared.types import FieldSelector, PrefixedEmail, SearchStr
-from mpcontribs_api.domains.project_groups.dependencies import ProjectGroupDep
+from mpcontribs_api.domains.project_groups.dependencies import ProjectGroupDep, ProjectGroupServiceDep
 from mpcontribs_api.domains.project_groups.models import (
     ProjectGroupFilter,
     ProjectGroupIn,
     ProjectGroupOut,
     ProjectGroupPatch,
+    ProjectRefs,
 )
 from mpcontribs_api.pagination import CursorParams
 
@@ -119,3 +121,52 @@ async def delete_project_groups(
         filter (ProjectGroupFilter): the query selecting which project groups to delete
     """
     return await repo.delete_project_groups(filter=filter)
+
+
+@router.post("/item/projects", response_model=BulkWriteSummary[str], dependencies=[Depends(require_user)])
+async def add_projects_by_identifiers(
+    service: ProjectGroupServiceDep,
+    name: SearchStr,
+    owner: PrefixedEmail,
+    body: ProjectRefs,
+):
+    """Add projects to the group identified by ``name`` + ``owner``.
+
+    Each project is verified against the projects collection (scoped to the caller); unknown or
+    invisible projects are reported per-item in the response rather than failing the whole request.
+    """
+    return await service.add_projects_by_identifiers(name=name, owner=owner, project_ids=body.project_ids)
+
+
+@router.delete("/item/projects", response_model=BulkWriteSummary[str], dependencies=[Depends(require_user)])
+async def delete_projects_by_identifiers(
+    service: ProjectGroupServiceDep,
+    name: SearchStr,
+    owner: PrefixedEmail,
+    body: ProjectRefs,
+):
+    """Delete projects from the group identified by ``name`` + ``owner``.
+
+    Ids that are not members of the group are reported per-item in the response.
+    """
+    return await service.delete_projects_by_identifiers(name=name, owner=owner, project_ids=body.project_ids)
+
+
+@router.post("/{id}/projects", response_model=BulkWriteSummary[str], dependencies=[Depends(require_user)])
+async def add_projects_by_id(
+    service: ProjectGroupServiceDep,
+    id: str,
+    body: ProjectRefs,
+):
+    """Add projects to the group identified by ``id``. See ``add_projects_by_identifiers``."""
+    return await service.add_projects_by_id(group_id=id, project_ids=body.project_ids)
+
+
+@router.delete("/{id}/projects", response_model=BulkWriteSummary[str], dependencies=[Depends(require_user)])
+async def delete_projects_by_id(
+    service: ProjectGroupServiceDep,
+    id: str,
+    body: ProjectRefs,
+):
+    """Delete projects from the group identified by ``id``. See ``delete_projects_by_identifiers``."""
+    return await service.delete_projects_by_id(group_id=id, project_ids=body.project_ids)
