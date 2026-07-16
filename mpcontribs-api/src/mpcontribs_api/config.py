@@ -157,6 +157,26 @@ class MongoSettings(BaseModel):
         return self
 
 
+class InitiativeSettings(BaseModel):
+    """Limits governing user-owned initiatives."""
+
+    max_unapproved_per_owner: int = Field(
+        default=3,
+        description="Maximum number of unapproved initiatives a single owner may have at once. Enforced on create.",
+    )
+    max_projects_per_unapproved: int = Field(
+        default=2,
+        description="Maximum number of projects that may be assigned to an unapproved initiative. Enforced when a "
+        "project's initiative is set via PATCH.",
+    )
+
+
+class DomainSettings(BaseModel):
+    """Settings to configure the domain logic of MPContribs"""
+
+    initiatives: InitiativeSettings = Field(default_factory=InitiativeSettings)
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -178,6 +198,9 @@ class Settings(BaseSettings):
 
     # MPContribs_otel__*
     otel: ObservabilitySettings = Field(default_factory=ObservabilitySettings)
+
+    # MPContribs_domain_*
+    domain: DomainSettings = Field(default_factory=DomainSettings)
 
     # SMTP Settings
     mail_default_sender: str = Field(
