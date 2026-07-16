@@ -32,7 +32,6 @@ def _repo(user: User) -> ProjectGroupRepository:
 
 def _group_in(name: str, owner: str = ALICE_EMAIL, **overrides) -> ProjectGroupIn:
     defaults = {
-        "_id": PydanticObjectId(),
         "name": name,
         "owner": owner,
         "projects": [],
@@ -157,3 +156,31 @@ class TestDeleteByFilter:
             filter=ProjectGroupFilter(owner="google:nobody@example.com")
         )
         assert result.num_deleted == 0
+
+
+# ---------------------------------------------------------------------------
+# insert_project_group
+#
+# The input model carries no ``_id`` (the server assigns the ObjectId) and takes
+# plain project ids, which from_input_model resolves into stored Links/DBRefs.
+# ---------------------------------------------------------------------------
+
+
+class TestInsertProjectGroup:
+    async def test_assigns_object_id(self, db):
+        group = await _insert("ins-oid")
+        assert isinstance(group.id, PydanticObjectId)
+
+    async def test_resolves_project_ids_to_links(self, db):
+        await _insert("ins-with-projects", projects=["mp-alpha", "mp-beta"])
+        doc = await ProjectGroup.find_one(ProjectGroup.name == "ins-with-projects")
+        assert doc is not None
+        assert doc.projects is not None
+        assert {link.ref.collection for link in doc.projects} == {"projects"}
+        assert sorted(link.ref.id for link in doc.projects) == ["mp-alpha", "mp-beta"]
+
+    async def test_empty_projects_default(self, db):
+        await _insert("ins-no-projects")
+        doc = await ProjectGroup.find_one(ProjectGroup.name == "ins-no-projects")
+        assert doc is not None
+        assert doc.projects == []

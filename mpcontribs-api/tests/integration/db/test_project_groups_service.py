@@ -45,7 +45,7 @@ async def _insert_project(pid: str, owner: str = ALICE_EMAIL, **overrides):
 
 async def _insert_group(name: str, owner: str = ALICE_EMAIL) -> ProjectGroup:
     return await ProjectGroupRepository(ADMIN).insert_project_group(
-        ProjectGroupIn(_id=PydanticObjectId(), name=name, owner=owner, projects=[], description="d")
+        ProjectGroupIn(name=name, owner=owner, projects=[], description="d")
     )
 
 

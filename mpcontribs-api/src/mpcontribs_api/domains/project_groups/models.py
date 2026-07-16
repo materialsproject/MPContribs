@@ -1,6 +1,7 @@
 from beanie import Link, PydanticObjectId
+from bson import DBRef
 from bson.errors import InvalidId
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from pymongo import ASCENDING, IndexModel
 
 from mpcontribs_api.domains._shared.filters import BaseFilter
@@ -14,9 +15,9 @@ from mpcontribs_api.projection import SparseFieldsModel
 class ProjectGroup(BaseDocumentWithInput[PydanticObjectId]):
     name: SearchStr = Field(max_length=50)
     owner: PrefixedEmail
-    is_public: bool = False
-    projects: list[Link[Project]]
     description: str = Field(max_length=100)
+    is_public: bool = False
+    projects: list[Link[Project]] | None = None
 
     class Settings:
         name = "project_groups"
@@ -34,12 +35,23 @@ class ProjectGroup(BaseDocumentWithInput[PydanticObjectId]):
         """A ``ProjectGroup`` is uniquely identified by its ``name`` + ``owner``."""
         return frozenset({"name", "owner"})
 
+    @classmethod
+    def from_input_model(cls, data: ProjectGroupIn) -> ProjectGroup:
+        """Build a stored group from input, assigning a fresh ``_id`` and resolving member ids to links"""
+        payload = data.model_dump()
+        project_ids = payload.pop("projects", None) or []
+        payload["_id"] = PydanticObjectId()
+        payload["projects"] = [DBRef("projects", pid) for pid in project_ids]
+        return cls.model_validate(payload)
+
     @field_validator("projects")
     @classmethod
     def _reject_duplicate_refs(
         cls,
-        value: list[Link[Project] | Project],
-    ) -> list[Link[Project] | Project]:
+        value: list[Link[Project] | Project] | None,
+    ) -> list[Link[Project] | Project] | None:
+        if value is None:
+            return value
         seen: set[ShortStr] = set()
         for item in value:
             ref_id = item.ref.id if isinstance(item, Link) else item.id
@@ -52,8 +64,16 @@ class ProjectGroup(BaseDocumentWithInput[PydanticObjectId]):
         return value
 
 
-class ProjectGroupIn(ProjectGroup):
-    pass
+class ProjectGroupIn(BaseModel):
+    """User-supplied fields for creating a project group"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: SearchStr = Field(max_length=50)
+    owner: PrefixedEmail
+    description: str = Field(max_length=100)
+    is_public: bool = False
+    projects: list[ShortStr] = Field(default_factory=list)
 
 
 class ProjectGroupOut(DocumentOut[PydanticObjectId]):
