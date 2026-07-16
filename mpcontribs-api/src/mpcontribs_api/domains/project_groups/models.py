@@ -23,10 +23,14 @@ class ProjectGroup(BaseDocumentWithInput[PydanticObjectId]):
         name = "project_groups"
         indexes = [
             IndexModel(
+                keys=[("name", ASCENDING), ("owner", ASCENDING)],
+                name="name_owner",
+                unique=True,
+            ),
+            IndexModel(
                 keys=[("name", ASCENDING), ("owner", ASCENDING), ("is_public", ASCENDING)],
                 name="name_owner_is_public",
-                unique=True,
-            )
+            ),
         ]
         validate_on_save = True
 
