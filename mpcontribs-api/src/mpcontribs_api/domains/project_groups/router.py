@@ -62,16 +62,19 @@ async def get_project_group(
     "", response_model=ProjectGroupOut, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_user)]
 )
 async def insert_project_group(
-    repo: ProjectGroupDep,
+    service: ProjectGroupServiceDep,
     project_group: ProjectGroupIn,
 ):
     """Insert a new project group.
 
+    Each referenced project is verified against the projects collection (scoped to the caller);
+    creation is rejected with 404 if any project id is unknown or not visible.
+
     Args:
-        repo (ProjectGroupDep): the project group repo we depend on
+        service (ProjectGroupServiceDep): the project group service we depend on
         project_group (ProjectGroupIn): the project group to insert
     """
-    return await repo.insert_project_group(project_group=project_group)
+    return await service.insert(project_group=project_group)
 
 
 @router.patch("/item", response_model=ProjectGroupOut, dependencies=[Depends(require_user)])

@@ -4,7 +4,7 @@ import pytest
 from beanie import Link, PydanticObjectId
 from bson import DBRef
 
-from mpcontribs_api.domains.project_groups.models import ProjectGroupOut
+from mpcontribs_api.domains.project_groups.models import ProjectGroupIn, ProjectGroupOut
 from mpcontribs_api.domains.project_groups.service import ProjectGroupService
 from mpcontribs_api.domains.projects.models import Project
 from mpcontribs_api.exceptions import ConflictError, NotFoundError
@@ -53,6 +53,38 @@ def _group(project_ids: list[str] | None = None) -> ProjectGroupOut:
     # Members are stored as Links (DBRefs); set them directly to sidestep Link revalidation.
     group.projects = [Link(DBRef("projects", pid), Project) for pid in (project_ids or [])]
     return group
+
+
+# ---------------------------------------------------------------------------
+# insert
+# ---------------------------------------------------------------------------
+
+
+class TestInsert:
+    def _payload(self, projects: list[str]) -> ProjectGroupIn:
+        return ProjectGroupIn(name="g", owner="google:a@b.com", description="d", projects=projects)
+
+    async def test_all_projects_valid_inserts(self):
+        service, groups, _ = _make_service(None, visible_projects={"mp-1", "mp-2"})
+        groups.insert_project_group.return_value = "stored"
+        payload = self._payload(["mp-1", "mp-2"])
+        result = await service.insert(payload)
+        assert result == "stored"
+        groups.insert_project_group.assert_awaited_once_with(payload)
+
+    async def test_missing_project_raises_not_found_and_skips_insert(self):
+        service, groups, _ = _make_service(None, visible_projects={"mp-1"})
+        with pytest.raises(NotFoundError) as exc:
+            await service.insert(self._payload(["mp-1", "ghost"]))
+        assert exc.value.context["ids"] == ["ghost"]
+        groups.insert_project_group.assert_not_awaited()
+
+    async def test_empty_projects_inserts_without_validation(self):
+        service, groups, projects = _make_service(None)
+        payload = self._payload([])
+        await service.insert(payload)
+        projects.get_by_id.assert_not_awaited()
+        groups.insert_project_group.assert_awaited_once_with(payload)
 
 
 # ---------------------------------------------------------------------------

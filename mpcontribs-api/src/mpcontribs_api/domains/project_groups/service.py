@@ -2,7 +2,7 @@ from beanie import Link
 
 from mpcontribs_api.domains._shared.bulk import BulkFailure, BulkWriteSummary
 from mpcontribs_api.domains._shared.types import PrefixedEmail, SearchStr, ShortStr
-from mpcontribs_api.domains.project_groups.models import ProjectGroupOut
+from mpcontribs_api.domains.project_groups.models import ProjectGroup, ProjectGroupIn, ProjectGroupOut
 from mpcontribs_api.domains.project_groups.repository import ProjectGroupRepository
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
 from mpcontribs_api.exceptions import NotFoundError
@@ -22,6 +22,17 @@ class ProjectGroupService:
     ) -> None:
         self._groups = groups
         self._projects = projects
+
+    async def _project_exists(self, project_id: ShortStr) -> bool:
+        """Whether a project with ``project_id`` exists and is visible to the caller."""
+        return await self._projects.get_by_id(project_id, fields=frozenset({"id"})) is not None
+
+    async def insert(self, project_group: ProjectGroupIn) -> ProjectGroup:
+        """Insert a new group after verifying every referenced project exists and is visible"""
+        missing = [pid for pid in project_group.projects if not await self._project_exists(pid)]
+        if missing:
+            raise NotFoundError("One or more projects not found or not visible", ids=missing)
+        return await self._groups.insert_project_group(project_group)
 
     async def _resolve_by_id(self, group_id: str) -> ProjectGroupOut:
         """Resolve a visible group by its ObjectId, or raise ``NotFoundError``."""
@@ -50,7 +61,7 @@ class ProjectGroupService:
         failed: list[BulkFailure] = []
         valid: list[ShortStr] = []
         for index, pid in enumerate(project_ids):
-            if await self._projects.get_by_id(pid, fields=frozenset({"id"})) is None:
+            if not await self._project_exists(pid):
                 failed.append(
                     BulkFailure(
                         index=index,

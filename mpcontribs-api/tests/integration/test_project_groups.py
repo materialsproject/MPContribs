@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from mpcontribs_api.domains.project_groups.dependencies import get_project_group_repository
+from mpcontribs_api.domains.project_groups.dependencies import get_project_group_service
 from tests.integration.conftest import AUTHED_HEADERS
 
 # A valid 24-char hex ObjectId string (ProjectGroupOut.id is a PydanticObjectId).
@@ -11,11 +11,11 @@ SAMPLE_OID = "6eb7cf5a86d9755df3a6c593"
 
 
 @pytest.fixture
-def group_repo(test_app):
-    repo = AsyncMock()
-    test_app.dependency_overrides[get_project_group_repository] = lambda: repo
-    yield repo
-    test_app.dependency_overrides.pop(get_project_group_repository, None)
+def group_service(test_app):
+    service = AsyncMock()
+    test_app.dependency_overrides[get_project_group_service] = lambda: service
+    yield service
+    test_app.dependency_overrides.pop(get_project_group_service, None)
 
 
 # ---------------------------------------------------------------------------
@@ -53,18 +53,18 @@ class TestInsertProjectGroupResponse:
         attrs.update(overrides)
         return SimpleNamespace(**attrs)
 
-    def test_returns_201(self, client, group_repo):
-        group_repo.insert_project_group.return_value = self._inserted()
+    def test_returns_201(self, client, group_service):
+        group_service.insert.return_value = self._inserted()
         r = client.post("/api/v1/project_groups", json=self._body(), headers=AUTHED_HEADERS)
         assert r.status_code == 201
 
-    def test_response_includes_generated_id(self, client, group_repo):
-        group_repo.insert_project_group.return_value = self._inserted()
+    def test_response_includes_generated_id(self, client, group_service):
+        group_service.insert.return_value = self._inserted()
         body = client.post("/api/v1/project_groups", json=self._body(), headers=AUTHED_HEADERS).json()
         assert body["id"] == SAMPLE_OID
 
-    def test_response_echoes_full_document(self, client, group_repo):
-        group_repo.insert_project_group.return_value = self._inserted(name="echo-group", is_public=True)
+    def test_response_echoes_full_document(self, client, group_service):
+        group_service.insert.return_value = self._inserted(name="echo-group", is_public=True)
         body = client.post(
             "/api/v1/project_groups",
             json=self._body(name="echo-group", is_public=True),
