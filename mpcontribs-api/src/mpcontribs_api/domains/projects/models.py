@@ -51,7 +51,7 @@ class Project(BaseDocumentWithInput[ShortStr]):
     stats: Stats
 
     # Optional
-    category: ShortStr | None = None
+    tags: list[ShortStr] | None = None
     references: list[Reference] = Field(default_factory=list)
     long_title: str | None = None
     other: dict[str, Any] = Field(default_factory=dict)
@@ -85,7 +85,7 @@ class ProjectOut(DocumentOut[ShortStr]):
     authors: str | None = None
     description: str | None = None
     title: ShortStr | None = None
-    category: ShortStr | None = None
+    tags: list[ShortStr] | None = None
     owner: PrefixedEmail | None = None
     other: dict[str, Any] | None = None
     is_public: bool | None = None
@@ -119,10 +119,9 @@ class ProjectFilter(BaseFilter):
     owner__neq: PrefixedEmail | None = None
     owner__ilike: str | None = None
 
-    category: ShortStr | None = None
-    category__in: list[ShortStr] | None = None
-    category__neq: ShortStr | None = None
-    category__ilike: str | None = None
+    tags: list[ShortStr] | None = None  # exact match of list
+    tags__in: list[ShortStr] | None = None  # if at least one tag is present
+    tags__contains: list[ShortStr] | None = None  # Project.tags must be a superset of these
 
     # fuzzy only
     long_title__ilike: str | None = None
@@ -154,7 +153,7 @@ class ProjectPatch(BaseModel):
     title: ShortStr | None = None
     authors: str | None = None
     description: str | None = None
-    category: ShortStr | None = None
+    tags: list[ShortStr] | None = None
     owner: PrefixedEmail | None = None
     unique_identifiers: bool | None = None
     references: list[Reference] = Field(default_factory=list)

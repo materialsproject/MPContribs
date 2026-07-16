@@ -189,6 +189,57 @@ class TestGetProjectsIdFilter:
 
 
 # ---------------------------------------------------------------------------
+# get_projects — tags filtering
+#
+# ``tags__contains`` maps to MongoDB ``$all``: a project matches only when its
+# tags are a superset of every value supplied (the query list is a subset of
+# the stored array). Contrast with ``tags__in`` ($in), which matches on any
+# single overlapping tag.
+# ---------------------------------------------------------------------------
+
+
+class TestGetProjectsTagsFilter:
+    async def test_contains_requires_all_tags_as_subset(self, db):
+        from mpcontribs_api.domains.projects.models import ProjectFilter
+
+        await _insert("tags-superset", tags=["alpha", "beta", "gamma"])
+        await _insert("tags-partial", tags=["alpha", "beta"])
+        await _insert("tags-none", tags=["delta"])
+        page = await _repo(ADMIN).get_projects(
+            filter=ProjectFilter(tags__contains=["alpha", "gamma"]),
+            pagination=CursorParams(),
+            fields=None,
+        )
+        assert {p.id for p in page.items} == {"tags-superset"}
+
+    async def test_contains_single_tag(self, db):
+        from mpcontribs_api.domains.projects.models import ProjectFilter
+
+        await _insert("tags-single-hit", tags=["alpha", "beta"])
+        await _insert("tags-single-miss", tags=["beta", "gamma"])
+        page = await _repo(ADMIN).get_projects(
+            filter=ProjectFilter(tags__contains=["alpha"]),
+            pagination=CursorParams(),
+            fields=None,
+        )
+        assert {p.id for p in page.items} == {"tags-single-hit"}
+
+    async def test_contains_parses_comma_string(self, db):
+        from mpcontribs_api.domains.projects.models import ProjectFilter
+
+        await _insert("tags-csv-hit", tags=["alpha", "beta", "gamma"])
+        await _insert("tags-csv-miss", tags=["alpha"])
+        # FilterDepends collapses the list query param to a comma string; the
+        # BaseFilter validator must re-expand it.
+        page = await _repo(ADMIN).get_projects(
+            filter=ProjectFilter(tags__contains="alpha,beta"),
+            pagination=CursorParams(),
+            fields=None,
+        )
+        assert {p.id for p in page.items} == {"tags-csv-hit"}
+
+
+# ---------------------------------------------------------------------------
 # Field projection
 # ---------------------------------------------------------------------------
 
