@@ -58,7 +58,9 @@ async def get_project_group(
     return await repo.get_project_group(name=name, owner=owner, fields=selected)
 
 
-@router.post("", response_model=ProjectGroupOut, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_user)])
+@router.post(
+    "", response_model=ProjectGroupOut, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_user)]
+)
 async def insert_project_group(
     repo: ProjectGroupDep,
     project_group: ProjectGroupIn,

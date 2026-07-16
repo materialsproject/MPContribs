@@ -68,9 +68,7 @@ class ProjectGroupService:
 
     async def _delete(self, group: ProjectGroupOut, project_ids: list[ShortStr]) -> BulkWriteSummary[str]:
         """Delete requested members from the group; non-members are reported as failed items."""
-        current = {
-            (link.ref.id if isinstance(link, Link) else link.id) for link in (group.projects or [])
-        }
+        current = {(link.ref.id if isinstance(link, Link) else link.id) for link in (group.projects or [])}
         failed: list[BulkFailure] = []
         present: list[ShortStr] = []
         for index, pid in enumerate(project_ids):

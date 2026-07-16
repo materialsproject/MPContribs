@@ -91,6 +91,7 @@ class DownloadError(AppError):
     error_code = "download_error"
     log_level = logging.WARNING
 
+
 def error_body(error_code: str, message: str, **public_context) -> dict:
     body: dict[str, Any] = {"error": {"code": error_code, "message": message}}
     if public_context:

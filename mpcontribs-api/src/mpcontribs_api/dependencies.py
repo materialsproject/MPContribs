@@ -71,4 +71,3 @@ def require_user(user: UserDep) -> User:
     if user.is_anonymous:
         raise AuthenticationError("authentication required")
     return user
-
