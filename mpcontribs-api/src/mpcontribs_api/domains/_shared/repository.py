@@ -14,6 +14,7 @@ from bson.errors import InvalidId
 from fastapi_filter.contrib.beanie import Filter
 from pydantic import BaseModel
 from pymongo.asynchronous.client_session import AsyncClientSession
+from pymongo.errors import DuplicateKeyError
 from types_aiobotocore_s3 import S3Client
 
 from mpcontribs_api.authz import User
@@ -190,16 +191,21 @@ class MongoDbRepository[
         return [doc.id for doc in docs]
 
     async def insert_one(self, in_resource: TIn) -> TDoc:
-        """Insert a new document built from its input model, rejecting duplicate ids.
+        """Insert a new document built from its input model, rejecting an existing duplicate.
+
+        Duplicates are determined by model-declared identifiers that uniquely identify a document.
 
         Args:
             in_resource (TIn): the validated input payload to translate and store
         """
         document = self.document_model.from_input_model(in_resource)
-        existing = await self.document_model.find_one(self.document_model.id == document.id)
-        if existing:
-            raise ConflictError(f"Cannot insert document.\n Document with ID {document.id} exists")
-        await document.insert()
+        try:
+            await document.insert()
+        except DuplicateKeyError as exc:
+            raise ConflictError(
+                f"Cannot insert {self.document_model.__name__}: a conflicting document already exists",
+                identifiers=document.identifiers(),
+            ) from exc
         return document
 
     async def delete(self, filter: TFilter, session: AsyncClientSession | None = None) -> DeleteResponse:
