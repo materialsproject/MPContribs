@@ -111,8 +111,17 @@ class TestDeleteOne:
                 {"_id": PydanticObjectId(), "name": "dup", "owner": ALICE_EMAIL, "projects": [], "description": "d"},
             ]
         )
-        with pytest.raises(ConflictError):
-            await _repo(ADMIN).delete_project_group(name="dup", owner=ALICE_EMAIL)
+        try:
+            with pytest.raises(ConflictError):
+                await _repo(ADMIN).delete_project_group(name="dup", owner=ALICE_EMAIL)
+        finally:
+            # Restore the unique index we dropped so order-dependent tests that rely on it (e.g. the
+            # insert-duplicate guard) still see it. Planted duplicates must go first, or the unique
+            # index rebuild would fail.
+            await db["project_groups"].delete_many({"name": "dup"})
+            await db["project_groups"].create_index(
+                [("name", 1), ("owner", 1)], name="name_owner", unique=True
+            )
 
 
 # ---------------------------------------------------------------------------

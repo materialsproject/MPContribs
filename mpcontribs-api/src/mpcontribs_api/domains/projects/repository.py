@@ -1,5 +1,9 @@
 from typing import Any
 
+from beanie import PydanticObjectId, UpdateResponse
+from beanie.operators import Set
+from bson import DBRef
+
 from mpcontribs_api.authz import User
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
 from mpcontribs_api.domains.projects.models import (
@@ -9,7 +13,7 @@ from mpcontribs_api.domains.projects.models import (
     ProjectOut,
     ProjectPatch,
 )
-from mpcontribs_api.exceptions import PermissionError
+from mpcontribs_api.exceptions import NotFoundError, PermissionError
 from mpcontribs_api.pagination import CursorParams
 
 
@@ -133,3 +137,42 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
             # New project: the caller owns it, regardless of the submitted owner.
             project.owner = self._user.username
         return await project.save()
+
+    async def set_initiative(self, id: str, ref: DBRef | None) -> Project:
+        """Set a scoped project's canonical initiative link.
+
+        The link is written as-is (a ``DBRef`` into ``initiatives`` or ``None``); all authorization
+        and limit checks are the caller's (see ``ProjectInitiativeService``). Scoping ensures a
+        project the caller cannot see is reported as not found rather than silently missed.
+
+        Args:
+            id (str): the id of the project to update
+            ref (DBRef | None): the initiative reference to assign, or None to unassign
+        """
+        query = self.document_model.find_one(self._scope, self.document_model.id == id).update(
+            Set({"initiative": ref}),
+            response_type=UpdateResponse.NEW_DOCUMENT,
+        )
+        updated = await query  # pyright: ignore[reportGeneralTypeIssues] # beanie UpdateQuery is awaitable
+        if updated is None:
+            raise NotFoundError(self._not_found(id))
+        return updated
+
+    async def count_initiative_members(self, initiative_id: PydanticObjectId, exclude_project_id: str | None) -> int:
+        """Count projects assigned to an initiative, ignoring user scope.
+
+        The unapproved-initiative member limit is an integrity constraint on the initiative's true
+        size, so it must count every member regardless of who can see them — a scoped count could
+        let a collaborator overshoot the cap with projects they cannot see. ``exclude_project_id``
+        drops the project being (re)assigned so re-assigning an existing member is idempotent and
+        never trips the limit.
+
+        Args:
+            initiative_id (PydanticObjectId): the initiative whose members to count
+            exclude_project_id (str | None): a project id to exclude from the count, if any
+        """
+        collection = self.document_model.get_pymongo_collection()
+        query: dict[str, Any] = {"initiative.$id": initiative_id}
+        if exclude_project_id is not None:
+            query["_id"] = {"$ne": exclude_project_id}
+        return await collection.count_documents(query)

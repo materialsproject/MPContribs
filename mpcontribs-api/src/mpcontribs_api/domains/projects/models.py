@@ -2,12 +2,14 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
+from beanie import Link
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 
 from mpcontribs_api import pagination
 from mpcontribs_api.domains._shared.filters import BaseFilter
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
 from mpcontribs_api.domains._shared.types import PrefixedEmail, ShortStr
+from mpcontribs_api.domains.initiatives.models import Initiative
 
 
 class Column(BaseModel):
@@ -60,6 +62,8 @@ class Project(BaseDocumentWithInput[ShortStr]):
     is_approved: bool = False
     license: Literal["CCA4", "CCPD"] | None = None
 
+    initiative: Link[Initiative] | None = None
+
     # Empty method for now. Keeping for business logic later
     @classmethod
     def from_input_model(cls, data: ProjectIn) -> Project:
@@ -96,6 +100,7 @@ class ProjectOut(DocumentOut[ShortStr]):
     stats: Stats | None = None
     columns: list[Column] | None = None
     license: Literal["CCA4", "CCPD"] | None = None
+    initiative: Link[Initiative] | None = None
 
     @staticmethod
     def default_fields() -> list[str]:
@@ -163,3 +168,6 @@ class ProjectPatch(BaseModel):
     is_public: bool | None = None
     is_approved: bool | None = None
     license: Literal["CCA4", "CCPD"] | None = None
+
+    # str here, but ProjectService coerces to a Link
+    initiative: str | None = None

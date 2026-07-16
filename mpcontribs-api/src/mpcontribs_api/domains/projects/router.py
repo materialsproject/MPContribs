@@ -6,7 +6,7 @@ from starlette.status import HTTP_204_NO_CONTENT
 
 from mpcontribs_api.dependencies import require_user
 from mpcontribs_api.domains._shared.types import FieldSelector
-from mpcontribs_api.domains.projects.dependencies import ProjectDep
+from mpcontribs_api.domains.projects.dependencies import ProjectDep, ProjectServiceDep
 from mpcontribs_api.domains.projects.models import (
     ProjectFilter,
     ProjectIn,
@@ -83,7 +83,7 @@ async def upsert_project_by_id(
 
 @router.patch("/{id}", response_model=ProjectOut, dependencies=[Depends(require_user)])
 async def patch_project_by_id(
-    repo: ProjectDep,
+    service: ProjectServiceDep,
     id: str,
     update: ProjectPatch,
 ):
@@ -91,8 +91,13 @@ async def patch_project_by_id(
 
     Note: overwrites fields with given values - arrays are not appended to.
 
+    The ``initiative`` field carries an initiative ``slug`` (or ``null`` to unassign). Setting it
+    is gated by the assignment service: the caller must be able to manage the target initiative
+    (owner/collaborator/admin) and an unapproved initiative may not exceed its member cap. Plain
+    field patches take the fast path straight to the repository.
+
     Args:
-        repo (ProjectDep): the project repo we depend on
+        service (ProjectServiceDep): the project assignment service we depend on
         id (str): the id of the project to update
         update (ProjectPatch): the partial update to apply - unset fields are dropped
             - Note: If fields are intentionally set to None, None is applied to the field.
@@ -100,7 +105,7 @@ async def patch_project_by_id(
     Returns:
         ProjectOut: the full Project with updates applied
     """
-    return await repo.patch_project_by_id(id=id, update=update)
+    return await service.patch(id=id, update=update)
 
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_user)])
