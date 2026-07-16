@@ -14,6 +14,7 @@ from mpcontribs_api.projection import SparseFieldsModel
 class ProjectGroup(BaseDocumentWithInput[PydanticObjectId]):
     name: SearchStr = Field(max_length=50)
     owner: PrefixedEmail
+    is_public: bool = False
     projects: list[Link[Project]]
     description: str = Field(max_length=100)
 
@@ -21,8 +22,8 @@ class ProjectGroup(BaseDocumentWithInput[PydanticObjectId]):
         name = "project_groups"
         indexes = [
             IndexModel(
-                keys=[("name", ASCENDING), ("owner", ASCENDING)],
-                name="name_owner",
+                keys=[("name", ASCENDING), ("owner", ASCENDING), ("is_public", ASCENDING)],
+                name="name_owner_is_public",
                 unique=True,
             )
         ]
@@ -58,6 +59,7 @@ class ProjectGroupIn(ProjectGroup):
 class ProjectGroupOut(DocumentOut[PydanticObjectId]):
     name: SearchStr | None = None
     owner: PrefixedEmail | None = None
+    is_public: bool | None = None
     projects: list[Link[Project]] | None = None
     description: str | None = None
 
@@ -73,6 +75,7 @@ class ProjectGroupOut(DocumentOut[PydanticObjectId]):
 class ProjectGroupPatch(SparseFieldsModel):
     name: SearchStr | None = None
     owner: PrefixedEmail | None = None
+    is_public: bool | None = None
     projects: list[Link[Project]] | None = None
     description: str | None = None
 
@@ -95,6 +98,8 @@ class ProjectGroupFilter(BaseFilter):
     owner: PrefixedEmail | None = None
     owner__in: list[PrefixedEmail] | None = None
     owner__neq: PrefixedEmail | None = None
+
+    is_public: bool | None = None
 
     order_by: list[str] | None = None
 

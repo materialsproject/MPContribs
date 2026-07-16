@@ -30,7 +30,7 @@ class ProjectGroupRepository(
         """Provides scope based on current user's permitted groups and publicly released data."""
         if user.is_admin:
             return {}
-        ors: list[dict[str, Any]] = [{"is_public": True, "is_approved": True}]
+        ors: list[dict[str, Any]] = [{"is_public": True}]
         if not user.is_anonymous:
             ors.append({"owner": user.username})
             if user.groups:
