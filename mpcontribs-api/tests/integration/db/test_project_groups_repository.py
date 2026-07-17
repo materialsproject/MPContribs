@@ -9,7 +9,8 @@ from mpcontribs_api.domains.project_groups.models import (
     ProjectGroupPatch,
 )
 from mpcontribs_api.domains.project_groups.repository import ProjectGroupRepository
-from mpcontribs_api.exceptions import ConflictError, NotFoundError, ValidationError
+from mpcontribs_api.exceptions import ConflictError, NotFoundError, PermissionError, ValidationError
+from mpcontribs_api.pagination import CursorParams
 
 # Share the session event loop (see the projects repo test for why).
 pytestmark = [pytest.mark.db, pytest.mark.asyncio(loop_scope="session")]
@@ -21,9 +22,11 @@ pytestmark = [pytest.mark.db, pytest.mark.asyncio(loop_scope="session")]
 
 ADMIN = User(username="google:admin@example.com", groups=frozenset({"admin"}))
 ALICE = User(username="google:alice@example.com", groups=frozenset({"mp-team"}))
+BOB = User(username="google:bob@example.com", groups=frozenset())
 ANON = User()
 
 ALICE_EMAIL = "google:alice@example.com"
+BOB_EMAIL = "google:bob@example.com"
 
 
 def _repo(user: User) -> ProjectGroupRepository:
@@ -70,6 +73,50 @@ class TestGetOne:
 
 
 # ---------------------------------------------------------------------------
+# project-group:<oid> role scoping
+# ---------------------------------------------------------------------------
+
+
+def _role_user(group_id, username: str = "google:carol@example.com") -> User:
+    """A non-owner authenticated user granted access to one group via its project-group role."""
+    return User(username=username, groups=frozenset({f"project-group:{group_id}"}))
+
+
+class TestGroupRoleScope:
+    async def test_role_grants_visibility(self, db):
+        group = await _insert("role-vis")  # Alice's private group
+        found = await _repo(_role_user(group.id)).get_project_group(name="role-vis", owner=ALICE_EMAIL, fields=None)
+        assert found is not None
+        assert found.id == group.id
+
+    async def test_without_role_not_visible(self, db):
+        await _insert("role-none")
+        found = await _repo(BOB).get_project_group(name="role-none", owner=ALICE_EMAIL, fields=None)
+        assert found is None
+
+    async def test_malformed_role_is_ignored(self, db):
+        await _insert("role-bad")
+        member = User(username="google:carol@example.com", groups=frozenset({"project-group:not-an-oid"}))
+        # A malformed role id must not raise; it simply grants nothing.
+        found = await _repo(member).get_project_group(name="role-bad", owner=ALICE_EMAIL, fields=None)
+        assert found is None
+
+    async def test_role_appears_in_listing(self, db):
+        group = await _insert("role-list")
+        page = await _repo(_role_user(group.id)).get_project_groups(
+            pagination=CursorParams(), filter=ProjectGroupFilter(), fields=None
+        )
+        assert group.id in {g.id for g in page.items}
+
+    async def test_role_grants_scope_but_not_delete(self, db):
+        # Scope makes the group visible, but deletion remains owner-or-admin (403 for a role holder).
+        group = await _insert("role-del")
+        with pytest.raises(PermissionError):
+            await _repo(_role_user(group.id)).delete_project_group(name="role-del", owner=ALICE_EMAIL)
+        assert await ProjectGroup.find_one(ProjectGroup.name == "role-del") is not None
+
+
+# ---------------------------------------------------------------------------
 # delete_one  (identifier-keyed, single-resource, raises)
 # ---------------------------------------------------------------------------
 
@@ -92,6 +139,18 @@ class TestDeleteOne:
             await _repo(ANON).delete_project_group(name="del-scoped", owner=ALICE_EMAIL)
         # ...and it is untouched.
         assert await ProjectGroup.find_one(ProjectGroup.name == "del-scoped") is not None
+
+    async def test_owner_can_delete_own(self, db):
+        await _insert("del-own", owner=ALICE_EMAIL)
+        result = await _repo(ALICE).delete_project_group(name="del-own", owner=ALICE_EMAIL)
+        assert result.num_deleted == 1
+
+    async def test_visible_public_non_owner_forbidden(self, db):
+        # Bob can *see* Alice's public group but does not own it → 403, and it is left intact.
+        await _insert("del-pub", owner=ALICE_EMAIL, is_public=True)
+        with pytest.raises(PermissionError):
+            await _repo(BOB).delete_project_group(name="del-pub", owner=ALICE_EMAIL)
+        assert await ProjectGroup.find_one(ProjectGroup.name == "del-pub") is not None
 
     async def test_wrong_identifier_keys_raise_validation(self, db):
         with pytest.raises(ValidationError):
@@ -165,6 +224,16 @@ class TestDeleteByFilter:
             filter=ProjectGroupFilter(owner="google:nobody@example.com")
         )
         assert result.num_deleted == 0
+
+    async def test_non_admin_bulk_restricted_to_own(self, db):
+        # A broad filter from a non-admin is pinned to their own groups: a public group owned by
+        # someone else must survive even though the filter would otherwise match it.
+        await _insert("own-bulk", owner=ALICE_EMAIL, is_public=True)
+        await _insert("other-bulk", owner=BOB_EMAIL, is_public=True)
+        result = await _repo(ALICE).delete_project_groups(filter=ProjectGroupFilter(is_public=True))
+        assert result.num_deleted == 1
+        assert await ProjectGroup.find_one(ProjectGroup.name == "own-bulk") is None
+        assert await ProjectGroup.find_one(ProjectGroup.name == "other-bulk") is not None
 
 
 # ---------------------------------------------------------------------------

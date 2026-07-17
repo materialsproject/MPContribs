@@ -331,3 +331,35 @@ class TestComponentMutationsRequireAuth:
         structure_service.get_many.return_value = Page(items=[], next_cursor=None)
         r = client.get("/api/v1/structures", headers=FORCE_ANON_HEADERS)
         assert r.status_code == 200
+
+
+# ===========================================================================
+# Component inserts require the caller be a writer of at least one project
+# (authenticated alone is not enough — require_writer).
+# ===========================================================================
+
+# Authenticated, but carries no groups -> no writable projects. Override the default
+# groups header (AUTHED_HEADERS sets mp-team) to empty so the caller is a non-writer.
+NON_WRITER_HEADERS = {
+    "x-consumer-username": "google:nogroups@example.com",
+    "x-authenticated-groups": "",
+}
+
+
+class TestComponentInsertRequiresWriter:
+    def test_structures_post_non_writer_403(self, client, structure_service):
+        r = client.post("/api/v1/structures", json=[], headers=NON_WRITER_HEADERS)
+        assert r.status_code == 403
+        structure_service.insert.assert_not_called()
+
+    def test_tables_post_non_writer_403(self, client, table_service):
+        r = client.post("/api/v1/tables", json=[], headers=NON_WRITER_HEADERS)
+        assert r.status_code == 403
+        table_service.insert.assert_not_called()
+
+    def test_structures_post_writer_allowed(self, client, structure_service):
+        # The default AUTHED_HEADERS identity carries the mp-team group -> writer.
+        structure_service.insert.return_value = {"total": 0, "succeeded": [], "failed": []}
+        r = client.post("/api/v1/structures", json=[])
+        assert r.status_code == 200
+        structure_service.insert.assert_awaited_once()

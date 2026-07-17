@@ -2,7 +2,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from mpcontribs_api.domains.projects.dependencies import get_project_initiative_service, get_scoped_projects
+from mpcontribs_api.domains.projects.dependencies import get_project_service, get_scoped_projects
 from mpcontribs_api.domains.projects.models import ProjectOut, Stats
 from mpcontribs_api.exceptions import ConflictError, NotFoundError
 from mpcontribs_api.pagination import Page
@@ -43,9 +43,9 @@ def project_repo(test_app, mock_project_repo):
 def project_service(test_app):
     """Override the assignment service the PATCH route depends on with an async mock."""
     service = AsyncMock()
-    test_app.dependency_overrides[get_project_initiative_service] = lambda: service
+    test_app.dependency_overrides[get_project_service] = lambda: service
     yield service
-    test_app.dependency_overrides.pop(get_project_initiative_service, None)
+    test_app.dependency_overrides.pop(get_project_service, None)
 
 
 # ---------------------------------------------------------------------------

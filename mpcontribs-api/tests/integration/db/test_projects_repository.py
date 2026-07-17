@@ -3,7 +3,7 @@ import pytest
 from mpcontribs_api.authz import User
 from mpcontribs_api.domains.projects.models import Project, ProjectIn, ProjectOut, ProjectPatch, Stats
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
-from mpcontribs_api.exceptions import ConflictError, NotFoundError
+from mpcontribs_api.exceptions import ConflictError, NotFoundError, PermissionError, ValidationError
 from mpcontribs_api.pagination import CursorParams
 
 # All tests in this module share the session event loop so they can reuse the
@@ -365,6 +365,38 @@ class TestDeleteProject:
         with pytest.raises(NotFoundError, match="not found"):
             await _repo(ADMIN).delete_project_by_id(id="ghost-id")
 
+    async def test_owner_can_delete_own_project(self, db):
+        await _insert("del-own", owner="google:alice@example.com")
+        await _repo(ALICE).delete_project_by_id(id="del-own")
+        assert await Project.find_one(Project.id == "del-own") is None
+
+    async def test_admin_can_delete_any_project(self, db):
+        await _insert("del-admin", owner="google:alice@example.com")
+        await _repo(ADMIN).delete_project_by_id(id="del-admin")
+        assert await Project.find_one(Project.id == "del-admin") is None
+
+    async def test_group_member_non_owner_cannot_delete(self, db):
+        # A user whose group contains the project slug can *see* it, but only the owner may delete.
+        member = User(username="google:carol@example.com", groups=frozenset({"del-grp"}))
+        await _insert("del-grp", owner="google:alice@example.com")
+        with pytest.raises(PermissionError):
+            await _repo(member).delete_project_by_id(id="del-grp")
+        assert await Project.find_one(Project.id == "del-grp") is not None
+
+    async def test_visible_public_non_owner_cannot_delete(self, db):
+        # BOB can see the public+approved project but does not own it → 403, not a silent success.
+        await _insert("del-pub", owner="google:alice@example.com", is_public=True, is_approved=True)
+        with pytest.raises(PermissionError):
+            await _repo(BOB).delete_project_by_id(id="del-pub")
+        assert await Project.find_one(Project.id == "del-pub") is not None
+
+    async def test_out_of_scope_delete_not_found(self, db):
+        # BOB cannot see Alice's private project → 404 (existence is not leaked as a 403).
+        await _insert("del-hidden", owner="google:alice@example.com", is_public=False)
+        with pytest.raises(NotFoundError):
+            await _repo(BOB).delete_project_by_id(id="del-hidden")
+        assert await Project.find_one(Project.id == "del-hidden") is not None
+
 
 # ---------------------------------------------------------------------------
 # upsert_project_by_id
@@ -438,3 +470,87 @@ class TestUpsertProjectAuthorization:
         await _repo(ALICE).upsert_project_by_id(id="auth-preserve", data=data)
         found = await Project.find_one(Project.id == "auth-preserve")
         assert found.owner == "google:alice@example.com"
+
+
+# ---------------------------------------------------------------------------
+# is_approved is admin-only (patch + upsert)
+# ---------------------------------------------------------------------------
+
+
+class TestApprovalIsAdminOnly:
+    async def test_non_admin_cannot_patch_is_approved(self, db):
+        await _insert("appr-patch", owner="google:alice@example.com")
+        with pytest.raises(PermissionError):
+            await _repo(ALICE).patch_project_by_id(id="appr-patch", update=ProjectPatch(is_approved=True))
+        found = await Project.find_one(Project.id == "appr-patch")
+        assert found.is_approved is False
+
+    async def test_admin_can_patch_is_approved(self, db):
+        await _insert("appr-patch-admin", owner="google:alice@example.com")
+        await _repo(ADMIN).patch_project_by_id(id="appr-patch-admin", update=ProjectPatch(is_approved=True))
+        found = await Project.find_one(Project.id == "appr-patch-admin")
+        assert found.is_approved is True
+
+    async def test_non_admin_upsert_new_project_stays_unapproved(self, db):
+        # Body asks for approval; a non-admin's new project must start unapproved.
+        data = _project_in("appr-new", owner="google:bob@example.com", is_approved=True)
+        await _repo(BOB).upsert_project_by_id(id="appr-new", data=data)
+        found = await Project.find_one(Project.id == "appr-new")
+        assert found.is_approved is False
+
+    async def test_non_admin_upsert_cannot_change_existing_approval(self, db):
+        # Admin seeds an approved project; the owner (non-admin) cannot un-approve it via PUT.
+        await _insert("appr-existing", owner="google:alice@example.com", is_approved=True)
+        data = _project_in("appr-existing", owner="google:alice@example.com", is_approved=False)
+        await _repo(ALICE).upsert_project_by_id(id="appr-existing", data=data)
+        found = await Project.find_one(Project.id == "appr-existing")
+        assert found.is_approved is True
+
+    async def test_admin_upsert_can_approve(self, db):
+        data = _project_in("appr-admin-new", is_approved=True)
+        await _repo(ADMIN).upsert_project_by_id(id="appr-admin-new", data=data)
+        found = await Project.find_one(Project.id == "appr-admin-new")
+        assert found.is_approved is True
+
+
+# ---------------------------------------------------------------------------
+# a project cannot be public unless approved
+# ---------------------------------------------------------------------------
+
+
+class TestPublicRequiresApproved:
+    async def test_patch_public_on_unapproved_rejected(self, db):
+        await _insert("pub-unappr", owner="google:alice@example.com", is_approved=False)
+        with pytest.raises(ValidationError, match="approved"):
+            await _repo(ADMIN).patch_project_by_id(id="pub-unappr", update=ProjectPatch(is_public=True))
+        found = await Project.find_one(Project.id == "pub-unappr")
+        assert found.is_public is False
+
+    async def test_patch_public_and_approved_together_succeeds(self, db):
+        await _insert("pub-both", owner="google:alice@example.com", is_approved=False)
+        await _repo(ADMIN).patch_project_by_id(
+            id="pub-both", update=ProjectPatch(is_public=True, is_approved=True)
+        )
+        found = await Project.find_one(Project.id == "pub-both")
+        assert found.is_public is True
+        assert found.is_approved is True
+
+    async def test_patch_public_on_approved_succeeds(self, db):
+        await _insert("pub-approved", owner="google:alice@example.com", is_approved=True)
+        await _repo(ADMIN).patch_project_by_id(id="pub-approved", update=ProjectPatch(is_public=True))
+        found = await Project.find_one(Project.id == "pub-approved")
+        assert found.is_public is True
+
+    async def test_upsert_public_unapproved_rejected(self, db):
+        # A non-admin's public+approved body is coerced to unapproved, which then violates the invariant.
+        data = _project_in("pub-upsert", owner="google:bob@example.com", is_public=True, is_approved=True)
+        with pytest.raises(ValidationError, match="approved"):
+            await _repo(BOB).upsert_project_by_id(id="pub-upsert", data=data)
+        assert await Project.find_one(Project.id == "pub-upsert") is None
+
+    async def test_admin_upsert_public_approved_succeeds(self, db):
+        data = _project_in("pub-upsert-admin", is_public=True, is_approved=True)
+        await _repo(ADMIN).upsert_project_by_id(id="pub-upsert-admin", data=data)
+        found = await Project.find_one(Project.id == "pub-upsert-admin")
+        assert found.is_public is True
+        assert found.is_approved is True

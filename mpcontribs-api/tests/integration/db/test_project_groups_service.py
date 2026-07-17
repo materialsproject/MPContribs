@@ -134,6 +134,21 @@ class TestAdd:
 # ---------------------------------------------------------------------------
 
 
+class TestInsert:
+    async def test_non_admin_owner_forced_to_caller(self, db):
+        # Alice submits Bob as owner; the caller's identity must win so she can manage the group.
+        group = await _service(ALICE).insert(
+            ProjectGroupIn(name="ins-forced", owner=BOB_EMAIL, projects=[], description="d")
+        )
+        assert group.owner == ALICE_EMAIL
+
+    async def test_admin_may_set_owner_on_behalf(self, db):
+        group = await _service(ADMIN).insert(
+            ProjectGroupIn(name="ins-onbehalf", owner=BOB_EMAIL, projects=[], description="d")
+        )
+        assert group.owner == BOB_EMAIL
+
+
 class TestDelete:
     async def test_delete_by_id_unlinks_project(self, db):
         group = await _insert_group("rm-id")

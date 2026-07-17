@@ -7,7 +7,7 @@ from mpcontribs_api.domains.initiatives.models import InitiativeIn, InitiativePa
 from mpcontribs_api.domains.initiatives.repository import InitiativeRepository
 from mpcontribs_api.domains.projects.models import Project, ProjectIn, ProjectPatch, Stats
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
-from mpcontribs_api.domains.projects.service import ProjectInitiativeService
+from mpcontribs_api.domains.projects.service import ProjectService
 from mpcontribs_api.exceptions import ConflictError, NotFoundError, PermissionError
 
 pytestmark = [pytest.mark.db, pytest.mark.asyncio(loop_scope="session")]
@@ -27,8 +27,8 @@ CAROL_EMAIL = "google:carol@example.com"
 STATS = Stats(columns=0, contributions=0, tables=0, structures=0, attachments=0, size=0.0)
 
 
-def _service(user: User) -> ProjectInitiativeService:
-    return ProjectInitiativeService(
+def _service(user: User) -> ProjectService:
+    return ProjectService(
         projects=MongoDbProjectRepository(user),
         initiatives=InitiativeRepository(user),
     )
@@ -144,7 +144,7 @@ class TestBothRights:
 
 class TestMemberCap:
     async def test_unapproved_capped_at_configured_members(self, db):
-        cap = get_settings().initiatives.max_projects_per_unapproved
+        cap = get_settings().domain.initiatives.max_projects_per_unapproved
         await _insert_initiative("init-cap", ALICE)
         for i in range(cap):
             await _insert_project(f"cap-proj-{i}", owner=ALICE_EMAIL)
@@ -154,7 +154,7 @@ class TestMemberCap:
             await _service(ALICE).patch("cap-proj-over", ProjectPatch(initiative="init-cap"))
 
     async def test_reassigning_existing_member_is_idempotent(self, db):
-        cap = get_settings().initiatives.max_projects_per_unapproved
+        cap = get_settings().domain.initiatives.max_projects_per_unapproved
         await _insert_initiative("init-idem", ALICE)
         for i in range(cap):
             await _insert_project(f"idem-proj-{i}", owner=ALICE_EMAIL)
@@ -164,7 +164,7 @@ class TestMemberCap:
         assert again.initiative is not None
 
     async def test_approved_initiative_has_no_member_cap(self, db):
-        cap = get_settings().initiatives.max_projects_per_unapproved
+        cap = get_settings().domain.initiatives.max_projects_per_unapproved
         await _insert_initiative("init-approved", ALICE)
         await InitiativeRepository(ADMIN).patch_initiative("init-approved", InitiativePatch(is_approved=True))
         for i in range(cap + 2):  # comfortably past the unapproved cap
@@ -175,3 +175,29 @@ class TestMemberCap:
             exclude_project_id=None,
         )
         assert count == cap + 2
+
+
+# ---------------------------------------------------------------------------
+# Admin bypass + unassignment rights
+# ---------------------------------------------------------------------------
+
+
+class TestAdminAndUnassign:
+    async def test_admin_can_assign_to_any_initiative(self, db):
+        # Alice's private initiative is manageable by an admin even though the admin holds no role.
+        await _insert_project("adm-proj", owner=ALICE_EMAIL)
+        init = await _insert_initiative("adm-init", ALICE)
+        updated = await _service(ADMIN).patch("adm-proj", ProjectPatch(initiative="adm-init"))
+        assert _assigned_id(updated) == init.id
+
+    async def test_project_owner_can_unassign_without_initiative_rights(self, db):
+        # A collaborator assigns Bob's project; Bob, lacking any initiative role, can still detach
+        # his own project — unassignment needs only project-write access.
+        await _insert_project("detach-proj", owner=BOB_EMAIL)
+        await _insert_initiative("detach-init", ALICE)
+        await _service(_collaborator("detach-init", username=BOB_EMAIL)).patch(
+            "detach-proj", ProjectPatch(initiative="detach-init")
+        )
+        bob_plain = User(username=BOB_EMAIL, groups=frozenset())
+        updated = await _service(bob_plain).patch("detach-proj", ProjectPatch(initiative=None))
+        assert _assigned_id(updated) is None

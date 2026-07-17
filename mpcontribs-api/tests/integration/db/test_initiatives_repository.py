@@ -2,9 +2,15 @@ import pytest
 
 from mpcontribs_api.authz import User
 from mpcontribs_api.config import get_settings
-from mpcontribs_api.domains.initiatives.models import Initiative, InitiativeIn, InitiativePatch
+from mpcontribs_api.domains.initiatives.models import (
+    Initiative,
+    InitiativeFilter,
+    InitiativeIn,
+    InitiativePatch,
+)
 from mpcontribs_api.domains.initiatives.repository import InitiativeRepository
 from mpcontribs_api.exceptions import ConflictError, NotFoundError, PermissionError, ValidationError
+from mpcontribs_api.pagination import CursorParams
 
 # Share the session event loop (see the projects repo test for why).
 pytestmark = [pytest.mark.db, pytest.mark.asyncio(loop_scope="session")]
@@ -68,14 +74,14 @@ class TestInsert:
 
 class TestUnapprovedPerOwnerLimit:
     async def test_owner_capped_at_configured_unapproved(self, db):
-        limit = get_settings().initiatives.max_unapproved_per_owner
+        limit = get_settings().domain.initiatives.max_unapproved_per_owner
         for i in range(limit):
             await _insert(f"cap-{i}", ALICE)
         with pytest.raises(ConflictError):
             await _insert("cap-over", ALICE)
 
     async def test_approved_do_not_count_against_quota(self, db):
-        limit = get_settings().initiatives.max_unapproved_per_owner
+        limit = get_settings().domain.initiatives.max_unapproved_per_owner
         for i in range(limit):
             await _insert(f"quota-{i}", ALICE)
         await _approve("quota-0")  # frees a slot
@@ -83,7 +89,7 @@ class TestUnapprovedPerOwnerLimit:
         assert await _insert("quota-extra", ALICE) is not None
 
     async def test_admin_is_exempt(self, db):
-        limit = get_settings().initiatives.max_unapproved_per_owner
+        limit = get_settings().domain.initiatives.max_unapproved_per_owner
         for i in range(limit + 2):
             await _repo(ADMIN).insert_initiative(InitiativeIn(slug=f"admin-{i}", name="x"))
 
@@ -182,3 +188,50 @@ class TestDelete:
     async def test_missing_is_not_found(self, db):
         with pytest.raises(NotFoundError):
             await _repo(ADMIN).delete_initiative("nope-missing")
+
+
+# ---------------------------------------------------------------------------
+# Listing + filtering (scoped)
+# ---------------------------------------------------------------------------
+
+
+class TestListAndFilter:
+    async def test_list_scoped_to_caller(self, db):
+        await _insert("mine-1", ALICE)
+        await _insert("bobs-1", BOB)  # Bob's private initiative, invisible to Alice
+        page = await _repo(ALICE).get_initiatives(CursorParams(), InitiativeFilter(), fields=None)
+        slugs = {i.slug for i in page.items}
+        assert "mine-1" in slugs
+        assert "bobs-1" not in slugs
+
+    async def test_filter_by_is_approved(self, db):
+        await _insert("appr-1", ALICE)
+        await _insert("unappr-1", ALICE)
+        await _approve("appr-1")
+        page = await _repo(ADMIN).get_initiatives(CursorParams(), InitiativeFilter(is_approved=True), fields=None)
+        slugs = {i.slug for i in page.items}
+        assert "appr-1" in slugs
+        assert "unappr-1" not in slugs
+
+    async def test_filter_by_owner(self, db):
+        await _insert("owned-alice", ALICE)
+        await _insert("owned-bob", BOB)
+        page = await _repo(ADMIN).get_initiatives(CursorParams(), InitiativeFilter(owner=BOB_EMAIL), fields=None)
+        assert {i.slug for i in page.items} == {"owned-bob"}
+
+
+# ---------------------------------------------------------------------------
+# Admin bypass
+# ---------------------------------------------------------------------------
+
+
+class TestAdminBypass:
+    async def test_admin_can_patch_non_owned(self, db):
+        await _insert("admin-patch", ALICE)
+        patched = await _repo(ADMIN).patch_initiative("admin-patch", InitiativePatch(name="Admin Renamed"))
+        assert patched.name == "Admin Renamed"
+
+    async def test_admin_can_delete_non_owned(self, db):
+        await _insert("admin-del", ALICE)
+        result = await _repo(ADMIN).delete_initiative("admin-del")
+        assert result.num_deleted == 1

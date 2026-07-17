@@ -4,6 +4,7 @@ import pytest
 from beanie import Link, PydanticObjectId
 from bson import DBRef
 
+from mpcontribs_api.authz import User
 from mpcontribs_api.domains.project_groups.models import ProjectGroupIn, ProjectGroupOut
 from mpcontribs_api.domains.project_groups.service import ProjectGroupService
 from mpcontribs_api.domains.projects.models import Project
@@ -27,6 +28,10 @@ def _make_service(group: ProjectGroupOut | None, *, visible_projects: set[str] |
     visible = visible_projects or set()
     groups = AsyncMock()
     projects = AsyncMock()
+    # insert() forces owner to the caller for non-admins; give the stub an admin user so these
+    # payload-identity assertions exercise the pass-through path (owner-forcing is covered end-to-end
+    # in the db service test).
+    groups._user = User(username="google:admin@example.com", groups=frozenset({"admin"}))
 
     if ambiguous:
         groups.get_one.side_effect = ConflictError("ambiguous")
