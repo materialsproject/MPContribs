@@ -36,6 +36,9 @@ ADMIN_GROUP = settings.mongo.admin_group
 # prefix to user roles to disambiguate from project roles, which are bare ids
 INITIATIVE_ROLE_PREFIX = "initiative:"
 
+# prefix for project-group roles: a group's _id (an ObjectId hex string) is granted as ``project-group:<oid>``
+PROJECT_GROUP_ROLE_PREFIX = "project-group:"
+
 
 class User(BaseModel):
     """User definition derived from request headers.
@@ -77,6 +80,16 @@ class User(BaseModel):
     def initiative_roles(self) -> list[str]:
         """The initiative slugs this user collaborates on, decoded from their ``initiative:<slug>`` roles."""
         return [role[len(INITIATIVE_ROLE_PREFIX) :] for role in self.groups if role.startswith(INITIATIVE_ROLE_PREFIX)]
+
+    @property
+    def project_group_roles(self) -> list[str]:
+        """The project-group ids this user may access, decoded from their ``project-group:<oid>`` roles.
+
+        Values are the raw hex strings; callers that query by ``_id`` must convert them
+        """
+        return [
+            role[len(PROJECT_GROUP_ROLE_PREFIX) :] for role in self.groups if role.startswith(PROJECT_GROUP_ROLE_PREFIX)
+        ]
 
     def has_role(self, role: str, *, resource: str | None = None) -> bool:
         """Determine whether a user has a role assigned to them.
