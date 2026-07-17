@@ -130,11 +130,11 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
         Update the document if the id exists, otherwise insert a new one under that id.
 
         - **Existing project:** only its ``owner`` or an admin may overwrite it. The stored
-          ``owner`` is preserved - ownership cannot be reassigned through the request body.
-        - **New project:** ``owner`` is forced to the caller, ignoring any body value.
-
-        an existing project keeps its stored approval and a new one starts unapproved. The resulting
-        document must also satisfy ``is_public ⇒ is_approved``.
+          ``owner`` and all server-managed fields (see ``Project.server_managed_fields``) are
+          preserved - ``ProjectIn`` cannot carry them, so a PUT never resets approval, publication,
+          or stats.
+        - **New project:** ``owner`` is forced to the caller; server-managed fields keep their
+          defaults
 
         Note: relies on the path param ``id`` for identity, not the body's id.
 
@@ -160,9 +160,9 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
                 raise PermissionError(required_role="owner-or-admin")
             # Ownership is immutable via upsert; keep the original owner.
             project.owner = existing.owner
-            # Approval is admin-only; a non-admin keeps the project's stored approval state.
-            if not self._user.is_admin:
-                project.is_approved = existing.is_approved
+            # make sure a full replacement doesn't overwrite server-defined fields
+            for field in self.document_model.server_managed_fields():
+                setattr(project, field, getattr(existing, field))
         else:
             # New project: the caller owns it, regardless of the submitted owner.
             project.owner = self._user.username
