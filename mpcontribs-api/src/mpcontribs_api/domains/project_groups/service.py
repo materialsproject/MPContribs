@@ -28,7 +28,13 @@ class ProjectGroupService:
         return await self._projects.get_by_id(project_id, fields=frozenset({"id"})) is not None
 
     async def insert(self, project_group: ProjectGroupIn) -> ProjectGroup:
-        """Insert a new group after verifying every referenced project exists and is visible"""
+        """Insert a new group after verifying every referenced project exists and is visible.
+
+        Non-admins are set as owner automatically, while admins can specify owners.
+        """
+        user = self._groups._user
+        if not user.is_admin:
+            project_group = project_group.model_copy(update={"owner": user.username})
         missing = [pid for pid in project_group.projects if not await self._project_exists(pid)]
         if missing:
             raise NotFoundError("One or more projects not found or not visible", ids=missing)
