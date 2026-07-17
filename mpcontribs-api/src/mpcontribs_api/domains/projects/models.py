@@ -8,7 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 from mpcontribs_api import pagination
 from mpcontribs_api.domains._shared.filters import BaseFilter
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
-from mpcontribs_api.domains._shared.types import PrefixedEmail, ShortStr
+from mpcontribs_api.domains._shared.types import PrefixedEmail, SearchStr, ShortStr
 from mpcontribs_api.domains.initiatives.models import Initiative
 
 
@@ -53,7 +53,7 @@ class Project(BaseDocumentWithInput[ShortStr]):
 
     # Optional
     stats: Stats = Field(default_factory=Stats)
-    tags: list[ShortStr] | None = None
+    tags: list[SearchStr] | None = None
     mp_category: str | None = None
     references: list[Reference] = Field(default_factory=list)
     long_title: str | None = None
@@ -93,7 +93,7 @@ class ProjectOut(DocumentOut[ShortStr]):
     authors: str | None = None
     description: str | None = None
     title: ShortStr | None = None
-    tags: list[ShortStr] | None = None
+    tags: list[SearchStr] | None = None
     mp_category: str | None = None
     owner: PrefixedEmail | None = None
     other: dict[str, Any] | None = None
@@ -129,9 +129,9 @@ class ProjectFilter(BaseFilter):
     owner__neq: PrefixedEmail | None = None
     owner__ilike: str | None = None
 
-    tags: list[ShortStr] | None = None  # exact match of list
-    tags__in: list[ShortStr] | None = None  # if at least one tag is present
-    tags__contains: list[ShortStr] | None = None  # Project.tags must be a superset of these
+    tags: list[SearchStr] | None = None  # exact match of list
+    tags__in: list[SearchStr] | None = None  # if at least one tag is present
+    tags__contains: list[SearchStr] | None = None  # Project.tags must be a superset of these
 
     mp_category: str | None = None
     mp_category__in: list[str] | None = None
@@ -166,7 +166,7 @@ class ProjectIn(BaseModel):
     unique_identifiers: bool
 
     # Optional
-    tags: list[ShortStr] | None = None
+    tags: list[SearchStr] | None = None
     references: list[Reference] = Field(default_factory=list)
     long_title: str | None = None
     other: dict[str, Any] = Field(default_factory=dict)
@@ -182,7 +182,7 @@ class ProjectPatch(BaseModel):
     title: ShortStr | None = None
     authors: str | None = None
     description: str | None = None
-    tags: list[ShortStr] | None = None
+    tags: list[SearchStr] | None = None
     owner: PrefixedEmail | None = None
     unique_identifiers: bool | None = None
     references: list[Reference] = Field(default_factory=list)
