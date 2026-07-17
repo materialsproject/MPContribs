@@ -59,9 +59,15 @@ class TestStats:
         stats = Stats(columns=0, contributions=0, tables=0, structures=0, attachments=0, size=0.0)
         assert stats.contributions == 0
 
-    def test_missing_field_raises(self):
-        with pytest.raises(PydanticValidationError):
-            Stats(columns=1, contributions=2, tables=3, structures=4, attachments=5)  # missing size
+    def test_fields_default_to_zero(self):
+        # Stats is server-computed and every field defaults to zero, so an empty Stats is valid.
+        stats = Stats()
+        assert stats.columns == 0
+        assert stats.contributions == 0
+        assert stats.tables == 0
+        assert stats.structures == 0
+        assert stats.attachments == 0
+        assert stats.size == 0.0
 
 
 # ---------------------------------------------------------------------------
@@ -196,19 +202,15 @@ class TestProjectPatch:
 # ---------------------------------------------------------------------------
 
 
-VALID_STATS = Stats(columns=0, contributions=0, tables=0, structures=0, attachments=0, size=0.0)
-
-
 class TestProjectFromInputModel:
     def _make_input(self, **overrides):
         defaults = {
-            "_id": "test-proj",
+            "id": "test-proj",
             "title": "Test Project",
             "authors": "Alice, Bob",
             "description": "A test project",
             "owner": "google:alice@example.com",
             "unique_identifiers": True,
-            "stats": VALID_STATS,
         }
         defaults.update(overrides)
         return ProjectIn(**defaults)

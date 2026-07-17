@@ -14,6 +14,7 @@ from bson.errors import InvalidId
 from fastapi_filter.contrib.beanie import Filter
 from pydantic import BaseModel
 from pymongo.asynchronous.client_session import AsyncClientSession
+from pymongo.errors import DuplicateKeyError
 from types_aiobotocore_s3 import S3Client
 
 from mpcontribs_api.authz import User
@@ -55,6 +56,7 @@ class MongoDbRepository[
         Args:
             user (User): the current user requesting resources
         """
+        self._user = user
         self._scope = self._build_scope(user)
 
     @staticmethod
@@ -105,6 +107,62 @@ class MongoDbRepository[
         next_cursor = encode_cursor(str(items[-1].id)) if has_more and items else None
         return Page(items=items, next_cursor=next_cursor)
 
+    def _identifier_query(self, identifiers: dict[str, Any]) -> dict[str, Any]:
+        """Turn a ``{field: value}`` identifier dict into a scoped Mongo query fragment.
+
+        The keys must be exactly the model's :meth:`identifier_fields`
+        ``id`` is remapped Mongo's ``_id`` (mirroring ``BaseFilter._get_filter_conditions``)
+        since a raw dict query does not go through Beanie's alias resolution.
+
+        Args:
+            identifiers (dict[str, Any]): identifier field values keyed by ``identifier_fields``
+        """
+        expected = self.document_model.identifier_fields()
+        if identifiers.keys() != expected:
+            raise ValidationError(
+                "identifiers must match the model's identifier fields exactly",
+                expected=sorted(expected),
+                received=sorted(identifiers.keys()),
+            )
+        return {("_id" if key == "id" else key): value for key, value in identifiers.items()}
+
+    async def _resolve_one_id(self, identifiers: dict[str, Any], session: AsyncClientSession | None = None) -> Any:
+        """Resolve the single scoped ``_id`` matching ``identifiers``, or ``None`` if absent.
+
+        Enforces uniqueness: the identifier fields are meant to key at most one document, so if two
+        are found (a duplicate under a supposedly-unique key) this raises ``ConflictError`` rather
+        than silently picking one.
+        """
+        query = self._identifier_query(identifiers)
+        projection = self.out_model.projection(frozenset({"id"}))
+        docs = (
+            await self.document_model.find(self._scope, query, session=session).limit(2).project(projection).to_list()
+        )  # pyright: ignore[reportArgumentType]
+        if len(docs) > 1:
+            raise ConflictError("identifiers matched more than one document", identifiers=identifiers)
+        return docs[0].id if docs else None
+
+    async def get_one(
+        self,
+        identifiers: dict[str, Any],
+        fields: frozenset[str] | None = None,
+    ) -> TOut | None:
+        """Return the single scoped document matching ``identifiers``, projected to ``fields``.
+
+        Returns ``None`` when nothing matches, but ``ConflictError`` if the identifiers match
+        more than one document.
+
+        Args:
+            identifiers (dict[str, Any]): identifier field values keyed by ``identifier_fields``
+            fields (frozenset[str] | None): fields to project; if None the full document is returned
+        """
+        query = self._identifier_query(identifiers)
+        projection = self.out_model.projection(fields)
+        docs = await self.document_model.find(self._scope, query).limit(2).project(projection).to_list()  # pyright: ignore[reportArgumentType]
+        if len(docs) > 1:
+            raise ConflictError("identifiers matched more than one document", identifiers=identifiers)
+        return docs[0] if docs else None
+
     async def get_by_id(self, id: Any, fields: frozenset[str] | None = None) -> TDoc | TOut | None:
         """Return a single scoped document by id, projected to the requested fields.
 
@@ -134,29 +192,72 @@ class MongoDbRepository[
         return [doc.id for doc in docs]
 
     async def insert_one(self, in_resource: TIn) -> TDoc:
-        """Insert a new document built from its input model, rejecting duplicate ids.
+        """Insert a new document built from its input model, rejecting an existing duplicate.
+
+        Duplicates are determined by model-declared identifiers that uniquely identify a document.
 
         Args:
             in_resource (TIn): the validated input payload to translate and store
         """
         document = self.document_model.from_input_model(in_resource)
-        existing = await self.document_model.find_one(self.document_model.id == document.id)
-        if existing:
-            raise ConflictError(f"Cannot insert document.\n Document with ID {document.id} exists")
-        await document.insert()
+        try:
+            await document.insert()
+        except DuplicateKeyError as exc:
+            raise ConflictError(
+                f"Cannot insert {self.document_model.__name__}: a conflicting document already exists",
+                identifiers=document.identifiers(),
+            ) from exc
         return document
 
-    async def delete_by_id(self, id: Any, session: AsyncClientSession | None = None) -> DeleteResponse:
-        """Delete a single scoped document by id.
+    async def delete(self, filter: TFilter, session: AsyncClientSession | None = None) -> DeleteResponse:
+        """Delete every scoped document matching an arbitrary ``filter``.
 
-        Scoping ensures callers cannot delete documents they are not permitted to see.
+        This is the bulk path (e.g. "delete every ProjectGroup with owner == X"). It does not raise
+        on an empty match — a zero count is a valid, unambiguous outcome for a filter delete. Scoping
+        ensures callers cannot delete documents they are not permitted to see.
 
         Args:
-            id (str): the id of the document to delete
+            filter (TFilter): the fastapi-filter query to apply on top of the user scope
+            session (AsyncClientSession | None): optional client session for transactions
+        """
+        query = filter.filter(self.document_model.find(self._scope, session=session))
+        result = await query.delete_many(session=session)
+        if result is None:
+            raise ValidationError("DeleteResult not returned internally")
+        return DeleteResponse.from_delete_result(result)
+
+    async def delete_one(
+        self, identifiers: dict[str, Any], session: AsyncClientSession | None = None
+    ) -> DeleteResponse:
+        """Delete the single scoped document matching ``identifiers``.
+
+        Uniqueness is checked before anything is deleted (see :meth:`_resolve_one_id`), so a
+        duplicate raises ``ConflictError`` and an absent resource raises ``NotFoundError`` — this
+        never deletes more than the one intended document.
+
+        Args:
+            identifiers (dict[str, Any]): identifier field values keyed by ``identifier_fields``
+            session (AsyncClientSession | None): optional client session for transactions
+        """
+        oid = await self._resolve_one_id(identifiers, session=session)
+        if oid is None:
+            raise NotFoundError(f"{self.document_model.__name__} not found", identifiers=identifiers)
+        return await self.delete_by_id(oid, session=session)
+
+    async def delete_by_id(self, id: Any, session: AsyncClientSession | None = None) -> DeleteResponse:
+        """Delete a single scoped document by its primary key (``_id``).
+
+        Scoping ensures callers cannot delete documents they are not permitted to see; an id that is
+        absent or out of scope raises ``NotFoundError``. Kept distinct from :meth:`delete_one`, whose
+        key is the semantic ``identifier_fields`` (which differs from ``_id`` for some resources).
+
+        Args:
+            id (Any): the primary key of the document to delete
+            session (AsyncClientSession | None): optional client session for transactions
         """
         doc = await self.document_model.find_one(self._scope, self.document_model.id == id, session=session)
-        if not doc:
-            raise NotFoundError("Document with id not found", id=id)
+        if doc is None:
+            raise NotFoundError(self._not_found(id))
         await doc.delete(session=session)
         return DeleteResponse(num_deleted=1)
 
@@ -210,6 +311,27 @@ class MongoDbRepository[
         if updated is None:
             raise NotFoundError(self._not_found(id))
         return updated
+
+    async def patch_one(
+        self,
+        identifiers: dict[str, Any],
+        update: TPatch,
+        session: AsyncClientSession | None = None,
+    ) -> TDoc:
+        """Partially update the single scoped document matching ``identifiers``.
+
+        Resolves the target by its unique identifier fields (raising ``ConflictError`` on a
+        duplicate, ``NotFoundError`` when absent) and then applies the patch via :meth:`patch`.
+
+        Args:
+            identifiers (dict[str, Any]): identifier field values keyed by ``identifier_fields``
+            update (TPatch): the partial update to apply; unset fields are dropped
+            session (AsyncClientSession | None): optional client session for transactions
+        """
+        oid = await self._resolve_one_id(identifiers, session=session)
+        if oid is None:
+            raise NotFoundError(f"{self.document_model.__name__} not found", identifiers=identifiers)
+        return await self.patch(oid, update)
 
     def _hash_payload(self, payload: dict[str, Any], *, separators: tuple[str, str] = (",", ":")) -> str:
         canonical = json.dumps(

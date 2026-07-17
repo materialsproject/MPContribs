@@ -1,6 +1,8 @@
+from unittest.mock import AsyncMock
+
 import pytest
 
-from mpcontribs_api.domains.projects.dependencies import get_scoped_projects
+from mpcontribs_api.domains.projects.dependencies import get_project_service, get_scoped_projects
 from mpcontribs_api.domains.projects.models import ProjectOut, Stats
 from mpcontribs_api.exceptions import ConflictError, NotFoundError
 from mpcontribs_api.pagination import Page
@@ -35,6 +37,15 @@ def project_repo(test_app, mock_project_repo):
     test_app.dependency_overrides[get_scoped_projects] = lambda: mock_project_repo
     yield mock_project_repo
     test_app.dependency_overrides.pop(get_scoped_projects, None)
+
+
+@pytest.fixture
+def project_service(test_app):
+    """Override the assignment service the PATCH route depends on with an async mock."""
+    service = AsyncMock()
+    test_app.dependency_overrides[get_project_service] = lambda: service
+    yield service
+    test_app.dependency_overrides.pop(get_project_service, None)
 
 
 # ---------------------------------------------------------------------------
@@ -154,8 +165,8 @@ class TestGetProjectById:
 
 
 class TestPatchProject:
-    def test_valid_patch_returns_200(self, client, project_repo):
-        project_repo.patch_project_by_id.return_value = SAMPLE_PROJECT
+    def test_valid_patch_returns_200(self, client, project_service):
+        project_service.patch.return_value = SAMPLE_PROJECT
         r = client.patch(
             "/api/v1/projects/mp-sample",
             json={"title": "Updated Title"},
@@ -163,9 +174,9 @@ class TestPatchProject:
         )
         assert r.status_code == 200
 
-    def test_patch_response_is_project_out(self, client, project_repo):
+    def test_patch_response_is_project_out(self, client, project_service):
         updated = ProjectOut(id="mp-sample", title="Updated Title")
-        project_repo.patch_project_by_id.return_value = updated
+        project_service.patch.return_value = updated
         body = client.patch(
             "/api/v1/projects/mp-sample",
             json={"title": "Updated Title"},
@@ -173,8 +184,8 @@ class TestPatchProject:
         ).json()
         assert body["title"] == "Updated Title"
 
-    def test_not_found_returns_404(self, client, project_repo):
-        project_repo.patch_project_by_id.side_effect = NotFoundError("not found")
+    def test_not_found_returns_404(self, client, project_service):
+        project_service.patch.side_effect = NotFoundError("not found")
         r = client.patch(
             "/api/v1/projects/missing",
             json={"title": "x" * 5},
@@ -182,7 +193,7 @@ class TestPatchProject:
         )
         assert r.status_code == 404
 
-    def test_invalid_title_too_short_returns_422(self, client, project_repo):
+    def test_invalid_title_too_short_returns_422(self, client, project_service):
         r = client.patch(
             "/api/v1/projects/mp-sample",
             json={"title": "ab"},
@@ -190,14 +201,14 @@ class TestPatchProject:
         )
         assert r.status_code == 422
 
-    def test_id_and_update_forwarded_to_repo(self, client, project_repo):
-        project_repo.patch_project_by_id.return_value = SAMPLE_PROJECT
+    def test_id_and_update_forwarded_to_service(self, client, project_service):
+        project_service.patch.return_value = SAMPLE_PROJECT
         client.patch(
             "/api/v1/projects/mp-sample",
             json={"title": "New Name"},
             headers=AUTHED_HEADERS,
         )
-        _, kwargs = project_repo.patch_project_by_id.call_args
+        _, kwargs = project_service.patch.call_args
         assert kwargs["id"] == "mp-sample"
         assert kwargs["update"].title == "New Name"
 
@@ -233,13 +244,12 @@ class TestDeleteProject:
 class TestUpsertProject:
     def _valid_body(self, **overrides):
         body = {
-            "_id": "mp-sample",
+            "id": "mp-sample",
             "title": "Test Project",
             "authors": "Alice",
             "description": "A project",
             "owner": "google:alice@example.com",
             "unique_identifiers": True,
-            "stats": {"columns": 0, "contributions": 0, "tables": 0, "structures": 0, "attachments": 0, "size": 0.0},
         }
         body.update(overrides)
         return body
@@ -269,13 +279,12 @@ class TestUpsertProject:
 class TestProjectMutationsRequireAuth:
     def _body(self):
         return {
-            "_id": "mp-sample",
+            "id": "mp-sample",
             "title": "Test Project",
             "authors": "Alice",
             "description": "A project",
             "owner": "google:alice@example.com",
             "unique_identifiers": True,
-            "stats": {"columns": 0, "contributions": 0, "tables": 0, "structures": 0, "attachments": 0, "size": 0.0},
         }
 
     def test_anonymous_put_returns_401(self, client, project_repo):

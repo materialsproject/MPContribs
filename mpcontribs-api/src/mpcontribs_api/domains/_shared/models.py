@@ -5,7 +5,7 @@ from collections.abc import Mapping
 from typing import Annotated, Any, ClassVar, Self
 
 from beanie import Document, PydanticObjectId
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from pymongo.results import DeleteResult
 
 from mpcontribs_api import pagination
@@ -28,6 +28,22 @@ class BaseDocumentWithInput[TId](Document):
     id: TId = Field(alias="_id")  # pyright: ignore[reportGeneralTypeIssues, reportIncompatibleVariableOverride]
 
     @classmethod
+    def identifier_fields(cls) -> frozenset[str]:
+        """Field names that uniquely identify a document in this collection.
+
+        This is the natural/unique key a caller can supply without first knowing the Mongo ``_id``
+        (e.g. ``{"name", "owner"}`` for a project group). The repository pairs these names with
+        caller-supplied values to locate a single resource, and rejects any value dict whose keys
+        don't match this set. Defaults to the primary key; subclasses with a meaningful compound key
+        override it.
+        """
+        return frozenset({"id"})
+
+    def identifiers(self) -> dict[str, Any]:
+        """This document's identifier field values, keyed by :meth:`identifier_fields`."""
+        return {field: getattr(self, field) for field in self.identifier_fields()}
+
+    @classmethod
     def from_input_model(cls, data: Any) -> Self:
         """Translate a validated input payload into a full stored document."""
         return cls(**data.model_dump())
@@ -43,8 +59,10 @@ class DocumentOut[TId](SparseFieldsModel):
 
     Mirrors :class:`BaseDocumentWithInput`: subclasses bind their id type as ``TId`` so each resource
     owns its id type, while the field (optional, since projections may omit it) and its alias wiring
-    are declared once here for the repository to read off any resource's output model.
-    """
+    are declared once here for the repository to read off any resource's output model."""
+
+    # lets POST/PUT responses correctly bring ``_id`` into ``id``, without it ``id`` ends up as None
+    model_config = ConfigDict(populate_by_name=True)
 
     id: Annotated[TId | None, Field(alias="_id", serialization_alias="id")] = None
 

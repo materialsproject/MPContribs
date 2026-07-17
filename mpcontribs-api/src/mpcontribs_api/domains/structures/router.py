@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from fastapi_filter import FilterDepends
 
-from mpcontribs_api.dependencies import S3Dep, require_user
+from mpcontribs_api.dependencies import S3Dep, require_user, require_writer
 from mpcontribs_api.domains._shared.bulk import BulkWriteSummary
 from mpcontribs_api.domains._shared.models import ComponentDeleteResponse
 from mpcontribs_api.domains._shared.types import (
@@ -68,7 +68,7 @@ async def download_structure(
     )
 
 
-@router.post("", response_model=BulkWriteSummary[StructureOut], dependencies=[Depends(require_user)])
+@router.post("", response_model=BulkWriteSummary[StructureOut], dependencies=[Depends(require_writer)])
 async def insert_structures(
     service: StructureServiceDep,
     structures: list[StructureIn],
