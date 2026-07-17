@@ -39,6 +39,10 @@ INITIATIVE_ROLE_PREFIX = "initiative:"
 # prefix for project-group roles: a group's _id (an ObjectId hex string) is granted as ``project-group:<oid>``
 PROJECT_GROUP_ROLE_PREFIX = "project-group:"
 
+# A role carrying one of these prefixes is scoped to a non-project resource; a role with none of
+# them is a bare project id.
+_RESOURCE_ROLE_PREFIXES = (INITIATIVE_ROLE_PREFIX, PROJECT_GROUP_ROLE_PREFIX)
+
 
 class User(BaseModel):
     """User definition derived from request headers.
@@ -72,9 +76,12 @@ class User(BaseModel):
 
     @property
     def project_roles(self) -> list[str]:
-        return [
-            role[len(INITIATIVE_ROLE_PREFIX) :] for role in self.groups if not role.startswith(INITIATIVE_ROLE_PREFIX)
-        ]
+        """The project ids this user carries, from their bare (unprefixed) roles.
+
+        Resource-scoped roles (``initiative:``, ``project-group:``) and the admin sentinel are
+        excluded, leaving only bare project ids.
+        """
+        return [role for role in self.groups if role != ADMIN_GROUP and not role.startswith(_RESOURCE_ROLE_PREFIXES)]
 
     @property
     def initiative_roles(self) -> list[str]:
@@ -96,7 +103,7 @@ class User(BaseModel):
 
         Specifying resource as:
         - ``INITIATIVE_ROLE_PREFIX`` looks for roles scoped to initiatives
-        - "project" looks for roles scoped to projects (no actual prefix implementation yet)
+        - "project" looks for bare (unprefixed) project roles
         - None looks for roles by matching the entire string
         """
         if resource == INITIATIVE_ROLE_PREFIX[:-1]:
@@ -110,8 +117,9 @@ class User(BaseModel):
         """Projects this user may write to. Admins are unbounded (handled by can_write)"""
         if self.is_anonymous:
             return frozenset()
-        # exclude the admin sentinel so it never leaks into a $in / membership test
-        return frozenset(g for g in self.groups if g != ADMIN_GROUP)
+        # only bare project roles are writable projects; the admin sentinel and resource-scoped
+        # roles (initiative:/project-group:) must never leak into a $in / membership test
+        return frozenset(self.project_roles)
 
     def can_manage(self, id: str, resource: str) -> bool:
         """Determines whether a user can manage a resource.
