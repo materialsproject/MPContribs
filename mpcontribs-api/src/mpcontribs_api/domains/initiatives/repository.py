@@ -26,7 +26,6 @@ class InitiativeRepository(
 
     def __init__(self, user: User) -> None:
         super().__init__(user)
-        self._user = user
         self._limits = get_settings().domain.initiatives
 
     @staticmethod
@@ -109,8 +108,7 @@ class InitiativeRepository(
         if existing is None:
             raise NotFoundError("Initiative not found", slug=slug)
         if not (
-            self._user.can_manage(id=existing.slug, resource="initiative")
-            or self._user.username == self.document_model.owner
+            self._user.can_manage(id=existing.slug, resource="initiative") or self._user.username == existing.owner
         ):
             raise PermissionError(required_role="initiative-owner-collaborator-or-admin")
 

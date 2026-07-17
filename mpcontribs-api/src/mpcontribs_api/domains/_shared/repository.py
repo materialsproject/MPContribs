@@ -56,6 +56,7 @@ class MongoDbRepository[
         Args:
             user (User): the current user requesting resources
         """
+        self._user = user
         self._scope = self._build_scope(user)
 
     @staticmethod
