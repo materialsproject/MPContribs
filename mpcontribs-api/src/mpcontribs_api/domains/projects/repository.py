@@ -13,7 +13,7 @@ from mpcontribs_api.domains.projects.models import (
     ProjectOut,
     ProjectPatch,
 )
-from mpcontribs_api.exceptions import NotFoundError, PermissionError
+from mpcontribs_api.exceptions import NotFoundError, PermissionError, ValidationError
 from mpcontribs_api.pagination import CursorParams
 
 
@@ -32,10 +32,6 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
 
     document_model = Project
     out_model = ProjectOut
-
-    def __init__(self, user: User) -> None:
-        super().__init__(user)
-        self._user = user
 
     @staticmethod
     def _build_scope(user: User) -> dict[str, Any]:
@@ -91,23 +87,54 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
         return await self.insert_one(project)
 
     async def patch_project_by_id(self, id: str, update: ProjectPatch) -> Project:
-        """Partially update a project by id, scoped to the current user. See ``patch``."""
+        """Partially update a scoped project by id, enforcing approval rules.
+
+        - Only an admin may change ``is_approved``.
+        - Resulting state must satisfy is_public <-> is_approved condition
+
+        The ``initiative`` field is split out upstream in ``ProjectService.patch``, so it never
+        reaches this method.
+        """
+        data = update.model_dump(exclude_unset=True)
+        if "is_approved" in data and not self._user.is_admin:
+            raise PermissionError(required_role="admin")
+
+        existing = await self.document_model.find_one(self._scope, self.document_model.id == id)
+        if existing is None:
+            raise NotFoundError(self._not_found(id))
+
+        resulting_approved = data.get("is_approved", existing.is_approved)
+        resulting_public = data.get("is_public", existing.is_public)
+        if resulting_public and not resulting_approved:
+            raise ValidationError("a project cannot be public until it is approved", id=id)
+
         return await self.patch(id, update)
 
     async def delete_project_by_id(self, id: str) -> None:
-        """Delete a project by id, scoped to the current user. See ``delete_by_id``."""
+        """Delete a scoped project by id. Restricted to the owner or an admin.
+
+        Visibility (public/approved or group membership) is not enough to delete: a project can
+        only be dissolved by its owner (or an admin). A caller who cannot see the project gets a
+        404; a caller who can see it but does not own it gets a 403.
+        """
+        existing = await self.document_model.find_one(self._scope, self.document_model.id == id)
+        if existing is None:
+            raise NotFoundError(self._not_found(id))
+        if not (self._user.is_admin or existing.owner == self._user.username):
+            raise PermissionError(required_role="owner-or-admin")
         await self.delete_by_id(id)
 
     async def upsert_project_by_id(self, id: str, data: ProjectIn) -> Project:
         """Upsert a project by provided id, authorized to the current user.
 
         Update the document if the id exists, otherwise insert a new one under that id.
-        Authorization (the read scope is for visibility, not write access, so it is not
-        reused here):
 
         - **Existing project:** only its ``owner`` or an admin may overwrite it. The stored
-          ``owner`` is preserved — ownership cannot be reassigned through the request body.
+          ``owner`` is preserved - ownership cannot be reassigned through the request body.
         - **New project:** ``owner`` is forced to the caller, ignoring any body value.
+
+        an existing project keeps its stored approval and a new one starts unapproved. The resulting
+        document must also satisfy ``is_public ⇒ is_approved``.
 
         Note: relies on the path param ``id`` for identity, not the body's id.
 
@@ -133,9 +160,18 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
                 raise PermissionError(required_role="owner-or-admin")
             # Ownership is immutable via upsert; keep the original owner.
             project.owner = existing.owner
+            # Approval is admin-only; a non-admin keeps the project's stored approval state.
+            if not self._user.is_admin:
+                project.is_approved = existing.is_approved
         else:
             # New project: the caller owns it, regardless of the submitted owner.
             project.owner = self._user.username
+            # Approval is admin-only; a non-admin's new project always starts unapproved.
+            if not self._user.is_admin:
+                project.is_approved = False
+
+        if project.is_public and not project.is_approved:
+            raise ValidationError("a project cannot be public until it is approved", id=id)
         return await project.save()
 
     async def set_initiative(self, id: str, ref: DBRef | None) -> Project:

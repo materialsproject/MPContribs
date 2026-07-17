@@ -3,6 +3,7 @@ from typing import Any
 from beanie import PydanticObjectId, UpdateResponse
 from beanie.operators import AddToSet, Pull
 from bson import DBRef
+from bson.errors import InvalidId
 from pymongo.asynchronous.client_session import AsyncClientSession
 
 from mpcontribs_api.authz import User
@@ -16,6 +17,7 @@ from mpcontribs_api.domains.project_groups.models import (
     ProjectGroupOut,
     ProjectGroupPatch,
 )
+from mpcontribs_api.exceptions import NotFoundError, PermissionError
 from mpcontribs_api.pagination import CursorParams, Page
 
 
@@ -27,14 +29,20 @@ class ProjectGroupRepository(
 
     @staticmethod
     def _build_scope(user: User) -> dict[str, Any]:
-        """Provides scope based on current user's permitted groups and publicly released data."""
+        """Scope reads to what the caller may see: public groups, ones they own, or ones granted."""
         if user.is_admin:
             return {}
         ors: list[dict[str, Any]] = [{"is_public": True}]
         if not user.is_anonymous:
             ors.append({"owner": user.username})
-            if user.groups:
-                ors.append({"_id": {"$in": sorted(user.groups)}})
+            granted: list[PydanticObjectId] = []
+            for raw in user.project_group_roles:
+                try:
+                    granted.append(PydanticObjectId(raw))
+                except InvalidId:
+                    continue
+            if granted:
+                ors.append({"_id": {"$in": sorted(granted)}})
         return {"$or": ors}
 
     async def get_project_groups(
@@ -71,11 +79,22 @@ class ProjectGroupRepository(
         return await self.patch_one({"name": name, "owner": owner}, update)
 
     async def delete_project_group(self, name: SearchStr, owner: PrefixedEmail) -> DeleteResponse:
-        """Delete the single project group identified by ``name`` + ``owner``. See ``delete_one``."""
-        return await self.delete_one({"name": name, "owner": owner})
+        """Delete the single project group identified by ``name`` + ``owner``."""
+        oid = await self._resolve_one_id({"name": name, "owner": owner})
+        if oid is None:
+            raise NotFoundError(f"{self.document_model.__name__} not found", name=name, owner=owner)
+        if not (self._user.is_admin or owner == self._user.username):
+            raise PermissionError(required_role="owner-or-admin")
+        return await self.delete_by_id(oid)
 
     async def delete_project_groups(self, filter: ProjectGroupFilter) -> DeleteResponse:
-        """Bulk-delete every scoped project group matching ``filter``. See ``delete``."""
+        """Bulk-delete project groups matching ``filter``, restricted to the caller's own.
+
+        A non-admin's bulk delete is scoped to their own groups (overriding any ``owner`` in the
+        filter) so it can never remove public groups belonging to others. See ``delete``.
+        """
+        if not self._user.is_admin:
+            filter.owner = self._user.username
         return await self.delete(filter)
 
     async def add_project_refs(

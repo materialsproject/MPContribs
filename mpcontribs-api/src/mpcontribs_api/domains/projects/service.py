@@ -54,7 +54,8 @@ class ProjectService:
         if initiative is None:
             raise NotFoundError("Initiative not found or not visible", slug=slug)
 
-        if not self._initiatives._user.can_manage(id=initiative.slug, resource="initiative"):
+        user = self._initiatives._user
+        if not (user.can_manage(id=initiative.slug, resource="initiative") or initiative.owner == user.username):
             raise PermissionError(
                 message="user does not have adequate acceess to this resource",
                 required_role="initiative-owner-collaborator-or-admin",
