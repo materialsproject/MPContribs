@@ -5,7 +5,7 @@ from mpcontribs_api.authz import User
 from mpcontribs_api.domains.project_groups.models import ProjectGroup, ProjectGroupIn
 from mpcontribs_api.domains.project_groups.repository import ProjectGroupRepository
 from mpcontribs_api.domains.project_groups.service import ProjectGroupService
-from mpcontribs_api.domains.projects.models import ProjectIn, Stats
+from mpcontribs_api.domains.projects.models import ProjectIn
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
 from mpcontribs_api.exceptions import ConflictError, NotFoundError
 
@@ -22,7 +22,6 @@ ANON = User()
 
 ALICE_EMAIL = "google:alice@example.com"
 BOB_EMAIL = "google:bob@example.com"
-STATS = Stats(columns=0, contributions=0, tables=0, structures=0, attachments=0, size=0.0)
 
 
 def _service(user: User = ADMIN) -> ProjectGroupService:
@@ -31,13 +30,12 @@ def _service(user: User = ADMIN) -> ProjectGroupService:
 
 async def _insert_project(pid: str, owner: str = ALICE_EMAIL, **overrides):
     payload = {
-        "_id": pid,
+        "id": pid,
         "title": pid[:30],
         "authors": "Author",
         "description": "desc",
         "owner": owner,
         "unique_identifiers": True,
-        "stats": STATS,
     }
     payload.update(overrides)
     return await MongoDbProjectRepository(ADMIN).insert_project(ProjectIn(**payload))

@@ -244,13 +244,12 @@ class TestDeleteProject:
 class TestUpsertProject:
     def _valid_body(self, **overrides):
         body = {
-            "_id": "mp-sample",
+            "id": "mp-sample",
             "title": "Test Project",
             "authors": "Alice",
             "description": "A project",
             "owner": "google:alice@example.com",
             "unique_identifiers": True,
-            "stats": {"columns": 0, "contributions": 0, "tables": 0, "structures": 0, "attachments": 0, "size": 0.0},
         }
         body.update(overrides)
         return body
@@ -280,13 +279,12 @@ class TestUpsertProject:
 class TestProjectMutationsRequireAuth:
     def _body(self):
         return {
-            "_id": "mp-sample",
+            "id": "mp-sample",
             "title": "Test Project",
             "authors": "Alice",
             "description": "A project",
             "owner": "google:alice@example.com",
             "unique_identifiers": True,
-            "stats": {"columns": 0, "contributions": 0, "tables": 0, "structures": 0, "attachments": 0, "size": 0.0},
         }
 
     def test_anonymous_put_returns_401(self, client, project_repo):

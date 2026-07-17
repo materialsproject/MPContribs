@@ -5,7 +5,7 @@ from mpcontribs_api.authz import User
 from mpcontribs_api.config import get_settings
 from mpcontribs_api.domains.initiatives.models import InitiativeIn, InitiativePatch
 from mpcontribs_api.domains.initiatives.repository import InitiativeRepository
-from mpcontribs_api.domains.projects.models import Project, ProjectIn, ProjectPatch, Stats
+from mpcontribs_api.domains.projects.models import Project, ProjectIn, ProjectPatch
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
 from mpcontribs_api.domains.projects.service import ProjectService
 from mpcontribs_api.exceptions import ConflictError, NotFoundError, PermissionError
@@ -24,7 +24,6 @@ CAROL = User(username="google:carol@example.com", groups=frozenset())
 ALICE_EMAIL = "google:alice@example.com"
 BOB_EMAIL = "google:bob@example.com"
 CAROL_EMAIL = "google:carol@example.com"
-STATS = Stats(columns=0, contributions=0, tables=0, structures=0, attachments=0, size=0.0)
 
 
 def _service(user: User) -> ProjectService:
@@ -41,13 +40,12 @@ def _collaborator(slug: str, username: str = BOB_EMAIL) -> User:
 async def _insert_project(pid: str, owner: str = ALICE_EMAIL) -> Project:
     return await MongoDbProjectRepository(ADMIN).insert_project(
         ProjectIn(
-            _id=pid,
+            id=pid,
             title=pid[:30],
             authors="Author",
             description="desc",
             owner=owner,
             unique_identifiers=True,
-            stats=STATS,
         )
     )
 

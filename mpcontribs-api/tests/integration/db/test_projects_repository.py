@@ -16,8 +16,6 @@ pytestmark = [pytest.mark.db, pytest.mark.asyncio(loop_scope="session")]
 # Helpers
 # ---------------------------------------------------------------------------
 
-STATS = Stats(columns=0, contributions=0, tables=0, structures=0, attachments=0, size=0.0)
-
 ADMIN = User(username="google:admin@example.com", groups=frozenset({"admin"}))
 ALICE = User(username="google:alice@example.com", groups=frozenset({"mp-team"}))
 ANON = User()
@@ -28,6 +26,26 @@ def _repo(user: User) -> MongoDbProjectRepository:
 
 
 def _project_in(id: str, **overrides) -> ProjectIn:
+    """Build a user-supplied ``ProjectIn`` (content fields only — no server-managed fields)."""
+    defaults = {
+        "id": id,
+        "title": id[:30],
+        "authors": "Test Author",
+        "description": "Test description",
+        "owner": "google:alice@example.com",
+        "unique_identifiers": True,
+    }
+    defaults.update(overrides)
+    return ProjectIn(**defaults)
+
+
+async def _insert(id: str, **overrides) -> Project:
+    """Seed a Project document directly.
+
+    ``ProjectIn`` no longer carries server-managed fields, so seeding a specific ``is_public`` /
+    ``is_approved`` / ``stats`` state (as the scope tests need) is done by building the stored
+    ``Project`` and inserting it, bypassing the input contract.
+    """
     defaults = {
         "_id": id,
         "title": id[:30],
@@ -35,15 +53,9 @@ def _project_in(id: str, **overrides) -> ProjectIn:
         "description": "Test description",
         "owner": "google:alice@example.com",
         "unique_identifiers": True,
-        "stats": STATS,
     }
     defaults.update(overrides)
-    return ProjectIn(**defaults)
-
-
-async def _insert(id: str, **overrides) -> Project:
-    project_in = _project_in(id, **overrides)
-    return await _repo(ADMIN).insert_project(project_in)
+    return await Project(**defaults).insert()
 
 
 # ---------------------------------------------------------------------------
@@ -53,25 +65,22 @@ async def _insert(id: str, **overrides) -> Project:
 
 class TestInsertProject:
     async def test_inserted_project_is_retrievable(self, db):
-        await _insert("ins-basic")
+        await _repo(ADMIN).insert_project(_project_in("ins-basic"))
         found = await Project.find_one(Project.id == "ins-basic")
         assert found is not None
         assert found.id == "ins-basic"
 
     async def test_duplicate_id_raises_conflict(self, db):
-        await _insert("ins-dup")
+        await _repo(ADMIN).insert_project(_project_in("ins-dup"))
         with pytest.raises(ConflictError):
-            await _insert("ins-dup")
+            await _repo(ADMIN).insert_project(_project_in("ins-dup"))
 
-    async def test_default_not_public(self, db):
-        await _insert("ins-priv")
+    async def test_insert_defaults_private_and_unapproved(self, db):
+        # ProjectIn carries no is_public/is_approved, so an inserted project is private and unapproved.
+        await _repo(ADMIN).insert_project(_project_in("ins-priv"))
         found = await Project.find_one(Project.id == "ins-priv")
         assert found.is_public is False
-
-    async def test_explicit_public(self, db):
-        await _insert("ins-pub", is_public=True, is_approved=True)
-        found = await Project.find_one(Project.id == "ins-pub")
-        assert found.is_public is True
+        assert found.is_approved is False
 
 
 # ---------------------------------------------------------------------------
@@ -473,7 +482,7 @@ class TestUpsertProjectAuthorization:
 
 
 # ---------------------------------------------------------------------------
-# is_approved is admin-only (patch + upsert)
+# is_approved is admin-only (via PATCH — ProjectIn cannot carry it)
 # ---------------------------------------------------------------------------
 
 
@@ -491,30 +500,9 @@ class TestApprovalIsAdminOnly:
         found = await Project.find_one(Project.id == "appr-patch-admin")
         assert found.is_approved is True
 
-    async def test_non_admin_upsert_new_project_stays_unapproved(self, db):
-        # Body asks for approval; a non-admin's new project must start unapproved.
-        data = _project_in("appr-new", owner="google:bob@example.com", is_approved=True)
-        await _repo(BOB).upsert_project_by_id(id="appr-new", data=data)
-        found = await Project.find_one(Project.id == "appr-new")
-        assert found.is_approved is False
-
-    async def test_non_admin_upsert_cannot_change_existing_approval(self, db):
-        # Admin seeds an approved project; the owner (non-admin) cannot un-approve it via PUT.
-        await _insert("appr-existing", owner="google:alice@example.com", is_approved=True)
-        data = _project_in("appr-existing", owner="google:alice@example.com", is_approved=False)
-        await _repo(ALICE).upsert_project_by_id(id="appr-existing", data=data)
-        found = await Project.find_one(Project.id == "appr-existing")
-        assert found.is_approved is True
-
-    async def test_admin_upsert_can_approve(self, db):
-        data = _project_in("appr-admin-new", is_approved=True)
-        await _repo(ADMIN).upsert_project_by_id(id="appr-admin-new", data=data)
-        found = await Project.find_one(Project.id == "appr-admin-new")
-        assert found.is_approved is True
-
 
 # ---------------------------------------------------------------------------
-# a project cannot be public unless approved
+# a project cannot be public unless approved (enforced on PATCH)
 # ---------------------------------------------------------------------------
 
 
@@ -541,16 +529,38 @@ class TestPublicRequiresApproved:
         found = await Project.find_one(Project.id == "pub-approved")
         assert found.is_public is True
 
-    async def test_upsert_public_unapproved_rejected(self, db):
-        # A non-admin's public+approved body is coerced to unapproved, which then violates the invariant.
-        data = _project_in("pub-upsert", owner="google:bob@example.com", is_public=True, is_approved=True)
-        with pytest.raises(ValidationError, match="approved"):
-            await _repo(BOB).upsert_project_by_id(id="pub-upsert", data=data)
-        assert await Project.find_one(Project.id == "pub-upsert") is None
 
-    async def test_admin_upsert_public_approved_succeeds(self, db):
-        data = _project_in("pub-upsert-admin", is_public=True, is_approved=True)
-        await _repo(ADMIN).upsert_project_by_id(id="pub-upsert-admin", data=data)
-        found = await Project.find_one(Project.id == "pub-upsert-admin")
+# ---------------------------------------------------------------------------
+# upsert (PUT) cannot set server-managed fields; it preserves them on update
+# ---------------------------------------------------------------------------
+
+
+class TestUpsertServerManagedFields:
+    async def test_new_project_is_private_and_unapproved(self, db):
+        # ProjectIn has no is_public/is_approved, so a new PUT project starts safe by default.
+        await _repo(BOB).upsert_project_by_id(id="srv-new", data=_project_in("srv-new"))
+        found = await Project.find_one(Project.id == "srv-new")
+        assert found.is_public is False
+        assert found.is_approved is False
+
+    async def test_admin_upsert_cannot_approve_via_body(self, db):
+        # Approval is PATCH-only even for an admin; a PUT can never approve a project.
+        await _repo(ADMIN).upsert_project_by_id(id="srv-admin-new", data=_project_in("srv-admin-new"))
+        found = await Project.find_one(Project.id == "srv-admin-new")
+        assert found.is_approved is False
+
+    async def test_update_preserves_public_and_approved(self, db):
+        # A full-replace PUT by the owner must not wipe server-managed publication/approval.
+        await _insert("srv-preserve", owner="google:alice@example.com", is_public=True, is_approved=True)
+        data = _project_in("srv-preserve", owner="google:alice@example.com", title="Renamed Title")
+        await _repo(ALICE).upsert_project_by_id(id="srv-preserve", data=data)
+        found = await Project.find_one(Project.id == "srv-preserve")
+        assert found.title == "Renamed Title"  # content fields still update
         assert found.is_public is True
         assert found.is_approved is True
+
+    async def test_update_preserves_stats(self, db):
+        await _insert("srv-stats", owner="google:alice@example.com", stats=Stats(contributions=7))
+        await _repo(ALICE).upsert_project_by_id(id="srv-stats", data=_project_in("srv-stats"))
+        found = await Project.find_one(Project.id == "srv-stats")
+        assert found.stats.contributions == 7
