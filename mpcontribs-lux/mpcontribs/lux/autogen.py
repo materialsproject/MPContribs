@@ -100,7 +100,7 @@ class SchemaGenerator(BaseModel):
                         self.file_name, orient=orient, lines=self.fmt == "jsonl"
                     )
                     break
-                except Exception:
+                except Exception as exc:
                     continue
             else:
                 raise ValueError(

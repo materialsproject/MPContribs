@@ -1,4 +1,5 @@
 from mpcontribs.config import mp_level01_titles
+from mpcontribs.io.core.recdict import RecursiveDict
 from mpcontribs.io.core.utils import clean_value, get_composition_from_string
 from mpcontribs.users.utils import duplicate_check
 
@@ -25,6 +26,7 @@ def round_to_100_percent(number_set, digit_after_decimal=1):
 def run(mpfile, **kwargs):
     import pymatgen
     import pandas as pd
+    from mpcontribs.users.swf.rest.rester import SwfRester
 
     # load data from google sheet
     google_sheet = mpfile.document[mp_level01_titles[0]].pop("google_sheet")

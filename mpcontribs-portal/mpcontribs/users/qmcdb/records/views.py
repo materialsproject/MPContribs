@@ -1,13 +1,18 @@
 from __future__ import division
 from django.shortcuts import render
 from django.http import HttpResponseRedirect, HttpResponse
+from django.contrib.auth.decorators import login_required
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from records.forms import MaterialSubmissionForm
+from records.forms import MaterialQueryForm, MaterialSubmissionForm
 from records.models import QMCDBSet
 from records.serializers import QMCDBSetSerializer
+from rest_framework.renderers import JSONRenderer
+from rest_framework.parsers import JSONParser
+from django.utils.six import BytesIO
 from django.utils.safestring import mark_safe
+import numpy as np
 
 
 def manual_qmc_record_submission(request):

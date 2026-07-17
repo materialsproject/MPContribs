@@ -1,5 +1,4 @@
-import argparse
-import os
+import argparse, os
 from mpcontribs.io.archieml.mpfile import MPFile
 from pre_submission import *
 
