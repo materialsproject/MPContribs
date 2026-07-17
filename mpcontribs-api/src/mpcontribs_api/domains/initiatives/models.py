@@ -1,35 +1,17 @@
 from __future__ import annotations
 
-import re
-from typing import Annotated, Self
+from typing import Self
 
 from beanie import PydanticObjectId
 from bson.errors import InvalidId
-from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from pymongo import ASCENDING, IndexModel
 
 from mpcontribs_api.domains._shared.filters import BaseFilter
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
-from mpcontribs_api.domains._shared.types import NFKCStr, PrefixedEmail
+from mpcontribs_api.domains._shared.types import NFKCStr, PrefixedEmail, Slug
 from mpcontribs_api.exceptions import ValidationError
 from mpcontribs_api.projection import SparseFieldsModel
-
-# A URL-safe, human-readable slug
-# Also carried in user.groups like ``initiative:<slug>``
-_SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
-
-
-def _validate_slug(v: str) -> str:
-    v = v.strip().lower()
-    if not _SLUG_RE.match(v):
-        raise ValidationError(
-            "slug must be lowercase alphanumeric words separated by single hyphens, e.g. 'battery-genome-2025'",
-            slug=v,
-        )
-    return v
-
-
-Slug = Annotated[str, Field(min_length=3, max_length=50), BeforeValidator(_validate_slug)]
 
 
 class Initiative(BaseDocumentWithInput[PydanticObjectId]):

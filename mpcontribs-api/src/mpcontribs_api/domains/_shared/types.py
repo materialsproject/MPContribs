@@ -197,3 +197,20 @@ NFKCStr = Annotated[str, BeforeValidator(func=nfkc_normalize)]
 
 # Converts strs to pretty display form (keeps unicode and most formatting)
 DisplayStr = Annotated[str, BeforeValidator(func=nfc_normalize)]
+
+# A URL-safe, human-readable slug
+# carried in user.groups like ``initiative:<slug>``
+_SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+
+
+def _validate_slug(v: str) -> str:
+    v = v.strip().lower()
+    if not _SLUG_RE.match(v):
+        raise ValidationError(
+            "slug must be lowercase alphanumeric words separated by single hyphens, e.g. 'battery-genome-2025'",
+            slug=v,
+        )
+    return v
+
+
+Slug = Annotated[str, Field(min_length=3, max_length=50), BeforeValidator(_validate_slug)]
