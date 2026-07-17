@@ -24,12 +24,12 @@ class Column(BaseModel):
 
 
 class Stats(BaseModel):
-    columns: int
-    contributions: int
-    tables: int
-    structures: int
-    attachments: int
-    size: float
+    columns: int = 0
+    contributions: int = 0
+    tables: int = 0
+    structures: int = 0
+    attachments: int = 0
+    size: float = 0
 
 
 class Reference(BaseModel):
@@ -50,10 +50,11 @@ class Project(BaseDocumentWithInput[ShortStr]):
     description: str
     owner: PrefixedEmail
     unique_identifiers: bool
-    stats: Stats
 
     # Optional
+    stats: Stats = Field(default_factory=Stats)
     tags: list[ShortStr] | None = None
+    mp_category: str | None = None
     references: list[Reference] = Field(default_factory=list)
     long_title: str | None = None
     other: dict[str, Any] = Field(default_factory=dict)
@@ -64,7 +65,6 @@ class Project(BaseDocumentWithInput[ShortStr]):
 
     initiative: Link[Initiative] | None = None
 
-    # Empty method for now. Keeping for business logic later
     @classmethod
     def from_input_model(cls, data: ProjectIn) -> Project:
         return cls(**data.model_dump())
@@ -76,6 +76,10 @@ class Project(BaseDocumentWithInput[ShortStr]):
         Needs override over parent class since Project.id is a simple str
         """
         return pagination.decode_cursor(cursor)
+
+    @classmethod
+    def server_managed_fields(cls) -> tuple:
+        return ("is_public", "is_approved", "stats", "mp_category")
 
     class Settings:
         name = "projects"
@@ -90,6 +94,7 @@ class ProjectOut(DocumentOut[ShortStr]):
     description: str | None = None
     title: ShortStr | None = None
     tags: list[ShortStr] | None = None
+    mp_category: str | None = None
     owner: PrefixedEmail | None = None
     other: dict[str, Any] | None = None
     is_public: bool | None = None
@@ -128,6 +133,11 @@ class ProjectFilter(BaseFilter):
     tags__in: list[ShortStr] | None = None  # if at least one tag is present
     tags__contains: list[ShortStr] | None = None  # Project.tags must be a superset of these
 
+    mp_category: str | None = None
+    mp_category__in: list[str] | None = None
+    mp_category__neq: str | None = None
+    mp_category__ilike: str | None = None
+
     # fuzzy only
     long_title__ilike: str | None = None
 
@@ -145,11 +155,25 @@ class ProjectFilter(BaseFilter):
         model = Project
 
 
-# Keeping for business logic separation. May have specific implementation later
-class ProjectIn(Project):
+class ProjectIn(BaseModel):
     """Representation of user-supplied input."""
 
-    pass
+    id: ShortStr
+    title: ShortStr
+    authors: str
+    description: str
+    owner: PrefixedEmail
+    unique_identifiers: bool
+
+    # Optional
+    tags: list[ShortStr] | None = None
+    references: list[Reference] = Field(default_factory=list)
+    long_title: str | None = None
+    other: dict[str, Any] = Field(default_factory=dict)
+    columns: list[Column] = Field(default_factory=list)
+    license: Literal["CCA4", "CCPD"] | None = None
+
+    initiative: Link[Initiative] | None = None
 
 
 class ProjectPatch(BaseModel):
