@@ -308,11 +308,11 @@ class TestInsertContributionsUnapprovedQuota:
         contrib_repo.insert_many_contributions.assert_not_called()
 
     async def test_batch_trimmed_to_remaining_capacity(self, monkeypatch):
-        # cap 5, 4 already stored -> remaining = 5 - 4 + 1 = 2 slots for this batch
+        # cap 5, 3 already stored -> remaining = 5 - 3 = 2 slots for this batch
         monkeypatch.setattr(get_settings().user, "max_unapproved_contributions_per_project", 5)
         contrib_repo = AsyncMock()
         contrib_repo.insert_many_contributions.return_value = None
-        contrib_repo.count_contributions_for_project.return_value = 4
+        contrib_repo.count_contributions_for_project.return_value = 3
         svc, *_ = _make_service(contributions=contrib_repo, projects=_unapproved_projects_repo())
 
         summary = await svc.insert_contributions([_contrib_in(identifier=f"mp-{i}") for i in range(4)])
@@ -323,6 +323,34 @@ class TestInsertContributionsUnapprovedQuota:
         # Only the two accepted contributions reached the database
         inserted = contrib_repo.insert_many_contributions.call_args[0][0]
         assert len(inserted) == 2
+
+    async def test_batch_may_fill_project_to_exactly_cap(self, monkeypatch):
+        # cap 3, 2 stored -> exactly one slot; the batch fills the project to the cap, not past it.
+        monkeypatch.setattr(get_settings().user, "max_unapproved_contributions_per_project", 3)
+        contrib_repo = AsyncMock()
+        contrib_repo.insert_many_contributions.return_value = None
+        contrib_repo.count_contributions_for_project.return_value = 2
+        svc, *_ = _make_service(contributions=contrib_repo, projects=_unapproved_projects_repo())
+
+        summary = await svc.insert_contributions([_contrib_in(identifier=f"mp-{i}") for i in range(2)])
+
+        assert summary.total == 2
+        assert len(summary.succeeded) == 1
+        assert [f.index for f in summary.failed] == [1]
+
+    async def test_batch_at_exactly_cap_rejects_all_new(self, monkeypatch):
+        # cap 3, 3 stored -> zero remaining slots; a project already at the cap admits nothing new.
+        monkeypatch.setattr(get_settings().user, "max_unapproved_contributions_per_project", 3)
+        contrib_repo = AsyncMock()
+        contrib_repo.insert_many_contributions.return_value = None
+        contrib_repo.count_contributions_for_project.return_value = 3
+        svc, *_ = _make_service(contributions=contrib_repo, projects=_unapproved_projects_repo())
+
+        summary = await svc.insert_contributions([_contrib_in(identifier=f"mp-{i}") for i in range(2)])
+
+        assert [f.index for f in summary.failed] == [0, 1]
+        assert summary.succeeded == []
+        contrib_repo.insert_many_contributions.assert_not_called()
 
     async def test_approved_project_is_unlimited(self, monkeypatch):
         monkeypatch.setattr(get_settings().user, "max_unapproved_contributions_per_project", 1)
@@ -398,8 +426,8 @@ class TestInsertContributionsUnapprovedQuota:
 
 class TestUpsertContributionsUnapprovedQuota:
     async def test_only_new_documents_count_against_cap(self, monkeypatch):
-        # cap 2, 2 stored -> one slot for a new document; updating an existing one is free.
-        monkeypatch.setattr(get_settings().user, "max_unapproved_contributions_per_project", 2)
+        # cap 3, 2 stored -> one slot for a new document; updating an existing one is free.
+        monkeypatch.setattr(get_settings().user, "max_unapproved_contributions_per_project", 3)
         contrib_repo = AsyncMock()
         contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
         contrib_repo.count_contributions_for_project.return_value = 2
@@ -489,6 +517,19 @@ class TestUpsertContributionByIdQuota:
         await svc.upsert_contribution_by_id("someid", _contrib_in())
 
         contrib_repo.upsert_contribution_by_id.assert_called_once()
+
+    async def test_new_insert_at_exactly_cap_rejected(self, monkeypatch):
+        # stored == cap: the project is full, so a brand-new document is rejected (no cap+1 slack).
+        monkeypatch.setattr(get_settings().user, "max_unapproved_contributions_per_project", 2)
+        contrib_repo = AsyncMock()
+        contrib_repo.get_contribution_by_id.return_value = None
+        contrib_repo.count_contributions_for_project.return_value = 2
+        svc, *_ = _make_service(contributions=contrib_repo, projects=_unapproved_projects_repo())
+
+        with pytest.raises(PermissionError):
+            await svc.upsert_contribution_by_id("someid", _contrib_in())
+
+        contrib_repo.upsert_contribution_by_id.assert_not_called()
 
     async def test_new_insert_approved_project_unlimited(self, monkeypatch):
         monkeypatch.setattr(get_settings().user, "max_unapproved_contributions_per_project", 1)

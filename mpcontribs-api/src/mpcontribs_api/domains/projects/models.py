@@ -2,12 +2,11 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from fastapi_filter.contrib.beanie import Filter
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
 
 from mpcontribs_api import pagination
-from mpcontribs_api.domains._shared.filters import BaseFilter
 from mpcontribs_api.config import get_settings
+from mpcontribs_api.domains._shared.filters import BaseFilter
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
 from mpcontribs_api.domains._shared.types import PrefixedEmail, ShortStr
 from mpcontribs_api.exceptions import ValidationError

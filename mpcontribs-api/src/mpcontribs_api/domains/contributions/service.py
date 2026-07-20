@@ -332,7 +332,7 @@ class ContributionService:
                 continue
             # Upserts against an existing row are updates (no new document); only absent keys count.
             existing = await self._existing_keys(items) if is_upsert else set()
-            allowed = max(0, cap - stored + 1)
+            allowed = max(0, cap - stored)
             rejected: list[ResolvedWrite] = []
             for item in items:
                 key = (item.contribution.project, item.contribution.identifier, item.version)
@@ -594,7 +594,7 @@ class ContributionService:
         if existing is None:
             stored = await self._unapproved_stored_count(contribution.project)
             cap = get_settings().user.max_unapproved_contributions_per_project
-            if stored is not None and stored > cap:
+            if stored is not None and stored >= cap:
                 logger.warning(
                     "contribution.unapproved_quota_exceeded",
                     project=contribution.project,

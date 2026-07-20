@@ -46,13 +46,14 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
                 ors.append({"_id": {"$in": sorted(user.groups)}})
         return {"$or": ors}
 
-    async def _check_num_projects(self, data: ProjectIn):
+    async def _check_num_projects(self, owner: str):
+        """Reject a *new* project that would push ``owner`` past the per-user cap."""
         settings = get_settings()
-        result = await Project.find(Project.owner == data.owner).count()
-        if result > settings.user.max_projects:
+        result = await Project.find(Project.owner == owner).count()
+        if result >= settings.user.max_projects:
             raise PermissionError(
                 f"Cannot be owner of more than {settings.user.max_projects} projects",
-                owner=data.owner,
+                owner=owner,
                 num_projects=result,
             )
 
@@ -95,7 +96,7 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
 
     async def insert_project(self, project: ProjectIn) -> Project:
         """Insert a new project, rejecting a duplicate id. See ``insert_one``."""
-        await self._check_num_projects(project)
+        await self._check_num_projects(project.owner)
         return await self.insert_one(project)
 
     async def patch_project_by_id(self, id: str, update: ProjectPatch) -> Project:
@@ -133,17 +134,18 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
         if self._user.username is None:
             raise PermissionError(required_role="authenticated")
 
-        await self._check_num_projects(data)
-
         existing = await self.document_model.find_one(self.document_model.id == id)
         project = self.document_model.from_input_model(data)
         project.id = id
         if existing is not None:
             if not (self._user.is_admin or existing.owner == self._user.username):
                 raise PermissionError(required_role="owner-or-admin")
-            # Ownership is immutable via upsert; keep the original owner.
+            # Ownership is immutable via upsert; keep the original owner. Updating an existing
+            # project does not create a new one, so the per-user project cap does not apply.
             project.owner = existing.owner
         else:
-            # New project: the caller owns it, regardless of the submitted owner.
+            # New project: the caller owns it, regardless of the submitted owner. Enforce the
+            # per-user cap against the caller before creating another project under their name.
             project.owner = self._user.username
+            await self._check_num_projects(self._user.username)
         return await project.save()

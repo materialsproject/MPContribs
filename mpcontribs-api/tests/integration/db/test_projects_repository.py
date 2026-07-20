@@ -387,3 +387,54 @@ class TestUpsertProjectAuthorization:
         await _repo(ALICE).upsert_project_by_id(id="auth-preserve", data=data)
         found = await Project.find_one(Project.id == "auth-preserve")
         assert found.owner == "google:alice@example.com"
+
+
+# ---------------------------------------------------------------------------
+# Per-user project-count quota (max_projects)
+# ---------------------------------------------------------------------------
+
+
+ALICE_EMAIL = "google:alice@example.com"
+
+
+class TestProjectCountQuota:
+    async def test_insert_can_reach_exactly_cap(self, db, monkeypatch):
+        # The cap is inclusive: a user may own up to (not fewer than) max_projects.
+        from mpcontribs_api.config import get_settings
+
+        monkeypatch.setattr(get_settings().user, "max_projects", 2)
+        await _insert("cap-1", owner=ALICE_EMAIL)
+        await _insert("cap-2", owner=ALICE_EMAIL)
+        assert await Project.find(Project.owner == ALICE_EMAIL).count() == 2
+
+    async def test_insert_over_cap_rejected(self, db, monkeypatch):
+        from mpcontribs_api.config import get_settings
+        from mpcontribs_api.exceptions import PermissionError as AppPermissionError
+
+        monkeypatch.setattr(get_settings().user, "max_projects", 2)
+        await _insert("cap-a", owner=ALICE_EMAIL)
+        await _insert("cap-b", owner=ALICE_EMAIL)
+        with pytest.raises(AppPermissionError):
+            await _insert("cap-c", owner=ALICE_EMAIL)
+
+    async def test_upsert_new_project_over_cap_rejected(self, db, monkeypatch):
+        # A brand-new project via upsert is counted against the caller's cap.
+        from mpcontribs_api.config import get_settings
+        from mpcontribs_api.exceptions import PermissionError as AppPermissionError
+
+        monkeypatch.setattr(get_settings().user, "max_projects", 1)
+        await _insert("owned-1", owner=ALICE_EMAIL)
+        data = _project_in("new-proj", owner=ALICE_EMAIL)
+        with pytest.raises(AppPermissionError):
+            await _repo(ALICE).upsert_project_by_id(id="new-proj", data=data)
+
+    async def test_upsert_existing_project_allowed_at_cap(self, db, monkeypatch):
+        # Regression: updating a project you already own must never be blocked by the cap, even
+        # when you are exactly at it. Only *new* projects count against the quota.
+        from mpcontribs_api.config import get_settings
+
+        monkeypatch.setattr(get_settings().user, "max_projects", 1)
+        await _insert("owned-only", owner=ALICE_EMAIL)
+        data = _project_in("owned-only", owner=ALICE_EMAIL, title="Updated Title")
+        result = await _repo(ALICE).upsert_project_by_id(id="owned-only", data=data)
+        assert result.title == "Updated Title"
