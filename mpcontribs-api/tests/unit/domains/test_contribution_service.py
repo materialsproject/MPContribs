@@ -8,10 +8,10 @@ from pymatgen.core import Element
 from pymongo.errors import BulkWriteError
 
 from mpcontribs_api.authz import ADMIN_GROUP, User
-from mpcontribs_api.config import MongoSettings
+from mpcontribs_api.config import MongoSettings, get_settings
 from mpcontribs_api.domains.attachments.models import Attachment, AttachmentIn
-from mpcontribs_api.domains.contributions.models import Contribution, ContributionIn
 from mpcontribs_api.domains.contributions import service as service_module
+from mpcontribs_api.domains.contributions.models import Contribution, ContributionIn
 from mpcontribs_api.domains.contributions.service import ContributionService
 from mpcontribs_api.domains.structures.models import (
     Lattice,
@@ -22,7 +22,7 @@ from mpcontribs_api.domains.structures.models import (
     StructureIn,
 )
 from mpcontribs_api.domains.tables.models import Attributes, Labels, Table, TableIn
-from mpcontribs_api.exceptions import ConflictError, ValidationError
+from mpcontribs_api.exceptions import ConflictError, PermissionError, ValidationError
 
 pytestmark = pytest.mark.asyncio
 
@@ -153,7 +153,6 @@ def _make_service(
     settings: MongoSettings | None = None,
     write_slots: asyncio.Semaphore | None = None,
     user: User | None = None,
-    projects=None,
     unique_identifiers: bool = True,
 ) -> tuple[ContributionService, AsyncMock, AsyncMock, AsyncMock, AsyncMock, MagicMock]:
     contrib_repo = contributions or AsyncMock()
@@ -187,6 +186,7 @@ def _approved_projects_repo() -> AsyncMock:
     """A projects repo whose every project reads as approved (quota does not apply)."""
     repo = AsyncMock()
     repo.get_by_id = AsyncMock(return_value=MagicMock(is_approved=True))
+    repo.unique_identifiers_by_id.side_effect = lambda ids: {pid: True for pid in ids}
     return repo
 
 
@@ -194,6 +194,7 @@ def _unapproved_projects_repo() -> AsyncMock:
     """A projects repo whose every project reads as unapproved (quota applies)."""
     repo = AsyncMock()
     repo.get_by_id = AsyncMock(return_value=MagicMock(is_approved=False))
+    repo.unique_identifiers_by_id.side_effect = lambda ids: {pid: True for pid in ids}
     return repo
 
 
@@ -286,6 +287,7 @@ def _projects_repo_by_approval(approval: dict[str, bool]) -> AsyncMock:
         return MagicMock(is_approved=approval[project_id])
 
     repo.get_by_id = AsyncMock(side_effect=_get_by_id)
+    repo.unique_identifiers_by_id.side_effect = lambda ids: {pid: True for pid in ids}
     return repo
 
 
@@ -387,6 +389,118 @@ class TestInsertContributionsUnapprovedQuota:
             await svc.insert_contributions([_contrib_in(identifier=f"mp-{i}") for i in range(3)])
 
         warn.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# upsert_contributions — unapproved-contribution quota (new docs only)
+# ---------------------------------------------------------------------------
+
+
+class TestUpsertContributionsUnapprovedQuota:
+    async def test_only_new_documents_count_against_cap(self, monkeypatch):
+        # cap 2, 2 stored -> one slot for a new document; updating an existing one is free.
+        monkeypatch.setattr(get_settings().user, "max_unapproved_contributions_per_project", 2)
+        contrib_repo = AsyncMock()
+        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
+        contrib_repo.count_contributions_for_project.return_value = 2
+        contrib_repo.existing_versioned_keys.return_value = {("proj", "a", 1)}  # 'a' already exists
+        svc, *_ = _make_service(contributions=contrib_repo, projects=_unapproved_projects_repo())
+
+        contribs = [
+            _contrib_in(identifier="a"),  # update of an existing contribution -> always allowed
+            _contrib_in(identifier="b"),  # new -> consumes the one remaining slot
+            _contrib_in(identifier="c"),  # new -> over cap, rejected
+        ]
+        summary = await svc.upsert_contributions(contribs)
+
+        assert len(summary.succeeded) == 2
+        assert [f.index for f in summary.failed] == [2]
+        assert summary.failed[0].error_code == "permission_denied"
+        upserted = {c.args[1].identifier for c in contrib_repo.upsert_contribution_by_identifiers.call_args_list}
+        assert upserted == {"a", "b"}
+
+    async def test_pure_updates_are_never_capped(self, monkeypatch):
+        monkeypatch.setattr(get_settings().user, "max_unapproved_contributions_per_project", 1)
+        contrib_repo = AsyncMock()
+        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
+        contrib_repo.count_contributions_for_project.return_value = 99  # far over cap
+        contrib_repo.existing_versioned_keys.return_value = {("proj", f"mp-{i}", 1) for i in range(3)}
+        svc, *_ = _make_service(contributions=contrib_repo, projects=_unapproved_projects_repo())
+
+        summary = await svc.upsert_contributions([_contrib_in(identifier=f"mp-{i}") for i in range(3)])
+
+        assert len(summary.succeeded) == 3
+        assert summary.failed == []
+        assert contrib_repo.upsert_contribution_by_identifiers.call_count == 3
+
+    async def test_approved_project_skips_quota(self, monkeypatch):
+        monkeypatch.setattr(get_settings().user, "max_unapproved_contributions_per_project", 1)
+        contrib_repo = AsyncMock()
+        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
+        svc, *_ = _make_service(contributions=contrib_repo, projects=_approved_projects_repo())
+
+        summary = await svc.upsert_contributions([_contrib_in(identifier=f"mp-{i}") for i in range(3)])
+
+        assert len(summary.succeeded) == 3
+        assert summary.failed == []
+        contrib_repo.count_contributions_for_project.assert_not_called()
+        contrib_repo.existing_versioned_keys.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# upsert_contribution_by_id — single-record quota
+# ---------------------------------------------------------------------------
+
+
+class TestUpsertContributionByIdQuota:
+    async def test_update_existing_allowed_even_over_cap(self, monkeypatch):
+        monkeypatch.setattr(get_settings().user, "max_unapproved_contributions_per_project", 1)
+        contrib_repo = AsyncMock()
+        contrib_repo.get_contribution_by_id.return_value = MagicMock(spec=Contribution)  # id exists -> update
+        contrib_repo.count_contributions_for_project.return_value = 99
+        contrib_repo.upsert_contribution_by_id.return_value = MagicMock(spec=Contribution)
+        svc, *_ = _make_service(contributions=contrib_repo, projects=_unapproved_projects_repo())
+
+        await svc.upsert_contribution_by_id("someid", _contrib_in())
+
+        contrib_repo.upsert_contribution_by_id.assert_called_once()
+        contrib_repo.count_contributions_for_project.assert_not_called()
+
+    async def test_new_insert_over_cap_rejected(self, monkeypatch):
+        monkeypatch.setattr(get_settings().user, "max_unapproved_contributions_per_project", 2)
+        contrib_repo = AsyncMock()
+        contrib_repo.get_contribution_by_id.return_value = None  # id absent -> would insert
+        contrib_repo.count_contributions_for_project.return_value = 5  # over cap
+        svc, *_ = _make_service(contributions=contrib_repo, projects=_unapproved_projects_repo())
+
+        with pytest.raises(PermissionError):
+            await svc.upsert_contribution_by_id("someid", _contrib_in())
+
+        contrib_repo.upsert_contribution_by_id.assert_not_called()
+
+    async def test_new_insert_under_cap_allowed(self, monkeypatch):
+        monkeypatch.setattr(get_settings().user, "max_unapproved_contributions_per_project", 5)
+        contrib_repo = AsyncMock()
+        contrib_repo.get_contribution_by_id.return_value = None
+        contrib_repo.count_contributions_for_project.return_value = 1
+        contrib_repo.upsert_contribution_by_id.return_value = MagicMock(spec=Contribution)
+        svc, *_ = _make_service(contributions=contrib_repo, projects=_unapproved_projects_repo())
+
+        await svc.upsert_contribution_by_id("someid", _contrib_in())
+
+        contrib_repo.upsert_contribution_by_id.assert_called_once()
+
+    async def test_new_insert_approved_project_unlimited(self, monkeypatch):
+        monkeypatch.setattr(get_settings().user, "max_unapproved_contributions_per_project", 1)
+        contrib_repo = AsyncMock()
+        contrib_repo.get_contribution_by_id.return_value = None
+        contrib_repo.upsert_contribution_by_id.return_value = MagicMock(spec=Contribution)
+        svc, *_ = _make_service(contributions=contrib_repo, projects=_approved_projects_repo())
+
+        await svc.upsert_contribution_by_id("someid", _contrib_in())
+
+        contrib_repo.upsert_contribution_by_id.assert_called_once()
+        contrib_repo.count_contributions_for_project.assert_not_called()
 
 
 # ---------------------------------------------------------------------------

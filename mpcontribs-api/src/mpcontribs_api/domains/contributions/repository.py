@@ -53,6 +53,28 @@ class MongoDbContributionRepository(
         """
         return await self.document_model.find(self.document_model.project == project_name).count()
 
+    async def existing_versioned_keys(
+        self, keys: list[tuple[str, str, int]]
+    ) -> set[tuple[str, str, int]]:
+        """Return which ``(project, identifier, version)`` triples already have a stored document.
+
+        Args:
+            keys: (project, identifier, version) triples to test
+
+        Returns:
+            set[tuple[str, str, int]]: the subset of ``keys`` that already exist
+        """
+        if not keys:
+            return set()
+        match: dict[str, Any] = {
+            "$or": [{"project": p, "identifier": i, "version": v} for p, i, v in keys]
+        }
+        collection = self.document_model.get_pymongo_collection()
+        existing: set[tuple[str, str, int]] = set()
+        async for doc in collection.find(match, {"project": 1, "identifier": 1, "version": 1}):
+            existing.add((doc["project"], doc["identifier"], doc["version"]))
+        return existing
+
     async def get_contributions(
         self,
         filter: ContributionFilter,

@@ -120,26 +120,12 @@ class ContributionService:
         no_comp = [item for item in plan if not item.contribution.has_components()]
         with_comp = [item for item in plan if item.contribution.has_components()]
 
-        # Reject contributions that exceed the component limit
-        oversize_failures, remaining_indices = self._split_oversize(contributions)
-        # Reject contributions that are being added to an unapproved project and cause the project to exceed the
-        # contribution limit
-        quota_failures, remaining_indices = await self._split_quota_exceeded(remaining_indices, contributions)
-        no_comp_indices = [i for i in remaining_indices if not contributions[i].has_components()]
-        with_comp_indices = [i for i in remaining_indices if contributions[i].has_components()]
-
-        no_comp_succeeded, no_comp_failed = await self._insert_no_components(
-            indices=no_comp_indices,
-            contributions=contributions,
-        )
-        with_comp_succeeded, with_comp_failed = await self._insert_with_components(
-            indices=with_comp_indices,
-            contributions=contributions,
-        )
+        no_comp_succeeded, no_comp_failed = await self._insert_no_components(no_comp)
+        with_comp_succeeded, with_comp_failed = await self._insert_with_components(with_comp)
 
         succeeded = [doc for _, doc in sorted(no_comp_succeeded + with_comp_succeeded, key=lambda p: p[0])]
         failed = sorted(
-            oversize_failures + quota_failures + no_comp_failed + with_comp_failed,
+            failures + no_comp_failed + with_comp_failed,
             key=lambda f: f.index,
         )
         return BulkWriteSummary[Contribution](total=len(contributions), succeeded=succeeded, failed=failed)
@@ -327,55 +313,62 @@ class ContributionService:
 
     async def _split_quota_exceeded(
         self,
-        indices: list[int],
-        contributions: list[ContributionIn],
-    ) -> tuple[list[BulkFailure], list[int]]:
-        """Trim each unapproved project's in-batch contributions to its remaining quota.
-
-        The unapproved-contribution cap is on a project's total count, so the batch's own additions
-        count toward it: a project with N slots left accepts the first N contributions for it (input
-        order) and rejects the rest. Rejections are non-terminal — they land in ``failed`` while the
-        rest of the batch proceeds, mirroring ``_split_oversize``. The policy is evaluated once per
-        distinct project, and each breach is logged for audit/abuse monitoring (the response is a
-        200 with embedded failures, so the access log alone cannot surface it).
-
-        The ``+ 1`` in the allowance mirrors the previous per-insert gate, which rejected only once
-        the stored count exceeded the cap.
-        """
-        by_project: dict[str, list[int]] = defaultdict(list)
-        for i in indices:
-            by_project[contributions[i].project].append(i)
+        plan: list[ResolvedWrite],
+        *,
+        is_upsert: bool,
+    ) -> tuple[list[BulkFailure], list[ResolvedWrite]]:
+        """Trim each unapproved project's newly-created contributions to its remaining quota."""
+        by_project: dict[str, list[ResolvedWrite]] = defaultdict(list)
+        for item in plan:
+            by_project[item.contribution.project].append(item)
 
         cap = get_settings().user.max_unapproved_contributions_per_project
         failures: list[BulkFailure] = []
-        remaining: list[int] = []
-        for project_id, project_indices in by_project.items():
+        survivors: list[ResolvedWrite] = []
+        for project_id, items in by_project.items():
             stored = await self._unapproved_stored_count(project_id)
             if stored is None:
-                remaining.extend(project_indices)
+                survivors.extend(items)
                 continue
+            # Upserts against an existing row are updates (no new document); only absent keys count.
+            existing = await self._existing_keys(items) if is_upsert else set()
             allowed = max(0, cap - stored + 1)
-            accepted, rejected = project_indices[:allowed], project_indices[allowed:]
-            remaining.extend(accepted)
+            rejected: list[ResolvedWrite] = []
+            for item in items:
+                key = (item.contribution.project, item.contribution.identifier, item.version)
+                if key in existing:
+                    survivors.append(item)
+                elif allowed > 0:
+                    survivors.append(item)
+                    allowed -= 1
+                else:
+                    rejected.append(item)
             if not rejected:
                 continue
-            self._log_quota_exceeded(project_id, contributions, cap, stored, len(accepted), rejected)
+            self._log_quota_exceeded(project_id, cap, stored, len(items) - len(rejected), rejected)
             exc = PermissionError(
                 "Attempted to add more than the allowed number of unapproved contributions",
                 project=project_id,
                 max_contribs=cap,
             )
-            failures.extend(bulk_failure_from_exception(i, contributions[i].identifiers(), exc) for i in rejected)
-        return failures, sorted(remaining)
+            failures.extend(
+                bulk_failure_from_exception(item.index, item.contribution.identifiers(), exc) for item in rejected
+            )
+        survivors.sort(key=lambda item: item.index)
+        return failures, survivors
+
+    async def _existing_keys(self, items: list[ResolvedWrite]) -> set[tuple[str, str, int]]:
+        """Return which of ``items``' ``(project, identifier, version)`` keys already exist."""
+        keys = [(item.contribution.project, item.contribution.identifier, item.version) for item in items]
+        return await self._contributions.existing_versioned_keys(keys)
 
     @staticmethod
     def _log_quota_exceeded(
         project_id: str,
-        contributions: list[ContributionIn],
         cap: int,
         stored: int,
         accepted: int,
-        rejected: list[int],
+        rejected: list[ResolvedWrite],
     ) -> None:
         """Emit a structured audit event for an unapproved-project quota breach.
 
@@ -383,7 +376,7 @@ class ContributionService:
         per-request contextvars, so only the domain-specific dimensions are added here. The rejected
         identifier list is capped to keep a pathological batch from bloating a single log line.
         """
-        rejected_identifiers = [contributions[i].identifier for i in rejected[:_QUOTA_LOG_IDENTIFIER_CAP]]
+        rejected_identifiers = [item.contribution.identifier for item in rejected[:_QUOTA_LOG_IDENTIFIER_CAP]]
         logger.warning(
             "contribution.unapproved_quota_exceeded",
             project=project_id,
@@ -395,6 +388,31 @@ class ContributionService:
             rejected_identifiers=rejected_identifiers,
             rejected_identifiers_truncated=len(rejected) > _QUOTA_LOG_IDENTIFIER_CAP,
         )
+
+    async def _split_contributions(
+        self, contributions: list[ContributionIn], *, is_upsert: bool
+    ) -> tuple[list[BulkFailure], list[ResolvedWrite]]:
+        """Common method for validating contribution write failure logic and resolving versions.
+
+        Runs the cheap, local, index-based filters first (authorization, then component-count cap)
+        so guaranteed failures never reach the DB; ``_split_non_unique`` then turns the survivors
+        into a write plan carrying each resolved version, and the unapproved-contribution quota runs
+        last on that plan.
+
+        Returns:
+            tuple of (failures and their reasons, a ``ResolvedWrite`` per contribution to write)
+        """
+        # Per-item project authorization (see _split_unauthorized for the per-item vs fail-fast
+        # decision). Only authorized items reach Mongo; the rest are reported in ``failed``.
+        unauthorized_failures, authorized_indices = self._split_unauthorized(range(len(contributions)), contributions)
+        # Reject contributions that have too many components associated with them.
+        oversize_failures, sized_indices = self._split_oversize(authorized_indices, contributions)
+        # Verify identifiers/uniqueness within a project and resolve each version, depending on
+        # project.unique_identifiers and whether this is an insert or upsert.
+        non_unique_failures, plan = await self._split_non_unique(sized_indices, contributions, is_upsert=is_upsert)
+        # Reject writes that would push an unapproved project past its contribution cap.
+        quota_failures, plan = await self._split_quota_exceeded(plan, is_upsert=is_upsert)
+        return (unauthorized_failures + oversize_failures + non_unique_failures + quota_failures, plan)
 
     async def _insert_no_components(
         self,
@@ -560,6 +578,40 @@ class ContributionService:
         succeeded = [r for r in results if not isinstance(r, BulkFailure)]
         failed = failures + [r for r in results if isinstance(r, BulkFailure)]
         return BulkWriteSummary[Contribution](total=len(contributions), succeeded=succeeded, failed=failed)
+
+    async def upsert_contribution_by_id(self, id: str, contribution: ContributionIn) -> Contribution:
+        """Upsert a single contribution by document id, enforcing the unapproved-project quota.
+
+        Updating an existing (in-scope) contribution is always allowed. When ``id`` matches nothing
+        the repository inserts a new document, so the same unapproved cap that bounds inserts is
+        applied first: a new contribution for an unapproved project already at (or over) the cap is
+        rejected before the write.
+
+        Raises:
+            PermissionError: inserting a new contribution would exceed the unapproved cap
+        """
+        existing = await self._contributions.get_contribution_by_id(id, fields=frozenset({"id"}))
+        if existing is None:
+            stored = await self._unapproved_stored_count(contribution.project)
+            cap = get_settings().user.max_unapproved_contributions_per_project
+            if stored is not None and stored > cap:
+                logger.warning(
+                    "contribution.unapproved_quota_exceeded",
+                    project=contribution.project,
+                    max_allowed=cap,
+                    stored=stored,
+                    attempted=1,
+                    accepted=0,
+                    rejected=1,
+                    rejected_identifiers=[contribution.identifier],
+                    rejected_identifiers_truncated=False,
+                )
+                raise PermissionError(
+                    "Attempted to add more than the allowed number of unapproved contributions",
+                    project=contribution.project,
+                    max_contribs=cap,
+                )
+        return await self._contributions.upsert_contribution_by_id(id, contribution)
 
     async def delete_contributions(self, filter: ContributionFilter) -> BulkDeleteSummary:
         """Delete a contribution and all of its child components
