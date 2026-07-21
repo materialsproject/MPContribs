@@ -28,7 +28,7 @@ emmet-core==0.86.2
     # via mpcontribs-lux (pyproject.toml)
 execnet==2.1.2
     # via pytest-xdist
-filelock==3.29.4
+filelock==3.31.2
     # via virtualenv
 flake8==7.3.0
     # via mpcontribs-lux (pyproject.toml)
@@ -95,7 +95,7 @@ pandas==2.3.3
     #   pymatgen
 pathspec==0.12.1
     # via mypy
-pillow==12.2.0
+pillow==12.3.0
     # via matplotlib
 platformdirs==4.5.1
     # via virtualenv
@@ -107,7 +107,7 @@ pluggy==1.6.0
     #   pytest-cov
 pre-commit==4.5.0
     # via mpcontribs-lux (pyproject.toml)
-pyarrow==24.0.0
+pyarrow==25.0.0
     # via mpcontribs-lux (pyproject.toml)
 pybtex==0.25.1
     # via emmet-core
@@ -205,5 +205,5 @@ uncertainties==3.2.3
     # via pymatgen
 urllib3==2.7.0
     # via requests
-virtualenv==21.5.1
+virtualenv==21.6.1
     # via pre-commit
