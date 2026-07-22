@@ -1063,6 +1063,63 @@ class TestWriteAuthorization:
         assert [f.error_code for f in summary.failed] == ["permission_denied"]
         contrib_repo.upsert_contribution_by_identifiers.assert_not_called()
 
+    async def test_upsert_by_id_rejects_unauthorized_project(self):
+        # A member of "allowed" cannot write "forbidden" through the by-id endpoint. The check runs
+        # before any DB access, so neither the existence read nor the write is attempted — closing
+        # the gap where the upsert's unscoped insert branch would create the contribution anyway.
+        svc, contrib_repo, *_ = _make_service(user=_member_user("allowed"))
+
+        with pytest.raises(PermissionError, match="forbidden"):
+            await svc.upsert_contribution_by_id("someid", _contrib_in(project="forbidden"))
+
+        contrib_repo.get_contribution_by_id.assert_not_called()
+        contrib_repo.upsert_contribution_by_id.assert_not_called()
+
+    async def test_upsert_by_id_unauthorized_cannot_overwrite_public_contribution(self):
+        # Defense against overwriting a project's public contribution you don't own: even though the
+        # repository read scope would admit a public row, authorization is enforced up front.
+        svc, contrib_repo, *_ = _make_service(user=_member_user("allowed"))
+        # An existing (readable) contribution must not lower the bar — authz still rejects the write.
+        contrib_repo.get_contribution_by_id.return_value = MagicMock(spec=Contribution)
+
+        with pytest.raises(PermissionError, match="forbidden"):
+            await svc.upsert_contribution_by_id("someid", _contrib_in(project="forbidden"))
+
+        contrib_repo.upsert_contribution_by_id.assert_not_called()
+
+    async def test_upsert_by_id_anonymous_authorized_for_nothing(self):
+        svc, contrib_repo, *_ = _make_service(user=User())  # anonymous: no username, no groups
+
+        with pytest.raises(PermissionError):
+            await svc.upsert_contribution_by_id("someid", _contrib_in(project="any"))
+
+        contrib_repo.get_contribution_by_id.assert_not_called()
+        contrib_repo.upsert_contribution_by_id.assert_not_called()
+
+    async def test_upsert_by_id_authorized_member_proceeds(self):
+        # A member writing to their own project passes authorization; updating an existing row is
+        # not gated by the quota, so the write goes through.
+        contrib_repo = AsyncMock()
+        contrib_repo.get_contribution_by_id.return_value = MagicMock(spec=Contribution)  # exists -> update
+        contrib_repo.upsert_contribution_by_id.return_value = MagicMock(spec=Contribution)
+        svc, *_ = _make_service(
+            contributions=contrib_repo, projects=_unapproved_projects_repo(), user=_member_user("allowed")
+        )
+
+        await svc.upsert_contribution_by_id("someid", _contrib_in(project="allowed"))
+
+        contrib_repo.upsert_contribution_by_id.assert_called_once()
+
+    async def test_upsert_by_id_admin_bypasses_authorization(self):
+        contrib_repo = AsyncMock()
+        contrib_repo.get_contribution_by_id.return_value = MagicMock(spec=Contribution)
+        contrib_repo.upsert_contribution_by_id.return_value = MagicMock(spec=Contribution)
+        svc, *_ = _make_service(contributions=contrib_repo, projects=_approved_projects_repo())  # admin default
+
+        await svc.upsert_contribution_by_id("someid", _contrib_in(project="anything"))
+
+        contrib_repo.upsert_contribution_by_id.assert_called_once()
+
 
 # ---------------------------------------------------------------------------
 # Process-wide write_slots semaphore is honored

@@ -580,16 +580,18 @@ class ContributionService:
         return BulkWriteSummary[Contribution](total=len(contributions), succeeded=succeeded, failed=failed)
 
     async def upsert_contribution_by_id(self, id: str, contribution: ContributionIn) -> Contribution:
-        """Upsert a single contribution by document id, enforcing the unapproved-project quota.
-
-        Updating an existing (in-scope) contribution is always allowed. When ``id`` matches nothing
-        the repository inserts a new document, so the same unapproved cap that bounds inserts is
-        applied first: a new contribution for an unapproved project already at (or over) the cap is
-        rejected before the write.
+        """Upsert a single contribution by document id, enforcing write authorization and the quota.
 
         Raises:
-            PermissionError: inserting a new contribution would exceed the unapproved cap
+            PermissionError: the caller may not write the target project, or inserting a new
+                contribution would exceed the unapproved cap
         """
+        if not self._user.can_write(contribution.project):
+            raise PermissionError(
+                f"not authorized to write to project '{contribution.project}'",
+                project=contribution.project,
+            )
+
         existing = await self._contributions.get_contribution_by_id(id, fields=frozenset({"id"}))
         if existing is None:
             stored = await self._unapproved_stored_count(contribution.project)
