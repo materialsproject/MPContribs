@@ -11,7 +11,20 @@ from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, Documen
 from mpcontribs_api.domains._shared.types import PrefixedEmail, ShortStr
 from mpcontribs_api.exceptions import ValidationError
 
-settings = get_settings()
+
+def _validate_column_limit(columns: Any) -> Any:
+    """Reject input carrying more than the configured column cap.
+
+    Allows legacy docs that exceed cap to be returned without raising an error.
+    """
+    if isinstance(columns, list):
+        max_columns = get_settings().user.max_columns
+        if len(columns) > max_columns:
+            raise ValidationError(
+                f"columns cannot have more than {max_columns} entries",
+                column_length=len(columns),
+            )
+    return columns
 
 
 class Column(BaseModel):
@@ -75,16 +88,6 @@ class Project(BaseDocumentWithInput[ShortStr]):
         Needs override over parent class since Project.id is a simple str
         """
         return pagination.decode_cursor(cursor)
-
-    @field_validator("columns", mode="before")
-    @classmethod
-    def limit_column_length(cls, c: list[Column]) -> list[Column]:
-        if len(c) > settings.user.max_columns:
-            raise ValidationError(
-                f"columns cannot have more than {settings.user.max_columns} entries",
-                column_length=len(c),
-            )
-        return c
 
     class Settings:
         name = "projects"
@@ -152,7 +155,10 @@ class ProjectFilter(BaseFilter):
 class ProjectIn(Project):
     """Representation of user-supplied input."""
 
-    pass
+    @field_validator("columns", mode="before")
+    @classmethod
+    def limit_column_length(cls, c: Any) -> Any:
+        return _validate_column_limit(c)
 
 
 class ProjectPatch(BaseModel):
@@ -173,10 +179,5 @@ class ProjectPatch(BaseModel):
 
     @field_validator("columns", mode="before")
     @classmethod
-    def limit_column_length(cls, c: list[Column]) -> list[Column]:
-        if len(c) > settings.user.max_columns:
-            raise ValidationError(
-                f"columns cannot have more than {settings.user.max_columns} entries",
-                column_length=len(c),
-            )
-        return c
+    def limit_column_length(cls, c: Any) -> Any:
+        return _validate_column_limit(c)

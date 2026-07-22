@@ -8,7 +8,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class UserSettings(BaseModel):
     max_projects: int = Field(
         default=3,
-        description="The maximumum number of projects a single user is allowed to create",
+        description="The maximum number of projects a single user is allowed to create",
     )
     max_unapproved_contributions_per_project: int = Field(
         default=500,
