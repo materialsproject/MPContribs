@@ -425,12 +425,21 @@ class MongoDbContributionRepository(
         """Upserts a single Contribution addressed by the ``id`` in the request path.
 
         If a Contribution with that id exists it is updated; otherwise a new one is inserted **under
-        that same id**.        Args:
+        that same id**.
+
+        Args:
             id (str): the id of the Contribution to upsert
             contribution (ContributionIn): the Contribution to be upserted
 
         Returns:
-            Contribution: the upserted document"""
+            Contribution: the upserted document
+
+        Raises:
+            PermissionError: if the caller is not authorized to write to ``contribution.project``
+        """
+        if not self._user.can_write(contribution.project):
+            raise PermissionError(f"not authorized to write to project '{contribution.project}'")
+
         oid = self._convert_object_id(id)
         doc = self.document_model.from_input_model(contribution)
         doc.id = oid

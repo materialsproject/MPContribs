@@ -10,6 +10,7 @@ from mpcontribs_api.domains.contributions.models import (
 )
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
 from mpcontribs_api.exceptions import NotFoundError, ValidationError
+from mpcontribs_api.exceptions import PermissionError as AppPermissionError
 from mpcontribs_api.pagination import CursorParams
 
 pytestmark = [pytest.mark.db, pytest.mark.asyncio(loop_scope="session")]
@@ -489,6 +490,23 @@ class TestUpsertContributionById:
         stored = await Contribution.find_one(Contribution.id == existing.id)
         assert stored is not None
         assert stored.formula == "Li2O"
+
+    async def test_authorized_non_admin_can_upsert_into_own_project(self, db):
+        # ALICE is in group "mp-team", so she may write to that project.
+        new_id = PydanticObjectId()
+        payload = _contrib_in(project="mp-team", identifier="ups-authz-ok", _id=new_id)
+        await _repo(ALICE).upsert_contribution_by_id(str(new_id), payload)
+        stored = await Contribution.find_one(Contribution.id == new_id)
+        assert stored is not None
+        assert stored.project == "mp-team"
+
+    async def test_unauthorized_project_is_rejected_and_nothing_written(self, db):
+        # ALICE cannot write to "test-proj"; the insert must be refused, not silently written.
+        new_id = PydanticObjectId()
+        payload = _contrib_in(project="test-proj", identifier="ups-authz-deny", _id=new_id)
+        with pytest.raises(AppPermissionError):
+            await _repo(ALICE).upsert_contribution_by_id(str(new_id), payload)
+        assert await Contribution.find_one(Contribution.id == new_id) is None
 
 
 class TestDeleteByIdsScope:
