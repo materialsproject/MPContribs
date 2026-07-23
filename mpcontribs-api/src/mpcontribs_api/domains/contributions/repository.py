@@ -184,7 +184,8 @@ class MongoDbContributionRepository(
         Applies ``$set`` of ``update_data`` to the single in-scope row matching ``criteria``. When
         ``on_insert`` is given the operation upserts (writing ``on_insert`` if nothing matches) and
         always returns a document; otherwise it is a plain update that returns ``None`` on no match.
-        Shared by :meth:`patch_pivot_row` and both upsert methods so the query mechanics live once.
+        Shared by :meth:`update_contribution_by_identifiers` and both upsert methods so the query
+        mechanics live once.
         """
         query = self.document_model.find_one(self._scope, *criteria)
         result = (

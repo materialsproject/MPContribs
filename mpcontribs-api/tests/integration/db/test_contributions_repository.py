@@ -343,31 +343,46 @@ class TestFindOneContribution:
 
 
 # ---------------------------------------------------------------------------
-# patch_pivot_row (scoped find-one-and-update by pivot identity)
+# update_contribution_by_identifiers (scoped find-one-and-update by pivot identity)
 # ---------------------------------------------------------------------------
 
 
-class TestPatchPivotRow:
+class TestUpdateContributionByIdentifiers:
     async def test_updates_single_field(self, db):
         doc = await _insert(identifier="patch-formula")
-        updated = await _repo(ADMIN).patch_pivot_row(
+        updated = await _repo(ADMIN).update_contribution_by_identifiers(
             doc.project, doc.identifier, doc.version, doc.condition_key, {"formula": "SiO2"}
         )
         assert updated is not None and updated.formula == "SiO2"
         found = await Contribution.find_one(Contribution.id == doc.id)
         assert found.formula == "SiO2"
 
-    async def test_updates_data_field(self, db):
-        doc = await _insert(identifier="patch-data")
-        await _repo(ADMIN).patch_pivot_row(
+    async def test_updates_data_field_merges_by_default(self, db):
+        # Default (replace_data=False) deep-merges: the new leaf is added, existing leaves survive.
+        doc = await _insert(identifier="patch-data")  # data == {"band_gap": 2.1}
+        await _repo(ADMIN).update_contribution_by_identifiers(
             doc.project, doc.identifier, doc.version, doc.condition_key, {"data": {"energy": -5.0}}
+        )
+        found = await Contribution.find_one(Contribution.id == doc.id)
+        assert found.data == {"band_gap": 2.1, "energy": -5.0}
+
+    async def test_updates_data_field_replaces_when_requested(self, db):
+        # replace_data=True overwrites the whole data field, dropping keys not in the patch.
+        doc = await _insert(identifier="patch-data-replace")  # data == {"band_gap": 2.1}
+        await _repo(ADMIN).update_contribution_by_identifiers(
+            doc.project,
+            doc.identifier,
+            doc.version,
+            doc.condition_key,
+            {"data": {"energy": -5.0}},
+            replace_data=True,
         )
         found = await Contribution.find_one(Contribution.id == doc.id)
         assert found.data == {"energy": -5.0}
 
     async def test_unrelated_fields_unchanged(self, db):
         doc = await _insert(identifier="patch-preserve", formula="Fe2O3")
-        await _repo(ADMIN).patch_pivot_row(
+        await _repo(ADMIN).update_contribution_by_identifiers(
             doc.project, doc.identifier, doc.version, doc.condition_key, {"needs_build": False}
         )
         found = await Contribution.find_one(Contribution.id == doc.id)
@@ -375,7 +390,7 @@ class TestPatchPivotRow:
 
     async def test_no_matching_row_returns_none(self, db):
         doc = await _insert(identifier="patch-nomatch")
-        result = await _repo(ADMIN).patch_pivot_row(
+        result = await _repo(ADMIN).update_contribution_by_identifiers(
             doc.project, doc.identifier, doc.version, "conditions.temperature", {"formula": "X"}
         )
         assert result is None
@@ -383,7 +398,7 @@ class TestPatchPivotRow:
     async def test_anon_cannot_patch_private_row(self, db):
         doc = await _insert(identifier="patch-anon-priv", is_public=False)
         # Scope hides the private row from anonymous callers, so nothing matches to update.
-        result = await _repo(ANON).patch_pivot_row(
+        result = await _repo(ANON).update_contribution_by_identifiers(
             doc.project, doc.identifier, doc.version, doc.condition_key, {"formula": "X"}
         )
         assert result is None
