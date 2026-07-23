@@ -12,6 +12,7 @@ from mpcontribs_api.config import MongoSettings
 from mpcontribs_api.domains.attachments.models import Attachment, AttachmentIn
 from mpcontribs_api.domains.contributions.models import Contribution, ContributionIn, ContributionPatch
 from mpcontribs_api.domains.contributions.service import ContributionService
+from mpcontribs_api.domains.contributions.stats import ProjectAggregate
 from mpcontribs_api.domains.structures.models import (
     Lattice,
     Site,
@@ -168,6 +169,9 @@ def _make_service(
     if projects is None:
         projects_repo.unique_identifiers_by_id.side_effect = lambda ids: {pid: unique_identifiers for pid in ids}
     contrib_repo.max_versions.return_value = {}
+    # Every write/delete path recomputes project stats at the end (see ContributionService.update_project);
+    # return a real (empty) aggregate so the mapping to Stats/Column has concrete values, not mocks.
+    contrib_repo.aggregate_project_stats.return_value = ProjectAggregate()
     if client is None:
         client, _ = _make_fake_client()
     svc = ContributionService(
@@ -558,7 +562,7 @@ class TestContributionVersioning:
 
     async def test_upsert_unique_forces_version_one(self):
         svc, contrib_repo, *_ = _make_service()  # unique by default
-        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
+        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution, project="proj")
 
         # A supplied version is ignored for unique-identifier projects (inferred as 1).
         await svc.upsert_contributions([_contrib_in(identifier="mp-1", version=9)])
@@ -569,7 +573,7 @@ class TestContributionVersioning:
     async def test_upsert_non_unique_defaults_version_to_one_when_no_existing_row(self):
         # No row exists yet -> unambiguous insert -> default to version 1 rather than rejecting.
         svc, contrib_repo, *_ = _make_service(unique_identifiers=False)
-        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
+        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution, project="proj")
         contrib_repo.max_versions.return_value = {}  # nothing exists
 
         summary = await svc.upsert_contributions([_contrib_in(identifier="mp-1")])  # no version
@@ -594,7 +598,7 @@ class TestContributionVersioning:
     async def test_upsert_non_unique_with_existing_row_and_version_targets_it(self):
         # With an existing row, supplying the version resolves the ambiguity and proceeds.
         svc, contrib_repo, *_ = _make_service(unique_identifiers=False)
-        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
+        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution, project="proj")
         contrib_repo.max_versions.return_value = {("proj", "mp-1", ""): 2}
 
         summary = await svc.upsert_contributions([_contrib_in(identifier="mp-1", version=2)])
@@ -606,7 +610,7 @@ class TestContributionVersioning:
         # Unique-identifier projects have at most one row per identity, so upsert stays unambiguous
         # (version 1) even when a row exists; max_versions is not even consulted.
         svc, contrib_repo, *_ = _make_service()  # unique by default
-        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
+        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution, project="proj")
 
         summary = await svc.upsert_contributions([_contrib_in(identifier="mp-1")])  # no version
 
@@ -616,7 +620,7 @@ class TestContributionVersioning:
 
     async def test_upsert_non_unique_passes_supplied_version(self):
         svc, contrib_repo, *_ = _make_service(unique_identifiers=False)
-        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
+        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution, project="proj")
 
         await svc.upsert_contributions([_contrib_in(identifier="mp-1", version=7)])
 
@@ -703,7 +707,7 @@ class TestContributionPivotThroughService:
 
     async def test_upsert_passes_condition_key_to_repo(self):
         svc, contrib_repo, *_ = _make_service()  # unique -> version 1, condition_key differentiates
-        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
+        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution, project="proj")
 
         await svc.upsert_contributions([_pivoting_contrib()])
 
@@ -774,7 +778,7 @@ class TestUpsertContributionsGuard:
 class TestUpsertContributionsAtomic:
     async def test_calls_atomic_repo_method_once_per_item(self):
         svc, contrib_repo, *_ = _make_service()
-        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
+        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution, project="proj")
 
         contribs = [_contrib_in(identifier=f"mp-{i}") for i in range(3)]
         summary = await svc.upsert_contributions(contribs)
@@ -789,7 +793,7 @@ class TestUpsertContributionsAtomic:
 
     async def test_passes_identifiers_dict_and_input_to_repo(self):
         svc, contrib_repo, *_ = _make_service()
-        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
+        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution, project="proj")
 
         contrib = _contrib_in(project="my-proj", identifier="mp-99")
         await svc.upsert_contributions([contrib])
@@ -802,6 +806,8 @@ class TestUpsertContributionsAtomic:
     async def test_returns_repo_results_in_input_order(self):
         svc, contrib_repo, *_ = _make_service()
         docs = [MagicMock(spec=Contribution, name=f"doc-{i}") for i in range(3)]
+        for doc in docs:
+            doc.project = "proj"  # real project so update_project can aggregate the affected set
         returned = {}
 
         async def _upsert(identifiers, contrib, condition_key=""):
@@ -830,7 +836,7 @@ class TestUpsertContributionsAtomic:
         tiebreaker — the service must not pre-deduplicate or otherwise swallow one.
         """
         svc, contrib_repo, *_ = _make_service()
-        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
+        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution, project="proj")
 
         contribs = [
             _contrib_in(project="prj", identifier="same"),
@@ -847,7 +853,7 @@ class TestUpsertContributionsAtomic:
         async def _upsert(identifiers, contrib, condition_key=""):
             if contrib.identifier == "mp-1":
                 raise ConflictError("boom")
-            return MagicMock(spec=Contribution)
+            return MagicMock(spec=Contribution, project="proj")
 
         contrib_repo.upsert_contribution_by_identifiers.side_effect = _upsert
 
@@ -917,7 +923,7 @@ class TestWriteAuthorization:
 
     async def test_upsert_rejects_unauthorized_project_per_item(self):
         svc, contrib_repo, *_ = _make_service(user=_member_user("allowed"))
-        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
+        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution, project="proj")
 
         contribs = [
             _contrib_in(project="allowed", identifier="ok"),
@@ -945,61 +951,6 @@ class TestWriteAuthorization:
 
 
 # ---------------------------------------------------------------------------
-# Process-wide write_slots semaphore is honored
-# ---------------------------------------------------------------------------
-
-
-# class TestProcessWideWriteSlots:
-#     async def test_upsert_acquires_global_write_slot(self):
-#         write_slots = asyncio.Semaphore(1)
-#         svc, contrib_repo, *_ = _make_service(write_slots=write_slots)
-
-#         in_flight = 0
-#         peak = 0
-
-#         async def _upsert(identifiers, contrib):
-#             nonlocal in_flight, peak
-#             in_flight += 1
-#             peak = max(peak, in_flight)
-#             await asyncio.sleep(0)  # let other coroutines try to enter
-#             in_flight -= 1
-#             return MagicMock(spec=Contribution)
-
-#         contrib_repo.upsert_contribution_by_identifiers.side_effect = _upsert
-
-#         contribs = [_contrib_in(identifier=f"mp-{i}") for i in range(5)]
-#         await svc.upsert_contributions(contribs)
-
-#         assert peak == 1  # global semaphore of 1 must serialize all 5
-
-#     async def test_insert_with_components_acquires_global_write_slot(self):
-#         write_slots = asyncio.Semaphore(1)
-#         svc, contrib_repo, struct_repo, table_repo, attach_repo, _ = _make_service(write_slots=write_slots)
-
-#         struct_repo.insert_components.return_value = [_fake_structure()]
-#         table_repo.insert_components.return_value = []
-#         attach_repo.insert_components.return_value = []
-
-#         in_flight = 0
-#         peak = 0
-
-#         async def _insert(doc, session=None):
-#             nonlocal in_flight, peak
-#             in_flight += 1
-#             peak = max(peak, in_flight)
-#             await asyncio.sleep(0)
-#             in_flight -= 1
-#             return doc
-
-#         contrib_repo.insert_contribution.side_effect = _insert
-
-#         contribs = [_contrib_in(identifier=f"c{i}", structures=[_structure_in()]) for i in range(4)]
-#         await svc.insert_contributions(contribs)
-
-#         assert peak == 1
-
-
-# ---------------------------------------------------------------------------
 # delete_contributions — cascade delete (components-first), cursor loop
 # ---------------------------------------------------------------------------
 
@@ -1015,10 +966,11 @@ def _link(ref_id: PydanticObjectId) -> SimpleNamespace:
     return SimpleNamespace(ref=SimpleNamespace(id=ref_id))
 
 
-def _contrib_doc(structures=None, attachments=None, tables=None, id_=None) -> SimpleNamespace:
+def _contrib_doc(structures=None, attachments=None, tables=None, id_=None, project="proj") -> SimpleNamespace:
     """A contribution page item exposing the attributes delete_contributions reads."""
     return SimpleNamespace(
         id=id_ or _oid(),
+        project=project,
         structures=[_link(s) for s in (structures or [])],
         attachments=[_link(a) for a in (attachments or [])],
         tables=[_link(t) for t in (tables or [])],
@@ -1214,7 +1166,7 @@ class TestDeleteContributionsNoneComponents:
 
     async def test_none_component_fields_do_not_raise(self):
         svc, contrib_repo, struct_repo, table_repo, attach_repo, _ = _make_service()
-        doc = SimpleNamespace(id=_oid(), structures=None, tables=None, attachments=None)
+        doc = SimpleNamespace(id=_oid(), project="proj", structures=None, tables=None, attachments=None)
         contrib_repo.get_contributions.side_effect = [_page([doc]), _page([])]
         contrib_repo.delete_contributions.side_effect = [_delete_result(1), _delete_result(0)]
 
@@ -1234,7 +1186,7 @@ class TestDeleteContributionsNoneComponents:
 
 def _target_doc(project="mp-team", identifier="mp-1", version=1, condition_key="") -> MagicMock:
     """A stored Contribution the patch path anchors on (only identity attrs are read)."""
-    doc = MagicMock(spec=Contribution)
+    doc = MagicMock(spec=Contribution, project="proj")
     doc.project = project
     doc.identifier = identifier
     doc.version = version
@@ -1256,7 +1208,7 @@ class TestPatchContribution:
         contrib_repo.get_contribution_document.return_value = _target_doc(project="mp-team")
         with pytest.raises(PermissionError):
             await svc.patch_contribution(str(_oid()), ContributionPatch(formula="H2O"))
-        contrib_repo.patch_pivot_row.assert_not_called()
+        contrib_repo.update_contribution_by_identifiers.assert_not_called()
 
     async def test_empty_patch_is_noop_returns_target(self):
         svc, contrib_repo, *_ = _make_service()
@@ -1264,20 +1216,20 @@ class TestPatchContribution:
         contrib_repo.get_contribution_document.return_value = target
         result = await svc.patch_contribution(str(_oid()), ContributionPatch())
         assert result == [target]
-        contrib_repo.patch_pivot_row.assert_not_called()
+        contrib_repo.update_contribution_by_identifiers.assert_not_called()
 
     async def test_scalar_only_patch_updates_target_row(self):
         svc, contrib_repo, *_ = _make_service()
         target = _target_doc(condition_key="")
         contrib_repo.get_contribution_document.return_value = target
         updated = _target_doc()
-        contrib_repo.patch_pivot_row.return_value = updated
+        contrib_repo.update_contribution_by_identifiers.return_value = updated
 
         result = await svc.patch_contribution(str(_oid()), ContributionPatch(formula="H2O", needs_build=False))
 
         assert result == [updated]
-        contrib_repo.patch_pivot_row.assert_awaited_once()
-        args, _ = contrib_repo.patch_pivot_row.call_args
+        contrib_repo.update_contribution_by_identifiers.assert_awaited_once()
+        args, _ = contrib_repo.update_contribution_by_identifiers.call_args
         project, identifier, version, condition_key, update_data = args
         assert (project, identifier, version, condition_key) == ("mp-team", "mp-1", 1, "")
         assert update_data == {"formula": "H2O", "needs_build": False}
@@ -1287,12 +1239,12 @@ class TestPatchContribution:
         svc, contrib_repo, *_ = _make_service()
         target = _target_doc(condition_key="")
         contrib_repo.get_contribution_document.return_value = target
-        contrib_repo.patch_pivot_row.return_value = _target_doc()
+        contrib_repo.update_contribution_by_identifiers.return_value = _target_doc()
 
         await svc.patch_contribution(str(_oid()), ContributionPatch(data={"bandgap (eV)": 4.2}))
 
-        contrib_repo.patch_pivot_row.assert_awaited_once()
-        args, _ = contrib_repo.patch_pivot_row.call_args
+        contrib_repo.update_contribution_by_identifiers.assert_awaited_once()
+        args, _ = contrib_repo.update_contribution_by_identifiers.call_args
         *_identity, condition_key, update_data = args
         # No conditions -> the target row's own condition_key, data annotated in place.
         assert condition_key == ""
@@ -1304,7 +1256,7 @@ class TestPatchContribution:
         svc, contrib_repo, *_ = _make_service()
         contrib_repo.get_contribution_document.return_value = _target_doc()
         # Each fanned signature resolves to an existing row.
-        contrib_repo.patch_pivot_row.side_effect = [_target_doc(), _target_doc()]
+        contrib_repo.update_contribution_by_identifiers.side_effect = [_target_doc(), _target_doc()]
 
         result = await svc.patch_contribution(
             str(_oid()),
@@ -1312,19 +1264,44 @@ class TestPatchContribution:
         )
 
         assert len(result) == 2
-        assert contrib_repo.patch_pivot_row.await_count == 2
-        condition_keys = {call.args[3] for call in contrib_repo.patch_pivot_row.call_args_list}
+        assert contrib_repo.update_contribution_by_identifiers.await_count == 2
+        condition_keys = {call.args[3] for call in contrib_repo.update_contribution_by_identifiers.call_args_list}
         # Two distinct, non-empty condition signatures (one per temperature).
         assert len(condition_keys) == 2
         assert all(ck for ck in condition_keys)
-        for call in contrib_repo.patch_pivot_row.call_args_list:
+        for call in contrib_repo.update_contribution_by_identifiers.call_args_list:
             data = call.args[4]["data"]
             assert "t" in data and "conductivity" in data  # condition column + measurement
 
     async def test_condition_signature_without_existing_row_rejected(self):
         svc, contrib_repo, *_ = _make_service()
         contrib_repo.get_contribution_document.return_value = _target_doc()
-        contrib_repo.patch_pivot_row.return_value = None  # no stored row carries this condition_key
+        contrib_repo.update_contribution_by_identifiers.return_value = None  # no stored row carries this condition_key
 
         with pytest.raises(ValidationError, match="cannot create new ones"):
             await svc.patch_contribution(str(_oid()), ContributionPatch(data={"conductivity (S/cm, T=300K)": 1.2}))
+
+    async def test_data_patch_defaults_to_merge(self):
+        # Without an explicit flag, the repo is asked to merge (replace_data=False) so a data patch
+        # is an addition that preserves unmentioned stored columns.
+        svc, contrib_repo, *_ = _make_service()
+        contrib_repo.get_contribution_document.return_value = _target_doc(condition_key="")
+        contrib_repo.update_contribution_by_identifiers.return_value = _target_doc()
+
+        await svc.patch_contribution(str(_oid()), ContributionPatch(data={"bandgap (eV)": 4.2}))
+
+        _, kwargs = contrib_repo.update_contribution_by_identifiers.call_args
+        assert kwargs["replace_data"] is False
+
+    async def test_data_patch_forwards_replace_flag(self):
+        # replace_data=True is threaded through so the repo overwrites the row's data whole.
+        svc, contrib_repo, *_ = _make_service()
+        contrib_repo.get_contribution_document.return_value = _target_doc(condition_key="")
+        contrib_repo.update_contribution_by_identifiers.return_value = _target_doc()
+
+        await svc.patch_contribution(
+            str(_oid()), ContributionPatch(data={"bandgap (eV)": 4.2}), replace_data=True
+        )
+
+        _, kwargs = contrib_repo.update_contribution_by_identifiers.call_args
+        assert kwargs["replace_data"] is True

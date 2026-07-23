@@ -1,13 +1,17 @@
 from typing import Any
 
+from pymongo import UpdateOne
+
 from mpcontribs_api.authz import User
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
 from mpcontribs_api.domains.projects.models import (
+    Column,
     Project,
     ProjectFilter,
     ProjectIn,
     ProjectOut,
     ProjectPatch,
+    Stats,
 )
 from mpcontribs_api.exceptions import PermissionError
 from mpcontribs_api.pagination import CursorParams
@@ -82,6 +86,33 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
             result[doc["_id"]] = bool(doc.get("unique_identifiers"))
         return result
 
+    async def set_stats_and_columns(self, updates: dict[str, tuple[Stats, list[Column]]]) -> None:
+        """Overwrite the derived ``stats``/``columns`` of the given projects in one bulk write.
+
+        A **system-computed write**: identity is the project ``_id`` alone and the user scope is
+        deliberately not applied. Stats are recomputed from a project's contributions after a write
+        (see ``ContributionService.update_project``) and must land even when the caller is a group
+        contributor who does not own the project. Missing ids match nothing and are silently skipped.
+
+        Args:
+            updates: ``{project_id: (stats, columns)}`` to persist
+        """
+        if not updates:
+            return
+        ops = [
+            UpdateOne(
+                {"_id": pid},
+                {
+                    "$set": {
+                        "stats": stats.model_dump(mode="json"),
+                        "columns": [c.model_dump(mode="json") for c in cols],
+                    }
+                },
+            )
+            for pid, (stats, cols) in updates.items()
+        ]
+        await self.document_model.get_pymongo_collection().bulk_write(ops, ordered=False)
+
     async def insert_project(self, project: ProjectIn) -> Project:
         """Insert a new project, rejecting a duplicate id. See ``insert_one``."""
         return await self.insert_one(project)
@@ -130,6 +161,8 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
             # Ownership is immutable via upsert; keep the original owner.
             project.owner = existing.owner
         else:
+            # TODO: Check if Kong supplies email
             # New project: the caller owns it, regardless of the submitted owner.
-            project.owner = self._user.username
+            # project.owner = self._user.username
+            pass
         return await project.save()

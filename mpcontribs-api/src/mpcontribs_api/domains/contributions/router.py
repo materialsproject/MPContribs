@@ -139,5 +139,12 @@ async def upsert_contribution_by_id(repo: ContributionDep, id: str, contribution
 
 
 @router.patch("/{id}", dependencies=[Depends(require_user)])
-async def patch_contribution_by_id(service: ContributionServiceDep, id: str, update: ContributionPatch):
-    return await service.patch_contribution(id=id, patch=update)
+async def patch_contribution_by_id(
+    service: ContributionServiceDep,
+    id: str,
+    update: ContributionPatch,
+    replace_data: bool = False,
+):
+    # replace_data=false (default) merges the patch's `data` into the stored dict (an addition);
+    # replace_data=true overwrites `data` whole, dropping columns not in the patch.
+    return await service.patch_contribution(id=id, patch=update, replace_data=replace_data)

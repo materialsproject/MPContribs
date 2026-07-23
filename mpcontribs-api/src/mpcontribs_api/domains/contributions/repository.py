@@ -18,8 +18,64 @@ from mpcontribs_api.domains.contributions.models import (
     ContributionOut,
     ContributionPatch,
 )
+from mpcontribs_api.domains.contributions.stats import (
+    ColumnStat,
+    ProjectAggregate,
+    finalize_columns,
+    merge_contribution_columns,
+)
 from mpcontribs_api.exceptions import PermissionError
 from mpcontribs_api.pagination import CursorParams
+
+_ANNOTATED_LEAF_KEYS = frozenset({"value", "input_value", "display"})
+
+
+def _is_atomic_leaf(value: Any) -> bool:
+    """Whether a merge should replace ``value`` whole rather than descend into it.
+
+    Non-dicts (scalars, lists) are always atomic. A dict is atomic only when it is an
+    annotated-value leaf; plain nested group dicts are *not* atomic so their sibling keys survive
+    the merge.
+    """
+    if not isinstance(value, dict):
+        return True
+    return _ANNOTATED_LEAF_KEYS.issubset(value.keys())
+
+
+def _flatten_for_merge(prefix: str, value: dict[str, Any]) -> dict[str, Any]:
+    """Flatten a nested dict into ``{dotted.path: leaf}`` entries for a merge ``$set``.
+
+    Recurses through plain group dicts so ``$set`` touches only the leaves named in the patch and
+    every unmentioned sibling key is preserved; stops at atomic leaves (see :func:`_is_atomic_leaf`).
+    An empty dict contributes nothing — merge adds/overwrites leaves, it never clears a subtree.
+    """
+    flattened: dict[str, Any] = {}
+    for key, leaf in value.items():
+        path = f"{prefix}.{key}"
+        if _is_atomic_leaf(leaf):
+            flattened[path] = leaf
+        else:
+            flattened.update(_flatten_for_merge(path, leaf))
+    return flattened
+
+
+def _build_update_set(update_data: dict[str, Any], *, replace_data: bool) -> dict[str, Any]:
+    """Translate a patch's field map into the document handed to ``$set``.
+
+    With ``replace_data`` the map is used verbatim, so a dict field (``data``) overwrites the stored
+    value whole. Otherwise dict-valued fields are flattened to dotted paths so they deep-merge into
+    the stored dict — adding/overwriting only the named leaves — while scalar and list fields always
+    set directly.
+    """
+    if replace_data:
+        return update_data
+    document: dict[str, Any] = {}
+    for field, value in update_data.items():
+        if isinstance(value, dict):
+            document.update(_flatten_for_merge(field, value))
+        else:
+            document[field] = value
+    return document
 
 
 class MongoDbContributionRepository(
@@ -138,13 +194,15 @@ class MongoDbContributionRepository(
         )
         return await result  # pyright: ignore[reportGeneralTypeIssues] # beanie UpdateQuery is awaitable, but pyright doesn't see it
 
-    async def patch_pivot_row(
+    async def update_contribution_by_identifiers(
         self,
         project: str,
         identifier: str,
         version: int,
         condition_key: str,
         update_data: dict[str, Any],
+        *,
+        replace_data: bool = False,
     ) -> Contribution | None:
         """Apply ``update_data`` to the single scoped row identified by its full pivot identity.
 
@@ -152,14 +210,28 @@ class MongoDbContributionRepository(
         a patch updates exactly one pivoted contribution and never changes which row it is. Returns
         the updated document, or ``None`` when no in-scope row matches (the caller decides whether a
         missing row is an error).
+
+        ``replace_data`` controls how dict-valued fields (notably ``data``) are applied:
+
+        - **False (default):** deep-merge. Only the leaves named in ``update_data`` are ``$set`` (via
+          dotted paths), so unmentioned keys already in the stored dict are preserved (an addition).
+        - **True:** overwrite. The dict field replaces the stored value whole, dropping keys not in
+          the patch.
+
+        Scalar and list fields always set directly regardless of ``replace_data``.
         """
-        return await self._find_one_and_set(
+        document = _build_update_set(update_data, replace_data=replace_data)
+        criteria = (
             self.document_model.project == project,
             self.document_model.identifier == identifier,
             self.document_model.version == version,
             self.document_model.condition_key == condition_key,
-            update_data=update_data,
         )
+        # A merge whose only dict fields were empty produces no $set paths; MongoDB rejects an empty
+        # $set, so treat it as a no-op and return the current row unchanged.
+        if not document:
+            return await self.document_model.find_one(self._scope, *criteria)
+        return await self._find_one_and_set(*criteria, update_data=document)
 
     async def max_versions(self, keys: list[tuple[str, str, str]]) -> dict[tuple[str, str, str], int]:
         """Return ``{(project, identifier, condition_key): max_version}`` for the given keys.
@@ -276,6 +348,35 @@ class MongoDbContributionRepository(
         ids reachable from contributions in scope. See :meth:`_scan_referenced_ids`.
         """
         return await self._scan_referenced_ids(ref_field, {"$exists": True}, scoped=scoped)
+
+    async def aggregate_project_stats(self, project_id: str) -> ProjectAggregate:
+        """Recompute derived stats/columns for one project from its current contributions.
+
+        Deliberately **unscoped**: this is a system-computed rollup, not a user-facing read. Stats
+        must reflect every contribution in the project (a group contributor who cannot see sibling
+        contributions must not persist an undercount), so no user scope is merged into the ``$match``.
+        """
+        collection = self.document_model.get_pymongo_collection()
+        match: dict[str, Any] = {"project": project_id}
+
+        agg = ProjectAggregate()
+        pipeline: list[dict[str, Any]] = [
+            {"$match": match},
+            {"$group": {"_id": None, "contributions": {"$sum": 1}, "size": {"$sum": {"$bsonSize": "$$ROOT"}}}},
+        ]
+        async for row in await collection.aggregate(pipeline):
+            agg.contributions = int(row.get("contributions", 0))
+            agg.size = float(row.get("size", 0))
+
+        agg.structures = len(await collection.distinct("structures.$id", match))
+        agg.tables = len(await collection.distinct("tables.$id", match))
+        agg.attachments = len(await collection.distinct("attachments.$id", match))
+
+        acc: dict[str, ColumnStat] = {}
+        async for doc in collection.find(match, {"data": 1}):
+            merge_contribution_columns(acc, doc.get("data") or {})
+        agg.columns = finalize_columns(acc)
+        return agg
 
     async def upsert_contribution_by_identifiers(
         self,

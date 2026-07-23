@@ -15,6 +15,7 @@ class Column(BaseModel):
     min: float | None = None
     max: float | None = None
     unit: str | None = None
+    precision: int | None = None
 
     @property
     def segments(self) -> tuple[str, ...]:
@@ -59,7 +60,6 @@ class Project(BaseDocumentWithInput[ShortStr]):
     is_approved: bool = False
     license: Literal["CCA4", "CCPD"] | None = None
 
-    # Empty method for now. Keeping for business logic later
     @classmethod
     def from_input_model(cls, data: ProjectIn) -> Project:
         return cls(**data.model_dump())
@@ -68,7 +68,7 @@ class Project(BaseDocumentWithInput[ShortStr]):
     def decode_cursor(cursor: str) -> str:
         """Decodes cursor and returns it as a str.
 
-        Needs override over parent class since Project.id is a simple str
+        Needs to override the parent class since Project.id is a simple str
         """
         return pagination.decode_cursor(cursor)
 

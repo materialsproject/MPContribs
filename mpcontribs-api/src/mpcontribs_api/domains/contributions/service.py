@@ -28,6 +28,7 @@ from mpcontribs_api.domains.contributions.models import (
 )
 from mpcontribs_api.domains.contributions.pivot import expand_contribution, expand_data
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
+from mpcontribs_api.domains.projects.models import Column, Stats
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
 from mpcontribs_api.domains.structures.models import Structure
 from mpcontribs_api.domains.structures.repository import MongoDbStructureRepository
@@ -137,6 +138,7 @@ class ContributionService:
             failures + no_comp_failed + with_comp_failed,
             key=lambda f: f.index,
         )
+        await self.update_project({doc.project for doc in succeeded})
         return BulkWriteSummary[Contribution](total=len(contributions), succeeded=succeeded, failed=failed)
 
     def _expand_batch(
@@ -598,9 +600,12 @@ class ContributionService:
         results = await asyncio.gather(*[_bounded_upsert(item) for item in plan])
         succeeded = [r for r in results if not isinstance(r, BulkFailure)]
         failed = failures + [r for r in results if isinstance(r, BulkFailure)]
+        await self.update_project({doc.project for doc in succeeded})
         return BulkWriteSummary[Contribution](total=len(contributions), succeeded=succeeded, failed=failed)
 
-    async def patch_contribution(self, id: str, patch: ContributionPatch) -> list[Contribution]:
+    async def patch_contribution(
+        self, id: str, patch: ContributionPatch, *, replace_data: bool = False
+    ) -> list[Contribution]:
         """Partially update a contribution, fanning condition-bearing ``data`` onto its pivoted rows.
 
         The ``{id}`` in the path anchors the update: its stored ``(project, identifier, version)`` is
@@ -616,9 +621,15 @@ class ContributionService:
 
         Non-``data`` fields set on the patch are applied to every row the patch touches.
 
+        ``replace_data`` chooses how ``data`` is written onto each targeted row: by default (``False``)
+        it deep-merges — only the columns present in the patch are added/overwritten and any other
+        stored columns survive — so a patch is an *addition*. With ``True`` the patch's ``data``
+        overwrites the row's ``data`` whole, dropping columns not in the patch (a full replace).
+
         Args:
             id: the id of a contribution the caller may see; anchors the (project, identifier, version)
             patch: the partial update; ``data`` may carry unit/condition annotations
+            replace_data: overwrite ``data`` whole instead of merging the patch into it (default merge)
 
         Returns:
             list[Contribution]: the updated document(s), one per row the patch touched
@@ -643,38 +654,54 @@ class ContributionService:
         if patch.data is None:
             if not scalar_update:
                 return [target]
-            updated = await self._contributions.patch_pivot_row(
+            updated = await self._contributions.update_contribution_by_identifiers(
                 target.project, target.identifier, target.version, target.condition_key, scalar_update
             )
-            return [updated] if updated is not None else []
-
-        rows = expand_data(patch.data)
-
-        # No conditions: single row targeting the {id} contribution itself (units annotated in place).
-        if not any(row.condition_key for row in rows):
-            update_data = {**scalar_update, "data": rows[0].data}
-            updated = await self._contributions.patch_pivot_row(
-                target.project, target.identifier, target.version, target.condition_key, update_data
-            )
-            return [updated] if updated is not None else []
-
-        # Conditions present: fan each signature onto the sibling row that already carries it. Missing
-        # rows are rejected — a patch matches existing pivots, it never mints new condition_keys.
-        updated_rows: list[Contribution] = []
-        for row in rows:
-            update_data = {**scalar_update, "data": row.data}
-            updated = await self._contributions.patch_pivot_row(
-                target.project, target.identifier, target.version, row.condition_key, update_data
-            )
-            if updated is None:
-                raise ValidationError(
-                    f"no existing contribution for project '{target.project}', identifier "
-                    f"'{target.identifier}', version {target.version} with condition_key "
-                    f"'{row.condition_key}'; a patch updates existing pivoted rows and cannot create new ones",
-                    condition_key=row.condition_key,
+            result = [updated] if updated is not None else []
+        else:
+            rows = expand_data(patch.data)
+            # No conditions: single row targeting the {id} contribution itself (units annotated in place).
+            if not any(row.condition_key for row in rows):
+                update_data = {**scalar_update, "data": rows[0].data}
+                updated = await self._contributions.update_contribution_by_identifiers(
+                    target.project,
+                    target.identifier,
+                    target.version,
+                    target.condition_key,
+                    update_data,
+                    replace_data=replace_data,
                 )
-            updated_rows.append(updated)
-        return updated_rows
+                result = [updated] if updated is not None else []
+            else:
+                # Conditions present: fan each signature onto the sibling row that already carries it.
+                # Missing rows are rejected — a patch matches existing pivots, never makes condition_keys.
+                updated_rows: list[Contribution] = []
+                for row in rows:
+                    update_data = {**scalar_update, "data": row.data}
+                    updated = await self._contributions.update_contribution_by_identifiers(
+                        target.project,
+                        target.identifier,
+                        target.version,
+                        row.condition_key,
+                        update_data,
+                        replace_data=replace_data,
+                    )
+                    if updated is None:
+                        raise ValidationError(
+                            f"no existing contribution for project '{target.project}', identifier "
+                            f"'{target.identifier}', version {target.version} with condition_key "
+                            f"'{row.condition_key}'; a patch updates existing pivoted rows and cannot create new ones",
+                            project=target.project,
+                            identifier=target.identifier,
+                            version=target.version,
+                            condition_key=row.condition_key,
+                        )
+                    updated_rows.append(updated)
+                result = updated_rows
+
+        # A patch can shift a column's min/max, its unit, or the document size — refresh the rollup.
+        await self.update_project({target.project})
+        return result
 
     async def delete_contributions(self, filter: ContributionFilter) -> BulkDeleteSummary:
         """Delete a contribution and all of its child components
@@ -690,6 +717,8 @@ class ContributionService:
         """
         num_deleted_components = 0
         num_deleted_contributions = 0
+        # Projects touched by this delete, so their rollup stats can be recomputed once at the end.
+        affected_projects: set[str] = set()
         # Loop through cursor rather than materialize arbitrary number of Contributions
         while True:
             # Since we are deleting everything matching filter, we can continuously get the 1st page
@@ -697,6 +726,7 @@ class ContributionService:
                 pagination=CursorParams(cursor=None, limit=100),
                 filter=filter,
             )
+            affected_projects.update(c.project for c in page.items if c.project is not None)
             # For each component type, gather ObjectIds then bulk delete them
             # - components first so no children are left orphaned
             for field, repo in self._children.items():
@@ -713,4 +743,40 @@ class ContributionService:
             num_deleted_contributions += deleted_contribs.deleted_count if deleted_contribs else 0
             if not page.items:
                 break
+        await self.update_project(affected_projects)
         return BulkDeleteSummary(num_deleted=num_deleted_contributions, num_children_deleted=num_deleted_components)
+
+    async def update_project(self, project_ids: Iterable[str]) -> None:
+        """Recompute ``Project.stats``/``Project.columns`` from current contributions, per project.
+
+        Called after a contribution write/delete so a project's rollup stays in sync with its
+        contributions. Recomputes from the DB (rather than applying a per-write delta) because
+        ``columns`` min/max cannot be maintained incrementally on delete. Runs after the write
+        commits — the stats are eventually consistent, not part of the write's transaction.
+
+        The recompute is best-effort: a failure to refresh one project's stats is logged and does
+        not fail the originating write (the data is already committed; stats self-heal on the next
+        write). Contributions in a batch almost always target a single project, so the affected set
+        is small and each project is aggregated sequentially.
+        """
+        pids = {pid for pid in project_ids if pid}
+        if not pids:
+            return
+        updates: dict[str, tuple[Stats, list[Column]]] = {}
+        for pid in sorted(pids):
+            try:
+                agg = await self._contributions.aggregate_project_stats(pid)
+            except Exception:
+                logger.error("project_stats_recompute_failed", project=pid, exc_info=True)
+                continue
+            stats = Stats(
+                columns=len(agg.columns),
+                contributions=agg.contributions,
+                tables=agg.tables,
+                structures=agg.structures,
+                attachments=agg.attachments,
+                size=agg.size,
+            )
+            columns = [Column(path=c.path, min=c.min, max=c.max, unit=c.unit) for c in agg.columns]
+            updates[pid] = (stats, columns)
+        await self._projects.set_stats_and_columns(updates)
