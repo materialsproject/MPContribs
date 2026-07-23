@@ -422,19 +422,20 @@ class MongoDbContributionRepository(
         return cast(Contribution, result)  # upsert always returns the resulting document
 
     async def upsert_contribution_by_id(self, id: str, contribution: ContributionIn) -> Contribution:
-        """Upserts a single Contribution.
+        """Upserts a single Contribution addressed by the ``id`` in the request path.
 
-        If Contributions with identical identifiers exist, update, otherwise insert
-
-        Args:
+        If a Contribution with that id exists it is updated; otherwise a new one is inserted **under
+        that same id**.        Args:
             id (str): the id of the Contribution to upsert
             contribution (ContributionIn): the Contribution to be upserted
 
         Returns:
-            ContributionOut: the upserted document"""
+            Contribution: the upserted document"""
+        oid = self._convert_object_id(id)
         doc = self.document_model.from_input_model(contribution)
+        doc.id = oid
         result = await self._find_one_and_set(
-            self.document_model.id == self._convert_object_id(id),
+            self.document_model.id == oid,
             update_data=doc.model_dump(exclude={"id"}, exclude_none=True),
             on_insert=doc,
         )
