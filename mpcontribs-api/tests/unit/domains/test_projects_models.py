@@ -254,3 +254,58 @@ class TestProjectDecodeCursor:
     def test_malformed_cursor_raises_value_error(self):
         with pytest.raises(ValueError):
             Project.decode_cursor("!!!not-base64!!!")
+
+
+# ---------------------------------------------------------------------------
+# Column-length quota (max_columns)
+# ---------------------------------------------------------------------------
+
+
+def _columns(n: int) -> list[Column]:
+    return [Column(path=f"data.col_{i}") for i in range(n)]
+
+
+class TestColumnLengthQuota:
+    """A project may carry at most ``user.max_columns`` columns; the limit is inclusive."""
+
+    def _make_input(self, columns: list[Column]) -> dict:
+        return {
+            "_id": "cols-proj",
+            "title": "Columns Project",
+            "authors": "Alice",
+            "description": "desc",
+            "owner": "google:alice@example.com",
+            "unique_identifiers": True,
+            "stats": VALID_STATS,
+            "columns": columns,
+        }
+
+    def test_project_in_at_cap_is_allowed(self, monkeypatch):
+        from mpcontribs_api.config import get_settings
+
+        monkeypatch.setattr(get_settings().user, "max_columns", 2)
+        project = ProjectIn(**self._make_input(_columns(2)))
+        assert len(project.columns) == 2
+
+    def test_project_in_over_cap_raises(self, monkeypatch):
+        from mpcontribs_api.config import get_settings
+        from mpcontribs_api.exceptions import ValidationError as AppValidationError
+
+        monkeypatch.setattr(get_settings().user, "max_columns", 2)
+        with pytest.raises(AppValidationError):
+            ProjectIn(**self._make_input(_columns(3)))
+
+    def test_project_patch_at_cap_is_allowed(self, monkeypatch):
+        from mpcontribs_api.config import get_settings
+
+        monkeypatch.setattr(get_settings().user, "max_columns", 2)
+        patch = ProjectPatch(columns=_columns(2))
+        assert len(patch.columns) == 2
+
+    def test_project_patch_over_cap_raises(self, monkeypatch):
+        from mpcontribs_api.config import get_settings
+        from mpcontribs_api.exceptions import ValidationError as AppValidationError
+
+        monkeypatch.setattr(get_settings().user, "max_columns", 2)
+        with pytest.raises(AppValidationError):
+            ProjectPatch(columns=_columns(3))
