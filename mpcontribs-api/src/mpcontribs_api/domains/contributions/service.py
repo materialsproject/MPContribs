@@ -89,6 +89,8 @@ class ContributionService:
         project = await self._projects.get_by_id(project_id, fields=frozenset({"is_approved"}))
         if not project or project.is_approved:
             return None
+        # Soft limit: this count feeds a non-atomic check-then-write, so concurrent writes to the
+        # same project can overshoot the cap by a bounded amount. Acceptable for an anti-abuse quota.
         return await self._contributions.count_contributions_for_project(project_id)
 
     async def insert_contributions(

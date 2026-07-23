@@ -49,6 +49,8 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
     async def _check_num_projects(self, owner: str):
         """Reject a *new* project that would push ``owner`` past the per-user cap."""
         settings = get_settings()
+        # Soft limit: this count-then-insert is not atomic, so concurrent creates by the same owner
+        # can overshoot the cap by a bounded amount. Acceptable for an anti-abuse quota.
         result = await Project.find(Project.owner == owner).count()
         if result >= settings.user.max_projects:
             raise PermissionError(
