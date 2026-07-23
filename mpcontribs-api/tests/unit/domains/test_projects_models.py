@@ -184,7 +184,15 @@ class TestProjectPatch:
     def test_default_lists_are_empty(self):
         patch = ProjectPatch()
         assert patch.references == []
-        assert patch.columns == []
+
+    def test_is_approved_defaults_to_none(self):
+        # None => unset, so an ordinary patch never implicitly touches approval.
+        assert ProjectPatch().is_approved is None
+
+    def test_columns_is_not_a_patch_field(self):
+        # ``columns`` is server-owned and must not be accepted on the patch model.
+        assert "columns" not in ProjectPatch.model_fields
+        assert "stats" not in ProjectPatch.model_fields
 
     def test_invalid_license_raises(self):
         with pytest.raises(PydanticValidationError):
@@ -196,41 +204,42 @@ class TestProjectPatch:
 # ---------------------------------------------------------------------------
 
 
-VALID_STATS = Stats(columns=0, contributions=0, tables=0, structures=0, attachments=0, size=0.0)
-
-
 class TestProjectFromInputModel:
     def _make_input(self, **overrides):
         defaults = {
-            "_id": "test-proj",
             "title": "Test Project",
             "authors": "Alice, Bob",
             "description": "A test project",
             "owner": "google:alice@example.com",
             "unique_identifiers": True,
-            "stats": VALID_STATS,
         }
         defaults.update(overrides)
         return ProjectIn(**defaults)
 
     def test_from_input_model_creates_project(self):
         project_in = self._make_input()
-        project = Project.from_input_model(project_in)
+        project = Project.from_input_model(project_in, id="test-proj")
         assert isinstance(project, Project)
         assert project.id == "test-proj"
         assert project.title == "Test Project"
 
     def test_from_input_model_preserves_owner(self):
         project_in = self._make_input(owner="github:bob@github.com")
-        project = Project.from_input_model(project_in)
+        project = Project.from_input_model(project_in, id="test-proj")
         assert project.owner == "github:bob@github.com"
 
     def test_from_input_model_defaults(self):
         project_in = self._make_input()
-        project = Project.from_input_model(project_in)
+        project = Project.from_input_model(project_in, id="test-proj")
         assert project.is_public is False
         assert project.is_approved is False
         assert project.references == []
+        assert project.columns == []
+
+    def test_from_input_model_starts_with_empty_server_owned_fields(self):
+        # stats/columns aren't on the input model and default empty on the document.
+        project = Project.from_input_model(self._make_input(), id="test-proj")
+        assert project.stats == Stats.empty()
         assert project.columns == []
 
 

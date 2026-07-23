@@ -1,9 +1,10 @@
 import pytest
 
 from mpcontribs_api.authz import User
-from mpcontribs_api.domains.projects.models import Project, ProjectIn, ProjectOut, ProjectPatch, Stats
+from mpcontribs_api.domains.projects.models import Column, Project, ProjectIn, ProjectOut, ProjectPatch, Stats
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
 from mpcontribs_api.exceptions import ConflictError, NotFoundError
+from mpcontribs_api.exceptions import PermissionError as AppPermissionError
 from mpcontribs_api.pagination import CursorParams
 
 # All tests in this module share the session event loop so they can reuse the
@@ -16,8 +17,6 @@ pytestmark = [pytest.mark.db, pytest.mark.asyncio(loop_scope="session")]
 # Helpers
 # ---------------------------------------------------------------------------
 
-STATS = Stats(columns=0, contributions=0, tables=0, structures=0, attachments=0, size=0.0)
-
 ADMIN = User(username="google:admin@example.com", groups=frozenset({"admin"}))
 ALICE = User(username="google:alice@example.com", groups=frozenset({"mp-team"}))
 ANON = User()
@@ -28,14 +27,13 @@ def _repo(user: User) -> MongoDbProjectRepository:
 
 
 def _project_in(id: str, **overrides) -> ProjectIn:
+    # No id (it comes from the path) and no stats/columns (server-owned) on the input model.
     defaults = {
-        "_id": id,
         "title": id[:30],
         "authors": "Test Author",
         "description": "Test description",
         "owner": "google:alice@example.com",
         "unique_identifiers": True,
-        "stats": STATS,
     }
     defaults.update(overrides)
     return ProjectIn(**defaults)
@@ -43,7 +41,7 @@ def _project_in(id: str, **overrides) -> ProjectIn:
 
 async def _insert(id: str, **overrides) -> Project:
     project_in = _project_in(id, **overrides)
-    return await _repo(ADMIN).insert_project(project_in)
+    return await _repo(ADMIN).insert_project(id, project_in)
 
 
 # ---------------------------------------------------------------------------
@@ -387,3 +385,69 @@ class TestUpsertProjectAuthorization:
         await _repo(ALICE).upsert_project_by_id(id="auth-preserve", data=data)
         found = await Project.find_one(Project.id == "auth-preserve")
         assert found.owner == "google:alice@example.com"
+
+
+# ---------------------------------------------------------------------------
+# Server-owned fields: stats / columns are derived, is_approved is admin-only
+# ---------------------------------------------------------------------------
+
+
+class TestServerOwnedFields:
+    async def test_upsert_update_preserves_stats_and_columns(self, db):
+        await _insert("srv-preserve")
+        # A server-computed rollup already lives on the stored document.
+        stored = await Project.find_one(Project.id == "srv-preserve")
+        stored.stats = Stats(columns=2, contributions=5, tables=1, structures=0, attachments=0, size=42.0)
+        stored.columns = [Column(path="data.band_gap", min=0.0, max=1.0, unit="eV")]
+        await stored.save()
+        # A full overwrite must not clobber them.
+        await _repo(ADMIN).upsert_project_by_id(id="srv-preserve", data=_project_in("srv-preserve", title="Edited"))
+        found = await Project.find_one(Project.id == "srv-preserve")
+        assert found.title == "Edited"
+        assert found.stats.contributions == 5
+        assert [c.path for c in found.columns] == ["data.band_gap"]
+
+    async def test_upsert_new_starts_with_empty_stats(self, db):
+        await _repo(ALICE).upsert_project_by_id(id="srv-new-empty", data=_project_in("srv-new-empty"))
+        found = await Project.find_one(Project.id == "srv-new-empty")
+        assert found.stats == Stats.empty()
+        assert found.columns == []
+
+    async def test_non_admin_cannot_approve_new_project_via_upsert(self, db):
+        data = _project_in("srv-approve-new", is_approved=True)
+        await _repo(ALICE).upsert_project_by_id(id="srv-approve-new", data=data)
+        found = await Project.find_one(Project.id == "srv-approve-new")
+        assert found.is_approved is False
+
+    async def test_admin_can_approve_new_project_via_upsert(self, db):
+        data = _project_in("srv-approve-admin", is_approved=True)
+        await _repo(ADMIN).upsert_project_by_id(id="srv-approve-admin", data=data)
+        found = await Project.find_one(Project.id == "srv-approve-admin")
+        assert found.is_approved is True
+
+    async def test_non_admin_cannot_change_approval_via_upsert(self, db):
+        await _insert("srv-approve-existing", owner="google:alice@example.com", is_approved=True)
+        # The owner (non-admin) overwrites and tries to un-approve; approval must stick.
+        data = _project_in("srv-approve-existing", owner="google:alice@example.com", is_approved=False)
+        await _repo(ALICE).upsert_project_by_id(id="srv-approve-existing", data=data)
+        found = await Project.find_one(Project.id == "srv-approve-existing")
+        assert found.is_approved is True
+
+    async def test_non_admin_cannot_approve_via_patch(self, db):
+        await _insert("srv-patch-approve", owner="google:alice@example.com")
+        with pytest.raises(AppPermissionError):
+            await _repo(ALICE).patch_project_by_id(id="srv-patch-approve", update=ProjectPatch(is_approved=True))
+        found = await Project.find_one(Project.id == "srv-patch-approve")
+        assert found.is_approved is False
+
+    async def test_admin_can_approve_via_patch(self, db):
+        await _insert("srv-patch-admin", owner="google:alice@example.com")
+        await _repo(ADMIN).patch_project_by_id(id="srv-patch-admin", update=ProjectPatch(is_approved=True))
+        found = await Project.find_one(Project.id == "srv-patch-admin")
+        assert found.is_approved is True
+
+    async def test_non_admin_plain_patch_is_allowed(self, db):
+        await _insert("srv-patch-plain", owner="google:alice@example.com")
+        await _repo(ALICE).patch_project_by_id(id="srv-patch-plain", update=ProjectPatch(title="New Title"))
+        found = await Project.find_one(Project.id == "srv-patch-plain")
+        assert found.title == "New Title"

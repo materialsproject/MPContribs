@@ -62,15 +62,13 @@ def _service(client) -> ContributionService:
 
 async def _make_project(unique_identifiers: bool = True) -> Project:
     project_in = ProjectIn(
-        _id=PID,
         title="Stats Project",
         authors="Test Author",
         description="Recompute lifecycle fixture",
         owner="google:admin@example.com",
         unique_identifiers=unique_identifiers,
-        stats=EMPTY_STATS,
     )
-    return await MongoDbProjectRepository(ADMIN).insert_project(project_in)
+    return await MongoDbProjectRepository(ADMIN).insert_project(PID, project_in)
 
 
 def _structure(charge: float | None) -> StructureIn:

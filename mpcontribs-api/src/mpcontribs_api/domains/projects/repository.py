@@ -13,7 +13,7 @@ from mpcontribs_api.domains.projects.models import (
     ProjectPatch,
     Stats,
 )
-from mpcontribs_api.exceptions import PermissionError
+from mpcontribs_api.exceptions import ConflictError, PermissionError
 from mpcontribs_api.pagination import CursorParams
 
 
@@ -113,12 +113,31 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
         ]
         await self.document_model.get_pymongo_collection().bulk_write(ops, ordered=False)
 
-    async def insert_project(self, project: ProjectIn) -> Project:
-        """Insert a new project, rejecting a duplicate id. See ``insert_one``."""
-        return await self.insert_one(project)
+    async def insert_project(self, id: str, project: ProjectIn) -> Project:
+        """Insert a new project under ``id`` (supplied by the caller), rejecting a duplicate id.
+
+        Projects carry a meaningful ``ShortStr`` id that is not part of the input body, so — unlike
+        the generic ``insert_one`` — the id is passed explicitly and stamped onto the document here.
+        """
+        document = Project.from_input_model(project, id=id)
+        existing = await self.document_model.find_one(self.document_model.id == id)
+        if existing:
+            raise ConflictError(f"Cannot insert document.\n Document with ID {id} exists")
+        await document.insert()
+        return document
 
     async def patch_project_by_id(self, id: str, update: ProjectPatch) -> Project:
-        """Partially update a project by id, scoped to the current user. See ``patch``."""
+        """Partially update a project by id, scoped to the current user. See ``patch``.
+
+        ``is_approved`` is an admin-only curation flag: a non-admin that sets it (to any value) is
+        rejected. ``stats``/``columns`` are not on the patch model at all, so they cannot be
+        client-patched. Both remain server-owned.
+
+        Raises:
+            PermissionError: if a non-admin caller sets ``is_approved``
+        """
+        if update.is_approved is not None and not self._user.is_admin:
+            raise PermissionError(required_role="admin")
         return await self.patch(id, update)
 
     async def delete_project_by_id(self, id: str) -> None:
@@ -153,16 +172,25 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
             raise PermissionError(required_role="authenticated")
 
         existing = await self.document_model.find_one(self.document_model.id == id)
-        project = self.document_model.from_input_model(data)
-        project.id = id
+        project = self.document_model.from_input_model(data, id=id)
         if existing is not None:
             if not (self._user.is_admin or existing.owner == self._user.username):
                 raise PermissionError(required_role="owner-or-admin")
             # Ownership is immutable via upsert; keep the original owner.
             project.owner = existing.owner
+            # Server-owned rollups are never taken from the request body; keep the stored values
+            # (they self-heal on the next contribution write via ``ContributionService``).
+            project.stats = existing.stats
+            project.columns = existing.columns
+            # Approval is an admin-only curation flag: a non-admin cannot toggle it via a full
+            # overwrite, so preserve whatever is already stored.
+            if not self._user.is_admin:
+                project.is_approved = existing.is_approved
         else:
             # TODO: Check if Kong supplies email
             # New project: the caller owns it, regardless of the submitted owner.
             # project.owner = self._user.username
-            pass
+            # A new project starts unapproved; only an admin may create it pre-approved.
+            if not self._user.is_admin:
+                project.is_approved = False
         return await project.save()
