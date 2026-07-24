@@ -225,6 +225,18 @@ class ContributionFilter(BaseFilter):
     id__in: list[PydanticObjectId] | None = None
     id__neq: PydanticObjectId | None = None
 
+    project: str | None = None
+    project__in: list[str] | None = None
+    project__neq: str | None = None
+    project__ilike: str | None = None
+
+    last_modified: datetime | None = None
+    # TODO: Not sure if these are viable in fastapi-filter
+    last_modified_after: datetime | None = None
+    last_modified_before: datetime | None = None
+    # TODO: Implement
+    # data__*
+    # component_size
     identifier: str | None = None
     identifier__in: list[ShortStr] | None = None
     identifier__neq: ShortStr | None = None

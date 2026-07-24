@@ -117,6 +117,16 @@ class ProjectFilter(BaseFilter):
     owner__neq: PrefixedEmail | None = None
     owner__ilike: str | None = None
 
+    authors: str | None = None
+    authors__in: str | None = None
+    authors__neq: str | None = None
+    authors__ilike: str | None = None
+
+    description: str | None = None
+    description__in: str | None = None
+    description__neq: str | None = None
+    description__ilike: str | None = None
+
     # fuzzy only
     long_title__ilike: str | None = None
 
@@ -126,6 +136,7 @@ class ProjectFilter(BaseFilter):
 
     license: Literal["CCA4", "CCPD"] | None = None
     license__in: list[Literal["CCA4", "CCPD"]] | None = None
+    license__neq: Literal["CCA4", "CCPD"] | None = None
 
     # sorting
     order_by: list[str] | None = None
