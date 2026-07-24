@@ -232,13 +232,15 @@ class AnnotatedData(BaseModel):
                     canon_value, canon_error = cv, ce
                     canon_unit = _format_unit(quantity.units)
 
+        # Keep the input_* if we had to coerce things
+        keep_input = bool(unit) or canon_value != nominal
         return cls(
             value=canon_value,
             unit=canon_unit,
-            input_value=nominal,
-            input_unit=unit,
+            input_value=nominal if keep_input else None,
+            input_unit=unit if keep_input else None,
             error=canon_error,
-            input_error=error,
+            input_error=error if keep_input else None,
             precision=precision,
         )
 
