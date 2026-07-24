@@ -1,13 +1,13 @@
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
-from mpcontribs_api.domains._shared.types import (
+from mpcontribs_api.domains._shared.types import to_snake_case
+from mpcontribs_api.domains._shared.units import AnnotatedData, UnitError, parse_condition_value
+from mpcontribs_api.domains.contributions.data import (
     ParsedKey,
     parse_annotated_key,
-    to_snake_case,
     validate_contribution_data,
 )
-from mpcontribs_api.domains._shared.units import AnnotatedData, UnitError, parse_condition_value
 from mpcontribs_api.exceptions import ValidationError
 
 if TYPE_CHECKING:

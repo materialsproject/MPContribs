@@ -2,7 +2,7 @@ from collections.abc import Iterator
 from dataclasses import dataclass, field
 from typing import Any
 
-from mpcontribs_api.domains._shared.types import is_quantity_leaf
+from mpcontribs_api.domains.contributions.data import is_quantity_leaf
 
 # Sentinel unit for a column whose leaves are not numeric (see module docstring).
 NON_NUMERIC_UNIT = "NaN"

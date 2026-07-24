@@ -19,8 +19,9 @@ from pymongo import ASCENDING, IndexModel
 from mpcontribs_api._openapi import CONTRIBUTION_DATA_INPUT_DESCRIPTION, CONTRIBUTION_DATA_OUTPUT_DESCRIPTION
 from mpcontribs_api.domains._shared.filters import BaseFilter
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
-from mpcontribs_api.domains._shared.types import ContributionData, DisplayStr, SearchStr, ShortStr
+from mpcontribs_api.domains._shared.types import DisplayStr, SearchStr, ShortStr
 from mpcontribs_api.domains.attachments.models import Attachment, AttachmentFilter, AttachmentIn
+from mpcontribs_api.domains.contributions.data import ContributionData
 from mpcontribs_api.domains.structures.models import Structure, StructureFilter, StructureIn
 from mpcontribs_api.domains.tables.models import Table, TableFilter, TableIn
 from mpcontribs_api.exceptions import ValidationError

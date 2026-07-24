@@ -3,10 +3,10 @@ import math
 import pytest
 from beanie import PydanticObjectId
 
-from mpcontribs_api.domains._shared.types import (
+from mpcontribs_api.domains._shared.types import to_snake_case
+from mpcontribs_api.domains.contributions.data import (
     coerce_keys,
     parse_annotated_key,
-    to_snake_case,
 )
 from mpcontribs_api.domains.contributions.models import ContributionIn
 from mpcontribs_api.domains.contributions.pivot import expand_contribution

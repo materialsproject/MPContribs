@@ -10,7 +10,8 @@ from types_aiobotocore_s3 import S3Client
 
 from mpcontribs_api.authz import User
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
-from mpcontribs_api.domains._shared.types import DownloadFormat, ShortMimeFormat, is_quantity_leaf
+from mpcontribs_api.domains._shared.types import DownloadFormat, ShortMimeFormat
+from mpcontribs_api.domains.contributions.data import is_quantity_leaf
 from mpcontribs_api.domains.contributions.models import (
     Contribution,
     ContributionFilter,
@@ -32,7 +33,7 @@ def _is_atomic_leaf(value: Any) -> bool:
     """Whether a merge should replace ``value`` whole rather than descend into it.
 
     Non-dicts (scalars, lists) are always atomic. A dict is atomic only when it is a quantity leaf
-    (see :func:`mpcontribs_api.domains._shared.types.is_quantity_leaf`); plain nested group dicts are
+    (see :func:`mpcontribs_api.domains.contributions.data.is_quantity_leaf`); plain nested group dicts are
     *not* atomic so their sibling keys survive the merge.
     """
     return not isinstance(value, dict) or is_quantity_leaf(value)
