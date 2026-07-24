@@ -44,7 +44,9 @@ class TestParseConditionValueRobustness:
             # A numeric leaf must be finite (the inf/NaN guard) and representable in strict JSON so it
             # survives storage and canonical_md5 hashing.
             assert math.isfinite(out["value"])
-            assert math.isfinite(out["input_value"])
+            # input_value is omitted for a bare, exact, unit-less number (value fully describes it).
+            if "input_value" in out:
+                assert math.isfinite(out["input_value"])
             json.dumps(out, allow_nan=False)
 
     @settings(max_examples=200, deadline=None, suppress_health_check=[HealthCheck.too_slow])

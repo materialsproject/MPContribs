@@ -134,12 +134,13 @@ class TestParseAnnotatedKey:
 
 
 class TestExpandContribution:
-    def test_no_annotations_returns_unchanged(self):
+    def test_no_annotations_still_normalizes_scalars_to_leaves(self):
         c = _contrib_in({"a": {"b": 1.5}, "plain": 3})
         rows = expand_contribution(c)
         assert len(rows) == 1
         assert rows[0].condition_key == ""
-        assert rows[0].contribution is c  # untouched, same object
+        # Every numeric scalar is promoted to a quantity leaf, at any nesting depth.
+        assert rows[0].contribution.data == {"a": {"b": {"value": 1.5}}, "plain": {"value": 3.0}}
 
     def test_unit_only_annotates_in_place_single_row(self):
         rows = expand_contribution(_contrib_in({"bandgap (eV)": 1.1}))
@@ -225,13 +226,14 @@ class TestExpandContribution:
     def test_plain_keys_coerced_when_no_annotations(self):
         rows = expand_contribution(_contrib_in({"Band Gap": 1.5, "nested": {"Sub Key": 2}}))
         assert len(rows) == 1
-        assert rows[0].contribution.data == {"band_gap": 1.5, "nested": {"sub_key": 2}}
+        # keys coerced to snake_case, numeric values promoted to leaves
+        assert rows[0].contribution.data == {"band_gap": {"value": 1.5}, "nested": {"sub_key": {"value": 2.0}}}
 
-    def test_no_op_coercion_returns_same_object(self):
-        # all keys already snake_case -> the original contribution object is returned untouched
+    def test_already_snake_case_keys_still_leafify_numbers(self):
+        # Even with nothing to coerce, bare numbers are normalized to quantity leaves.
         c = _contrib_in({"band_gap": 1.5, "nested": {"sub_key": 2}})
         rows = expand_contribution(c)
-        assert rows[0].contribution is c
+        assert rows[0].contribution.data == {"band_gap": {"value": 1.5}, "nested": {"sub_key": {"value": 2.0}}}
 
     def test_annotated_path_segments_coerced(self):
         rows = expand_contribution(_contrib_in({"Band Gap (eV, T=300K)": 1.1}))

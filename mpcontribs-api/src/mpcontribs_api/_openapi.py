@@ -13,19 +13,36 @@ collapses to a single underscore. So `"bandGap"`, `"Band Gap"`, and `"band-gap"`
 `"band_gap"`, and the **keys you read back may differ from the keys you submitted**. Keys must be
 ASCII and must not reduce to an empty string (e.g. `"***"` is rejected).
 
-**Annotated keys (units + conditions):** a top-level key may carry an annotation in parentheses:
+**Reserved keys:** `value`, `unit`, `input_value`, `input_unit`, `error`, `input_error`,
+`precision`, and `display` are reserved for the stored value-leaf shape and may **not** be used as
+data keys (a key that coerces to any of these is rejected).
 
-    "name (unit, condition1=value1, condition2=value2, ...)"
+**Values become structured leaves.** Any value that reads as a number is stored as a *quantity leaf*
+(see the response schema) capturing its value, unit, uncertainty, and precision; anything that does
+not (a word like `"cubic"`, a boolean, a list) is stored as-is. Scalars **inside lists** are left
+as-is (a list is treated as array data, not a column of measurements).
 
-- The single token without an `=` is the **unit** (e.g. `eV`, `S/cm`, `K`); units are left verbatim
-  (not coerced) so they round-trip through Pint.
-- Each `k=v` token is a **condition**. Condition names are coerced to `snake_case` like any other key.
-- The `name` may be a dotted path (`"transport.conductivity (S/cm)"`) to nest the value.
-- A key with no parentheses is a plain, fully backward-compatible key.
+**Two ways to give a unit (both accepted, they converge):**
+
+1. In the **key**, via an annotation in parentheses:
+   `"name (unit, condition1=value1, condition2=value2, ...)"` — with the value a bare number
+   (`{"bandgap (eV)": 5}`).
+2. In the **value** string itself (`{"bandgap": "5 eV"}`).
+
+Annotation rules: the single token without an `=` is the **unit** (e.g. `eV`, `S/cm`, `K`), left
+verbatim so it round-trips through Pint; each `k=v` token is a **condition** (names coerced to
+`snake_case`); `name` may be a dotted path (`"transport.conductivity (S/cm)"`) to nest the value; a
+key with no parentheses is a plain key. If a unit is given in **both** the key and the value and they
+differ, the **key's unit wins** — the value is converted into it (a dimensional mismatch is rejected).
 
 Recognized units are canonicalized to SI base units on write (the submitted form is preserved too —
-see the response schema). Magnitudes may carry uncertainty as `"4.2(3)"`, `"4.2+/-0.3"`, or
-`"4.2±0.3"`.
+see the response schema); an unrecognized unit is kept verbatim. Magnitudes may carry uncertainty as
+`"4.2(3)"`, `"4.2+/-0.3"`, or `"4.2±0.3"`. Precision (significant figures) is captured from a string
+magnitude such as `"1.000"`; a bare JSON number carries no trailing-zero information.
+
+The server does **not** produce a formatted `display` string — the response returns the structured
+fields (`input_value`/`input_unit`/`input_error`/`precision`) so clients render values however they
+prefer. (`display` remains a reserved key for backward compatibility with older stored leaves.)
 
 **Pivoting on conditions:** if any key carries conditions, the single submission is *expanded* into
 one contribution per distinct condition signature. Each resulting contribution stores its conditions
@@ -44,16 +61,22 @@ CONTRIBUTION_DATA_OUTPUT_DESCRIPTION = """\
 Hierarchical contribution data. Keys are stored in `snake_case` (see the write schema for the
 coercion rules), so they may differ from the keys originally submitted.
 
-Values that were submitted with a unit annotation are stored as an **annotated leaf** object:
+Any value that reads as a number is stored as a **quantity leaf** object:
 
 - `value` / `unit`: the SI-canonical magnitude and unit (or the submitted form when the unit is
   unrecognized or dimensionless)
-- `input_value` / `input_unit`: the magnitude and unit exactly as submitted
+- `input_value` / `input_unit`: the magnitude and unit as submitted (omitted for a bare, unitless,
+  exact number that ``value`` already fully describes)
 - `error`: the (SI-propagated) standard deviation — present only when the magnitude carried an
-  uncertainty
-- `display`: a human-readable rendering of the *submitted* magnitude/unit (e.g. `"4.2+/-0.3 eV"`)
+  uncertainty; `input_error` is the same in the submitted unit
+- `precision`: the number of significant figures the submission carried — present only when it is
+  derivable (a string magnitude such as `"1.000"`)
 
-Plain (unannotated) values keep whatever JSON shape they were submitted with.
+There is no server-rendered `display` string: `input_value`, `input_unit`, `input_error`, and
+`precision` reproduce the submitted form exactly, so a client can format the value however it likes.
+
+Values that are not numeric (words, booleans, lists) keep whatever JSON shape they were submitted
+with (after `snake_case` key coercion).
 """
 
 openapi_tags = [

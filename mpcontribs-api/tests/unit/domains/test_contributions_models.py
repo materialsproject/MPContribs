@@ -119,6 +119,18 @@ class TestContributionBase:
         with pytest.raises(ValidationError, match="reduces to an empty string"):
             _make_contribution_in(data={"***": "fail"})
 
+    def test_reserved_leaf_keys_rejected(self):
+        # A data key that coerces to a reserved value-leaf name is rejected on write.
+        for bad in ("value", "unit", "error", "precision", "input_value", "display"):
+            with pytest.raises(ValidationError, match="reserved"):
+                _make_contribution_in(data={bad: 1})
+        # rejected when nested, too
+        with pytest.raises(ValidationError, match="reserved"):
+            _make_contribution_in(data={"group": {"unit": "x"}})
+        # and when used as a condition name in an annotated key
+        with pytest.raises(ValidationError, match="reserved"):
+            _make_contribution_in(data={"x (eV, value=3)": 1})
+
     # There isn't currently value validation. This is to check that that is true
     def test_data_value_validation(self):
         pipes_in_values = {"test": "pass||"}

@@ -2,6 +2,8 @@ from collections.abc import Iterator
 from dataclasses import dataclass, field
 from typing import Any
 
+from mpcontribs_api.domains._shared.types import is_quantity_leaf
+
 # Sentinel unit for a column whose leaves are not numeric (see module docstring).
 NON_NUMERIC_UNIT = "NaN"
 
@@ -31,28 +33,18 @@ class ProjectAggregate:
     columns: list[ColumnStat] = field(default_factory=list)
 
 
-def _is_annotated_leaf(node: dict[str, Any]) -> bool:
-    """True when ``node`` is the canonical annotated-data leaf shape (numeric ``value`` + ``display``).
-
-    Both fields are always present on a leaf produced by ``AnnotatedData.as_dict`` and ``value`` is a
-    finite float, so requiring both distinguishes a leaf from an ordinary nested ``data`` object
-    (whose keys are user-supplied snake_case names).
-    """
-    value = node.get("value")
-    return "display" in node and isinstance(value, (int, float)) and not isinstance(value, bool)
-
-
 def iter_leaves(data: dict[str, Any], prefix: str = "") -> Iterator[tuple[str, float | None, str | None]]:
     """Yield ``(path, numeric_value, unit)`` for every leaf of one contribution's ``data``.
 
-    ``numeric_value`` is ``None`` for a non-numeric leaf; ``unit`` is the canonical unit for an
-    annotated leaf (possibly ``None``), ``None`` for a bare number, and :data:`NON_NUMERIC_UNIT`
-    for a non-numeric leaf. Nested plain objects are recursed; annotated leaves are not.
+    ``numeric_value`` is ``None`` for a non-numeric leaf; ``unit`` is the canonical unit for a
+    quantity leaf (possibly ``None``), ``None`` for a legacy bare number, and :data:`NON_NUMERIC_UNIT`
+    for a non-numeric leaf. Nested plain objects are recursed; quantity leaves are not. The bare
+    int/float branches below handle legacy documents written before scalars were normalized to leaves.
     """
     for key, node in data.items():
         path = f"{prefix}.{key}" if prefix else key
         if isinstance(node, dict):
-            if _is_annotated_leaf(node):
+            if is_quantity_leaf(node):
                 yield path, float(node["value"]), node.get("unit")
             else:
                 yield from iter_leaves(node, path)

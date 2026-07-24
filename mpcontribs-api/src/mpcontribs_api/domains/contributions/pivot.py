@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING, Any
 
 from mpcontribs_api.domains._shared.types import (
     ParsedKey,
-    coerce_keys,
     parse_annotated_key,
     to_snake_case,
     validate_contribution_data,
@@ -61,6 +60,45 @@ def _set_nested(target: dict[str, Any], segments: tuple[str, ...], value: Any) -
     cursor[leaf] = value
 
 
+def normalize_node(value: Any, key_unit: str | None = None) -> Any:
+    """Recursively coerce dict keys to ``snake_case`` and turn scalar measurements into quantity leaves.
+
+    This is the write-path core of "every numeric becomes a leaf":
+
+    - **dict**: each key is coerced to ``snake_case`` (sibling collisions rejected); values recurse
+      with no inherited unit — only a top-level annotated key carries a unit (``key_unit``).
+    - **list**: elements recurse, but scalar elements are left verbatim (a list is array data, not a
+      column of measurements — mirrors :func:`mpcontribs_api.domains.contributions.stats.iter_leaves`,
+      which never treats list scalars as columns).
+    - **scalar**: promoted to a quantity leaf via :meth:`AnnotatedData.try_from_value` when it parses
+      as a number (optionally carrying a unit); otherwise kept verbatim (categorical string, bool).
+
+    ``key_unit`` (from a top-level annotated key) is applied only to a scalar value; when it labels a
+    dict/list value it has no scalar to annotate and is ignored.
+
+    Raises:
+        ValidationError: on a key that empties after coercion, a sibling-key collision, or a value
+            whose unit cannot be parsed/reconciled.
+    """
+    if isinstance(value, dict):
+        out: dict[str, Any] = {}
+        for key, sub in value.items():
+            coerced = to_snake_case(key)
+            if not coerced:
+                raise ValidationError(f"data key '{key}' reduces to an empty string after snake_case coercion")
+            if coerced in out:
+                raise ValidationError(f"data keys collide after snake_case coercion: '{coerced}'")
+            out[coerced] = normalize_node(sub)
+        return out
+    if isinstance(value, list):
+        return [normalize_node(item) for item in value]
+    try:
+        leaf = AnnotatedData.try_from_value(value, key_unit)
+    except UnitError as err:
+        raise ValidationError(f"could not parse value {value!r}: {err}") from err
+    return leaf.as_dict() if leaf is not None else value
+
+
 def expand_data(data: dict[str, Any]) -> list[ExpandedData]:
     """Annotate units and pivot a ``data`` mapping on its condition signatures.
 
@@ -79,15 +117,11 @@ def expand_data(data: dict[str, Any]) -> list[ExpandedData]:
         ValidationError: on a malformed annotation, a path/column collision, or expanded data that
             violates the depth/key rules.
     """
-    # parse_annotated_key raises DataKeyError (a ValidationError) on a malformed key; it propagates
-    # with its structured context and error_code intact and is rendered by the app error handlers.
     parsed = {raw_key: parse_annotated_key(raw_key) for raw_key in data}
 
     if not any(pk.is_annotated for pk in parsed.values()):
-        # Nothing annotated, but keys still get snake_case coercion (all-plain data). Return the
-        # original object untouched when coercion is a no-op so callers can short-circuit.
-        coerced = coerce_keys(data)
-        return [ExpandedData(data=data if coerced == data else coerced, condition_key="")]
+        normalized = normalize_node(data)
+        return [ExpandedData(data=data if normalized == data else normalized, condition_key="")]
 
     # Split columns into the condition-less broadcast set and the conditioned groups (keyed by the
     # canonical condition_key so physically-equal signatures merge into one row).
@@ -120,16 +154,7 @@ def expand_data(data: dict[str, Any]) -> list[ExpandedData]:
         return segments
 
     def _annotate_column(row_data: dict[str, Any], raw_key: str, pk: ParsedKey) -> None:
-        try:
-            # Annotated leaves are produced (already canonical) by the AnnotatedData factory; plain
-            # values keep their structure but have their nested keys coerced to snake_case.
-            leaf = (
-                AnnotatedData.from_submission(data[raw_key], pk.unit).as_dict()
-                if pk.is_annotated
-                else coerce_keys(data[raw_key])
-            )
-        except UnitError as err:
-            raise ValidationError(f"could not parse value for '{raw_key}': {err}") from err
+        leaf = normalize_node(data[raw_key], pk.unit if pk.is_annotated else None)
         _set_nested(row_data, _coerce_segments(pk), leaf)
 
     def _finalize(row_data: dict[str, Any], ckey: str) -> ExpandedData:

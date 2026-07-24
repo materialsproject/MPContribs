@@ -10,7 +10,7 @@ from types_aiobotocore_s3 import S3Client
 
 from mpcontribs_api.authz import User
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
-from mpcontribs_api.domains._shared.types import DownloadFormat, ShortMimeFormat
+from mpcontribs_api.domains._shared.types import DownloadFormat, ShortMimeFormat, is_quantity_leaf
 from mpcontribs_api.domains.contributions.models import (
     Contribution,
     ContributionFilter,
@@ -27,19 +27,15 @@ from mpcontribs_api.domains.contributions.stats import (
 from mpcontribs_api.exceptions import PermissionError
 from mpcontribs_api.pagination import CursorParams
 
-_ANNOTATED_LEAF_KEYS = frozenset({"value", "input_value", "display"})
-
 
 def _is_atomic_leaf(value: Any) -> bool:
     """Whether a merge should replace ``value`` whole rather than descend into it.
 
-    Non-dicts (scalars, lists) are always atomic. A dict is atomic only when it is an
-    annotated-value leaf; plain nested group dicts are *not* atomic so their sibling keys survive
-    the merge.
+    Non-dicts (scalars, lists) are always atomic. A dict is atomic only when it is a quantity leaf
+    (see :func:`mpcontribs_api.domains._shared.types.is_quantity_leaf`); plain nested group dicts are
+    *not* atomic so their sibling keys survive the merge.
     """
-    if not isinstance(value, dict):
-        return True
-    return _ANNOTATED_LEAF_KEYS.issubset(value.keys())
+    return not isinstance(value, dict) or is_quantity_leaf(value)
 
 
 def _flatten_for_merge(prefix: str, value: dict[str, Any]) -> dict[str, Any]:

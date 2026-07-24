@@ -273,6 +273,23 @@ def parse_annotated_key(key: str) -> ParsedKey:
     return ParsedKey(path=path, unit=unit, conditions=conditions)
 
 
+# Users cannot use these values in their Contributions.data key names - reserved for describing numeric values
+RESERVED_LEAF_KEYS = frozenset(
+    {"value", "unit", "input_value", "input_unit", "error", "input_error", "precision", "display"}
+)
+
+
+def is_quantity_leaf(node: Any) -> bool:
+    """True when ``node`` is a stored quantity leaf (numeric ``value`` + only reserved keys."""
+    if not isinstance(node, dict):
+        return False
+    value = node.get("value")
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        return False
+    # node.keys is a subset of RESERVED_LEAF_KEYS
+    return node.keys() <= RESERVED_LEAF_KEYS
+
+
 def _coerce_key(key: Any) -> str:
     """Coerce one dict key to ``snake_case``, rejecting non-ASCII or empty-after-coercion keys."""
     if not isinstance(key, str) or not key.isascii():
@@ -309,6 +326,9 @@ def coerce_keys(value: Any) -> Any:
 
 
 def _get_dict_depth(x: Any) -> int:
+    # If x is a leaf (value + metadata) dict it counts as a single level of nesting (treat it as scalar)
+    if is_quantity_leaf(x):
+        return 0
     if isinstance(x, dict):
         return 1 + max((_get_dict_depth(v) for v in x.values()), default=0)
     elif isinstance(x, list):
@@ -338,8 +358,15 @@ def _validate_plain_key(key: Any) -> None:
         raise ValidationError("Non-ASCII key found in Contribution.data. All dict keys must be only ASCII")
     if key == "":
         raise ValidationError("Empty key found in Contribution.data. Keys must be non-empty.")
-    if not to_snake_case(key):
+    coerced = to_snake_case(key)
+    if not coerced:
         raise ValidationError(f"data key '{key}' reduces to an empty string after snake_case coercion")
+    if coerced in RESERVED_LEAF_KEYS:
+        raise ValidationError(
+            f"data key '{key}' is reserved for annotated-value leaves and may not be used",
+            key=key,
+            reserved=sorted(RESERVED_LEAF_KEYS),
+        )
 
 
 def _validate_nested_keys(value: Any) -> None:
@@ -354,6 +381,10 @@ def _validate_keys(data: dict[str, Any] | None) -> dict[str, Any] | None:
     """Strict plain-key validation for a single dict level (used for nested levels)."""
     if data is None:
         return None
+    # A server-built quantity leaf legitimately uses the reserved key names; do not descend into it
+    # (re-validation after normalization/expansion would otherwise reject its own keys).
+    if is_quantity_leaf(data):
+        return data
     for key in data:
         _validate_plain_key(key)
     # Recurse into nested dicts, including dicts nested inside lists.
@@ -395,13 +426,7 @@ def _validate_data_keys(data: dict[str, Any] | None) -> dict[str, Any] | None:
 
 
 def validate_contribution_data(data: dict[str, Any] | None) -> dict[str, Any] | None:
-    """Run the full write-path ``data`` validation (depth + annotated/plain keys).
-
-    This is the runtime equivalent of the :data:`ContributionData` validator chain, exposed as a
-    plain function so expansion (:mod:`mpcontribs_api.domains.contributions.pivot`) can re-check the
-    data it rewrites — ``model_copy`` bypasses Pydantic validators, so pivoted rows are re-validated
-    here before they are stored.
-    """
+    """Run the full write-path ``data`` validation (depth + annotated/plain keys)."""
     _validate_data_depth(data)
     _validate_data_keys(data)
     return data
@@ -409,6 +434,5 @@ def validate_contribution_data(data: dict[str, Any] | None) -> dict[str, Any] | 
 
 ContributionData = Annotated[
     dict[str, Any] | None,
-    BeforeValidator(_validate_data_depth),
-    BeforeValidator(_validate_data_keys),
+    BeforeValidator(validate_contribution_data),
 ]

@@ -1,7 +1,6 @@
 import math
 
 import pytest
-from pydantic import ValidationError as PydanticValidationError
 
 from mpcontribs_api.config import get_settings
 from mpcontribs_api.domains._shared.units import (
@@ -33,20 +32,13 @@ class TestAnnotateValue:
         assert math.isclose(leaf["value"], 4.2 * 1.602176634e-19, rel_tol=1e-9)
         assert leaf["unit"] != "eV"  # canonicalized to base units
         assert "error" not in leaf
-        # display renders the submitted (pre-canonicalization) form
-        assert leaf["display"] == "4.2 eV"
-
-    def test_display_renders_submitted_form(self):
-        assert AnnotatedData.from_submission(4.2, "eV").as_dict()["display"] == "4.2 eV"
-        assert AnnotatedData.from_submission("4.2(3)", "eV").as_dict()["display"] == "4.2+/-0.3 eV"
-        assert AnnotatedData.from_submission(5, None).as_dict()["display"] == "5"
-        # unrecognized unit still renders verbatim
-        assert AnnotatedData.from_submission(1.0, "widgets").as_dict()["display"] == "1 widgets"
+        # no formatted display string is ever stored; clients format from the structured fields
+        assert "display" not in leaf
 
     def test_unitless_value(self):
-        # exclude_none drops unit/input_unit for a unit-less leaf; display is always present.
+        # A bare, exact, unit-less number is fully described by ``value``: input_*/display are omitted.
         leaf = AnnotatedData.from_submission(5, None).as_dict()
-        assert leaf == {"value": 5.0, "input_value": 5.0, "display": "5"}
+        assert leaf == {"value": 5.0}
 
     def test_unknown_unit_stored_as_submitted(self):
         leaf = AnnotatedData.from_submission(1.0, "widgets").as_dict()
@@ -61,7 +53,7 @@ class TestAnnotateValue:
         assert ohm_sign != greek_omega
         leaf = AnnotatedData.from_submission(1.0, ohm_sign).as_dict()
         assert leaf["input_unit"] == greek_omega
-        assert ohm_sign not in leaf["display"]
+        assert ohm_sign not in leaf["input_unit"]
         # Both spellings produce the identical stored/canonical leaf.
         assert leaf == AnnotatedData.from_submission(1.0, greek_omega).as_dict()
 
@@ -223,7 +215,7 @@ class TestConditionKey:
 
 
 # ---------------------------------------------------------------------------
-# display precision — preserve submitted trailing zeros, still cap length
+# precision — count submitted significant figures, capped at the float-precision length
 # ---------------------------------------------------------------------------
 
 
@@ -248,55 +240,48 @@ class TestCountSigFigs:
         assert _count_sig_figs(mag) == expected
 
 
-class TestDisplayPreservesTrailingZeros:
-    """display keeps the trailing zeros the user typed (precision signal), but stays capped.
+class TestPrecisionCapture:
+    """The leaf's ``precision`` records the submitted significant figures, capped, for client use.
 
     Trailing zeros are informative — "1.000" claims more measurement confidence than "1.0" — so we
-    must not trim them, while still bounding length at float_precision significant figures.
+    store the sig-fig count so a client can reproduce it, while bounding it at float_precision.
     """
 
     @pytest.mark.parametrize(
-        ("submitted", "expected_display"),
+        ("submitted", "expected_precision"),
         [
-            ("1.000", "1.000 eV"),
-            ("1.0", "1.0 eV"),
-            ("4.20", "4.20 eV"),
-            ("300.0", "300.0 eV"),
-            ("0.00500", "0.00500 eV"),
-            ("5", "5 eV"),
+            ("1.000", 4),
+            ("1.0", 2),
+            ("4.20", 3),
+            ("300.0", 4),
+            ("0.00500", 3),
+            ("5", 1),
         ],
     )
-    def test_string_input_preserves_trailing_zeros(self, submitted, expected_display):
-        assert AnnotatedData.from_submission(submitted, "eV").as_dict()["display"] == expected_display
+    def test_string_input_records_precision(self, submitted, expected_precision):
+        assert AnnotatedData.from_submission(submitted, "eV").precision == expected_precision
 
-    def test_numeric_input_has_no_trailing_zeros_to_preserve(self):
-        # A JSON number loses "1.000" -> 1.0 before it reaches us, so display is trimmed.
-        assert AnnotatedData.from_submission(1.000, "eV").as_dict()["display"] == "1 eV"
-        assert AnnotatedData.from_submission(4.20, "eV").as_dict()["display"] == "4.2 eV"
+    def test_numeric_input_has_no_precision(self):
+        # A JSON number loses "1.000" -> 1.0 before it reaches us, so there is nothing to record.
+        assert AnnotatedData.from_submission(1.000, "eV").precision is None
+        assert AnnotatedData.from_submission(4.20, "eV").precision is None
 
-    def test_trailing_zeros_preserved_through_condition_path(self):
-        leaf = parse_condition_value("1.000 eV")
-        assert leaf["display"] == "1.000 eV"
+    def test_precision_captured_through_condition_path(self):
+        assert parse_condition_value("1.000 eV")["precision"] == 4
 
-    def test_length_cap_enforced_beyond_precision(self):
-        # 14 submitted sig figs are rounded down to the float_precision cap.
-        display = AnnotatedData.from_submission("1.2345678901234", "eV").as_dict()["display"]
-        mantissa = display.split(" ")[0].lstrip("-").replace(".", "")
-        assert len(mantissa.lstrip("0")) <= _FLOAT_PRECISION
-
-    def test_trailing_zeros_capped_at_precision(self):
-        # More trailing zeros than the cap are truncated to exactly float_precision sig figs.
+    def test_precision_capped_at_float_precision(self):
+        # 14 submitted sig figs are capped at the float_precision length.
+        assert AnnotatedData.from_submission("1.2345678901234", "eV").precision == _FLOAT_PRECISION
         zeros = "1." + "0" * (_FLOAT_PRECISION + 5)
-        mantissa = AnnotatedData.from_submission(zeros, "eV").as_dict()["display"].split(" ")[0].replace(".", "")
-        assert len(mantissa) == _FLOAT_PRECISION
+        assert AnnotatedData.from_submission(zeros, "eV").precision == _FLOAT_PRECISION
 
-    def test_display_does_not_change_stored_numeric_value(self):
-        # Preserving display precision must not alter the stored float value/input_value.
+    def test_precision_does_not_change_stored_numeric_value(self):
+        # Recording precision must not alter the stored float value/input_value.
         leaf = AnnotatedData.from_submission("1.000", "eV").as_dict()
         assert leaf["input_value"] == 1.0
 
     def test_identity_still_normalizes_regardless_of_trailing_zeros(self):
-        # condition_key uses the canonical float, not display: "300" and "300.0" still collapse.
+        # condition_key uses the canonical float, not precision: "300" and "300.0" still collapse.
         assert AnnotatedData.condition_key({"T": parse_condition_value("300 K")}) == AnnotatedData.condition_key(
             {"T": parse_condition_value("300.000 K")}
         )
@@ -309,20 +294,23 @@ class TestDisplayPreservesTrailingZeros:
 
 class TestAnnotatedData:
     def test_unit_and_error_optional(self):
-        leaf = AnnotatedData(value=5.0, input_value=5.0, display="5")
+        leaf = AnnotatedData(value=5.0, input_value=5.0)
         assert leaf.unit is None
         assert leaf.input_unit is None
         assert leaf.error is None
+        assert leaf.precision is None
 
     def test_unit_case_preserved(self):
         # units must never be casefolded (eV stays eV, not ev)
-        leaf = AnnotatedData(value=1.0, unit="eV", input_value=1.0, input_unit="eV", display="1 eV")
+        leaf = AnnotatedData(value=1.0, unit="eV", input_value=1.0, input_unit="eV")
         assert leaf.unit == "eV"
         assert leaf.input_unit == "eV"
 
-    def test_display_required(self):
-        with pytest.raises(PydanticValidationError):
-            AnnotatedData(value=5.0, input_value=5.0)
+    def test_display_not_stored(self):
+        # display is derived on read, never a stored field: value alone is a valid leaf.
+        leaf = AnnotatedData(value=5.0).as_dict()
+        assert leaf == {"value": 5.0}
+        assert "display" not in leaf
 
 
 class TestAnnotatedDataFactory:
@@ -333,7 +321,7 @@ class TestAnnotatedDataFactory:
         assert isinstance(leaf, AnnotatedData)
         assert leaf.input_value == 4.2
         assert leaf.input_unit == "eV"
-        assert leaf.display == "4.2 eV"
+        assert leaf.precision == 2  # "4.2" -> 2 significant figures
 
     def test_from_submission_canonicalizes_to_si(self):
         leaf = AnnotatedData.from_submission(4.2, "eV")
@@ -346,7 +334,7 @@ class TestAnnotatedDataFactory:
 
     def test_as_dict_omits_none_fields(self):
         leaf = AnnotatedData.from_submission(5, None).as_dict()
-        assert leaf == {"value": 5.0, "input_value": 5.0, "display": "5"}
+        assert leaf == {"value": 5.0}
 
     def test_identity_scalar_categorical_verbatim(self):
         assert AnnotatedData.identity_scalar("cubic") == "cubic"
@@ -367,3 +355,70 @@ class TestAnnotatedDataFactory:
 
     def test_condition_key_method_empty(self):
         assert AnnotatedData.condition_key({}) == ""
+
+
+# ---------------------------------------------------------------------------
+# try_from_value — the unified scalar entry point (leaf vs categorical, unit sources)
+# ---------------------------------------------------------------------------
+
+
+class TestTryFromValue:
+    def test_bare_number_becomes_unitless_leaf(self):
+        leaf = AnnotatedData.try_from_value(5, None)
+        assert leaf is not None
+        assert leaf.as_dict() == {"value": 5.0}
+
+    def test_number_with_key_unit(self):  # spreadsheet scenario A: "bandgap (eV)" -> 5
+        leaf = AnnotatedData.try_from_value(5, "eV")
+        assert leaf is not None
+        assert leaf.input_value == 5.0
+        assert leaf.input_unit == "eV"
+
+    def test_string_with_embedded_unit(self):  # spreadsheet scenario B: "bandgap" -> "5 eV"
+        leaf = AnnotatedData.try_from_value("5 eV", None)
+        assert leaf is not None
+        assert leaf.input_value == 5.0
+        assert leaf.input_unit == "eV"
+
+    def test_scenarios_a_and_b_converge(self):
+        # Unit-in-key (number value) and unit-in-value (string) produce the same physical leaf.
+        a = AnnotatedData.try_from_value(5, "eV")
+        b = AnnotatedData.try_from_value("5 eV", None)
+        assert a is not None and b is not None
+        for field in ("value", "unit", "input_value", "input_unit"):
+            assert getattr(a, field) == getattr(b, field)
+
+    def test_categorical_string_is_not_a_leaf(self):
+        assert AnnotatedData.try_from_value("cubic", None) is None
+
+    def test_boolean_is_not_a_leaf(self):
+        assert AnnotatedData.try_from_value(True, None) is None
+
+    def test_unrecognized_unit_in_value_kept_verbatim(self):
+        leaf = AnnotatedData.try_from_value("5 apples", None)
+        assert leaf is not None
+        assert leaf.value == 5.0
+        assert leaf.unit == "apples"
+        assert leaf.input_unit == "apples"
+
+    def test_precision_captured_from_string(self):
+        leaf = AnnotatedData.try_from_value("5.00 eV", None)
+        assert leaf is not None
+        assert leaf.precision == 3
+
+    def test_conflicting_units_key_wins_via_conversion(self):
+        # key unit eV, value unit meV -> converted into eV (5 meV == 0.005 eV).
+        leaf = AnnotatedData.try_from_value("5 meV", "eV")
+        assert leaf is not None
+        assert leaf.input_unit == "eV"
+        assert math.isclose(leaf.input_value, 0.005, rel_tol=1e-9)
+
+    def test_conflicting_units_same_dimension_ok(self):
+        leaf = AnnotatedData.try_from_value("5 eV", "eV")
+        assert leaf is not None
+        assert leaf.input_unit == "eV"
+        assert leaf.input_value == 5.0
+
+    def test_incompatible_units_rejected(self):
+        with pytest.raises(UnitError):
+            AnnotatedData.try_from_value("5 kg", "eV")

@@ -141,25 +141,54 @@ def _split_ufloat(magnitude: float | UFloat) -> tuple[float, float | None]:
     return float(magnitude), None
 
 
+def _reconcile_units(mag: str, embedded_unit: str | None, key_unit: str | None) -> tuple[Any, str | None]:
+    """Reconcile a value-embedded unit with a key-annotation unit (the key unit wins).
+
+    Returns ``(magnitude, unit)``:
+
+    - only one unit present (or neither) -> that unit, magnitude unchanged;
+    - both present and equal -> that unit, magnitude unchanged;
+    - both present and different -> the magnitude is converted from ``embedded_unit`` into
+      ``key_unit`` via Pint, so the stored form honors the key's declared unit.
+
+    Raises:
+        UnitError: when the two units differ and are not dimensionally convertible (including when
+            either is a unit Pint does not recognize).
+    """
+    if not (embedded_unit and key_unit) or nfc_normalize(embedded_unit) == nfc_normalize(key_unit):
+        return mag, key_unit or embedded_unit
+    try:
+        converted = _UREG.Quantity(_parse_magnitude(mag), embedded_unit).to(key_unit)
+    except Exception as err:  # broad catch: undefined unit or dimensionality mismatch
+        raise UnitError(
+            f"value unit {embedded_unit!r} is not convertible to the key unit {key_unit!r}",
+            value=mag,
+        ) from err
+    return converted.magnitude, key_unit
+
+
 class AnnotatedData(BaseModel):
-    """The canonical shape of an annotated ``Contribution.data`` leaf, and its factory.
+    """The canonical shape of a ``Contribution.data`` quantity leaf, and its factory.
 
     ``value``/``unit`` hold the SI-canonical form (or the submitted form when the unit is
-    unrecognized/dimensionless); ``input_value``/``input_unit`` always hold the submitted form.
-    ``error`` is the (SI-propagated) standard deviation, present only when the magnitude carried an
-    uncertainty. ``display`` is a human-readable rendering of the *submitted* magnitude/unit.
+    unrecognized/dimensionless); ``input_value``/``input_unit`` hold the submitted form. ``error`` is
+    the (SI-propagated) standard deviation, present only when the magnitude carried an uncertainty;
+    ``input_error`` is the same uncertainty in the submitted unit. ``precision`` is the number of
+    significant digits the submission carried (string magnitudes only); it is ``None`` for a numeric
+    submission, which carries no trailing-zero information.
 
-    This model is the single source of truth for the leaf: :meth:`from_submission` builds one from a
-    raw value + unit, :meth:`as_dict` serializes it to the stored dict, and :meth:`identity_scalar`
-    renders its contribution to a condition identity string.
+    The leaf carries no human-readable ``display`` string: clients format the value however they
+    like from these fields (``input_value``/``input_unit``/``input_error``/``precision`` reproduce the
+    submitted form exactly).
     """
 
     value: float
     unit: str | None = None
-    input_value: float
+    input_value: float | None = None
     input_unit: str | None = None
     error: float | None = None
-    display: str
+    input_error: float | None = None
+    precision: int | None = None
 
     @classmethod
     def from_submission(cls, value: Any, unit: str | None) -> Self:
@@ -167,12 +196,13 @@ class AnnotatedData(BaseModel):
 
         Args:
             value: the submitted magnitude (number, or a string possibly carrying uncertainty)
-            unit: the unit string parsed from the annotated key, or ``None``/empty for unit-less
+            unit: the resolved unit string, or ``None``/empty for unit-less
 
         ``value``/``unit`` are canonical SI when convertible else the submitted form;
-        ``input_value``/``input_unit`` are always the submitted form; ``error`` is present only for an
-        uncertain magnitude; ``display`` renders the submitted form (trailing-zero precision preserved,
-        capped at ``float_precision`` significant figures).
+        ``input_value``/``input_unit`` hold the submitted form (kept only when a unit is present or
+        canonicalization changed the magnitude); ``error`` is present only for an uncertain magnitude;
+        ``precision`` is the submitted significant-figure count for a string magnitude (``None`` for a
+        numeric submission).
 
         Raises:
             UnitError: if the magnitude cannot be parsed.
@@ -182,8 +212,9 @@ class AnnotatedData(BaseModel):
             unit = nfc_normalize(unit)
         magnitude = _parse_magnitude(value)
         nominal, error = _split_ufloat(magnitude)
-        # display always reflects the submitted (pre-canonicalization) magnitude/unit.
-        display = _format_display(value, nominal, error, unit, settings.mpcontribs.float_precision)
+        # Precision is only recoverable from a string submission
+        cap = settings.mpcontribs.float_precision
+        precision = min(_count_sig_figs(value), cap) if isinstance(value, str) else None
 
         # Canonicalize to SI base units when Pint recognizes the unit; otherwise keep the submitted form.
         canon_value, canon_unit, canon_error = nominal, unit, error
@@ -207,8 +238,41 @@ class AnnotatedData(BaseModel):
             input_value=nominal,
             input_unit=unit,
             error=canon_error,
-            display=display,
+            input_error=error,
+            precision=precision,
         )
+
+    @classmethod
+    def try_from_value(cls, value: Any, key_unit: str | None) -> Self | None:
+        """Build a leaf from an arbitrary scalar, or return ``None`` when it is categorical.
+
+        Handles both spreadsheet forms and reconciles the two possible unit sources (decision:
+        the key unit wins on conflict):
+
+        - a number -> magnitude from the number, unit from ``key_unit`` (may be ``None``);
+        - a string that does not start like a number (``"cubic"``) -> ``None`` (keep it verbatim);
+        - a string that starts like a number -> split into magnitude + embedded unit; if both an
+          embedded unit and ``key_unit`` are present and differ, the magnitude is converted from the
+          embedded unit into ``key_unit`` (raising :class:`UnitError` on a dimensional mismatch), so
+          the stored form honors the key's declared unit. An unrecognized unit is kept verbatim.
+
+        ``bool`` is categorical (returns ``None``); it is an ``int`` subclass but never a measurement.
+        """
+        if isinstance(value, bool):
+            return None
+        if isinstance(value, (int, float)):
+            return cls.from_submission(value, key_unit)
+        if not isinstance(value, str):
+            return None
+        text = _normalize_sci_notation(value.strip())
+        if not _NUMERIC_START.match(text):
+            return None
+        match = _MAGNITUDE_UNIT.match(text)
+        if match is None:
+            return None
+        mag, embedded_unit = match.group("mag").strip(), match.group("unit").strip() or None
+        magnitude, unit = _reconcile_units(mag, embedded_unit, key_unit)
+        return cls.from_submission(magnitude, unit)
 
     def as_dict(self) -> dict[str, Any]:
         """The stored leaf shape: ``model_dump(exclude_none=True)`` so ``None`` fields are omitted."""
@@ -251,7 +315,8 @@ def _count_sig_figs(mag: str) -> int:
 
     Trailing zeros after a decimal point are significant (``"1.000"`` -> 4, so higher measurement
     confidence than ``"1.0"``); leading zeros are not (``"0.00500"`` -> 3). Falls back to 1 when no
-    number leads the string. Used to preserve user-supplied precision in the ``display`` string.
+    number leads the string. Captured as the leaf's ``precision`` field so clients can reproduce the
+    submitted precision when formatting.
     """
     m = _LEADING_NUM.match(mag.strip())
     if not m:
@@ -261,46 +326,6 @@ def _count_sig_figs(mag: str) -> int:
         stripped = s.replace(".", "").lstrip("0")
         return len(stripped) if stripped else max(len(s.split(".", 1)[1]), 1)
     return len(s.lstrip("0") or "0")
-
-
-def _format_number(x: float, sig_figs: int, *, keep_trailing_zeros: bool) -> str:
-    """Render ``x`` to ``sig_figs`` significant figures.
-
-    With ``keep_trailing_zeros`` the ``#`` format flag retains the zeros the user typed
-    (``"1.000"``); the bare trailing ``.`` that flag can leave (``"5."``, ``"1.e+03"``) is stripped.
-    Without it, trailing zeros are trimmed (plain ``g``) — used for numeric input, which carries no
-    trailing-zero information to preserve.
-    """
-    sig_figs = max(sig_figs, 1)
-    flag = "#" if keep_trailing_zeros else ""
-    s = format(x, f"{flag}.{sig_figs}g")
-    if s.endswith("."):
-        s = s[:-1]
-    return s.replace(".e", "e").replace(".E", "E")
-
-
-def _display_magnitude(value: Any, nominal: float, cap: int) -> str:
-    """Format the nominal magnitude for display, capped at ``cap`` significant figures.
-
-    A string submission keeps its trailing zeros up to the cap (precision is meaningful: ``"1.000"``
-    vs ``"1.0"``); a numeric submission carries no such information, so it is rendered trimmed and
-    capped. ``cap`` is the length cap that bounds how much precision a caller can submit.
-    """
-    if isinstance(value, str):
-        return _format_number(nominal, min(_count_sig_figs(value), cap), keep_trailing_zeros=True)
-    return _format_number(nominal, cap, keep_trailing_zeros=False)
-
-
-def _format_display(value: Any, nominal: float, error: float | None, unit: str | None, cap: int) -> str:
-    """Render the submitted magnitude/unit for display, e.g. ``"4.20 eV"``, ``"4.2+/-0.3 eV"``, ``"5"``.
-
-    The nominal magnitude preserves the submitted trailing zeros (capped at ``cap`` sig figs); the
-    uncertainty is rendered trimmed and capped.
-    """
-    mag = _display_magnitude(value, nominal, cap)
-    if error is not None:
-        mag = f"{mag}+/-{_format_number(error, cap, keep_trailing_zeros=False)}"
-    return f"{mag} {unit}" if unit else mag
 
 
 def _format_unit(units: Any) -> str:

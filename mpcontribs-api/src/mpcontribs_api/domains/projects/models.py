@@ -13,7 +13,6 @@ class Column(BaseModel):
     min: float | None = None
     max: float | None = None
     unit: str | None = None
-    precision: int | None = None
 
     @property
     def segments(self) -> tuple[str, ...]:

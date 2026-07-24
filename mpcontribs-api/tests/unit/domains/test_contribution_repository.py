@@ -26,9 +26,16 @@ class TestIsAtomicLeaf:
     def test_plain_group_dict_is_not_atomic(self):
         assert not _is_atomic_leaf({"a": 1, "b": 2})
 
-    def test_partial_leaf_shape_is_not_atomic(self):
-        # Missing a required leaf marker ("display") -> treated as a descendable group.
-        assert not _is_atomic_leaf({"value": 1.0, "input_value": 1.0})
+    def test_minimal_value_leaf_is_atomic(self):
+        # A bare-number leaf has only ``value`` (no input_value/display) and is still a leaf.
+        assert _is_atomic_leaf({"value": 1.0})
+        assert _is_atomic_leaf({"value": 1.0, "input_value": 1.0})
+
+    def test_dict_with_non_reserved_key_is_not_atomic(self):
+        # A numeric ``value`` alongside a non-reserved key is a descendable group, not a leaf.
+        assert not _is_atomic_leaf({"value": 1.0, "extra": 2})
+        # ``value`` present but non-numeric -> not a leaf either.
+        assert not _is_atomic_leaf({"value": "text"})
 
 
 class TestFlattenForMerge:
