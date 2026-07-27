@@ -194,6 +194,20 @@ class Identity:
         """A Mongo projection selecting exactly the identity fields."""
         return {f.name: 1 for f in fields(cls)}
 
+    @staticmethod
+    def check_hierarchy(material_id: str | None, chemical_system_id: str | None, formula: str | None) -> None:
+        """Enforce the identifier specificity hierarchy ``chemical_system_id`` > ``formula`` > ``material_id."""
+        if not chemical_system_id:
+            raise ValidationError(
+                "chemical_system_id is required (identifier hierarchy: chemical_system_id > formula > material_id)."
+            )
+        if material_id is not None and formula is None:
+            raise ValidationError(
+                "formula is required when material_id is specified "
+                "(identifier hierarchy: chemical_system_id > formula > material_id).",
+                material_id=material_id,
+            )
+
 
 class ContributionBase(BaseDocumentWithInput[PydanticObjectId]):
     """Shared settings and fields for Contribution, ContributionIn, and ContributionOut."""
@@ -287,17 +301,8 @@ class ContributionIn(ContributionBase):
 
     @model_validator(mode="after")
     def _check_identifier_hierarchy(self) -> ContributionIn:
-        """Enforce ``chemical_system_id`` > ``formula`` > ``material_id``.
-
-        ``chemical_system_id`` is required
-        ``material_id`` requires ``formula`` to be specified
-        """
-        if self.material_id is not None and self.formula is None:
-            raise ValidationError(
-                "formula is required when material_id is specified "
-                "(identifier hierarchy: chemical_system_id > formula > material_id).",
-                material_id=self.material_id,
-            )
+        """Enforce ``chemical_system_id`` > ``formula`` > ``material_id`` (see :meth:`Identity.check_hierarchy`)."""
+        Identity.check_hierarchy(self.material_id, self.chemical_system_id, self.formula)
         return self
 
     def has_components(self) -> bool:

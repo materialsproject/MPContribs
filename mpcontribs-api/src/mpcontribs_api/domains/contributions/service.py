@@ -24,6 +24,7 @@ from mpcontribs_api.domains.contributions.models import (
     ContributionFilter,
     ContributionIn,
     ContributionPatch,
+    Identity,
     IdentityKey,
     Scalar,
     extract_unique_value,
@@ -95,8 +96,8 @@ class ContributionService:
         ``settings.mongo.max_concurrent_transactions``. Per-item failures are returned in the
         summary's ``failed`` list; the request as a whole does not raise on partial failure.
 
-        A duplicate identity ``(project, material_id, chemical_system_id, formula, unique_value)``
-        is rejected as a conflict. See ``_resolve_identity``.
+        A duplicate identity ``(project, material_id, chemical_system_id, formula, unique_value,
+        condition_key)`` is rejected as a conflict. See ``_resolve_identity``.
 
         Args:
             contributions: contributions to insert; may include nested structures/tables/attachments
@@ -167,9 +168,9 @@ class ContributionService:
         """Resolve each contribution's identity (``unique_value``) and reject duplicates.
 
         A project designates at most one ``unique_column``; its value is promoted from the
-        contribution's ``data`` to ``unique_value``, the tail of the identity tuple
-        ``(project, material_id, chemical_system_id, formula, unique_value)``. A contribution is
-        rejected when:
+        contribution's ``data`` to ``unique_value`` in the identity tuple
+        ``(project, material_id, chemical_system_id, formula, unique_value, condition_key)``. A
+        contribution is rejected when:
 
         - its ``project`` is not found or not accessible;
         - the project sets a ``unique_column`` but the value is missing or non-scalar; or
@@ -574,16 +575,7 @@ class ContributionService:
         )
         material_id = set_fields["material_id"] if "material_id" in set_fields else existing_material_id
         formula = set_fields["formula"] if "formula" in set_fields else existing_formula
-        if not chemical_system_id:
-            raise ValidationError(
-                "chemical_system_id is required (identifier hierarchy: chemical_system_id > formula > material_id)."
-            )
-        if material_id is not None and formula is None:
-            raise ValidationError(
-                "formula is required when material_id is specified "
-                "(identifier hierarchy: chemical_system_id > formula > material_id).",
-                material_id=material_id,
-            )
+        Identity.check_hierarchy(material_id, chemical_system_id, formula)
 
     async def delete_contributions(self, filter: ContributionFilter) -> BulkDeleteSummary:
         """Delete a contribution and all of its child components

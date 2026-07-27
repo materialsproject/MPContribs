@@ -157,7 +157,8 @@ class MongoDbContributionRepository(
         (the empty-``unique_column`` case, since ``keep_nulls=False`` strips it).
 
         Args:
-            keys: identity tuples (project, material_id, chemical_system_id, formula, unique_value)
+            keys: identity tuples (project, material_id, chemical_system_id, formula, unique_value,
+                condition_key)
 
         Returns:
             set[IdentityKey]: the subset of ``keys`` already present
@@ -259,7 +260,7 @@ class MongoDbContributionRepository(
         """Atomically upsert a Contribution by its full identity.
 
         Relies on the unique index over (project, material_id, chemical_system_id, formula,
-        unique_value) so that concurrent requests targeting the same identity cannot both win the
+        unique_value, condition_key) so that concurrent requests targeting the same identity cannot both win the
         insert branch. Fields the caller did not set are not touched (partial update). On insert a
         fresh Contribution document is written with ``is_public=False``.
 
