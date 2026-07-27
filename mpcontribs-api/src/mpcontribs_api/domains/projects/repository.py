@@ -187,9 +187,8 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
             if not self._user.is_admin:
                 project.is_approved = existing.is_approved
         else:
-            # TODO: Check if Kong supplies email
-            # New project: the caller owns it, regardless of the submitted owner.
-            # project.owner = self._user.username
+            # New project is owned by the caller
+            project.owner = self._user.username
             # A new project starts unapproved; only an admin may create it pre-approved.
             if not self._user.is_admin:
                 project.is_approved = False

@@ -372,11 +372,11 @@ class TestUpsertProjectAuthorization:
         assert found.title == "Original"
 
     async def test_new_project_sets_owner_to_caller(self, db):
-        # Body owner is someone else; the caller's identity must win.
+        # Body carries a foreign owner; the authenticated caller's identity must win on insert.
         data = _project_in("auth-newowner", owner="google:alice@example.com")
         await _repo(BOB).upsert_project_by_id(id="auth-newowner", data=data)
         found = await Project.find_one(Project.id == "auth-newowner")
-        assert found.owner == "google:alice@example.com"
+        assert found.owner == "google:bob@example.com"
 
     async def test_update_preserves_original_owner(self, db):
         await _insert("auth-preserve", owner="google:alice@example.com")

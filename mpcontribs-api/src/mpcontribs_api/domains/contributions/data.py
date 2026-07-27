@@ -153,9 +153,9 @@ def _validate_plain_key(key: Any) -> None:
     """Validate a single plain key token (a path segment or a condition name).
 
     Punctuation, spaces, and casing are no longer rejected: keys are coerced to ``snake_case`` on the
-    write path (see :func:`to_snake_case`). This only rejects keys that cannot be coerced into a
-    usable token: non-ASCII, empty, or ones that reduce to an empty string after coercion
-    (e.g. ``"***"``).
+    write path (see :func:`to_snake_case`), which folds ``*``/``/``/``|`` and any other non-alphanumeric
+    run to ``_``. This only rejects keys that cannot be coerced into a usable token: non-ASCII, empty,
+    or ones that reduce to an empty string after coercion (e.g. ``"***"``).
     """
     if not isinstance(key, str) or not key.isascii():
         raise ValidationError("Non-ASCII key found in Contribution.data. All dict keys must be only ASCII")

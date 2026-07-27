@@ -241,6 +241,14 @@ class TestExpandContribution:
         assert set(data) == {"band_gap", "t"}
         assert data["band_gap"]["input_unit"] == "eV"
 
+    def test_forbidden_name_chars_folded_to_underscore(self):
+        # '*', '/', and '|' are allowed in the name portion but folded to '_' (not rejected). The
+        # same characters stay verbatim inside a unit (S/cm), which is never snake_cased.
+        rows = expand_contribution(_contrib_in({"a/b*c|d (S/cm)": 5}))
+        data = rows[0].contribution.data
+        assert set(data) == {"a_b_c_d"}
+        assert data["a_b_c_d"]["input_unit"] == "S/cm"
+
     def test_dotted_path_segments_coerced(self):
         rows = expand_contribution(_contrib_in({"Outer.Inner Key (eV)": 1.1}))
         data = rows[0].contribution.data

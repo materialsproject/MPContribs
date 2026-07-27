@@ -109,11 +109,12 @@ class TestContributionBase:
 
     def test_data_key_validation(self):
         # Punctuation/spaces/casing are no longer rejected at the ContributionIn level: keys are
-        # coerced to snake_case later (in expand_contribution), so validation only checks that a key
-        # is ASCII and can be coerced to a non-empty token.
+        # coerced to snake_case later (in expand_contribution), which folds '*', '/', and '|' to '_',
+        # so validation only checks that a key is ASCII and can be coerced to a non-empty token.
         _make_contribution_in(data={"test.": "pass"})
         _make_contribution_in(data={"Band Gap": "pass"})
         _make_contribution_in(data={"test||": "pass"})
+        _make_contribution_in(data={"a/b*c": "pass"})
         with pytest.raises(ValidationError, match="Non-ASCII key found in Contribution.data"):
             _make_contribution_in(data={"ΔE": "fail"})
         with pytest.raises(ValidationError, match="reduces to an empty string"):
