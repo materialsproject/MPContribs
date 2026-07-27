@@ -84,17 +84,19 @@ class TestContributionBase:
                 }
             )
 
-    def test_missing_formula_raises(self):
-        with pytest.raises(PydanticValidationError):
-            ContributionIn(
-                **{
-                    "_id": PydanticObjectId(),
-                    "project": "proj",
-                    "material_id": "mp-001",
-                    "chemical_system_id": "Fe-O",
-                    "data": {},
-                }
-            )
+    def test_formula_optional_when_no_material_id(self):
+        # formula is no longer unconditionally required: a chemical-system-level contribution is
+        # valid (identifier hierarchy: chemical_system_id > formula > material_id).
+        contrib = ContributionIn(
+            **{
+                "_id": PydanticObjectId(),
+                "project": "proj",
+                "chemical_system_id": "Fe-O",
+                "data": {},
+            }
+        )
+        assert contrib.formula is None
+        assert contrib.material_id is None
 
     def test_data_can_be_empty_dict(self):
         contrib = _make_contribution_in(data={})
@@ -218,6 +220,39 @@ class TestPatchIdentifierValidation:
         assert patch.material_id is None
         assert patch.chemical_system_id is None
         assert patch.formula is None
+
+
+class TestIdentifierHierarchy:
+    """chemical_system_id > formula > material_id: each level requires the ones above it."""
+
+    def _build(self, **identity):
+        return ContributionIn(
+            _id=PydanticObjectId(), project="proj", data={}, **identity
+        )
+
+    def test_chemical_system_only_is_valid(self):
+        contrib = self._build(chemical_system_id="Fe-O")
+        assert contrib.chemical_system_id == "Fe-O"
+        assert contrib.formula is None
+        assert contrib.material_id is None
+
+    def test_chemical_system_and_formula_is_valid(self):
+        contrib = self._build(chemical_system_id="Fe-O", formula="Fe2O3")
+        assert contrib.formula == "Fe2O3"
+        assert contrib.material_id is None
+
+    def test_full_triple_is_valid(self):
+        contrib = self._build(chemical_system_id="Fe-O", formula="Fe2O3", material_id="mp-1")
+        assert contrib.material_id == "mp-1"
+
+    def test_material_id_without_formula_raises(self):
+        with pytest.raises(ValidationError, match="formula is required when material_id"):
+            self._build(chemical_system_id="Fe-O", material_id="mp-1")
+
+    def test_missing_chemical_system_raises(self):
+        # chemical_system_id is required by its type, so omitting it is a Pydantic error.
+        with pytest.raises(PydanticValidationError):
+            self._build(formula="Fe2O3")
 
 
 # ---------------------------------------------------------------------------

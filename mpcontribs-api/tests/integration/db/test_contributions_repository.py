@@ -112,6 +112,43 @@ class TestInsertContribution:
 
 
 # ---------------------------------------------------------------------------
+# Identifier hierarchy: chemical_system_id > formula > material_id
+# A contribution may stop at the chemical-system level (null material_id/formula).
+# ---------------------------------------------------------------------------
+
+
+class TestNullableIdentifierHierarchy:
+    async def test_chemical_system_only_persists_with_null_identifiers(self, db):
+        ci = _contrib_in(project="chem-only", material_id=None, formula=None)
+        doc = Contribution.from_input_model(ci)
+        result = await _repo().insert_contribution(doc)
+        found = await Contribution.find_one(Contribution.id == result.id)
+        assert found is not None
+        assert found.chemical_system_id == "Fe-O"
+        # keep_nulls=False strips the absent identity fields; they read back as None.
+        assert found.material_id is None
+        assert found.formula is None
+
+    async def test_existing_identities_matches_null_identity(self, db):
+        ci = _contrib_in(project="chem-only", material_id=None, formula=None)
+        await _repo().insert_contribution(Contribution.from_input_model(ci))
+        key = ci.identity().as_tuple()
+        found = await _repo().existing_identities([key])
+        assert key in found
+
+    async def test_duplicate_chemical_system_only_collides_on_unique_index(self, db):
+        from pymongo.errors import DuplicateKeyError
+
+        ci = _contrib_in(project="chem-only", material_id=None, formula=None)
+        await _repo().insert_contribution(Contribution.from_input_model(ci))
+        dup = _contrib_in(project="chem-only", material_id=None, formula=None)
+        # Same (project, chemical_system_id) with null material_id/formula/unique_value is one
+        # unique key — the second insert must be rejected.
+        with pytest.raises(DuplicateKeyError):
+            await _repo().insert_contribution(Contribution.from_input_model(dup))
+
+
+# ---------------------------------------------------------------------------
 # insert_many_contributions (bulk)
 # ---------------------------------------------------------------------------
 

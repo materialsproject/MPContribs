@@ -519,23 +519,71 @@ class ContributionService:
         unique_value = await self._resolve_unique_value(contribution.project, contribution.data)
         return await self._contributions.upsert_contribution_by_id(id, contribution, unique_value)
 
-    async def patch_contribution_by_id(self, id: str, update: ContributionPatch) -> Contribution:
-        """Patch a single contribution by id, recomputing ``unique_value`` if identity inputs change.
+    # Identity fields subject to the specificity hierarchy chemical_system_id > formula > material_id.
+    _IDENTITY_FIELDS = frozenset({"material_id", "chemical_system_id", "formula"})
 
-        ``unique_value`` derives from (project, data); it is only recomputed when the patch touches
-        either, so metadata-only patches (e.g. ``is_public``) don't re-read the project or risk
-        failing on a legacy document missing the unique_column value.
+    async def patch_contribution_by_id(self, id: str, update: ContributionPatch) -> Contribution:
+        """Patch a single contribution by id.
+
+        Re-reads the existing document when the patch touches identity inputs, to (a) recompute
+        ``unique_value`` when ``data``/``project`` change and (b) validate the identifier hierarchy
+        against the *merged* state when ``material_id``/``chemical_system_id``/``formula``. Metadata-only
+        patches (e.g. ``is_public``) skip the read entirely, so they don't risk failing on a legacy document
+        missing the unique_column value.
         """
         set_fields = update.model_dump(exclude_unset=True)
-        if "data" not in set_fields and "project" not in set_fields:
+        touches_unique = "data" in set_fields or "project" in set_fields
+        touches_identity = bool(self._IDENTITY_FIELDS & set_fields.keys())
+        if not touches_unique and not touches_identity:
             return await self._contributions.patch_contribution_by_id(id, update)
+
         existing = await self._contributions.get_contribution_by_id(id, fields=None)
         if existing is None or existing.project is None:
             raise NotFoundError(f"contribution '{id}' not found")
+
+        if touches_identity:
+            self._validate_identifier_hierarchy_merged(
+                set_fields,
+                existing_material_id=existing.material_id,
+                existing_chemical_system_id=existing.chemical_system_id,
+                existing_formula=existing.formula,
+            )
+        if not touches_unique:
+            return await self._contributions.patch_contribution_by_id(id, update)
+
         project = set_fields.get("project") or existing.project
         data = set_fields["data"] if "data" in set_fields else existing.data
         unique_value = await self._resolve_unique_value(project, data)
         return await self._contributions.patch_contribution_by_id(id, update, unique_value=unique_value)
+
+    @staticmethod
+    def _validate_identifier_hierarchy_merged(
+        set_fields: dict,
+        *,
+        existing_material_id: str | None,
+        existing_chemical_system_id: str | None,
+        existing_formula: str | None,
+    ) -> None:
+        """Reject a patch whose merged identity violates chemical_system_id > formula > material_id.
+
+        The merged value of each identity field is the patched value when set (``exclude_unset``, so
+        an explicit ``null`` counts) and the existing document's value otherwise.
+        """
+        chemical_system_id = (
+            set_fields["chemical_system_id"] if "chemical_system_id" in set_fields else existing_chemical_system_id
+        )
+        material_id = set_fields["material_id"] if "material_id" in set_fields else existing_material_id
+        formula = set_fields["formula"] if "formula" in set_fields else existing_formula
+        if not chemical_system_id:
+            raise ValidationError(
+                "chemical_system_id is required (identifier hierarchy: chemical_system_id > formula > material_id)."
+            )
+        if material_id is not None and formula is None:
+            raise ValidationError(
+                "formula is required when material_id is specified "
+                "(identifier hierarchy: chemical_system_id > formula > material_id).",
+                material_id=material_id,
+            )
 
     async def delete_contributions(self, filter: ContributionFilter) -> BulkDeleteSummary:
         """Delete a contribution and all of its child components

@@ -10,7 +10,7 @@ from pymongo.errors import BulkWriteError
 from mpcontribs_api.authz import ADMIN_GROUP, User
 from mpcontribs_api.config import MongoSettings
 from mpcontribs_api.domains.attachments.models import Attachment, AttachmentIn
-from mpcontribs_api.domains.contributions.models import Contribution, ContributionIn
+from mpcontribs_api.domains.contributions.models import Contribution, ContributionIn, ContributionPatch
 from mpcontribs_api.domains.contributions.service import ContributionService
 from mpcontribs_api.domains.structures.models import (
     Lattice,
@@ -1128,3 +1128,53 @@ class TestDeleteContributionsNoneComponents:
         struct_repo.delete_by_ids.assert_not_called()
         table_repo.delete_by_ids.assert_not_called()
         attach_repo.delete_by_ids.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# patch_contribution_by_id — identifier hierarchy on the merged state
+# ---------------------------------------------------------------------------
+
+
+def _existing_doc(*, material_id, chemical_system_id, formula, project="proj"):
+    """A stand-in for the persisted document that patch re-reads to validate the merged identity."""
+    return SimpleNamespace(
+        id=_oid(),
+        project=project,
+        material_id=material_id,
+        chemical_system_id=chemical_system_id,
+        formula=formula,
+        data={},
+    )
+
+
+class TestPatchIdentifierHierarchy:
+    async def test_patch_material_id_onto_doc_without_formula_raises(self):
+        svc, contrib_repo, *_ = _make_service()
+        existing = _existing_doc(material_id=None, chemical_system_id="Fe-O", formula=None)
+        contrib_repo.get_contribution_by_id.return_value = existing
+
+        with pytest.raises(ValidationError, match="formula is required when material_id"):
+            await svc.patch_contribution_by_id(str(existing.id), ContributionPatch(material_id="mp-1"))
+
+        # Rejected before any write.
+        contrib_repo.patch_contribution_by_id.assert_not_called()
+
+    async def test_patch_material_id_when_existing_has_formula_ok(self):
+        svc, contrib_repo, *_ = _make_service()
+        existing = _existing_doc(material_id=None, chemical_system_id="Fe-O", formula="Fe2O3")
+        contrib_repo.get_contribution_by_id.return_value = existing
+        contrib_repo.patch_contribution_by_id.return_value = MagicMock(spec=Contribution)
+
+        await svc.patch_contribution_by_id(str(existing.id), ContributionPatch(material_id="mp-1"))
+
+        contrib_repo.patch_contribution_by_id.assert_called_once()
+
+    async def test_metadata_only_patch_skips_existing_read(self):
+        svc, contrib_repo, *_ = _make_service()
+        contrib_repo.patch_contribution_by_id.return_value = MagicMock(spec=Contribution)
+
+        await svc.patch_contribution_by_id("some-id", ContributionPatch(is_public=True))
+
+        # No identity/unique inputs touched -> no re-read, straight to the plain patch.
+        contrib_repo.get_contribution_by_id.assert_not_called()
+        contrib_repo.patch_contribution_by_id.assert_called_once()

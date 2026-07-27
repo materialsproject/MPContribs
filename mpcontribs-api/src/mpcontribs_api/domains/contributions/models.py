@@ -17,7 +17,7 @@ from beanie import (
 )
 from bson.errors import InvalidId
 from fastapi_filter import FilterDepends, with_prefix
-from pydantic import BeforeValidator, Field, field_validator
+from pydantic import BeforeValidator, Field, field_validator, model_validator
 from pymongo import ASCENDING, IndexModel
 
 from mpcontribs_api.domains._shared.filters import BaseFilter
@@ -79,9 +79,10 @@ def _validate_nested_keys(value: Any) -> None:
 
 Scalar = str | int | float | bool
 
-# Identity in index order: the three fixed fields plus unique_value and condition_key. condition_key
-# is "" until pivoting is wired in (contrib-data-handling merge).
-IdentityKey = tuple[str, str, str, str, Scalar | None, str]
+# Identity in index order: project, material_id, chemical_system_id, formula, unique_value,
+# condition_key. material_id/formula are nullable (identifier hierarchy); condition_key is "" until
+# pivoting is wired in (contrib-data-handling merge).
+IdentityKey = tuple[str, str | None, str, str | None, Scalar | None, str]
 
 
 def _value_at(data: dict[str, Any], path: str) -> Any:
@@ -135,12 +136,18 @@ class Identity:
     ``unique_value`` is the project's ``unique_column`` value promoted onto the document (``None`` when
     the project sets no ``unique_column``); ``condition_key`` is the pivot discriminator, ``""`` until
     pivoting is wired in.
+
+    ``material_id`` and ``formula`` are nullable: identifiers follow a specificity hierarchy
+    (``chemical_system_id`` > ``formula`` > ``material_id``), so a contribution may stop at the
+    chemical-system or formula level.
     """
 
+    # WARNING: the order the fields are specified in reflects their ordering for indices. Changing the order
+    # creates index migration. Only change intentionally
     project: str
-    material_id: str
+    material_id: str | None
     chemical_system_id: str
-    formula: str
+    formula: str | None
     unique_value: Scalar | None = None
     condition_key: str = ""
 
@@ -170,9 +177,9 @@ class Identity:
         """Build from a raw Mongo document/projection, tolerating null-stripped fields."""
         return cls(
             project=doc["project"],
-            material_id=doc["material_id"],
+            material_id=doc.get("material_id"),
             chemical_system_id=doc["chemical_system_id"],
-            formula=doc["formula"],
+            formula=doc.get("formula"),
             unique_value=doc.get("unique_value"),
             condition_key=doc.get("condition_key") or "",
         )
@@ -191,10 +198,12 @@ class Identity:
 class ContributionBase(BaseDocumentWithInput[PydanticObjectId]):
     """Shared settings and fields for Contribution, ContributionIn, and ContributionOut."""
 
+    # Identifiers follow a specificity hierarchy: chemical_system_id > formula > material_id.
+    # chemical_system_id is always required
     project: str
-    material_id: str
+    material_id: str | None = None
     chemical_system_id: str
-    formula: str
+    formula: str | None = None
     is_public: bool = False
     data: Annotated[
         dict[str, Any],
@@ -222,8 +231,8 @@ class Contribution(ContributionBase):
 
     # Server-owned: the service extracts this from data at the project's unique_column path and stamps
     # it on the doc (see ContributionService._resolve_identity). None when the project sets no
-    # unique_column, in which case the (project, material_id, chemical_system_id, formula) triple is
-    # the identity. Never trusted from the request body.
+    # unique_column, in which case the identity is the (project, material_id, chemical_system_id,
+    # formula) tuple. Never trusted from the request body.
     unique_value: Scalar | None = None
     # Server-owned pivot-condition discriminator; "" until pivoting is wired in (see IdentityKey).
     condition_key: str = ""
@@ -262,14 +271,34 @@ class Contribution(ContributionBase):
 
 
 class ContributionIn(ContributionBase):
-    """Fields that users are allowed to submit when adding a Contribution."""
+    """Fields that users are allowed to submit when adding a Contribution.
 
-    material_id: MaterialId
+    Identifiers follow the specificity hierarchy ``chemical_system_id`` > ``formula`` >
+    ``material_id``: ``chemical_system_id`` is always required, and each lower level requires the ones
+    above it (see :meth:`_check_identifier_hierarchy`).
+    """
+
+    material_id: MaterialId | None = None
     chemical_system_id: ChemicalSystemId
-    formula: Formula
+    formula: Formula | None = None
     structures: list[StructureIn] | None = None
     tables: list[TableIn] | None = None
     attachments: list[AttachmentIn] | None = None
+
+    @model_validator(mode="after")
+    def _check_identifier_hierarchy(self) -> ContributionIn:
+        """Enforce ``chemical_system_id`` > ``formula`` > ``material_id``.
+
+        ``chemical_system_id`` is required
+        ``material_id`` requires ``formula`` to be specified
+        """
+        if self.material_id is not None and self.formula is None:
+            raise ValidationError(
+                "formula is required when material_id is specified "
+                "(identifier hierarchy: chemical_system_id > formula > material_id).",
+                material_id=self.material_id,
+            )
+        return self
 
     def has_components(self) -> bool:
         """Returns ``True`` if the contribution has any components (structures, tables, attachments)"""
