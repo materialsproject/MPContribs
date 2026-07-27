@@ -30,11 +30,19 @@ def _repo(user: User = ADMIN) -> MongoDbContributionRepository:
     return MongoDbContributionRepository(user)
 
 
-def _contrib_in(project: str = "test-proj", identifier: str = "mp-1", **overrides) -> ContributionIn:
+# Tests use ``identifier=`` to mint distinct contributions; it maps onto material_id, which (with the
+# fixed chemical_system_id/formula defaults) makes each contribution's identity tuple differ.
+def _contrib_in(
+    project: str = "test-proj",
+    identifier: str = "mp-1",
+    chemical_system_id: str = "Fe-O",
+    **overrides,
+) -> ContributionIn:
     defaults: dict = {
         "_id": PydanticObjectId(),
         "project": project,
-        "identifier": identifier,
+        "material_id": identifier,
+        "chemical_system_id": chemical_system_id,
         "formula": "Fe2O3",
         "data": {"band_gap": 2.1},
     }
@@ -42,14 +50,21 @@ def _contrib_in(project: str = "test-proj", identifier: str = "mp-1", **override
     return ContributionIn(**defaults)
 
 
-async def _insert(project="test-proj", identifier="mp-1", is_public: bool = False, **overrides) -> Contribution:
+async def _insert(
+    project="test-proj",
+    identifier="mp-1",
+    chemical_system_id="Fe-O",
+    is_public: bool = False,
+    **overrides,
+) -> Contribution:
     # Build a Contribution directly so is_public can be set explicitly.
     # from_input_model() always forces is_public=False, which is correct for
     # user-submitted data but inconvenient for test setup.
     doc = Contribution(
         _id=PydanticObjectId(),
         project=project,
-        identifier=identifier,
+        material_id=identifier,
+        chemical_system_id=chemical_system_id,
         formula=overrides.pop("formula", "Fe2O3"),
         data=overrides.pop("data", {"band_gap": 2.1}),
         is_public=is_public,
@@ -73,7 +88,7 @@ class TestInsertContribution:
         doc = await _insert(identifier="ins-basic")
         found = await Contribution.find_one(Contribution.id == doc.id)
         assert found is not None
-        assert found.identifier == "ins-basic"
+        assert found.material_id == "ins-basic"
 
     async def test_is_public_defaults_to_false(self, db):
         doc = await _insert(identifier="ins-priv")
@@ -93,7 +108,7 @@ class TestInsertContribution:
         result = await _repo().insert_contribution(doc)
         found = await Contribution.find_one(Contribution.id == result.id)
         assert found is not None
-        assert found.identifier == "ins-via-repo"
+        assert found.material_id == "ins-via-repo"
 
 
 # ---------------------------------------------------------------------------
@@ -196,7 +211,7 @@ class TestGetContributions:
             page = await _repo(ADMIN).get_contributions(
                 pagination=CursorParams(limit=2, cursor=cursor), filter=_noop_filter(), fields=None
             )
-            identifiers.update(c.identifier for c in page.items if c.identifier)
+            identifiers.update(c.material_id for c in page.items if c.material_id)
             cursor = page.next_cursor
             if cursor is None:
                 break
@@ -231,14 +246,14 @@ class TestGetContributions:
         formulas = {c.formula for c in page.items}
         assert formulas == {"Fe2O3"}
 
-    async def test_filter_by_identifier_ilike(self, db):
+    async def test_filter_by_material_id_ilike(self, db):
         await _insert(identifier="ilike-abc", is_public=True)
         await _insert(identifier="ilike-xyz", is_public=True)
-        f = ContributionFilter(identifier__ilike="ilike-a")
+        f = ContributionFilter(material_id__ilike="ilike-a")
         page = await _repo(ADMIN).get_contributions(
             pagination=CursorParams(), filter=f, fields=None
         )
-        identifiers = {c.identifier for c in page.items}
+        identifiers = {c.material_id for c in page.items}
         assert "ilike-abc" in identifiers
         assert "ilike-xyz" not in identifiers
 
@@ -258,7 +273,7 @@ class TestGetContributions:
         page = await _repo(ADMIN).get_contributions(
             pagination=CursorParams(), filter=f, fields=None
         )
-        identifiers = {c.identifier for c in page.items}
+        identifiers = {c.material_id for c in page.items}
         assert "nb-false" in identifiers
         assert "nb-true" not in identifiers
 
@@ -273,7 +288,7 @@ class TestGetContributionById:
         doc = await _insert(identifier="get-id")
         result = await _repo(ADMIN).get_contribution_by_id(str(doc.id), fields=None)
         assert result is not None
-        assert result.identifier == "get-id"
+        assert result.material_id == "get-id"
 
     async def test_returns_none_for_missing_id(self, db):
         result = await _repo(ADMIN).get_contribution_by_id(str(PydanticObjectId()), fields=None)
@@ -308,39 +323,39 @@ class TestGetContributionById:
 
 
 # ---------------------------------------------------------------------------
-# find_one_contribution (by project + identifier)
+# find_one_contribution (by full identity)
 # ---------------------------------------------------------------------------
 
 
 class TestFindOneContribution:
     async def test_finds_existing_doc(self, db):
         await _insert(project="find-proj", identifier="find-id")
-        result = await _repo(ADMIN).find_one_contribution("find-proj", "find-id")
+        result = await _repo(ADMIN).find_one_contribution("find-proj", "find-id", "Fe-O", "Fe2O3")
         assert result is not None
         assert result.project == "find-proj"
-        assert result.identifier == "find-id"
+        assert result.material_id == "find-id"
 
     async def test_returns_none_for_missing_combination(self, db):
         await _insert(project="miss-proj", identifier="miss-id")
-        result = await _repo(ADMIN).find_one_contribution("miss-proj", "wrong-id")
+        result = await _repo(ADMIN).find_one_contribution("miss-proj", "wrong-id", "Fe-O", "Fe2O3")
         assert result is None
 
     async def test_scope_prevents_anon_finding_private(self, db):
         await _insert(project="anon-scope", identifier="priv-doc", is_public=False)
-        result = await _repo(ANON).find_one_contribution("anon-scope", "priv-doc")
+        result = await _repo(ANON).find_one_contribution("anon-scope", "priv-doc", "Fe-O", "Fe2O3")
         assert result is None
 
     async def test_scope_allows_anon_finding_public(self, db):
         await _insert(project="anon-scope-pub", identifier="pub-doc", is_public=True)
-        result = await _repo(ANON).find_one_contribution("anon-scope-pub", "pub-doc")
+        result = await _repo(ANON).find_one_contribution("anon-scope-pub", "pub-doc", "Fe-O", "Fe2O3")
         assert result is not None
 
-    async def test_project_identifier_combination_is_unique_lookup(self, db):
+    async def test_full_identity_is_unique_lookup(self, db):
         await _insert(project="same-proj", identifier="id-a")
         await _insert(project="same-proj", identifier="id-b")
-        result = await _repo(ADMIN).find_one_contribution("same-proj", "id-a")
+        result = await _repo(ADMIN).find_one_contribution("same-proj", "id-a", "Fe-O", "Fe2O3")
         assert result is not None
-        assert result.identifier == "id-a"
+        assert result.material_id == "id-a"
 
 
 # ---------------------------------------------------------------------------
@@ -463,7 +478,7 @@ class TestDeleteContributions:
         await _repo(ADMIN).delete_contributions(f)
         remaining = await Contribution.find().to_list()
         assert len(remaining) == 1
-        assert remaining[0].identifier == "bdel-keep"
+        assert remaining[0].material_id == "bdel-keep"
 
     async def test_bulk_delete_empty_collection_is_silent(self, db):
         await _repo(ADMIN).delete_contributions(_noop_filter())
@@ -474,7 +489,7 @@ class TestDeleteContributions:
         await _repo(ANON).delete_contributions(_noop_filter())
         # Anonymous scope: only public visible, so only the public doc is deleted.
         remaining = await Contribution.find().to_list()
-        identifiers = {d.identifier for d in remaining}
+        identifiers = {d.material_id for d in remaining}
         assert "bdel-scope-priv" in identifiers
 
 
@@ -487,7 +502,7 @@ class TestUpsertContributionById:
         assert isinstance(result, Contribution)
         stored = await Contribution.find_one(Contribution.id == new_id)
         assert stored is not None
-        assert stored.identifier == "ups-new"
+        assert stored.material_id == "ups-new"
 
     async def test_update_when_id_present_applies_change(self, db):
         existing = await _insert(identifier="ups-existing")
@@ -506,7 +521,7 @@ class TestDeleteByIdsScope:
         # Anonymous scope only sees public docs; deleting both ids must spare the private one.
         result = await _repo(ANON).delete_by_ids([pub.id, priv.id])
         assert result.num_deleted == 1
-        remaining = {d.identifier for d in await Contribution.find().to_list()}
+        remaining = {d.material_id for d in await Contribution.find().to_list()}
         assert "dbi-priv" in remaining
         assert "dbi-pub" not in remaining
 

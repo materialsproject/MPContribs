@@ -13,6 +13,7 @@ from mpcontribs_api.domains.contributions.models import (
     ContributionIn,
     ContributionOut,
     ContributionPatch,
+    extract_unique_value,
 )
 from mpcontribs_api.exceptions import ValidationError
 
@@ -26,7 +27,8 @@ def _make_contribution_in(**overrides) -> ContributionIn:
     defaults: dict = {
         "_id": PydanticObjectId(),
         "project": "test-project",
-        "identifier": "mp-1234",
+        "material_id": "mp-1234",
+        "chemical_system_id": "Fe-O",
         "formula": "Fe2O3",
         "data": {"band_gap": {"value": 2.1, "unit": "eV"}},
     }
@@ -45,13 +47,15 @@ class TestContributionBase:
             **{
                 "_id": PydanticObjectId(),
                 "project": "mp-project",
-                "identifier": "mp-001",
+                "material_id": "mp-001",
+                "chemical_system_id": "Fe-O",
                 "formula": "Fe2O3",
                 "data": {},
             }
         )
         assert contrib.project == "mp-project"
-        assert contrib.identifier == "mp-001"
+        assert contrib.material_id == "mp-001"
+        assert contrib.chemical_system_id == "Fe-O"
         assert contrib.formula == "Fe2O3"
         assert contrib.data == {}
 
@@ -72,7 +76,8 @@ class TestContributionBase:
             ContributionIn(
                 **{
                     "_id": PydanticObjectId(),
-                    "identifier": "mp-001",
+                    "material_id": "mp-001",
+                    "chemical_system_id": "Fe-O",
                     "formula": "Fe",
                     "data": {},
                 }
@@ -84,7 +89,8 @@ class TestContributionBase:
                 **{
                     "_id": PydanticObjectId(),
                     "project": "proj",
-                    "identifier": "mp-001",
+                    "material_id": "mp-001",
+                    "chemical_system_id": "Fe-O",
                     "data": {},
                 }
             )
@@ -179,7 +185,8 @@ class TestContributionOut:
         out = ContributionOut(project="mp-proj", formula="Li2O")
         assert out.project == "mp-proj"
         assert out.formula == "Li2O"
-        assert out.identifier is None
+        assert out.material_id is None
+        assert out.unique_value is None
 
     def test_is_public_field(self):
         out = ContributionOut(is_public=True)
@@ -200,7 +207,8 @@ class TestContributionPatch:
     def test_all_fields_optional(self):
         patch = ContributionPatch()
         assert patch.project is None
-        assert patch.identifier is None
+        assert patch.material_id is None
+        assert patch.chemical_system_id is None
         assert patch.formula is None
         assert patch.data is None
 
@@ -212,6 +220,53 @@ class TestContributionPatch:
     def test_data_can_be_set(self):
         patch = ContributionPatch(data={"new_key": 42})
         assert patch.data == {"new_key": 42}
+
+
+# ---------------------------------------------------------------------------
+# extract_unique_value — promoting a project's unique_column to the identity value
+# ---------------------------------------------------------------------------
+
+
+class TestExtractUniqueValue:
+    def test_top_level_scalar(self):
+        assert extract_unique_value({"sample_id": "A"}, "sample_id") == "A"
+
+    def test_nested_dotted_path(self):
+        assert extract_unique_value({"conditions": {"temp": 300}}, "conditions.temp") == 300
+
+    def test_accepts_bool_and_float(self):
+        assert extract_unique_value({"flag": True}, "flag") is True
+        assert extract_unique_value({"x": 1.5}, "x") == 1.5
+
+    def test_missing_path_raises(self):
+        with pytest.raises(ValidationError, match="missing from Contribution.data"):
+            extract_unique_value({"other": 1}, "sample_id")
+
+    def test_missing_when_data_none_raises(self):
+        with pytest.raises(ValidationError):
+            extract_unique_value(None, "sample_id")
+
+    def test_non_scalar_dict_raises(self):
+        with pytest.raises(ValidationError, match="must resolve to a scalar"):
+            extract_unique_value({"sample_id": {"nested": 1}}, "sample_id")
+
+    def test_non_scalar_list_raises(self):
+        with pytest.raises(ValidationError, match="must resolve to a scalar"):
+            extract_unique_value({"sample_id": [1, 2]}, "sample_id")
+
+
+class TestContributionOutDefaultFields:
+    def test_default_fields_are_identity_and_metadata(self):
+        assert ContributionOut.default_fields() == [
+            "id",
+            "project",
+            "material_id",
+            "chemical_system_id",
+            "formula",
+            "unique_value",
+            "is_public",
+            "last_modified",
+        ]
 
 
 # ---------------------------------------------------------------------------

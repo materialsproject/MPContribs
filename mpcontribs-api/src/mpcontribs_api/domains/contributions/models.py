@@ -75,11 +75,58 @@ def _validate_nested_keys(value: Any) -> None:
             _validate_nested_keys(item)
 
 
+Scalar = str | int | float | bool
+
+# Identity in index order: the three fixed fields plus unique_value and condition_key. condition_key
+# is "" until pivoting is wired in (contrib-data-handling merge).
+IdentityKey = tuple[str, str, str, str, Scalar | None, str]
+
+
+def _value_at(data: dict[str, Any], path: str) -> Any:
+    """Resolve a dotted ``path`` inside ``data``; raises ``KeyError`` if any segment is absent."""
+    cursor: Any = data
+    for segment in path.split("."):
+        if not isinstance(cursor, dict) or segment not in cursor:
+            raise KeyError(path)
+        cursor = cursor[segment]
+    return cursor
+
+
+def extract_unique_value(data: dict[str, Any] | None, unique_column: str) -> Scalar:
+    """Promote the value at a project's ``unique_column`` path to the Contribution's identity value.
+
+    Args:
+        data: the contribution's ``data`` payload
+        unique_column: the dotted path the project designated as its uniqueness discriminator
+
+    Returns:
+        Scalar: the scalar value at ``unique_column``
+
+    Raises:
+        ValidationError: if the path is absent or resolves to a non-scalar (dict/list/None)
+    """
+    try:
+        value = _value_at(data or {}, unique_column)
+    except KeyError as err:
+        raise ValidationError(
+            f"unique_column '{unique_column}' is required by the project but missing from Contribution.data",
+            unique_column=unique_column,
+        ) from err
+    if not isinstance(value, Scalar):
+        raise ValidationError(
+            f"unique_column '{unique_column}' must resolve to a scalar (str/int/float/bool), "
+            f"got '{type(value).__name__}'",
+            unique_column=unique_column,
+        )
+    return value
+
+
 class ContributionBase(BaseDocumentWithInput[PydanticObjectId]):
     """Shared settings and fields for Contribution, ContributionIn, and ContributionOut."""
 
     project: str
-    identifier: str
+    material_id: str
+    chemical_system_id: str
     formula: str
     is_public: bool = False
     data: Annotated[
@@ -95,8 +142,15 @@ class ContributionBase(BaseDocumentWithInput[PydanticObjectId]):
         keep_nulls = False
         indexes = [
             IndexModel(
-                keys=[("project", ASCENDING), ("identifier", ASCENDING), ("version", ASCENDING)],
-                name="project_identifier_version",
+                keys=[
+                    ("project", ASCENDING),
+                    ("material_id", ASCENDING),
+                    ("chemical_system_id", ASCENDING),
+                    ("formula", ASCENDING),
+                    ("unique_value", ASCENDING),
+                    ("condition_key", ASCENDING),
+                ],
+                name="project_identity",
                 unique=True,
             ),
             # Multikey indexes over each Link field's DBRef id so the component-delete
@@ -110,9 +164,13 @@ class ContributionBase(BaseDocumentWithInput[PydanticObjectId]):
 class Contribution(ContributionBase):
     """Models what is actually stored in the database."""
 
-    # Server-owned: the service resolves the real version (see ContributionService._split_non_unique)
-    # and stamps it on the doc. Defaults to 1 so the no-version (unique-identifier) case is implicit.
-    version: int = 1
+    # Server-owned: the service extracts this from data at the project's unique_column path and stamps
+    # it on the doc (see ContributionService._resolve_identity). None when the project sets no
+    # unique_column, in which case the (project, material_id, chemical_system_id, formula) triple is
+    # the identity. Never trusted from the request body.
+    unique_value: Scalar | None = None
+    # Server-owned pivot-condition discriminator; "" until pivoting is wired in (see IdentityKey).
+    condition_key: str = ""
     structures: list[Link[Structure]] | None = None
     tables: list[Link[Table]] | None = None
     attachments: list[Link[Attachment]] | None = None
@@ -121,13 +179,11 @@ class Contribution(ContributionBase):
     @classmethod
     def from_input_model(cls, data: ContributionIn) -> Contribution:
         # Server-owned fields are not taken from input: is_public starts False, components are
-        # inserted separately, last_modified is stamped by the before_event hook, and version is
+        # inserted separately, last_modified is stamped by the before_event hook, and unique_value is
         # resolved/stamped by the service (never trusted from the request body).
         return cls.model_validate(
             {
-                **data.model_dump(
-                    exclude={"is_public", "version", "structures", "tables", "attachments", "last_modified"}
-                ),
+                **data.model_dump(exclude={"is_public", "structures", "tables", "attachments", "last_modified"}),
                 "is_public": False,
             }
         )
@@ -138,15 +194,8 @@ class Contribution(ContributionBase):
 
 
 class ContributionIn(ContributionBase):
-    """Fields that users are allowed to submit when adding a Contribution.
+    """Fields that users are allowed to submit when adding a Contribution."""
 
-    version will be inferred if left as None
-    """
-
-    # Only meaningful on upsert/update of a non-unique-identifier project, where it selects which
-    # version to target. Ignored on insert (the service auto-assigns) and for unique-identifier
-    # projects (inferred as 1).
-    version: int | None = None
     structures: list[StructureIn] | None = None
     tables: list[TableIn] | None = None
     attachments: list[AttachmentIn] | None = None
@@ -159,9 +208,20 @@ class ContributionIn(ContributionBase):
         """Returns the total number of components (structures, tables, attachments) in the contribution"""
         return len(self.structures or []) + len(self.tables or []) + len(self.attachments or [])
 
-    def identifiers(self) -> dict[str, str]:
-        """Returns a dict of unique identifiers for a contribution (outside of id)."""
-        return {"project": self.project, "identifier": self.identifier}
+    def identifiers(self, unique_value: Scalar | None = None, condition_key: str = "") -> dict[str, Any]:
+        """Returns the identity fields of a contribution (outside of id) for reporting and upsert.
+
+        ``unique_value`` and ``condition_key`` are server-resolved, so they are passed in rather than
+        read off the input model.
+        """
+        return {
+            "project": self.project,
+            "material_id": self.material_id,
+            "chemical_system_id": self.chemical_system_id,
+            "formula": self.formula,
+            "unique_value": unique_value,
+            "condition_key": condition_key,
+        }
 
 
 class ContributionOut(DocumentOut[PydanticObjectId]):
@@ -171,9 +231,11 @@ class ContributionOut(DocumentOut[PydanticObjectId]):
     """
 
     project: str | None = None
-    identifier: str | None = None
-    version: int | None = None
+    material_id: str | None = None
+    chemical_system_id: str | None = None
     formula: str | None = None
+    unique_value: Scalar | None = None
+    condition_key: str | None = None
     is_public: bool | None = None
     last_modified: datetime | None = None
     needs_build: Annotated[bool | None, deprecated("'needs_build' is deprecated.")] = None
@@ -189,9 +251,10 @@ class ContributionOut(DocumentOut[PydanticObjectId]):
         return [
             "id",
             "project",
-            "identifier",
-            "version",
+            "material_id",
+            "chemical_system_id",
             "formula",
+            "unique_value",
             "is_public",
             "last_modified",
         ]
@@ -201,8 +264,8 @@ class ContributionPatch(SparseFieldsModel):
     """Fields that can be specified for partial updates to a Contribution."""
 
     project: str | None = None
-    identifier: str | None = None
-    version: int | None = None
+    material_id: str | None = None
+    chemical_system_id: str | None = None
     formula: str | None = None
     is_public: bool | None = None
     data: Annotated[
@@ -225,20 +288,29 @@ class ContributionFilter(BaseFilter):
     id__in: list[PydanticObjectId] | None = None
     id__neq: PydanticObjectId | None = None
 
-    identifier: str | None = None
-    identifier__in: list[ShortStr] | None = None
-    identifier__neq: ShortStr | None = None
-    identifier__ilike: str | None = None
+    material_id: str | None = None
+    material_id__in: list[ShortStr] | None = None
+    material_id__neq: ShortStr | None = None
+    material_id__ilike: str | None = None
 
-    version: str | None = None
-    version__in: list[ShortStr] | None = None
-    version__neq: ShortStr | None = None
-    version__ilike: str | None = None
+    chemical_system_id: str | None = None
+    chemical_system_id__in: list[ShortStr] | None = None
+    chemical_system_id__neq: ShortStr | None = None
+    chemical_system_id__ilike: str | None = None
 
     formula: str | None = None
     formula__in: list[ShortStr] | None = None
     formula__neq: ShortStr | None = None
     formula__ilike: str | None = None
+
+    unique_value: Scalar | None = None
+    unique_value__in: list[Scalar] | None = None
+    unique_value__neq: Scalar | None = None
+
+    condition_key: str | None = None
+    condition_key__in: list[str] | None = None
+    condition_key__neq: str | None = None
+    condition_key__ilike: str | None = None
 
     is_public: bool | None = None
 

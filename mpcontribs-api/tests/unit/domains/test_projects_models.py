@@ -10,6 +10,40 @@ from mpcontribs_api.domains.projects.models import (
     Reference,
     Stats,
 )
+from mpcontribs_api.exceptions import ValidationError
+
+
+class TestUniqueColumnValidation:
+    def _make_input(self, **overrides):
+        defaults = {
+            "_id": "uc-proj",
+            "title": "Test Project",
+            "authors": "Alice",
+            "description": "A test project",
+            "owner": "google:alice@example.com",
+            "stats": Stats(columns=0, contributions=0, tables=0, structures=0, attachments=0, size=0.0),
+        }
+        defaults.update(overrides)
+        return ProjectIn(**defaults)
+
+    def test_none_is_allowed(self):
+        assert self._make_input().unique_column is None
+
+    def test_dotted_path_accepted_even_if_absent_from_columns(self):
+        # No subset-of-columns check: columns is derived/eventually-consistent.
+        assert self._make_input(unique_column="conditions.temp").unique_column == "conditions.temp"
+
+    def test_empty_string_rejected(self):
+        with pytest.raises(ValidationError):
+            self._make_input(unique_column="")
+
+    def test_blank_segment_rejected(self):
+        with pytest.raises(ValidationError):
+            self._make_input(unique_column="a..b")
+
+    def test_patch_validates_unique_column(self):
+        with pytest.raises(ValidationError):
+            ProjectPatch(unique_column="a..b")
 
 # ---------------------------------------------------------------------------
 # Column
@@ -207,7 +241,6 @@ class TestProjectFromInputModel:
             "authors": "Alice, Bob",
             "description": "A test project",
             "owner": "google:alice@example.com",
-            "unique_identifiers": True,
             "stats": VALID_STATS,
         }
         defaults.update(overrides)

@@ -34,7 +34,6 @@ def _project_in(id: str, **overrides) -> ProjectIn:
         "authors": "Test Author",
         "description": "Test description",
         "owner": "google:alice@example.com",
-        "unique_identifiers": True,
         "stats": STATS,
     }
     defaults.update(overrides)

@@ -61,9 +61,18 @@ async def mongo_client():
 
 @pytest_asyncio.fixture(scope="session")
 async def db(mongo_client):
-    """Database handle with Beanie initialised against the test database."""
+    """Database handle with Beanie initialised against the test database.
+
+    Drops the collections first so init_beanie rebuilds exactly the current indexes on empty
+    collections. init_beanie creates model indexes but never drops removed ones, so a stale unique
+    index left in the dev DB (e.g. the old project_identifier_version) would collapse every now-null
+    identity field to one key and throw duplicate-key errors; and leftover documents from an earlier
+    schema could make the new unique index fail to build. Dropping the collection clears both.
+    """
     settings = get_settings()
     database = mongo_client[settings.mongo.db_name]
+    for collection in ("projects", "contributions", "structures", "tables", "attachments"):
+        await database.drop_collection(collection)
     await init_beanie(
         database=database,
         document_models=[Project, Contribution, Structure, Table, Attachment],

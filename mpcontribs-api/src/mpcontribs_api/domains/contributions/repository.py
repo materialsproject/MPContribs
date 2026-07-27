@@ -17,8 +17,14 @@ from mpcontribs_api.domains.contributions.models import (
     ContributionIn,
     ContributionOut,
     ContributionPatch,
+    IdentityKey,
+    Scalar,
 )
+from mpcontribs_api.exceptions import NotFoundError
 from mpcontribs_api.pagination import CursorParams
+
+# Sentinel for "leave unique_value untouched" on patch (distinct from a real None value).
+_UNSET: Any = object()
 
 
 class MongoDbContributionRepository(
@@ -58,9 +64,30 @@ class MongoDbContributionRepository(
         """Find a single contribution by id, scoped to the current user. See ``get_by_id``."""
         return await self.get_by_id(self._convert_object_id(id), fields)
 
-    async def patch_contribution_by_id(self, id: str, update: ContributionPatch):
-        """Partially update a contribution by id, scoped to the current user. See ``patch``."""
-        return await self.patch(self._convert_object_id(id), update)
+    async def patch_contribution_by_id(
+        self,
+        id: str,
+        update: ContributionPatch,
+        unique_value: Scalar | None = _UNSET,
+    ):
+        """Partially update a contribution by id, scoped to the current user.
+
+        ``unique_value`` is server-recomputed by the service when the patch changes ``data`` or
+        ``project`` (the inputs to identity); left as ``_UNSET`` it is not touched. When set, it is
+        folded into the ``$set`` so the identity index stays consistent with the patched ``data``.
+        """
+        if unique_value is _UNSET:
+            return await self.patch(self._convert_object_id(id), update)
+        update_data = update.model_dump(exclude_unset=True)
+        update_data["unique_value"] = unique_value
+        query = self.document_model.find_one(
+            self._scope,
+            self.document_model.id == self._convert_object_id(id),
+        ).update(Set(update_data), response_type=UpdateResponse.NEW_DOCUMENT)
+        updated = await query  # pyright: ignore[reportGeneralTypeIssues] # beanie UpdateQuery is awaitable
+        if updated is None:
+            raise NotFoundError(self._not_found(id))
+        return updated
 
     async def delete_contribution_by_id(self, id: str) -> None:
         """Delete a contribution by id, scoped to the current user. See ``delete_by_id``."""
@@ -99,55 +126,79 @@ class MongoDbContributionRepository(
         await doc.insert(session=session)
         return doc
 
-    async def find_one_contribution(self, project: str, identifier: str) -> Contribution | None:
-        """Find a single contribution by (project, identifier), scoped to the current user."""
+    async def find_one_contribution(
+        self,
+        project: str,
+        material_id: str,
+        chemical_system_id: str,
+        formula: str,
+        unique_value: Scalar | None = None,
+        condition_key: str = "",
+    ) -> Contribution | None:
+        """Find a single contribution by its full identity, scoped to the current user."""
         return await self.document_model.find_one(
             self._scope,
             self.document_model.project == project,
-            self.document_model.identifier == identifier,
+            self.document_model.material_id == material_id,
+            self.document_model.chemical_system_id == chemical_system_id,
+            self.document_model.formula == formula,
+            self.document_model.unique_value == unique_value,
+            self.document_model.condition_key == condition_key,
         )
 
-    async def max_versions(self, keys: list[tuple[str, str]]) -> dict[tuple[str, str], int]:
-        """Return ``{(project, identifier): max_version}`` for the given keys, scoped to the user.
+    async def existing_identities(self, keys: list[IdentityKey]) -> set[IdentityKey]:
+        """Return the subset of identity tuples that already exist, scoped to the user.
 
-        Presence of a key in the result also signals that at least one contribution already exists
-        for it, which the contribution write path uses to enforce uniqueness on unique-identifier
-        projects and to compute the next version on non-unique ones. Keys with no existing
-        contributions are absent from the result.
-
-        A single aggregation answers the whole batch so the write path avoids one round-trip per
-        contribution. Scope is merged into ``$match`` (mirroring :meth:`referenced_component_ids`);
-        a writer sees every contribution in their own project, so the scoped max equals the global
-        max for keys they may write.
+        One query answers the whole batch so the write path avoids a round-trip per contribution.
+        Scope is merged into the match (mirroring :meth:`referenced_component_ids`); a writer sees
+        every contribution in their own project, so this equals the global existence check for keys
+        they may write. A null ``unique_value`` matches documents where the field is null or absent
+        (the empty-``unique_column`` case, since ``keep_nulls=False`` strips it).
 
         Args:
-            keys: (project, identifier) pairs to look up
+            keys: identity tuples (project, material_id, chemical_system_id, formula, unique_value)
 
         Returns:
-            dict[tuple[str, str], int]: highest existing version per requested key
+            set[IdentityKey]: the subset of ``keys`` already present
         """
         if not keys:
-            return {}
-        match: dict[str, Any] = {"$or": [{"project": p, "identifier": i} for p, i in keys]}
+            return set()
+        ors = [
+            {
+                "project": project,
+                "material_id": material_id,
+                "chemical_system_id": chemical_system_id,
+                "formula": formula,
+                "unique_value": unique_value,
+                "condition_key": condition_key,
+            }
+            for (project, material_id, chemical_system_id, formula, unique_value, condition_key) in keys
+        ]
+        match: dict[str, Any] = {"$or": ors}
         if self._scope:
             match = {"$and": [self._scope, match]}
-        pipeline: list[dict[str, Any]] = [
-            {"$match": match},
-            {
-                "$group": {
-                    "_id": {"project": "$project", "identifier": "$identifier"},
-                    "max_version": {"$max": "$version"},
-                }
-            },
-        ]
+        projection = {
+            "project": 1,
+            "material_id": 1,
+            "chemical_system_id": 1,
+            "formula": 1,
+            "unique_value": 1,
+            "condition_key": 1,
+        }
         collection = self.document_model.get_pymongo_collection()
-        result: dict[tuple[str, str], int] = {}
-        async for doc in await collection.aggregate(pipeline):
-            gid = doc["_id"]
-            # Versions are >= 1; coalesce a null $max (legacy docs without the field) to 0 while
-            # still recording the key's presence (existence check for unique-identifier projects).
-            result[(gid["project"], gid["identifier"])] = doc.get("max_version") or 0
-        return result
+        found: set[IdentityKey] = set()
+        async for doc in collection.find(match, projection):
+            found.add(
+                (
+                    doc["project"],
+                    doc["material_id"],
+                    doc["chemical_system_id"],
+                    doc["formula"],
+                    doc.get("unique_value"),
+                    doc.get("condition_key") or "",
+                )
+            )
+        return found
 
     async def referenced_component_ids(
         self,
@@ -228,34 +279,35 @@ class MongoDbContributionRepository(
 
     async def upsert_contribution_by_identifiers(
         self,
-        identifiers: dict[str, str],
+        identifiers: dict[str, Any],
         contribution: ContributionIn,
-        version: int,
     ) -> Contribution:
-        """Atomically upsert a Contribution by its identifying fields and resolved version.
+        """Atomically upsert a Contribution by its full identity.
 
-        Relies on the unique index over (project, identifier, version) so that concurrent requests
-        targeting the same key cannot both win the insert branch. Fields the caller did not set are
-        not touched (partial update). On insert a fresh Contribution document is written with
-        ``is_public=False``.
+        Relies on the unique index over (project, material_id, chemical_system_id, formula,
+        unique_value) so that concurrent requests targeting the same identity cannot both win the
+        insert branch. Fields the caller did not set are not touched (partial update). On insert a
+        fresh Contribution document is written with ``is_public=False``.
 
         Args:
-            identifiers: the fields ContributionIn.identifiers() returns (project, identifier)
+            identifiers: the identity dict ContributionIn.identifiers(unique_value) returns
             contribution: the input payload to upsert
-            version: the version resolved by the service (1 for unique-identifier projects, or the
-                caller-supplied version for non-unique ones); selects which row to update
 
         Returns:
             Contribution: the document as it stands after the operation
         """
         doc = self.document_model.from_input_model(contribution)
-        doc.version = version
+        doc.unique_value = identifiers["unique_value"]
+        doc.condition_key = identifiers["condition_key"]
         update_data = doc.model_dump(exclude={"id"}, exclude_none=True)
         query = self.document_model.find_one(
             self._scope,
             self.document_model.project == identifiers["project"],
-            self.document_model.identifier == identifiers["identifier"],
-            self.document_model.version == version,
+            self.document_model.material_id == identifiers["material_id"],
+            self.document_model.chemical_system_id == identifiers["chemical_system_id"],
+            self.document_model.formula == identifiers["formula"],
+            self.document_model.unique_value == identifiers["unique_value"],
+            self.document_model.condition_key == identifiers["condition_key"],
         ).upsert(
             Set(update_data),
             on_insert=doc,
@@ -263,18 +315,27 @@ class MongoDbContributionRepository(
         )
         return await query  # pyright: ignore[reportGeneralTypeIssues] # beanie UpdateQuery is awaitable, but pyright doesn't see it
 
-    async def upsert_contribution_by_id(self, id: str, contribution: ContributionIn):
-        """Upserts a single Contribution.
+    async def upsert_contribution_by_id(
+        self,
+        id: str,
+        contribution: ContributionIn,
+        unique_value: Scalar | None = None,
+    ):
+        """Upserts a single Contribution by its Mongo ``_id``.
 
-        If Contributions with identical identifiers exist, update, otherwise insert
+        If a Contribution with this id exists it is updated, otherwise inserted. ``unique_value`` is
+        server-resolved by the service from the project's ``unique_column`` and stamped on the doc so
+        the identity index stays correct.
 
         Args:
             id (str): the id of the Contribution to upsert
             contribution (ContributionIn): the Contribution to be upserted
+            unique_value: the resolved identity value to stamp on the document
 
         Returns:
             ContributionOut: the upserted document"""
         doc = self.document_model.from_input_model(contribution)
+        doc.unique_value = unique_value
         query = self.document_model.find_one(
             self._scope,
             self.document_model.id == self._convert_object_id(id),
