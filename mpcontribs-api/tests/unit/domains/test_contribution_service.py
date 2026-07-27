@@ -657,7 +657,6 @@ class TestUpsertContributionsGuard:
         with pytest.raises(ValidationError):
             await svc.upsert_contributions([dirty])
         contrib_repo.upsert_contribution_by_identifiers.assert_not_called()
-        contrib_repo.find_one_contribution.assert_not_called()
         contrib_repo.insert_contribution.assert_not_called()
         contrib_repo.update_contribution.assert_not_called()
 
@@ -680,7 +679,6 @@ class TestUpsertContributionsAtomic:
         assert summary.failed == []
         assert contrib_repo.upsert_contribution_by_identifiers.call_count == 3
         # The legacy read-then-write path must not be used
-        contrib_repo.find_one_contribution.assert_not_called()
         contrib_repo.update_contribution.assert_not_called()
         contrib_repo.insert_contribution.assert_not_called()
 

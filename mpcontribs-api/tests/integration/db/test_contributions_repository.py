@@ -360,42 +360,6 @@ class TestGetContributionById:
 
 
 # ---------------------------------------------------------------------------
-# find_one_contribution (by full identity)
-# ---------------------------------------------------------------------------
-
-
-class TestFindOneContribution:
-    async def test_finds_existing_doc(self, db):
-        await _insert(project="find-proj", identifier="find-id")
-        result = await _repo(ADMIN).find_one_contribution("find-proj", "find-id", "Fe-O", "Fe2O3")
-        assert result is not None
-        assert result.project == "find-proj"
-        assert result.material_id == "find-id"
-
-    async def test_returns_none_for_missing_combination(self, db):
-        await _insert(project="miss-proj", identifier="miss-id")
-        result = await _repo(ADMIN).find_one_contribution("miss-proj", "wrong-id", "Fe-O", "Fe2O3")
-        assert result is None
-
-    async def test_scope_prevents_anon_finding_private(self, db):
-        await _insert(project="anon-scope", identifier="priv-doc", is_public=False)
-        result = await _repo(ANON).find_one_contribution("anon-scope", "priv-doc", "Fe-O", "Fe2O3")
-        assert result is None
-
-    async def test_scope_allows_anon_finding_public(self, db):
-        await _insert(project="anon-scope-pub", identifier="pub-doc", is_public=True)
-        result = await _repo(ANON).find_one_contribution("anon-scope-pub", "pub-doc", "Fe-O", "Fe2O3")
-        assert result is not None
-
-    async def test_full_identity_is_unique_lookup(self, db):
-        await _insert(project="same-proj", identifier="id-a")
-        await _insert(project="same-proj", identifier="id-b")
-        result = await _repo(ADMIN).find_one_contribution("same-proj", "id-a", "Fe-O", "Fe2O3")
-        assert result is not None
-        assert result.material_id == "id-a"
-
-
-# ---------------------------------------------------------------------------
 # update_contribution
 # ---------------------------------------------------------------------------
 

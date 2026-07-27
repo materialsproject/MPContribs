@@ -134,26 +134,6 @@ class MongoDbContributionRepository(
         await doc.insert(session=session)
         return doc
 
-    async def find_one_contribution(
-        self,
-        project: str,
-        material_id: str,
-        chemical_system_id: str,
-        formula: str,
-        unique_value: Scalar | None = None,
-        condition_key: str = "",
-    ) -> Contribution | None:
-        """Find a single contribution by its full identity, scoped to the current user."""
-        return await self.document_model.find_one(
-            self._scope,
-            self.document_model.project == project,
-            self.document_model.material_id == material_id,
-            self.document_model.chemical_system_id == chemical_system_id,
-            self.document_model.formula == formula,
-            self.document_model.unique_value == unique_value,
-            self.document_model.condition_key == condition_key,
-        )
-
     async def existing_identities(self, keys: list[IdentityKey]) -> set[IdentityKey]:
         """Return the subset of identity tuples that already exist, scoped to the user.
 
