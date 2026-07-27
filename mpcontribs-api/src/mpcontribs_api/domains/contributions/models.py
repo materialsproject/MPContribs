@@ -2,7 +2,7 @@ import re
 from collections.abc import Mapping
 from dataclasses import dataclass, fields
 from datetime import UTC, datetime
-from typing import Annotated, Any, cast
+from typing import Annotated, Any, ClassVar
 from warnings import deprecated
 
 from beanie import (
@@ -79,11 +79,6 @@ def _validate_nested_keys(value: Any) -> None:
 
 Scalar = str | int | float | bool
 
-# Identity in index order: project, material_id, chemical_system_id, formula, unique_value,
-# condition_key. material_id/formula are nullable (identifier hierarchy); condition_key is "" until
-# pivoting is wired in (contrib-data-handling merge).
-IdentityKey = tuple[str, str | None, str, str | None, Scalar | None, str]
-
 
 def _value_at(data: dict[str, Any], path: str) -> Any:
     """Resolve a dotted ``path`` inside ``data``; raises ``KeyError`` if any segment is absent."""
@@ -129,9 +124,8 @@ def extract_unique_value(data: dict[str, Any] | None, unique_column: str) -> Sca
 class Identity:
     """The full identity of a Contribution.
 
-    Field declaration order IS the identity/index column order: ``as_tuple``, ``index_model``, and
-    ``projection`` iterate ``dataclasses.fields`` in that order, so the order is declared exactly once
-    (below). Reordering the fields reorders the unique index — a schema change, not a cosmetic edit.
+    Field declaration order IS the identity/index column order: ``index_model`` and ``projection``
+    iterate ``dataclasses.fields`` in that order, so the order is declared exactly once (below).
     """
 
     # WARNING: the order the fields are specified in reflects their ordering for indices. Changing the order
@@ -143,26 +137,9 @@ class Identity:
     unique_value: Scalar | None = None
     condition_key: str = ""
 
-    def as_tuple(self) -> IdentityKey:
-        """Identity as a hashable tuple in index order (for set membership / dedup)."""
-        return cast(IdentityKey, tuple(getattr(self, f.name) for f in fields(self)))
-
     def as_dict(self) -> dict[str, Any]:
         """Identity as a flat dict keyed by field name (for Mongo match clauses and upsert)."""
         return {f.name: getattr(self, f.name) for f in fields(self)}
-
-    @classmethod
-    def from_tuple(cls, key: IdentityKey) -> Identity:
-        """Rebuild from an ``as_tuple()`` value. ``IdentityKey`` is fixed-shape in ``FIELDS`` order."""
-        project, material_id, chemical_system_id, formula, unique_value, condition_key = key
-        return cls(
-            project=project,
-            material_id=material_id,
-            chemical_system_id=chemical_system_id,
-            formula=formula,
-            unique_value=unique_value,
-            condition_key=condition_key,
-        )
 
     @classmethod
     def from_document(cls, doc: Mapping[str, Any]) -> Identity:
@@ -185,6 +162,10 @@ class Identity:
     def projection(cls) -> dict[str, int]:
         """A Mongo projection selecting exactly the identity fields."""
         return {f.name: 1 for f in fields(cls)}
+
+    # The identifier fields governed by the specificity hierarchy enforced in ``check_hierarchy``
+    # (excludes ``project``/``unique_value``/``condition_key``, which don't participate).
+    HIERARCHY_FIELDS: ClassVar[frozenset[str]] = frozenset({"material_id", "chemical_system_id", "formula"})
 
     @staticmethod
     def check_hierarchy(material_id: str | None, chemical_system_id: str | None, formula: str | None) -> None:
@@ -240,7 +221,7 @@ class Contribution(ContributionBase):
     # unique_column, in which case the identity is the (project, material_id, chemical_system_id,
     # formula) tuple. Never trusted from the request body.
     unique_value: Scalar | None = None
-    # Server-owned pivot-condition discriminator; "" until pivoting is wired in (see IdentityKey).
+    # Server-owned pivot-condition discriminator; "" until pivoting is wired in (see Identity).
     condition_key: str = ""
     structures: list[Link[Structure]] | None = None
     tables: list[Link[Table]] | None = None

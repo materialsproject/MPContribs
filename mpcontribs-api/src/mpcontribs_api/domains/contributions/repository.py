@@ -19,7 +19,6 @@ from mpcontribs_api.domains.contributions.models import (
     ContributionOut,
     ContributionPatch,
     Identity,
-    IdentityKey,
     Scalar,
 )
 from mpcontribs_api.exceptions import ConflictError, NotFoundError
@@ -134,32 +133,30 @@ class MongoDbContributionRepository(
         await doc.insert(session=session)
         return doc
 
-    async def existing_identities(self, keys: list[IdentityKey]) -> set[IdentityKey]:
-        """Return the subset of identity tuples that already exist, scoped to the user.
+    async def existing_identities(self, identities: list[Identity]) -> set[Identity]:
+        """Return the subset of identities that already exist, scoped to the user.
 
         One query answers the whole batch so the write path avoids a round-trip per contribution.
         Scope is merged into the match (mirroring :meth:`referenced_component_ids`); a writer sees
-        every contribution in their own project, so this equals the global existence check for keys
-        they may write. A null ``unique_value`` matches documents where the field is null or absent
-        (the empty-``unique_column`` case, since ``keep_nulls=False`` strips it).
+        every contribution in their own project, so this equals the global existence check for
+        identities they may write. A null ``unique_value`` matches documents where the field is null
+        or absent (the empty-``unique_column`` case, since ``keep_nulls=False`` strips it).
 
         Args:
-            keys: identity tuples (project, material_id, chemical_system_id, formula, unique_value,
-                condition_key)
+            identities: the identities to test for existence
 
         Returns:
-            set[IdentityKey]: the subset of ``keys`` already present
+            set[Identity]: the subset of ``identities`` already present
         """
-        if not keys:
+        if not identities:
             return set()
-        ors = [Identity.from_tuple(key).as_dict() for key in keys]
-        match: dict[str, Any] = {"$or": ors}
+        match: dict[str, Any] = {"$or": [identity.as_dict() for identity in identities]}
         if self._scope:
             match = {"$and": [self._scope, match]}
         collection = self.document_model.get_pymongo_collection()
-        found: set[IdentityKey] = set()
+        found: set[Identity] = set()
         async for doc in collection.find(match, Identity.projection()):
-            found.add(Identity.from_document(doc).as_tuple())
+            found.add(Identity.from_document(doc))
         return found
 
     async def referenced_component_ids(

@@ -132,7 +132,7 @@ class TestNullableIdentifierHierarchy:
     async def test_existing_identities_matches_null_identity(self, db):
         ci = _contrib_in(project="chem-only", material_id=None, formula=None)
         await _repo().insert_contribution(Contribution.from_input_model(ci))
-        key = ci.identity().as_tuple()
+        key = ci.identity()
         found = await _repo().existing_identities([key])
         assert key in found
 

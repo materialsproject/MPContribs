@@ -82,8 +82,6 @@ def _validate_formula(v: str | None) -> str | None:
     """
     if v is None:
         return None
-    if not isinstance(v, str):
-        raise ValidationError(f"formula must be a string, got '{type(v).__name__}'", formula=v)
     s = unicodedata.normalize("NFKC", v).strip()
     if not s:
         raise ValidationError("formula must not be empty", formula=v)

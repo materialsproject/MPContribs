@@ -25,7 +25,6 @@ from mpcontribs_api.domains.contributions.models import (
     ContributionIn,
     ContributionPatch,
     Identity,
-    IdentityKey,
     Scalar,
     extract_unique_value,
 )
@@ -196,7 +195,7 @@ class ContributionService:
         # First pass: validate accessibility + resolve each unique_value, collecting identity tuples
         # so the existence check can be batched into a single query.
         resolved: list[tuple[int, ContributionIn, Scalar | None]] = []
-        keys: list[IdentityKey] = []
+        keys: list[Identity] = []
         for i in indices:
             contrib = contributions[i]
             if contrib.project not in unique_columns:
@@ -237,7 +236,7 @@ class ContributionService:
                     continue
 
             resolved.append((i, contrib, unique_value))
-            keys.append(contrib.identity(unique_value).as_tuple())
+            keys.append(contrib.identity(unique_value))
 
         # Second pass (insert only): reject identity collisions against existing docs and earlier
         # items in this batch. Upsert skips this — an existing identity is the update target and the
@@ -247,9 +246,9 @@ class ContributionService:
             return failures, plan
 
         existing = await self._contributions.existing_identities(keys)
-        seen: set[IdentityKey] = set()
+        seen: set[Identity] = set()
         for i, contrib, unique_value in resolved:
-            key: IdentityKey = contrib.identity(unique_value).as_tuple()
+            key: Identity = contrib.identity(unique_value)
             if key in existing or key in seen:
                 failures.append(
                     BulkFailure(
@@ -520,9 +519,6 @@ class ContributionService:
         unique_value = await self._resolve_unique_value(contribution.project, contribution.data)
         return await self._contributions.upsert_contribution_by_id(id, contribution, unique_value)
 
-    # Identity fields subject to the specificity hierarchy chemical_system_id > formula > material_id.
-    _IDENTITY_FIELDS = frozenset({"material_id", "chemical_system_id", "formula"})
-
     async def patch_contribution_by_id(self, id: str, update: ContributionPatch) -> Contribution:
         """Patch a single contribution by id.
 
@@ -534,7 +530,7 @@ class ContributionService:
         """
         set_fields = update.model_dump(exclude_unset=True)
         touches_unique = "data" in set_fields or "project" in set_fields
-        touches_identity = bool(self._IDENTITY_FIELDS & set_fields.keys())
+        touches_identity = bool(Identity.HIERARCHY_FIELDS & set_fields.keys())
         if not touches_unique and not touches_identity:
             return await self._contributions.patch_contribution_by_id(id, update)
 
