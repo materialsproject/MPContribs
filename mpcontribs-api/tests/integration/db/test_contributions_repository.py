@@ -103,12 +103,12 @@ class TestInsertContribution:
         assert found.data == {"x": 1}
 
     async def test_insert_via_repo(self, db):
-        ci = _contrib_in(identifier="ins-via-repo")
+        ci = _contrib_in(identifier="mp-4001")
         doc = Contribution.from_input_model(ci)
         result = await _repo().insert_contribution(doc)
         found = await Contribution.find_one(Contribution.id == result.id)
         assert found is not None
-        assert found.material_id == "ins-via-repo"
+        assert found.material_id == "mp-4001"
 
 
 # ---------------------------------------------------------------------------
@@ -118,14 +118,14 @@ class TestInsertContribution:
 
 class TestInsertManyContributions:
     async def test_all_docs_persisted(self, db):
-        docs = [Contribution.from_input_model(_contrib_in(identifier=f"bulk-{i}")) for i in range(5)]
+        docs = [Contribution.from_input_model(_contrib_in(identifier=f"mp-{4100 + i}")) for i in range(5)]
         await _repo().insert_many_contributions(docs)
         for doc in docs:
             found = await Contribution.find_one(Contribution.id == doc.id)
             assert found is not None
 
     async def test_returns_insert_result(self, db):
-        docs = [Contribution.from_input_model(_contrib_in(identifier=f"bulk-ret-{i}")) for i in range(3)]
+        docs = [Contribution.from_input_model(_contrib_in(identifier=f"mp-{4200 + i}")) for i in range(3)]
         result = await _repo().insert_many_contributions(docs)
         assert result is not None
 
@@ -420,13 +420,13 @@ class TestPatchContributionById:
 
     async def test_raises_validation_error_for_bad_id(self, db):
         with pytest.raises(ValidationError):
-            await _repo(ADMIN).patch_contribution_by_id("bad-id", ContributionPatch(formula="X"))
+            await _repo(ADMIN).patch_contribution_by_id("bad-id", ContributionPatch(formula="Fe2O3"))
 
     async def test_anon_cannot_patch_private_doc(self, db):
         from mpcontribs_api.exceptions import NotFoundError
         doc = await _insert(identifier="patch-anon-priv", is_public=False)
         with pytest.raises(NotFoundError):
-            await _repo(ANON).patch_contribution_by_id(str(doc.id), ContributionPatch(formula="X"))
+            await _repo(ANON).patch_contribution_by_id(str(doc.id), ContributionPatch(formula="Fe2O3"))
 
 
 # ---------------------------------------------------------------------------
@@ -496,17 +496,17 @@ class TestDeleteContributions:
 class TestUpsertContributionById:
     async def test_insert_when_id_absent_persists_document(self, db):
         new_id = PydanticObjectId()
-        payload = _contrib_in(identifier="ups-new", _id=new_id)
+        payload = _contrib_in(identifier="mp-4002", _id=new_id)
         result = await _repo(ADMIN).upsert_contribution_by_id(str(new_id), payload)
         # Must be the resolved document, not an un-awaited query object.
         assert isinstance(result, Contribution)
         stored = await Contribution.find_one(Contribution.id == new_id)
         assert stored is not None
-        assert stored.material_id == "ups-new"
+        assert stored.material_id == "mp-4002"
 
     async def test_update_when_id_present_applies_change(self, db):
-        existing = await _insert(identifier="ups-existing")
-        payload = _contrib_in(identifier="ups-existing", formula="Li2O", _id=existing.id)
+        existing = await _insert(identifier="mp-4003")
+        payload = _contrib_in(identifier="mp-4003", formula="Li2O", _id=existing.id)
         result = await _repo(ADMIN).upsert_contribution_by_id(str(existing.id), payload)
         assert isinstance(result, Contribution)
         stored = await Contribution.find_one(Contribution.id == existing.id)

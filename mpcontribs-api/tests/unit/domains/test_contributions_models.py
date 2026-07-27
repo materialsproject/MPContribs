@@ -54,7 +54,8 @@ class TestContributionBase:
             }
         )
         assert contrib.project == "mp-project"
-        assert contrib.material_id == "mp-001"
+        # material_id is normalized on input: leading zeros in the numeric part are trimmed.
+        assert contrib.material_id == "mp-1"
         assert contrib.chemical_system_id == "Fe-O"
         assert contrib.formula == "Fe2O3"
         assert contrib.data == {}
@@ -135,6 +136,89 @@ class TestContributionBase:
         _make_contribution_in(data=punctuation_in_values)
         _make_contribution_in(data=ascii_in_values)
         assert True
+
+# ---------------------------------------------------------------------------
+# Contribution identifier validation (material_id / chemical_system_id / formula)
+#
+# Validation lives on the input models (ContributionIn / ContributionPatch), not the stored
+# Contribution, so these exercise it through ContributionIn.
+# ---------------------------------------------------------------------------
+
+
+class TestMaterialIdValidation:
+    @pytest.mark.parametrize(
+        ("given", "expected"),
+        [
+            ("mp-149", "mp-149"),
+            ("mp-1234567", "mp-1234567"),
+            ("mp-001", "mp-1"),  # leading zeros trimmed
+            ("mp-0001234", "mp-1234"),
+            ("  mp-42  ", "mp-42"),  # surrounding whitespace stripped
+        ],
+    )
+    def test_valid_material_id_is_normalized(self, given, expected):
+        assert _make_contribution_in(material_id=given).material_id == expected
+
+    @pytest.mark.parametrize(
+        "bad",
+        ["mp-12345678", "MP-1", "mp-", "mp-1a", "1234", "mvc-1", "mp-1.0"],
+    )
+    def test_invalid_material_id_raises(self, bad):
+        with pytest.raises(ValidationError, match="material_id"):
+            _make_contribution_in(material_id=bad)
+
+
+class TestChemicalSystemIdValidation:
+    @pytest.mark.parametrize("good", ["Fe-O", "Li-Fe-O", "Fe", "H"])
+    def test_valid_chemical_system_id(self, good):
+        assert _make_contribution_in(chemical_system_id=good).chemical_system_id == good
+
+    @pytest.mark.parametrize("bad", ["Xx-O", "fe-o", "Fe-", "-Fe", "Fe--O", ""])
+    def test_invalid_chemical_system_id_raises(self, bad):
+        with pytest.raises(ValidationError, match="chemical_system_id"):
+            _make_contribution_in(chemical_system_id=bad)
+
+
+class TestFormulaValidation:
+    @pytest.mark.parametrize(
+        ("given", "expected"),
+        [
+            ("Fe2O3", "Fe2O3"),
+            ("LiFeO2", "LiFeO2"),
+            ("Fe", "Fe"),
+            ("Fe02O3", "Fe2O3"),  # leading zeros in counts trimmed
+            ("FeO03", "FeO3"),
+            ("Fe₂O₃", "Fe2O3"),  # NFKC folds unicode subscripts
+            ("Co³O₄", "Co3O4"),  # ...and superscripts
+            ("Ｆｅ２Ｏ３", "Fe2O3"),  # ...and full-width forms
+        ],
+    )
+    def test_valid_formula_is_normalized(self, given, expected):
+        assert _make_contribution_in(formula=given).formula == expected
+
+    @pytest.mark.parametrize("bad", ["X", "fe2", "Fe2xO", "2FeO", "Fe0", ""])
+    def test_invalid_formula_raises(self, bad):
+        with pytest.raises(ValidationError, match="formula"):
+            _make_contribution_in(formula=bad)
+
+
+class TestPatchIdentifierValidation:
+    def test_patch_normalizes_material_id(self):
+        assert ContributionPatch(material_id="mp-007").material_id == "mp-7"
+
+    def test_patch_normalizes_formula(self):
+        assert ContributionPatch(formula="Fe02O3").formula == "Fe2O3"
+
+    def test_patch_rejects_bad_chemical_system_id(self):
+        with pytest.raises(ValidationError, match="chemical_system_id"):
+            ContributionPatch(chemical_system_id="Zz")
+
+    def test_patch_identifiers_stay_optional(self):
+        patch = ContributionPatch(is_public=True)
+        assert patch.material_id is None
+        assert patch.chemical_system_id is None
+        assert patch.formula is None
+
 
 # ---------------------------------------------------------------------------
 # Contribution.from_input_model

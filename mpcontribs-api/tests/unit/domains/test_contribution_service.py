@@ -88,6 +88,23 @@ def _structure_in(**overrides) -> StructureIn:
     return StructureIn(**defaults)
 
 
+_MP_ID_REGISTRY: dict[str, str] = {}
+
+
+def _mp_id_for(label: str) -> str:
+    """Map an arbitrary test label onto a stable, valid ``material_id`` (``mp-<n>``).
+
+    ``ContributionIn`` now validates ``material_id`` as ``mp-<digits>``, but these tests use
+    readable labels (``"dup"``, ``"ok"``, ...) purely to mint identities. This preserves the
+    pairing semantics they rely on — the same label always yields the same id (so intentional
+    duplicates still collide) and distinct labels yield distinct ids — while producing a value the
+    validator accepts. Values already shaped ``mp-<digits>`` pass through unchanged.
+    """
+    if label.startswith("mp-") and label[3:].isdigit():
+        return label
+    return _MP_ID_REGISTRY.setdefault(label, f"mp-{9_000_000 + len(_MP_ID_REGISTRY)}")
+
+
 def _contrib_in(
     project="proj",
     material_id="mp-1",
@@ -101,6 +118,7 @@ def _contrib_in(
     # identity tuple (project, material_id, chemical_system_id, formula, unique_value) differs.
     if identifier is not None:
         material_id = identifier
+    material_id = _mp_id_for(material_id)
     return ContributionIn(
         _id=_oid(),
         project=project,
@@ -376,7 +394,7 @@ class TestInsertContributionsTransactionPath:
 
         async def _insert(doc, session=None):
             # Fail the second contribution by inspecting the doc's material_id
-            if doc.material_id == "fail":
+            if doc.material_id == _mp_id_for("fail"):
                 raise ConflictError("conflict on insert")
             return doc
 
@@ -419,8 +437,8 @@ class TestInsertContributionsTransactionPath:
         await svc.insert_contributions(contribs)
 
         captured_by_id = {c.material_id: c for c in captured}
-        assert captured_by_id["a"].structures == [struct_a]
-        assert captured_by_id["b"].structures == [struct_b]
+        assert captured_by_id[_mp_id_for("a")].structures == [struct_a]
+        assert captured_by_id[_mp_id_for("b")].structures == [struct_b]
 
 
 # ---------------------------------------------------------------------------

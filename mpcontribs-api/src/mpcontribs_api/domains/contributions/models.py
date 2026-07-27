@@ -22,7 +22,7 @@ from pymongo import ASCENDING, IndexModel
 
 from mpcontribs_api.domains._shared.filters import BaseFilter
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
-from mpcontribs_api.domains._shared.types import ShortStr
+from mpcontribs_api.domains._shared.types import ChemicalSystemId, Formula, MaterialId, ShortStr
 from mpcontribs_api.domains.attachments.models import Attachment, AttachmentFilter, AttachmentIn
 from mpcontribs_api.domains.structures.models import Structure, StructureFilter, StructureIn
 from mpcontribs_api.domains.tables.models import Table, TableFilter, TableIn
@@ -264,6 +264,9 @@ class Contribution(ContributionBase):
 class ContributionIn(ContributionBase):
     """Fields that users are allowed to submit when adding a Contribution."""
 
+    material_id: MaterialId
+    chemical_system_id: ChemicalSystemId
+    formula: Formula
     structures: list[StructureIn] | None = None
     tables: list[TableIn] | None = None
     attachments: list[AttachmentIn] | None = None
@@ -336,9 +339,9 @@ class ContributionPatch(SparseFieldsModel):
     """Fields that can be specified for partial updates to a Contribution."""
 
     project: str | None = None
-    material_id: str | None = None
-    chemical_system_id: str | None = None
-    formula: str | None = None
+    material_id: MaterialId | None = None
+    chemical_system_id: ChemicalSystemId | None = None
+    formula: Formula | None = None
     is_public: bool | None = None
     data: Annotated[
         dict[str, Any] | None,

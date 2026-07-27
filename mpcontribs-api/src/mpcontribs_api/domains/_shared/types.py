@@ -1,14 +1,126 @@
 import re
+import unicodedata
 from enum import StrEnum
 from typing import Annotated
 
 import polars as pl
 from fastapi import Query
 from pydantic import BeforeValidator, Field, PlainSerializer, WithJsonSchema
+from pymatgen.core import Element
 
 from mpcontribs_api.exceptions import ValidationError
 
 ShortStr = Annotated[str, Field(min_length=3, max_length=30)]
+
+# "mp-" followed by one or more digits; leading zeros are trimmed afterwards.
+_MATERIAL_ID_RE = re.compile(r"^mp-([0-9]+)$")
+_MAX_MATERIAL_ID_DIGITS = 7
+
+
+def _validate_material_id(v: str | None) -> str | None:
+    """Normalize a Materials Project id: ``mp-`` + up to 7 digits, leading zeros trimmed.
+
+    ``"mp-001"`` -> ``"mp-1"``. Rejects anything not shaped ``mp-<digits>`` and any value whose
+    significant (leading-zero-trimmed) digit count exceeds 7.
+    """
+    if v is None:
+        return None
+    if not isinstance(v, str):
+        raise ValidationError(f"material_id must be a string, got '{type(v).__name__}'", material_id=v)
+    s = v.strip()
+    match = _MATERIAL_ID_RE.match(s)
+    if match is None:
+        raise ValidationError(
+            f"material_id '{v}' invalid. Must be 'mp-' followed by digits (e.g. 'mp-149')",
+            material_id=v,
+        )
+    trimmed = match.group(1).lstrip("0") or "0"
+    if len(trimmed) > _MAX_MATERIAL_ID_DIGITS:
+        raise ValidationError(
+            f"material_id '{v}' invalid. Numeric part must be at most {_MAX_MATERIAL_ID_DIGITS} digits",
+            material_id=v,
+        )
+    return f"mp-{trimmed}"
+
+
+MaterialId = Annotated[str, BeforeValidator(_validate_material_id)]
+
+
+def _validate_chemical_system_id(v: str | None) -> str | None:
+    """Validate a hyphen-delimited chemical system of element symbols, e.g. ``"Fe-O"``."""
+    if v is None:
+        return None
+    if not isinstance(v, str):
+        raise ValidationError(f"chemical_system_id must be a string, got '{type(v).__name__}'", chemical_system_id=v)
+    s = v.strip()
+    if not s:
+        raise ValidationError("chemical_system_id must not be empty", chemical_system_id=v)
+    for token in s.split("-"):
+        if not Element.is_valid_symbol(token):
+            raise ValidationError(
+                f"chemical_system_id '{v}' invalid. '{token}' is not a valid element symbol",
+                chemical_system_id=v,
+                invalid_token=token,
+            )
+    return s
+
+
+ChemicalSystemId = Annotated[str, BeforeValidator(_validate_chemical_system_id)]
+
+
+# Each token is an element symbol (upper, optional lower) followed by an optional integer count.
+_FORMULA_TOKEN_RE = re.compile(r"([A-Z][a-z]?)([0-9]*)")
+
+
+def _validate_formula(v: str | None) -> str | None:
+    """Validate/normalize a formula: element symbols each optionally followed by a count.
+
+    The value is NFKC-normalized first, so unicode subscripts/superscripts and full-width forms
+    fold to their ASCII equivalents (``"Fe₂O₃"`` -> ``"Fe2O3"``). Leading zeros in counts are then
+    trimmed (``"Fe02O3"`` -> ``"Fe2O3"``). Rejects unknown element symbols, stray characters, and
+    non-positive counts (``"Fe0"``).
+    """
+    if v is None:
+        return None
+    if not isinstance(v, str):
+        raise ValidationError(f"formula must be a string, got '{type(v).__name__}'", formula=v)
+    s = unicodedata.normalize("NFKC", v).strip()
+    if not s:
+        raise ValidationError("formula must not be empty", formula=v)
+    parts: list[str] = []
+    pos = 0
+    for match in _FORMULA_TOKEN_RE.finditer(s):
+        # A gap between the previous match end and this match start means a stray/invalid character.
+        if match.start() != pos:
+            break
+        symbol, count = match.group(1), match.group(2)
+        if not Element.is_valid_symbol(symbol):
+            raise ValidationError(
+                f"formula '{v}' invalid. '{symbol}' is not a valid element symbol",
+                formula=v,
+                invalid_symbol=symbol,
+            )
+        if count:
+            trimmed = count.lstrip("0")
+            if not trimmed:
+                raise ValidationError(
+                    f"formula '{v}' invalid. Count for '{symbol}' must be a positive integer",
+                    formula=v,
+                    invalid_count=count,
+                )
+            count = trimmed
+        parts.append(f"{symbol}{count}")
+        pos = match.end()
+    if pos != len(s):
+        raise ValidationError(
+            f"formula '{v}' invalid. Must be valid element symbols each optionally followed by a "
+            "positive integer count (e.g. 'Fe2O3')",
+            formula=v,
+        )
+    return "".join(parts)
+
+
+Formula = Annotated[str, BeforeValidator(_validate_formula)]
 
 FieldSelector = Annotated[list[str] | None, Query(alias="_fields")]
 
