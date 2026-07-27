@@ -92,4 +92,6 @@ max-line-length = 120
 pythonVersion = "3.14"
 typeCheckingMode = "standard"
 extraPaths = ["src"]
-ignore=["tests/"]
+# "build/" is a setuptools build artifact (gitignored); type-checking its stale copies produces
+# phantom errors against superseded source.
+ignore=["tests/", "build/"]
