@@ -287,7 +287,9 @@ class MongoDbContributionRepository(
 
         If a Contribution with this id exists it is updated, otherwise inserted. ``unique_value`` is
         server-resolved by the service from the project's ``unique_column`` and stamped on the doc so
-        the identity index stays correct.
+        the identity index stays correct. Because it is server-owned it is forced into the ``$set``
+        (bypassing ``exclude_none``), so re-resolving to ``None`` clears a previously-stored value on
+        update rather than leaving it stale.
 
         Args:
             id (str): the id of the Contribution to upsert
@@ -298,15 +300,23 @@ class MongoDbContributionRepository(
             ContributionOut: the upserted document"""
         doc = self.document_model.from_input_model(contribution)
         doc.unique_value = unique_value
-        query = self.document_model.find_one(
-            self._scope,
-            self.document_model.id == self._convert_object_id(id),
-        ).upsert(
-            Set(doc.model_dump(exclude={"id"}, exclude_none=True)),
-            on_insert=doc,
-            response_type=UpdateResponse.NEW_DOCUMENT,
-        )
-        return await query  # pyright: ignore[reportGeneralTypeIssues] # beanie UpdateQuery is awaitable, but pyright doesn't see it
+        update_data = doc.model_dump(exclude={"id"}, exclude_none=True)
+        update_data["unique_value"] = unique_value
+        try:
+            query = self.document_model.find_one(
+                self._scope,
+                self.document_model.id == self._convert_object_id(id),
+            ).upsert(
+                Set(update_data),
+                on_insert=doc,
+                response_type=UpdateResponse.NEW_DOCUMENT,
+            )
+            return await query  # pyright: ignore[reportGeneralTypeIssues] # beanie UpdateQuery is awaitable, but pyright doesn't see it
+        except DuplicateKeyError as err:
+            raise ConflictError(
+                f"contribution '{id}' cannot be upserted: the resulting identity already exists",
+                id=id,
+            ) from err
 
     async def download_contributions(
         self,

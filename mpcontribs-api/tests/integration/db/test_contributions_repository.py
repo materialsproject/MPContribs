@@ -523,6 +523,26 @@ class TestUpsertContributionById:
         assert stored is not None
         assert stored.formula == "Li2O"
 
+    async def test_update_clears_unique_value_when_resolved_to_none(self, db):
+        # A doc previously stamped with a unique_value whose project later drops its unique_column:
+        # re-resolving to None must clear the stored value, not leave it stale (exclude_none would).
+        existing = await _insert(identifier="mp-4004", unique_value="batch-A")
+        assert existing.unique_value == "batch-A"
+        payload = _contrib_in(identifier="mp-4004", _id=existing.id)
+        await _repo(ADMIN).upsert_contribution_by_id(str(existing.id), payload, unique_value=None)
+        stored = await Contribution.find_one(Contribution.id == existing.id)
+        assert stored is not None
+        assert stored.unique_value is None
+
+    async def test_upsert_onto_existing_identity_raises_conflict(self, db):
+        # Two docs differing only by material_id; PUTting victim's identity onto the first's collides
+        # on the unique index, which the repo surfaces as a ConflictError (409) not a raw 500.
+        await _insert(project="uid-dup", identifier="mp-100")
+        victim = await _insert(project="uid-dup", identifier="mp-200")
+        payload = _contrib_in(project="uid-dup", identifier="mp-100", _id=victim.id)
+        with pytest.raises(ConflictError):
+            await _repo(ADMIN).upsert_contribution_by_id(str(victim.id), payload)
+
 
 class TestDeleteByIdsScope:
     async def test_anon_cannot_delete_out_of_scope_ids(self, db):
