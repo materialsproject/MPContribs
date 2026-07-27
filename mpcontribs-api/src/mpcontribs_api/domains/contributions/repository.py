@@ -5,6 +5,7 @@ from typing import Any
 from beanie import PydanticObjectId, UpdateResponse
 from beanie.operators import Set
 from pymongo.asynchronous.client_session import AsyncClientSession
+from pymongo.errors import DuplicateKeyError
 from pymongo.results import DeleteResult
 from types_aiobotocore_s3 import S3Client
 
@@ -21,7 +22,7 @@ from mpcontribs_api.domains.contributions.models import (
     IdentityKey,
     Scalar,
 )
-from mpcontribs_api.exceptions import NotFoundError
+from mpcontribs_api.exceptions import ConflictError, NotFoundError
 from mpcontribs_api.pagination import CursorParams
 
 # Sentinel for "leave unique_value untouched" on patch (distinct from a real None value).
@@ -77,18 +78,24 @@ class MongoDbContributionRepository(
         ``project`` (the inputs to identity); left as ``_UNSET`` it is not touched. When set, it is
         folded into the ``$set`` so the identity index stays consistent with the patched ``data``.
         """
-        if unique_value is _UNSET:
-            return await self.patch(self._convert_object_id(id), update)
-        update_data = update.model_dump(exclude_unset=True)
-        update_data["unique_value"] = unique_value
-        query = self.document_model.find_one(
-            self._scope,
-            self.document_model.id == self._convert_object_id(id),
-        ).update(Set(update_data), response_type=UpdateResponse.NEW_DOCUMENT)
-        updated = await query  # pyright: ignore[reportGeneralTypeIssues] # beanie UpdateQuery is awaitable
-        if updated is None:
-            raise NotFoundError(self._not_found(id))
-        return updated
+        try:
+            if unique_value is _UNSET:
+                return await self.patch(self._convert_object_id(id), update)
+            update_data = update.model_dump(exclude_unset=True)
+            update_data["unique_value"] = unique_value
+            query = self.document_model.find_one(
+                self._scope,
+                self.document_model.id == self._convert_object_id(id),
+            ).update(Set(update_data), response_type=UpdateResponse.NEW_DOCUMENT)
+            updated = await query  # pyright: ignore[reportGeneralTypeIssues] # beanie UpdateQuery is awaitable
+            if updated is None:
+                raise NotFoundError(self._not_found(id))
+            return updated
+        except DuplicateKeyError as err:
+            raise ConflictError(
+                f"contribution '{id}' cannot be patched: the resulting identity already exists",
+                id=id,
+            ) from err
 
     async def delete_contribution_by_id(self, id: str) -> None:
         """Delete a contribution by id, scoped to the current user. See ``delete_by_id``."""

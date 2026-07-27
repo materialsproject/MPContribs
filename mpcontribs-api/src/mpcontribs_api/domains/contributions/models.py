@@ -132,14 +132,6 @@ class Identity:
     Field declaration order IS the identity/index column order: ``as_tuple``, ``index_model``, and
     ``projection`` iterate ``dataclasses.fields`` in that order, so the order is declared exactly once
     (below). Reordering the fields reorders the unique index — a schema change, not a cosmetic edit.
-
-    ``unique_value`` is the project's ``unique_column`` value promoted onto the document (``None`` when
-    the project sets no ``unique_column``); ``condition_key`` is the pivot discriminator, ``""`` until
-    pivoting is wired in.
-
-    ``material_id`` and ``formula`` are nullable: identifiers follow a specificity hierarchy
-    (``chemical_system_id`` > ``formula`` > ``material_id``), so a contribution may stop at the
-    chemical-system or formula level.
     """
 
     # WARNING: the order the fields are specified in reflects their ordering for indices. Changing the order

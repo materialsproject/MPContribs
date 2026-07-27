@@ -173,7 +173,7 @@ class ContributionService:
         contribution is rejected when:
 
         - its ``project`` is not found or not accessible;
-        - the project sets a ``unique_column`` but the value is missing or non-scalar; or
+        - the project sets a ``unique_column`` but the value is missing or non-scalar
         - (insert only) its identity collides with an existing document or with an earlier item in
           this batch. Collisions are conflicts, never silently disambiguated.
 

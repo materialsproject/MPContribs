@@ -10,7 +10,7 @@ from mpcontribs_api.domains.contributions.models import (
     ContributionPatch,
 )
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
-from mpcontribs_api.exceptions import NotFoundError, ValidationError
+from mpcontribs_api.exceptions import ConflictError, NotFoundError, ValidationError
 from mpcontribs_api.pagination import CursorParams
 
 pytestmark = [pytest.mark.db, pytest.mark.asyncio(loop_scope="session")]
@@ -464,6 +464,15 @@ class TestPatchContributionById:
         doc = await _insert(identifier="patch-anon-priv", is_public=False)
         with pytest.raises(NotFoundError):
             await _repo(ANON).patch_contribution_by_id(str(doc.id), ContributionPatch(formula="Fe2O3"))
+
+    async def test_patch_onto_existing_identity_raises_conflict(self, db):
+        # Two contributions differing only by material_id, so distinct identities.
+        await _insert(project="patch-dup", identifier="mp-100")
+        victim = await _insert(project="patch-dup", identifier="mp-200")
+        # Patching victim's material_id onto the first doc's makes the identities collide; the unique
+        # index rejects the write, which the repo surfaces as a ConflictError (409) not a raw 500.
+        with pytest.raises(ConflictError):
+            await _repo(ADMIN).patch_contribution_by_id(str(victim.id), ContributionPatch(material_id="mp-100"))
 
 
 # ---------------------------------------------------------------------------
