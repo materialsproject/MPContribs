@@ -17,6 +17,7 @@ from mpcontribs_api.domains.contributions.models import (
     ContributionIn,
     ContributionOut,
     ContributionPatch,
+    Identity,
     IdentityKey,
     Scalar,
 )
@@ -163,41 +164,14 @@ class MongoDbContributionRepository(
         """
         if not keys:
             return set()
-        ors = [
-            {
-                "project": project,
-                "material_id": material_id,
-                "chemical_system_id": chemical_system_id,
-                "formula": formula,
-                "unique_value": unique_value,
-                "condition_key": condition_key,
-            }
-            for (project, material_id, chemical_system_id, formula, unique_value, condition_key) in keys
-        ]
+        ors = [Identity.from_tuple(key).as_dict() for key in keys]
         match: dict[str, Any] = {"$or": ors}
         if self._scope:
             match = {"$and": [self._scope, match]}
-        projection = {
-            "project": 1,
-            "material_id": 1,
-            "chemical_system_id": 1,
-            "formula": 1,
-            "unique_value": 1,
-            "condition_key": 1,
-        }
         collection = self.document_model.get_pymongo_collection()
         found: set[IdentityKey] = set()
-        async for doc in collection.find(match, projection):
-            found.add(
-                (
-                    doc["project"],
-                    doc["material_id"],
-                    doc["chemical_system_id"],
-                    doc["formula"],
-                    doc.get("unique_value"),
-                    doc.get("condition_key") or "",
-                )
-            )
+        async for doc in collection.find(match, Identity.projection()):
+            found.add(Identity.from_document(doc).as_tuple())
         return found
 
     async def referenced_component_ids(

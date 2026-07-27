@@ -236,16 +236,7 @@ class ContributionService:
                     continue
 
             resolved.append((i, contrib, unique_value))
-            keys.append(
-                (
-                    contrib.project,
-                    contrib.material_id,
-                    contrib.chemical_system_id,
-                    contrib.formula,
-                    unique_value,
-                    "",
-                )
-            )
+            keys.append(contrib.identity(unique_value).as_tuple())
 
         # Second pass (insert only): reject identity collisions against existing docs and earlier
         # items in this batch. Upsert skips this — an existing identity is the update target and the
@@ -257,14 +248,7 @@ class ContributionService:
         existing = await self._contributions.existing_identities(keys)
         seen: set[IdentityKey] = set()
         for i, contrib, unique_value in resolved:
-            key: IdentityKey = (
-                contrib.project,
-                contrib.material_id,
-                contrib.chemical_system_id,
-                contrib.formula,
-                unique_value,
-                "",
-            )
+            key: IdentityKey = contrib.identity(unique_value).as_tuple()
             if key in existing or key in seen:
                 failures.append(
                     BulkFailure(

@@ -1,6 +1,8 @@
 import re
+from collections.abc import Mapping
+from dataclasses import dataclass, fields
 from datetime import UTC, datetime
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 from warnings import deprecated
 
 from beanie import (
@@ -121,6 +123,71 @@ def extract_unique_value(data: dict[str, Any] | None, unique_column: str) -> Sca
     return value
 
 
+# dataclass construction is cheaper than Pydantic.BaseModel
+@dataclass(frozen=True, slots=True)
+class Identity:
+    """The full identity of a Contribution.
+
+    Field declaration order IS the identity/index column order: ``as_tuple``, ``index_model``, and
+    ``projection`` iterate ``dataclasses.fields`` in that order, so the order is declared exactly once
+    (below). Reordering the fields reorders the unique index — a schema change, not a cosmetic edit.
+
+    ``unique_value`` is the project's ``unique_column`` value promoted onto the document (``None`` when
+    the project sets no ``unique_column``); ``condition_key`` is the pivot discriminator, ``""`` until
+    pivoting is wired in.
+    """
+
+    project: str
+    material_id: str
+    chemical_system_id: str
+    formula: str
+    unique_value: Scalar | None = None
+    condition_key: str = ""
+
+    def as_tuple(self) -> IdentityKey:
+        """Identity as a hashable tuple in index order (for set membership / dedup)."""
+        return cast(IdentityKey, tuple(getattr(self, f.name) for f in fields(self)))
+
+    def as_dict(self) -> dict[str, Any]:
+        """Identity as a flat dict keyed by field name (for Mongo match clauses and upsert)."""
+        return {f.name: getattr(self, f.name) for f in fields(self)}
+
+    @classmethod
+    def from_tuple(cls, key: IdentityKey) -> Identity:
+        """Rebuild from an ``as_tuple()`` value. ``IdentityKey`` is fixed-shape in ``FIELDS`` order."""
+        project, material_id, chemical_system_id, formula, unique_value, condition_key = key
+        return cls(
+            project=project,
+            material_id=material_id,
+            chemical_system_id=chemical_system_id,
+            formula=formula,
+            unique_value=unique_value,
+            condition_key=condition_key,
+        )
+
+    @classmethod
+    def from_document(cls, doc: Mapping[str, Any]) -> Identity:
+        """Build from a raw Mongo document/projection, tolerating null-stripped fields."""
+        return cls(
+            project=doc["project"],
+            material_id=doc["material_id"],
+            chemical_system_id=doc["chemical_system_id"],
+            formula=doc["formula"],
+            unique_value=doc.get("unique_value"),
+            condition_key=doc.get("condition_key") or "",
+        )
+
+    @classmethod
+    def index_model(cls, name: str = "project_identity", *, unique: bool = True) -> IndexModel:
+        """The unique index enforcing identity — keys follow the field order so they can't drift."""
+        return IndexModel(keys=[(f.name, ASCENDING) for f in fields(cls)], name=name, unique=unique)
+
+    @classmethod
+    def projection(cls) -> dict[str, int]:
+        """A Mongo projection selecting exactly the identity fields."""
+        return {f.name: 1 for f in fields(cls)}
+
+
 class ContributionBase(BaseDocumentWithInput[PydanticObjectId]):
     """Shared settings and fields for Contribution, ContributionIn, and ContributionOut."""
 
@@ -141,18 +208,7 @@ class ContributionBase(BaseDocumentWithInput[PydanticObjectId]):
         name = "contributions"
         keep_nulls = False
         indexes = [
-            IndexModel(
-                keys=[
-                    ("project", ASCENDING),
-                    ("material_id", ASCENDING),
-                    ("chemical_system_id", ASCENDING),
-                    ("formula", ASCENDING),
-                    ("unique_value", ASCENDING),
-                    ("condition_key", ASCENDING),
-                ],
-                name="project_identity",
-                unique=True,
-            ),
+            Identity.index_model(),
             # Multikey indexes over each Link field's DBRef id so the component-delete
             # reference check (referenced_component_ids) is index-served, not a COLLSCAN.
             IndexModel(keys=[("structures.$id", ASCENDING)], name="ref_structures"),
@@ -192,6 +248,18 @@ class Contribution(ContributionBase):
     def set_last_modified(self):
         self.last_modified = datetime.now(UTC)
 
+    @property
+    def identity(self) -> Identity:
+        """This document's identity, read straight off its own stored fields."""
+        return Identity(
+            project=self.project,
+            material_id=self.material_id,
+            chemical_system_id=self.chemical_system_id,
+            formula=self.formula,
+            unique_value=self.unique_value,
+            condition_key=self.condition_key,
+        )
+
 
 class ContributionIn(ContributionBase):
     """Fields that users are allowed to submit when adding a Contribution."""
@@ -208,20 +276,24 @@ class ContributionIn(ContributionBase):
         """Returns the total number of components (structures, tables, attachments) in the contribution"""
         return len(self.structures or []) + len(self.tables or []) + len(self.attachments or [])
 
-    def identifiers(self, unique_value: Scalar | None = None, condition_key: str = "") -> dict[str, Any]:
-        """Returns the identity fields of a contribution (outside of id) for reporting and upsert.
+    def identity(self, unique_value: Scalar | None = None, condition_key: str = "") -> Identity:
+        """Build this contribution's :class:`Identity` from its flat fields plus server-resolved parts.
 
         ``unique_value`` and ``condition_key`` are server-resolved, so they are passed in rather than
-        read off the input model.
+        read off the (untrusted) input model.
         """
-        return {
-            "project": self.project,
-            "material_id": self.material_id,
-            "chemical_system_id": self.chemical_system_id,
-            "formula": self.formula,
-            "unique_value": unique_value,
-            "condition_key": condition_key,
-        }
+        return Identity(
+            project=self.project,
+            material_id=self.material_id,
+            chemical_system_id=self.chemical_system_id,
+            formula=self.formula,
+            unique_value=unique_value,
+            condition_key=condition_key,
+        )
+
+    def identifiers(self, unique_value: Scalar | None = None, condition_key: str = "") -> dict[str, Any]:
+        """Returns the identity fields of a contribution (outside of id) for reporting and upsert."""
+        return self.identity(unique_value, condition_key).as_dict()
 
 
 class ContributionOut(DocumentOut[PydanticObjectId]):
