@@ -251,18 +251,6 @@ class TestGetContributions:
         )
         assert all(c.is_public is True for c in page.items)
 
-    async def test_filter_by_needs_build(self, db):
-        await _insert(identifier="nb-true", needs_build=True, is_public=True)
-        await _insert(identifier="nb-false", needs_build=False, is_public=True)
-        f = ContributionFilter(needs_build=False)
-        page = await _repo(ADMIN).get_contributions(
-            pagination=CursorParams(), filter=f, fields=None
-        )
-        identifiers = {c.identifier for c in page.items}
-        assert "nb-false" in identifiers
-        assert "nb-true" not in identifiers
-
-
 # ---------------------------------------------------------------------------
 # get_contribution_by_id
 # ---------------------------------------------------------------------------
@@ -384,7 +372,7 @@ class TestUpdateContributionByIdentifiers:
     async def test_unrelated_fields_unchanged(self, db):
         doc = await _insert(identifier="patch-preserve", formula="Fe2O3")
         await _repo(ADMIN).update_contribution_by_identifiers(
-            doc.project, doc.identifier, doc.version, doc.condition_key, {"needs_build": False}
+            doc.project, doc.identifier, doc.version, doc.condition_key, {"is_public": True}
         )
         found = await Contribution.find_one(Contribution.id == doc.id)
         assert found.formula == "Fe2O3"

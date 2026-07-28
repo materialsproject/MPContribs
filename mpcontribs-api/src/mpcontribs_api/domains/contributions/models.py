@@ -34,8 +34,6 @@ class ContributionBase(BaseModel):
     formula: DisplayStr
     data: ContributionData = Field(description=CONTRIBUTION_DATA_INPUT_DESCRIPTION)
 
-    # TODO: Verify that this should default to True and be passed by users
-    needs_build: bool = True
     last_modified: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
     class Settings:
@@ -75,7 +73,6 @@ class Contribution(ContributionBase, BaseDocumentWithInput[PydanticObjectId]):
     structures: list[Link[Structure]] | None = None
     tables: list[Link[Table]] | None = None
     attachments: list[Link[Attachment]] | None = None
-    # needs_build: bool = True
 
     @classmethod
     def from_input_model(cls, data: ContributionIn) -> Contribution:
@@ -136,7 +133,6 @@ class ContributionOut(DocumentOut[PydanticObjectId]):
     formula: str | None = None
     is_public: bool | None = None
     last_modified: datetime | None = None
-    needs_build: bool | None = None
     # No input validators on the read path: stored documents are trusted, and re-validating here
     # would 500 on historical data that missed the correction (see carrier_transport contribs)
     data: dict[str, Any] | None = Field(default=None, description=CONTRIBUTION_DATA_OUTPUT_DESCRIPTION)
@@ -155,7 +151,6 @@ class ContributionOut(DocumentOut[PydanticObjectId]):
             "formula",
             "is_public",
             "last_modified",
-            "needs_build",
         )
 
 
@@ -164,7 +159,6 @@ class ContributionPatch(SparseFieldsModel):
     identifier: SearchStr | None = None
     version: int | None = None
     formula: DisplayStr | None = None
-    needs_build: bool | None = None
     data: ContributionData = Field(default=None, description=CONTRIBUTION_DATA_INPUT_DESCRIPTION)
     structures: list[Link[Structure]] | None = None
     tables: list[Link[Table]] | None = None
@@ -192,8 +186,6 @@ class ContributionFilter(BaseFilter):
     formula__ilike: str | None = None
 
     is_public: bool | None = None
-
-    needs_build: bool | None = None
 
     table: TableFilter | None = FilterDepends(with_prefix("tables", TableFilter))
     attachment: AttachmentFilter | None = FilterDepends(with_prefix("attachments", AttachmentFilter))

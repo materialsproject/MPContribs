@@ -1225,14 +1225,14 @@ class TestPatchContribution:
         updated = _target_doc()
         contrib_repo.update_contribution_by_identifiers.return_value = updated
 
-        result = await svc.patch_contribution(str(_oid()), ContributionPatch(formula="H2O", needs_build=False))
+        result = await svc.patch_contribution(str(_oid()), ContributionPatch(formula="H2O"))
 
         assert result == [updated]
         contrib_repo.update_contribution_by_identifiers.assert_awaited_once()
         args, _ = contrib_repo.update_contribution_by_identifiers.call_args
         project, identifier, version, condition_key, update_data = args
         assert (project, identifier, version, condition_key) == ("mp-team", "mp-1", 1, "")
-        assert update_data == {"formula": "H2O", "needs_build": False}
+        assert update_data == {"formula": "H2O"}
         assert "data" not in update_data  # no data on the patch
 
     async def test_data_without_conditions_annotates_and_patches_target(self):

@@ -65,10 +65,10 @@ class TestBuildUpdateSet:
         assert _build_update_set(update, replace_data=True) == update
 
     def test_merge_flattens_only_dict_fields(self):
-        update = {"formula": "H2O", "needs_build": False, "data": {"a": 1, "grp": {"b": 2}}}
+        update = {"formula": "H2O", "version": 2, "data": {"a": 1, "grp": {"b": 2}}}
         assert _build_update_set(update, replace_data=False) == {
             "formula": "H2O",
-            "needs_build": False,
+            "version": 2,
             "data.a": 1,
             "data.grp.b": 2,
         }

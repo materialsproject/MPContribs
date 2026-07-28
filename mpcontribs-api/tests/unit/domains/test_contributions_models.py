@@ -57,7 +57,6 @@ class TestContributionBase:
 
     def test_defaults(self):
         contrib = _make_contribution_in()
-        assert contrib.needs_build is True
         assert contrib.structures is None
         assert contrib.tables is None
         assert contrib.attachments is None
@@ -217,9 +216,8 @@ class TestContributionPatch:
         assert patch.data is None
 
     def test_partial_patch(self):
-        patch = ContributionPatch(formula="Li2O", needs_build=False)
+        patch = ContributionPatch(formula="Li2O")
         assert patch.formula == "Li2O"
-        assert patch.needs_build is False
         assert patch.project is None
 
     def test_data_can_be_set(self):
