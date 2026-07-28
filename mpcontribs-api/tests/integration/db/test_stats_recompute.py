@@ -76,7 +76,7 @@ def _structure(charge: float | None) -> StructureIn:
     return StructureIn(
         name="struct",
         lattice=Lattice(
-            matrix=pl.DataFrame([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]),
+            matrix=[[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]],
             pbc=[True, True, True],
             a=1.0, b=1.0, c=1.0,
             alpha=90.0, beta=90.0, gamma=90.0,
@@ -173,13 +173,14 @@ class TestStatsRecomputeLifecycle:
         assert (cols["energy"].min, cols["energy"].max) == (-5.0, -5.0)
 
         # --- remove it -> back to empty ---
-        # NOTE: svc.delete_contributions() cannot delete a contribution that references real
-        # structure/table components: its cascade re-reads the contribution through ContributionFilter,
-        # whose nested component sub-filters make Beanie fetch the linked components, and the fetched
-        # frame content (e.g. Lattice.matrix) fails to round-trip (Structure/Table don't register
-        # FRAME_BSON_ENCODERS, so it is stored as a bare list _coerce_frame rejects). That is a
-        # pre-existing bug unrelated to the stats recompute. To still assert the removal recompute,
-        # drop the docs directly and recompute; the no-components case below covers delete() end-to-end.
+        # NOTE: svc.delete_contributions() cannot delete a contribution that references a real table
+        # component: its cascade re-reads the contribution through ContributionFilter, whose nested
+        # component sub-filters make Beanie fetch the linked components, and the fetched Table.data
+        # frame fails to round-trip (Table.data is a PolarsFrame that pymongo stores as bare column
+        # lists which _coerce_frame rejects on read). That is a pre-existing bug in the tables domain,
+        # unrelated to the stats recompute. (Structure.lattice.matrix used to hit the same bug but is
+        # now a plain nested-list type that round-trips.) To still assert the removal recompute, drop
+        # the docs directly and recompute; the no-components case below covers delete() end-to-end.
         await db["contributions"].delete_many({"project": PID})
         for coll in ("structures", "tables"):
             await db[coll].delete_many({})

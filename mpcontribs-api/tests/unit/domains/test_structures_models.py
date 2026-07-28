@@ -1,4 +1,3 @@
-import polars as pl
 import pytest
 from beanie import PydanticObjectId
 from pydantic import ValidationError as PydanticValidationError
@@ -13,6 +12,7 @@ from mpcontribs_api.domains.structures.models import (
     StructureIn,
     StructureOut,
     StructurePatch,
+    _validate_lattice_matrix,
 )
 from mpcontribs_api.exceptions import ValidationError as AppValidationError
 
@@ -23,7 +23,7 @@ from mpcontribs_api.exceptions import ValidationError as AppValidationError
 
 def _lattice_payload(**overrides) -> dict:
     payload = {
-        "matrix": {"x": [1.0, 0.0, 0.0], "y": [0.0, 1.0, 0.0], "z": [0.0, 0.0, 1.0]},
+        "matrix": [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]],
         "pbc": [True, True, True],
         "a": 1.0,
         "b": 1.0,
@@ -94,19 +94,64 @@ class TestSpecies:
 class TestLattice:
     def test_valid_construction(self):
         lattice = Lattice(**_lattice_payload())
-        assert isinstance(lattice.matrix, pl.DataFrame)
+        assert lattice.matrix == [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
         assert lattice.pbc == [True, True, True]
         assert lattice.volume == 1.0
 
-    def test_matrix_coerced_from_dict(self):
-        lattice = Lattice(**_lattice_payload())
-        assert lattice.matrix.columns == ["x", "y", "z"]
+    def test_matrix_preserves_row_major_ordering(self):
+        lattice = Lattice(**_lattice_payload(matrix=[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]]))
+        assert lattice.matrix == [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]]
+
+    def test_integer_cells_coerced_to_float(self):
+        lattice = Lattice(**_lattice_payload(matrix=[[1, 0, 0], [0, 1, 0], [0, 0, 1]]))
+        assert lattice.matrix == [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
+        assert all(isinstance(cell, float) for row in lattice.matrix for cell in row)
 
     def test_missing_angles_raise(self):
         payload = _lattice_payload()
         del payload["alpha"]
         with pytest.raises(PydanticValidationError):
             Lattice(**payload)
+
+
+class TestLatticeMatrixShape:
+    def test_valid_3x3_accepted(self):
+        result = _validate_lattice_matrix([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+        assert result == [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]]
+
+    def test_too_few_rows_2x3_rejected(self):
+        # 2x3: names the actual row count.
+        with pytest.raises(AppValidationError, match="got 2 rows"):
+            _validate_lattice_matrix([[1, 2, 3], [4, 5, 6]])
+
+    def test_wrong_columns_3x2_rejected(self):
+        # 3x2: names the offending row's column count.
+        with pytest.raises(AppValidationError, match="row 0 has 2 columns"):
+            _validate_lattice_matrix([[1, 2], [3, 4], [5, 6]])
+
+    def test_ragged_rows_rejected(self):
+        # A late ragged row is caught and its index/width named.
+        with pytest.raises(AppValidationError, match="row 2 has 2 columns"):
+            _validate_lattice_matrix([[1, 2, 3], [4, 5, 6], [7, 8]])
+
+    def test_non_numeric_cell_rejected(self):
+        # The offending value appears in the message.
+        with pytest.raises(AppValidationError, match=r"cell \[1\]\[2\] must be numeric, got 'x'"):
+            _validate_lattice_matrix([[1, 2, 3], [4, 5, "x"], [7, 8, 9]])
+
+    def test_boolean_cell_rejected(self):
+        # bool is an int subclass but not a valid matrix entry.
+        with pytest.raises(AppValidationError, match="must be numeric"):
+            _validate_lattice_matrix([[1, 2, 3], [4, 5, 6], [7, 8, True]])
+
+    def test_non_nested_rejected(self):
+        with pytest.raises(AppValidationError, match="3x3 nested list"):
+            _validate_lattice_matrix("not a matrix")
+
+    def test_rejected_at_model_construction(self):
+        # The BeforeValidator's domain error propagates through model validation.
+        with pytest.raises(AppValidationError, match="3x3"):
+            Lattice(**_lattice_payload(matrix=[[1, 2, 3], [4, 5, 6]]))
 
 
 # ---------------------------------------------------------------------------

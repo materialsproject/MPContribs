@@ -67,7 +67,7 @@ def _structure_in(**overrides) -> StructureIn:
         "name": "test-struct",
         "md5": "c" * 32,
         "lattice": Lattice(
-            matrix=pl.DataFrame([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]),
+            matrix=[[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]],
             pbc=[True, True, True],
             a=1.0, b=1.0, c=1.0,
             alpha=90.0, beta=90.0, gamma=90.0,
