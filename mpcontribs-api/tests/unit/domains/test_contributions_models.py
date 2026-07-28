@@ -214,11 +214,17 @@ class TestContributionPatch:
         assert patch.identifier is None
         assert patch.formula is None
         assert patch.data is None
+        assert patch.is_public is None
 
     def test_partial_patch(self):
         patch = ContributionPatch(formula="Li2O")
         assert patch.formula == "Li2O"
         assert patch.project is None
+
+    def test_is_public_settable(self):
+        # A contribution's visibility is patchable (publishing), unlike on ``ContributionIn``.
+        assert ContributionPatch(is_public=True).is_public is True
+        assert ContributionPatch(is_public=False).is_public is False
 
     def test_data_can_be_set(self):
         patch = ContributionPatch(data={"new_key": 42})

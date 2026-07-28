@@ -1,7 +1,7 @@
 import pytest
 from beanie import PydanticObjectId
 
-from mpcontribs_api.domains._shared.bulk import BulkDeleteSummary, BulkWriteSummary
+from mpcontribs_api.domains._shared.bulk import BulkDeleteSummary, BulkUpdateSummary, BulkWriteSummary
 from mpcontribs_api.domains.contributions.dependencies import (
     get_contribution_service,
     get_scoped_contributions,
@@ -259,6 +259,37 @@ class TestDownloadContributions:
 # ---------------------------------------------------------------------------
 
 
+class TestBulkUpdateContributions:
+    def test_publish_returns_200_and_summary(self, client, contribution_service):
+        contribution_service.bulk_update.return_value = BulkUpdateSummary(matched=3, modified=2, projects=["mp-team"])
+        r = client.patch("/api/v1/contributions", json={"is_public": True})
+        assert r.status_code == 200
+        assert r.json() == {"matched": 3, "modified": 2, "projects": ["mp-team"]}
+
+    def test_forwards_update_and_filter(self, client, contribution_service):
+        from mpcontribs_api.domains.contributions.models import ContributionFilter
+
+        contribution_service.bulk_update.return_value = BulkUpdateSummary(matched=0, modified=0, projects=[])
+        client.patch("/api/v1/contributions?project=mp-team", json={"is_public": True})
+        contribution_service.bulk_update.assert_awaited_once()
+        kwargs = contribution_service.bulk_update.call_args.kwargs
+        assert kwargs["update"].is_public is True
+        assert isinstance(kwargs["filter"], ContributionFilter)
+
+    def test_missing_is_public_returns_422(self, client, contribution_service):
+        r = client.patch("/api/v1/contributions", json={})
+        assert r.status_code == 422
+        contribution_service.bulk_update.assert_not_called()
+
+    def test_patch_by_id_forwards_is_public(self, client, contribution_service):
+        # The single-contribution publish path: {"is_public": true} reaches the service patch.
+        contribution_service.patch_contribution.return_value = [SAMPLE_OUT]
+        r = client.patch(f"/api/v1/contributions/{PydanticObjectId()}", json={"is_public": True})
+        assert r.status_code == 200
+        patch = contribution_service.patch_contribution.call_args.kwargs["patch"]
+        assert patch.is_public is True
+
+
 class TestContributionMutationsRequireAuth:
     def test_post_anon_401(self, client, contribution_service):
         r = client.post("/api/v1/contributions", json=[], headers=FORCE_ANON_HEADERS)
@@ -275,6 +306,11 @@ class TestContributionMutationsRequireAuth:
         r = client.delete("/api/v1/contributions", headers=FORCE_ANON_HEADERS)
         assert r.status_code == 401
         contribution_repo.delete_contributions.assert_not_called()
+
+    def test_patch_collection_anon_401(self, client, contribution_service):
+        r = client.patch("/api/v1/contributions", json={"is_public": True}, headers=FORCE_ANON_HEADERS)
+        assert r.status_code == 401
+        contribution_service.bulk_update.assert_not_called()
 
     def test_delete_by_id_anon_401(self, client, contribution_service):
         r = client.delete(f"/api/v1/contributions/{PydanticObjectId()}", headers=FORCE_ANON_HEADERS)

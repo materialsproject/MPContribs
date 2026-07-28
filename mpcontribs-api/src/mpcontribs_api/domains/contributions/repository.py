@@ -9,6 +9,7 @@ from pymongo.results import DeleteResult
 from types_aiobotocore_s3 import S3Client
 
 from mpcontribs_api.authz import User
+from mpcontribs_api.domains._shared.bulk import BulkUpdateSummary
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
 from mpcontribs_api.domains._shared.types import DownloadFormat, ShortMimeFormat
 from mpcontribs_api.domains.contributions.data import is_quantity_leaf
@@ -130,6 +131,38 @@ class MongoDbContributionRepository(
             filter (ContribtionFilter): the filter to use to identify contributions to delete
         """
         return await filter.filter(self.document_model.find(self._scope)).delete_many()
+
+    async def bulk_update(
+        self,
+        filter: ContributionFilter,
+        fields: dict[str, Any],
+        *,
+        project_constraint: frozenset[str] | None,
+    ) -> BulkUpdateSummary:
+        """``$set`` ``fields`` on every scoped row matching ``filter``, optionally limited to projects.
+
+        Args:
+            filter: the caller-supplied query, applied on top of the user scope
+            fields: the field/value map handed verbatim to ``$set``
+            project_constraint: projects the update is limited to, or ``None`` for no limit
+
+        Returns:
+            BulkUpdateSummary: the counts of matched and modified contribs, and the list of the projects changed
+        """
+        criteria: list[Any] = []
+        if self._scope:
+            criteria.append(self._scope)
+        if project_constraint is not None:
+            criteria.append({"project": {"$in": sorted(project_constraint)}})
+        query = filter.filter(self.document_model.find(*criteria)).get_filter_query()
+        collection = self.document_model.get_pymongo_collection()
+        # Distinct projects among the *matched* rows (computed before the write, since ``fields`` may
+        # change values the filter keyed on) so the caller can recompute those projects' rollups.
+        projects = {p for p in await collection.distinct("project", query) if p is not None}
+        result = await collection.update_many(query, {"$set": fields})
+        return BulkUpdateSummary(
+            matched=result.matched_count, modified=result.modified_count, projects=sorted(projects)
+        )
 
     async def insert_many_contributions(
         self,

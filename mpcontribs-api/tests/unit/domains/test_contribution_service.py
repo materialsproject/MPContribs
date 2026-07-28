@@ -10,7 +10,14 @@ from pymongo.errors import BulkWriteError
 from mpcontribs_api.authz import ADMIN_GROUP, User
 from mpcontribs_api.config import MongoSettings
 from mpcontribs_api.domains.attachments.models import Attachment, AttachmentIn
-from mpcontribs_api.domains.contributions.models import Contribution, ContributionIn, ContributionPatch
+from mpcontribs_api.domains._shared.bulk import BulkUpdateSummary
+from mpcontribs_api.domains.contributions.models import (
+    Contribution,
+    ContributionBulkUpdate,
+    ContributionFilter,
+    ContributionIn,
+    ContributionPatch,
+)
 from mpcontribs_api.domains.contributions.service import ContributionService
 from mpcontribs_api.domains.contributions.stats import ProjectAggregate
 from mpcontribs_api.domains.structures.models import (
@@ -1235,6 +1242,19 @@ class TestPatchContribution:
         assert update_data == {"formula": "H2O"}
         assert "data" not in update_data  # no data on the patch
 
+    async def test_is_public_patch_flows_through(self):
+        # Publishing a single contribution: is_public is a scalar field, so it reaches the repo's
+        # update verbatim via patch.model_dump(exclude_unset=True, exclude={"data"}).
+        svc, contrib_repo, *_ = _make_service()
+        contrib_repo.get_contribution_document.return_value = _target_doc(condition_key="")
+        contrib_repo.update_contribution_by_identifiers.return_value = _target_doc()
+
+        await svc.patch_contribution(str(_oid()), ContributionPatch(is_public=True))
+
+        args, _ = contrib_repo.update_contribution_by_identifiers.call_args
+        *_ignored, update_data = args
+        assert update_data == {"is_public": True}
+
     async def test_data_without_conditions_annotates_and_patches_target(self):
         svc, contrib_repo, *_ = _make_service()
         target = _target_doc(condition_key="")
@@ -1305,3 +1325,55 @@ class TestPatchContribution:
 
         _, kwargs = contrib_repo.update_contribution_by_identifiers.call_args
         assert kwargs["replace_data"] is True
+
+
+# ---------------------------------------------------------------------------
+# bulk_update — filtered field update, project-authorized
+# ---------------------------------------------------------------------------
+
+
+class TestBulkUpdate:
+    async def test_non_admin_constrains_to_writable_projects(self):
+        # A non-admin's bulk update is limited to the projects they may write, not merely read.
+        user = User(username="google:alice@example.com", groups=frozenset({"mp-team"}))
+        svc, contrib_repo, *_ = _make_service(user=user)
+        contrib_repo.bulk_update.return_value = BulkUpdateSummary(matched=3, modified=2, projects=["mp-team"])
+
+        summary = await svc.bulk_update(ContributionFilter(), ContributionBulkUpdate(is_public=True))
+
+        contrib_repo.bulk_update.assert_awaited_once()
+        args, kwargs = contrib_repo.bulk_update.call_args
+        assert args[1] == {"is_public": True}
+        assert kwargs["project_constraint"] == frozenset({"mp-team"})
+        assert (summary.matched, summary.modified, summary.projects) == (3, 2, ["mp-team"])
+
+    async def test_admin_is_unconstrained(self):
+        # Admins update across any project: no project constraint is applied.
+        svc, contrib_repo, *_ = _make_service()  # admin by default
+        contrib_repo.bulk_update.return_value = BulkUpdateSummary(matched=1, modified=1, projects=["any-proj"])
+
+        await svc.bulk_update(ContributionFilter(), ContributionBulkUpdate(is_public=True))
+
+        _, kwargs = contrib_repo.bulk_update.call_args
+        assert kwargs["project_constraint"] is None
+
+    async def test_only_set_fields_are_written(self):
+        # The service $sets exactly the fields the body carried (exclude_unset), so extending
+        # ContributionBulkUpdate with new fields flows through without touching the service.
+        svc, contrib_repo, *_ = _make_service()
+        contrib_repo.bulk_update.return_value = BulkUpdateSummary(matched=1, modified=1, projects=["p"])
+
+        await svc.bulk_update(ContributionFilter(), ContributionBulkUpdate(is_public=False))
+
+        args, _ = contrib_repo.bulk_update.call_args
+        assert args[1] == {"is_public": False}
+
+    async def test_recomputes_touched_project_stats(self):
+        # Every touched project's rollup is recomputed afterward, like the other write paths.
+        svc, contrib_repo, *_ = _make_service()
+        contrib_repo.bulk_update.return_value = BulkUpdateSummary(matched=2, modified=2, projects=["pa", "pb"])
+
+        await svc.bulk_update(ContributionFilter(), ContributionBulkUpdate(is_public=False))
+
+        aggregated = {call.args[0] for call in contrib_repo.aggregate_project_stats.call_args_list}
+        assert aggregated == {"pa", "pb"}

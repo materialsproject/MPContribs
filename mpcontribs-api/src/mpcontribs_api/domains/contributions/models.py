@@ -159,6 +159,7 @@ class ContributionPatch(SparseFieldsModel):
     identifier: SearchStr | None = None
     version: int | None = None
     formula: DisplayStr | None = None
+    is_public: bool | None = None
     data: ContributionData = Field(default=None, description=CONTRIBUTION_DATA_INPUT_DESCRIPTION)
     structures: list[Link[Structure]] | None = None
     tables: list[Link[Table]] | None = None
@@ -207,3 +208,10 @@ class ContributionFilter(BaseFilter):
                 "Invalid ObjectId format. Must be 12-byte input or a 24-character hex string",
                 oid=v,
             ) from err
+
+
+# Right now, only is_public makes sense to update across multiple Contributions
+class ContributionBulkUpdate(BaseModel):
+    """Body of the filtered bulk-update route (``PATCH /api/v1/contributions``)."""
+
+    is_public: bool

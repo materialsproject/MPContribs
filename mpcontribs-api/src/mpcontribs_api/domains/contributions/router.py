@@ -6,7 +6,7 @@ from fastapi_filter import FilterDepends
 
 from mpcontribs_api.config import get_settings
 from mpcontribs_api.dependencies import S3Dep, require_user
-from mpcontribs_api.domains._shared.bulk import BulkWriteSummary
+from mpcontribs_api.domains._shared.bulk import BulkUpdateSummary, BulkWriteSummary
 from mpcontribs_api.domains._shared.types import (
     DownloadFormat,
     FieldSelector,
@@ -16,6 +16,7 @@ from mpcontribs_api.domains._shared.types import (
 from mpcontribs_api.domains.contributions.dependencies import ContributionDep, ContributionServiceDep
 from mpcontribs_api.domains.contributions.models import (
     Contribution,
+    ContributionBulkUpdate,
     ContributionFilter,
     ContributionIn,
     ContributionOut,
@@ -66,6 +67,20 @@ async def delete_contributions(
     filter: ContributionFilter = FilterDepends(ContributionFilter),
 ):
     return await repo.delete_contributions(filter=filter)
+
+
+@router.patch("", dependencies=[Depends(require_user)])
+async def bulk_update_contributions(
+    service: ContributionServiceDep,
+    body: ContributionBulkUpdate,
+    filter: ContributionFilter = FilterDepends(ContributionFilter),
+) -> BulkUpdateSummary:
+    """Update every contribution matching ``filter`` that the caller may write.
+
+    The update is constrained to the caller's writable projects (admins are unconstrained), so a
+    filter that also matches public contributions in other projects leaves those untouched.
+    """
+    return await service.bulk_update(filter=filter, update=body)
 
 
 # TODO: Might want to take contributions in from request body and run model_validate_json on it (much faster)

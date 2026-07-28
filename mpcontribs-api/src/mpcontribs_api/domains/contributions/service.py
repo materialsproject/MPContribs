@@ -15,6 +15,7 @@ from mpcontribs_api.config import MongoSettings, get_settings
 from mpcontribs_api.domains._shared.bulk import (
     BulkDeleteSummary,
     BulkFailure,
+    BulkUpdateSummary,
     BulkWriteSummary,
     bulk_failure_from_exception,
 )
@@ -22,6 +23,7 @@ from mpcontribs_api.domains._shared.repository import MongoDbRepository
 from mpcontribs_api.domains.attachments.repository import MongoDbAttachmentRepository
 from mpcontribs_api.domains.contributions.models import (
     Contribution,
+    ContributionBulkUpdate,
     ContributionFilter,
     ContributionIn,
     ContributionPatch,
@@ -702,6 +704,29 @@ class ContributionService:
         # A patch can shift a column's min/max, its unit, or the document size — refresh the rollup.
         await self.update_project({target.project})
         return result
+
+    async def bulk_update(self, filter: ContributionFilter, update: ContributionBulkUpdate) -> BulkUpdateSummary:
+        """Apply a filtered field update to every contribution matching ``filter`` the caller may write.
+
+        Scoped to Contributions that a user can write to. Only the touched projects' rollups afterward, as the
+        other write paths do.
+
+        Args:
+            filter: the contributions to target, applied on top of the user scope
+            update: the fields to set; every field the caller supplied is applied verbatim
+
+        Returns:
+            BulkUpdateSummary: matched/modified counts and the projects touched
+        """
+        fields = update.model_dump(exclude_unset=True)
+        if not fields:
+            # Nothing to set: MongoDB rejects an empty $set, so short-circuit with a no-op result.
+            return BulkUpdateSummary(matched=0, modified=0, projects=[])
+        # Admins may write any project; everyone else is limited to the projects they own/contribute to.
+        project_constraint = None if self._user.is_admin else self._user.writable_projects
+        update_summary = await self._contributions.bulk_update(filter, fields, project_constraint=project_constraint)
+        await self.update_project(project_ids=update_summary.projects)
+        return update_summary
 
     async def delete_contributions(self, filter: ContributionFilter) -> BulkDeleteSummary:
         """Delete a contribution and all of its child components
