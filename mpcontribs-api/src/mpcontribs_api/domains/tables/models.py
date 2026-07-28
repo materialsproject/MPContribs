@@ -170,15 +170,15 @@ class TableOut(DocumentOut[PydanticObjectId]):
         return {key: val for key, val in normalized.items() if val is not None}
 
     @staticmethod
-    def default_fields() -> list[str]:
+    def default_fields() -> tuple[str, ...]:
         # Light default; the tabular payload (data) is fetched via ?_fields=.
-        return [
+        return (
             "id",
             "name",
             "md5",
             "attrs",
             "total_data_rows",
-        ]
+        )
 
     @classmethod
     def projection(cls, fields):

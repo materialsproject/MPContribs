@@ -54,7 +54,7 @@ async def get_contributions(
     repo: ContributionDep,
     pagination: Annotated[CursorParams, Depends()],
     filter: ContributionFilter = FilterDepends(ContributionFilter),
-    fields: FieldSelector = ContributionOut.default_fields(),
+    fields: FieldSelector = None,
 ):
     selected = ContributionOut.parse_fields(fields)
     return await repo.get_contributions(pagination=pagination, filter=filter, fields=selected)
@@ -95,7 +95,7 @@ async def download_contributions(
     format: DownloadFormat = DownloadFormat.JSONL,
     ignore_cache: bool = False,
     filter: ContributionFilter = FilterDepends(ContributionFilter),
-    fields: FieldSelector = ContributionOut.default_fields(),
+    fields: FieldSelector = None,
 ):
     selected = ContributionOut.parse_fields(fields)
     body = await repo.download_contributions(
@@ -127,7 +127,7 @@ async def delete_contribution_by_id(
 async def get_contribution_by_id(
     repo: ContributionDep,
     id: str,
-    fields: FieldSelector = ContributionOut.default_fields(),
+    fields: FieldSelector = None,
 ):
     selected = ContributionOut.parse_fields(fields)
     return await repo.get_contribution_by_id(id=id, fields=selected)

@@ -129,8 +129,17 @@ class TestProjectOut:
 
 
 class TestProjectOutProjection:
-    def test_parse_fields_none_returns_none(self):
-        assert ProjectOut.parse_fields(None) is None
+    def test_parse_fields_none_returns_default_fields(self):
+        # Omitted _fields (None) -> the route's default_fields() (plus identity), not "all".
+        assert ProjectOut.parse_fields(None) == frozenset(ProjectOut.default_fields())
+
+    def test_parse_fields_empty_returns_identity_only(self):
+        # Present-but-empty _fields -> identity fields only.
+        assert ProjectOut.parse_fields([]) == frozenset({"id"})
+
+    def test_parse_fields_all_sentinel_returns_none(self):
+        # `_all` -> every field.
+        assert ProjectOut.parse_fields(["_all"]) is None
 
     def test_parse_fields_valid_field(self):
         result = ProjectOut.parse_fields(["title"])

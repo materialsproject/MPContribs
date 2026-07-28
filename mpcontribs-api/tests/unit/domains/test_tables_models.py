@@ -228,7 +228,7 @@ class TestTableOut:
         assert out.attrs is None
 
     def test_default_fields(self):
-        assert TableOut.default_fields() == ["id", "name", "md5", "attrs", "total_data_rows"]
+        assert TableOut.default_fields() == ("id", "name", "md5", "attrs", "total_data_rows")
 
     def test_default_fields_parseable(self):
         parsed = TableOut.parse_fields(TableOut.default_fields())

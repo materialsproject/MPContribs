@@ -76,12 +76,12 @@ class StructureOut(DocumentOut[PydanticObjectId]):
     cif: str | None = None
 
     @staticmethod
-    def default_fields() -> list[str]:
-        return [
+    def default_fields() -> tuple[str, ...]:
+        return (
             "id",
             "name",
             "md5",
-        ]
+        )
 
 
 class StructurePatch(SparseFieldsModel):

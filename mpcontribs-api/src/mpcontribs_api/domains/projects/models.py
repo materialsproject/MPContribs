@@ -102,8 +102,8 @@ class ProjectOut(DocumentOut[ShortStr]):
     license: Literal["CCA4", "CCPD"] | None = None
 
     @staticmethod
-    def default_fields() -> list[str]:
-        return ["id", "is_public", "title", "owner", "is_approved", "unique_identifiers"]
+    def default_fields() -> tuple[str, ...]:
+        return ("id", "is_public", "title", "owner", "is_approved", "unique_identifiers")
 
 
 class ProjectFilter(BaseFilter):

@@ -23,14 +23,15 @@ async def get_projects(
     repo: ProjectDep,
     pagination: Annotated[CursorParams, Depends()],
     filter: ProjectFilter = FilterDepends(ProjectFilter),
-    fields: FieldSelector = ProjectOut.default_fields(),
+    fields: FieldSelector = None,
 ):
     """Return paginated projects matching a filter.
 
     Args:
         repo (ProjectDep): the project repo we depend on
         pagination (CursorParams): arguments for cursor-based pagination
-        fields (str | None): optional fields to include in return. If None supplied, all fields are returned
+        fields (list[str] | None): optional ``_fields`` selection. Omitted -> server defaults;
+            empty (``?_fields=``) -> identity fields only; ``_all`` -> the full document
 
     Returns:
         list[ProjectSummary]: a list of smaller project payloads
@@ -43,14 +44,15 @@ async def get_projects(
 async def get_project_by_id(
     id: str,
     repo: ProjectDep,
-    fields: FieldSelector = ProjectOut.default_fields(),
+    fields: FieldSelector = None,
 ):
     """Gets a single project by its ID.
 
     Args:
         id (str): the id of the project to retrieve
         repo (ProjectDep): the project repo we depend on
-        fields (str | None): optional fields to include in return. If None supplied, all fields are returned
+        fields (list[str] | None): optional ``_fields`` selection. Omitted -> server defaults;
+            empty (``?_fields=``) -> identity fields only; ``_all`` -> the full document
 
     Returns:
         ProjectOut: the requested project, actual data returned is determined by the view the user requested

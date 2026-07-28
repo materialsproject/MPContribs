@@ -53,9 +53,9 @@ class AttachmentOut(DocumentOut[PydanticObjectId]):
     content: int | None = None
 
     @staticmethod
-    def default_fields() -> list[str]:
+    def default_fields() -> tuple[str, ...]:
         # Light default; content fetched via ?_fields=.
-        return ["id", "name", "md5", "mime"]
+        return ("id", "name", "md5", "mime")
 
 
 class AttachmentPatch(SparseFieldsModel):

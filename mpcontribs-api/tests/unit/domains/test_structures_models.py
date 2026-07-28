@@ -178,7 +178,7 @@ class TestStructureOut:
         assert out.md5 is None
 
     def test_default_fields(self):
-        assert StructureOut.default_fields() == ["id", "name", "md5"]
+        assert StructureOut.default_fields() == ("id", "name", "md5")
 
     def test_default_fields_parseable(self):
         # The route default must survive parse_fields without raising.

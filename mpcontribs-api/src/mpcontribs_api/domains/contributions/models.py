@@ -145,8 +145,8 @@ class ContributionOut(DocumentOut[PydanticObjectId]):
     attachments: list[Link[Attachment]] | None = None
 
     @staticmethod
-    def default_fields() -> list[str]:
-        return [
+    def default_fields() -> tuple[str, ...]:
+        return (
             "id",
             "project",
             "identifier",
@@ -156,7 +156,7 @@ class ContributionOut(DocumentOut[PydanticObjectId]):
             "is_public",
             "last_modified",
             "needs_build",
-        ]
+        )
 
 
 class ContributionPatch(SparseFieldsModel):
