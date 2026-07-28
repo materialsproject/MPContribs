@@ -84,7 +84,7 @@ lark==1.3.1
     # via rfc3987-syntax
 lxml==6.1.1
     # via pymatgen-core
-matplotlib==3.10.9
+matplotlib==3.11.0
     # via
     #   -r python/requirements.txt
     #   pymatgen-core
@@ -96,7 +96,7 @@ monty==2026.5.18
     # via pymatgen-core
 mpmath==1.3.0
     # via sympy
-msgpack==1.1.2
+msgpack==1.2.1
     # via
     #   bravado
     #   bravado-core
@@ -230,7 +230,7 @@ sympy==1.14.0
     # via pymatgen-core
 tabulate==0.10.0
     # via pymatgen-core
-tqdm==4.68.1
+tqdm==4.68.2
     # via
     #   mpcontribs-client (MPContribs/mpcontribs-client/pyproject.toml)
     #   pymatgen-core
@@ -250,7 +250,7 @@ typing-extensions==4.15.0
     #   swagger-spec-validator
 tzdata==2026.2
     # via arrow
-ujson==5.12.1
+ujson==5.13.0
     # via mpcontribs-client (MPContribs/mpcontribs-client/pyproject.toml)
 uncertainties==3.2.3
     # via pymatgen-core

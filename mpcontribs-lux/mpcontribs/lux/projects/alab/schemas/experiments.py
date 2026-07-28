@@ -40,11 +40,27 @@ class Experiment(BaseModel, extra="forbid"):
         description="Root experiment type (NSC, Na, PG, MINES, TRI)"
     )
 
+    global_formula: str = Field(
+        description=(
+            "The canonical formula for the target material, independent of per-run precursor adjustments."
+            "Represents what the experiment was ultimately trying to synthesize. This should be same as `formula`."
+        ),
+    )
+
     experiment_subgroup: str | None = Field(
         default=None, description="Experiment subgroup (e.g., NSC_249, Na_123)"
     )
 
-    target_formula: str = Field(description="Target chemical formula")
+    target_formula: str | None = Field(
+        default=None,
+        description=(
+            "The formula used internally to determine precursor weights."
+            "May differ from the true intended formula (global_formula) due to experimental"
+            "constraints (e.g. oxygen mass balancing corrections, excess"
+            "alkali for battery materials). Not always a chemically meaningful"
+            "representation of what was attempted. Can be null if there is no adjustment for experiment."
+        ),
+    )
 
     last_updated: datetime = Field(description="Last modification timestamp")
 
@@ -54,6 +70,11 @@ class Experiment(BaseModel, extra="forbid"):
 
     notes: str | None = Field(
         default=None, description="Optional notes about the experiment"
+    )
+
+    precursor_powders: list[str] | None = Field(
+        default=None,
+        description="List of precursor powder names used in the experiment",
     )
 
     # === Heating fields (prefix: heating_) ===
@@ -83,6 +104,10 @@ class Experiment(BaseModel, extra="forbid"):
 
     heating_low_temp_calcination: bool | None = Field(
         default=None, description="Whether low temperature calcination was used"
+    )
+
+    heating_furnace_name: str | None = Field(
+        default=None, description="Heating furnace type"
     )
 
     # === Recovery fields (prefix: recovery_) ===

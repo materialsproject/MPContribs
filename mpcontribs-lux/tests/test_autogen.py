@@ -1,7 +1,6 @@
 """Test and demo automatic generation of schemas."""
 
 import gzip
-from importlib_resources import files as import_module_path
 import importlib.util
 import json
 from pathlib import Path
@@ -22,20 +21,14 @@ def dynamically_load_module_from_path(path: Path, module_name: str):
 
 
 def test_schema_generation(test_dir):
-
-    base_module_path = import_module_path("mpcontribs.lux")
+    example_file = (
+        Path(__file__).resolve().parents[1]
+        / "examples"
+        / "cubic_solid_expt_data.json.gz"
+    )
 
     temp_file = NamedTemporaryFile(suffix=".json")
-    with gzip.open(
-        (
-            import_module_path("mpcontribs.lux")
-            / ".."
-            / ".."
-            / "examples"
-            / "cubic_solid_expt_data.json.gz"
-        ).resolve(),
-        "rb",
-    ) as source_file:
+    with gzip.open(example_file, "rb") as source_file:
         temp_file.write(json.dumps(json.load(source_file)["data"]).encode())
 
     temp_file.seek(0)
