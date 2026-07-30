@@ -67,6 +67,9 @@ async def db(mongo_client):
     await init_beanie(
         database=database,
         document_models=[Project, Contribution, Structure, Table, Attachment],
+        # Mirror app.py so a test session drops indexes no longer declared in the models
+        # (e.g. a superseded unique index) instead of colliding with stale ones.
+        allow_index_dropping=True,
     )
     yield database
 

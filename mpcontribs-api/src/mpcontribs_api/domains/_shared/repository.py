@@ -19,7 +19,7 @@ from types_aiobotocore_s3 import S3Client
 from mpcontribs_api.authz import User
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DeleteResponse, DocumentOut
 from mpcontribs_api.domains._shared.types import DownloadFormat, ShortMimeFormat
-from mpcontribs_api.exceptions import ConflictError, NotFoundError, ValidationError
+from mpcontribs_api.exceptions import ConflictError, DownloadError, NotFoundError, ValidationError
 from mpcontribs_api.pagination import CursorParams, Page, encode_cursor
 
 
@@ -229,6 +229,8 @@ class MongoDbRepository[
                 return self._serialize_jsonl
             case DownloadFormat.CSV:
                 return lambda rows: self._serialize_csv(rows, fields)
+            case _:
+                raise DownloadError("download format unhandled", format=format)
 
     @staticmethod
     async def _serialize_jsonl(rows: AsyncIterable) -> AsyncIterator[bytes]:
