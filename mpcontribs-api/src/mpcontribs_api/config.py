@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class UserSettings(BaseModel):
+class QuotaLimits(BaseModel):
     max_projects: int = Field(
         default=3,
         description="The maximum number of projects a single user is allowed to create",
@@ -194,8 +194,8 @@ class Settings(BaseSettings):
     # MPContribs_otel__*
     otel: ObservabilitySettings = Field(default_factory=ObservabilitySettings)
 
-    # MPContribs_user__*
-    user: UserSettings = Field(default_factory=UserSettings)
+    # MPContribs_quota__*
+    quota: QuotaLimits = Field(default_factory=QuotaLimits)
 
     # SMTP Settings
     mail_default_sender: str = Field(
