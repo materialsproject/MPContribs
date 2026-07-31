@@ -9,7 +9,9 @@ from mpcontribs_api.domains.projects.models import (
     ProjectPatch,
     Reference,
     Stats,
+    check_column_limit,
 )
+from mpcontribs_api.exceptions import ValidationError as AppValidationError
 
 # ---------------------------------------------------------------------------
 # Column
@@ -266,46 +268,35 @@ def _columns(n: int) -> list[Column]:
 
 
 class TestColumnLengthQuota:
-    """A project may carry at most ``user.max_columns`` columns; the limit is inclusive."""
+    """The column cap is enforced by ``check_column_limit`` (called from the repository with the
+    caller's effective ``max_columns``), not by the ``ProjectIn``/``ProjectPatch`` models. These
+    tests pin the pure function's contract: the cap is inclusive, over-cap writes raise, and a
+    non-list value is a no-op so legacy documents that already exceed the cap can still be read back.
+    """
 
-    def _make_input(self, columns: list[Column]) -> dict:
-        return {
-            "_id": "cols-proj",
-            "title": "Columns Project",
-            "authors": "Alice",
-            "description": "desc",
-            "owner": "google:alice@example.com",
-            "unique_identifiers": True,
-            "stats": VALID_STATS,
-            "columns": columns,
-        }
+    def test_at_cap_is_allowed(self):
+        # Inclusive: exactly max_columns entries must pass.
+        check_column_limit(_columns(2), max_columns=2)
 
-    def test_project_in_at_cap_is_allowed(self, monkeypatch):
-        from mpcontribs_api.config import get_settings
+    def test_under_cap_is_allowed(self):
+        check_column_limit(_columns(1), max_columns=2)
 
-        monkeypatch.setattr(get_settings().user, "max_columns", 2)
-        project = ProjectIn(**self._make_input(_columns(2)))
-        assert len(project.columns) == 2
-
-    def test_project_in_over_cap_raises(self, monkeypatch):
-        from mpcontribs_api.config import get_settings
-        from mpcontribs_api.exceptions import ValidationError as AppValidationError
-
-        monkeypatch.setattr(get_settings().user, "max_columns", 2)
+    def test_over_cap_raises(self):
         with pytest.raises(AppValidationError):
-            ProjectIn(**self._make_input(_columns(3)))
+            check_column_limit(_columns(3), max_columns=2)
 
-    def test_project_patch_at_cap_is_allowed(self, monkeypatch):
-        from mpcontribs_api.config import get_settings
+    def test_error_reports_offending_length(self):
+        with pytest.raises(AppValidationError) as exc_info:
+            check_column_limit(_columns(5), max_columns=2)
+        assert exc_info.value.context["column_length"] == 5
 
-        monkeypatch.setattr(get_settings().user, "max_columns", 2)
-        patch = ProjectPatch(columns=_columns(2))
-        assert len(patch.columns) == 2
+    def test_none_is_noop(self):
+        # A read path may pass a non-list (e.g. an unset field); it must never raise so legacy
+        # documents that predate the cap remain retrievable.
+        check_column_limit(None, max_columns=0)
 
-    def test_project_patch_over_cap_raises(self, monkeypatch):
-        from mpcontribs_api.config import get_settings
-        from mpcontribs_api.exceptions import ValidationError as AppValidationError
-
-        monkeypatch.setattr(get_settings().user, "max_columns", 2)
-        with pytest.raises(AppValidationError):
-            ProjectPatch(columns=_columns(3))
+    def test_model_does_not_enforce_cap(self):
+        # Regression guard: the cap moved off the model into the repository. Constructing a model
+        # with more columns than any cap must NOT raise here — enforcement happens on write.
+        patch = ProjectPatch(columns=_columns(50))
+        assert len(patch.columns) == 50

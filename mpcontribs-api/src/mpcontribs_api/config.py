@@ -194,8 +194,8 @@ class Settings(BaseSettings):
     # MPContribs_otel__*
     otel: ObservabilitySettings = Field(default_factory=ObservabilitySettings)
 
-    # MPContribs_quota__*
-    quota: QuotaLimits = Field(default_factory=QuotaLimits)
+    # MPContribs_consumer__*
+    consumer: QuotaLimits = Field(default_factory=QuotaLimits)
 
     # SMTP Settings
     mail_default_sender: str = Field(

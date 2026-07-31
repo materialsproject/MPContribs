@@ -17,11 +17,11 @@ class ConsumerSettings(BaseModel):
     (the repository/input paths use ``exclude_unset`` to keep an override partial).
     """
 
-    max_projects: int = Field(default_factory=lambda: get_settings().quota.max_projects, ge=0)
+    max_projects: int = Field(default_factory=lambda: get_settings().consumer.max_projects, ge=0)
     max_unapproved_contributions_per_project: int = Field(
-        default_factory=lambda: get_settings().quota.max_unapproved_contributions_per_project, ge=0
+        default_factory=lambda: get_settings().consumer.max_unapproved_contributions_per_project, ge=0
     )
-    max_columns: int = Field(default_factory=lambda: get_settings().quota.max_columns, ge=0)
+    max_columns: int = Field(default_factory=lambda: get_settings().consumer.max_columns, ge=0)
 
 
 class ConsumerSettingsFilter(BaseFilter):
