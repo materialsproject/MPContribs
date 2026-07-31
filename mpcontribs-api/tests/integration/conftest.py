@@ -9,7 +9,7 @@ from mpcontribs_api.exceptions import register_exception_handlers
 from mpcontribs_api.middleware import RequestContextMiddleware
 
 
-@pytest.fixture(autouse=True, scope="session")
+@pytest.fixture(autouse=True)
 def _mock_beanie_collection():
     """Stub Beanie's collection check for mock-based integration tests.
 
@@ -19,6 +19,11 @@ def _mock_beanie_collection():
 
     The tests/integration/db/ conftest overrides this fixture with a no-op so
     DB tests still get the real Beanie collection after init_beanie().
+
+    Function-scoped (not session): the patch must be torn down after each mock-based test so it
+    can never leak into the real-DB tests that share this process. A session-scoped patch, once
+    entered by any route test, stayed active and silently turned the DB tests' collections into
+    MagicMocks — making their inserts vanish depending on collection order.
     """
     import beanie
 

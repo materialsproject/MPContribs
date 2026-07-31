@@ -21,13 +21,16 @@ pytestmark = [
 ]
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(autouse=True)
 def _mock_beanie_collection():
     """Override the parent integration conftest's Beanie mock.
 
     DB tests initialise Beanie for real via init_beanie(), so the mock must not
     intercept get_pymongo_collection().  Defining this fixture here (same name,
     no patch) causes pytest to use this no-op instead of the parent's version.
+
+    Autouse + function-scoped so it deterministically shadows the parent patch for every DB test,
+    regardless of the order route tests and DB tests are collected in.
     """
     yield
 
