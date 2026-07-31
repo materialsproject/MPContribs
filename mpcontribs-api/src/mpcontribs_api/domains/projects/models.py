@@ -1,30 +1,24 @@
-from __future__ import annotations
-
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 
 from mpcontribs_api import pagination
-from mpcontribs_api.config import get_settings
 from mpcontribs_api.domains._shared.filters import BaseFilter
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
 from mpcontribs_api.domains._shared.types import PrefixedEmail, ShortStr
 from mpcontribs_api.exceptions import ValidationError
 
 
-def _validate_column_limit(columns: Any) -> Any:
-    """Reject input carrying more than the configured column cap.
+def check_column_limit(columns: Any, max_columns: int) -> None:
+    """Reject a *write* carrying more columns than ``max_columns`` allows.
 
     Allows legacy docs that exceed cap to be returned without raising an error.
     """
-    if isinstance(columns, list):
-        max_columns = get_settings().user.max_columns
-        if len(columns) > max_columns:
-            raise ValidationError(
-                f"columns cannot have more than {max_columns} entries",
-                column_length=len(columns),
-            )
-    return columns
+    if isinstance(columns, list) and len(columns) > max_columns:
+        raise ValidationError(
+            f"columns cannot have more than {max_columns} entries",
+            column_length=len(columns),
+        )
 
 
 class Column(BaseModel):
@@ -155,11 +149,6 @@ class ProjectFilter(BaseFilter):
 class ProjectIn(Project):
     """Representation of user-supplied input."""
 
-    @field_validator("columns", mode="before")
-    @classmethod
-    def limit_column_length(cls, c: Any) -> Any:
-        return _validate_column_limit(c)
-
 
 class ProjectPatch(BaseModel):
     """Nullable Project representation of user-supplied data for partial update (patch)."""
@@ -176,8 +165,3 @@ class ProjectPatch(BaseModel):
     is_public: bool = False
     is_approved: bool = False
     license: Literal["CCA4", "CCPD"] | None = None
-
-    @field_validator("columns", mode="before")
-    @classmethod
-    def limit_column_length(cls, c: Any) -> Any:
-        return _validate_column_limit(c)

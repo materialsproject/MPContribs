@@ -20,6 +20,7 @@ from mpcontribs_api.domains._shared.bulk import (
 )
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
 from mpcontribs_api.domains.attachments.repository import MongoDbAttachmentRepository
+from mpcontribs_api.domains.consumers.models import ConsumerSettings
 from mpcontribs_api.domains.contributions.models import Contribution, ContributionFilter, ContributionIn
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
@@ -61,6 +62,7 @@ class ContributionService:
         attachments: MongoDbAttachmentRepository,
         tables: MongoDbTableRepository,
         settings: MongoSettings | None = None,
+        limits: ConsumerSettings | None = None,
     ):
         self._client = client
         self._user = user
@@ -70,6 +72,7 @@ class ContributionService:
         self._attachments = attachments
         self._tables = tables
         self._settings = settings or get_settings().mongo
+        self._limits = limits or ConsumerSettings()
 
     @property
     def _children(self) -> dict[str, MongoDbRepository]:
@@ -324,7 +327,7 @@ class ContributionService:
         for item in plan:
             by_project[item.contribution.project].append(item)
 
-        cap = get_settings().user.max_unapproved_contributions_per_project
+        cap = self._limits.max_unapproved_contributions_per_project
         failures: list[BulkFailure] = []
         survivors: list[ResolvedWrite] = []
         for project_id, items in by_project.items():
@@ -597,7 +600,7 @@ class ContributionService:
         existing = await self._contributions.get_contribution_by_id(id, fields=frozenset({"id"}))
         if existing is None:
             stored = await self._unapproved_stored_count(contribution.project)
-            cap = get_settings().user.max_unapproved_contributions_per_project
+            cap = self._limits.max_unapproved_contributions_per_project
             if stored is not None and stored >= cap:
                 logger.warning(
                     "contribution.unapproved_quota_exceeded",
