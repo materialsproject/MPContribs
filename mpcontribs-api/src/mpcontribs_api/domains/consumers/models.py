@@ -119,7 +119,7 @@ class ConsumerFilter(BaseFilter):
     consumer_id: str | None = None
     consumer_id__in: list[str] | None = None
 
-    settings: ConsumerSettingsFilter | None = FilterDepends(with_prefix("tables", ConsumerSettingsFilter))
+    settings: ConsumerSettingsFilter | None = FilterDepends(with_prefix("settings", ConsumerSettingsFilter))
 
     # sorting
     order_by: list[str] | None = None
