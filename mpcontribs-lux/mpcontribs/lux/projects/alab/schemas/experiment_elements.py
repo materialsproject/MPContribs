@@ -15,10 +15,10 @@ class ExperimentElement(BaseModel, extra="forbid"):
     Each experiment can have multiple elements (1:N relationship).
     """
 
-    experiment_id: str = Field(description="Reference to parent experiment")
+    rgNumber: str = Field(description="Reference to parent experiment")
 
-    element_symbol: str = Field(description="Element symbol (e.g., Na, Mg, O)")
+    elementSymbol: str = Field(description="Element symbol (e.g., Na, Mg, O)")
 
-    target_atomic_percent: float | None = Field(
+    targetAtomicPercent: float | None = Field(
         default=None, description="Target atomic percentage of this element"
     )

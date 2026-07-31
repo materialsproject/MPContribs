@@ -19,10 +19,10 @@ class XRDDataPoint(BaseModel, extra="forbid"):
     This is the flattened representation from twotheta[] and counts[] arrays.
     """
 
-    experiment_id: str = Field(description="Reference to parent experiment")
+    rgNumber: str = Field(description="Reference to parent experiment")
 
-    point_index: int = Field(description="Index in the diffraction pattern", ge=0)
+    pointIndex: int = Field(description="Index in the diffraction pattern", ge=0)
 
-    twotheta: float = Field(description="2θ angle in degrees")
+    twoTheta: float = Field(description="2θ angle in degrees")
 
     counts: float = Field(description="Intensity counts at this angle")

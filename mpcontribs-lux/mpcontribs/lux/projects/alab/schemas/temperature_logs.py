@@ -18,25 +18,12 @@ class TemperatureLogEntry(BaseModel, extra="forbid"):
     Each experiment can have thousands of temperature log entries (1:N relationship).
     """
 
-    experiment_id: str = Field(description="Reference to parent experiment")
+    rgNumber: str = Field(description="Reference to parent experiment")
 
-    sequence_number: int = Field(description="Sequence number in the time series", ge=0)
+    sequenceNumber: int = Field(description="Sequence number in the time series", ge=0)
 
-    time_minutes: float = Field(
+    timeMinutes: float = Field(
         description="Time elapsed since heating start in minutes"
     )
 
-    temperature_celsius: float = Field(description="Temperature reading in °C")
-
-
-# For backward compatibility with nested structure
-class TemperatureLog(BaseModel, extra="forbid"):
-    """Temperature log with array structure (MongoDB format)."""
-
-    time_minutes: list[float] | None = Field(
-        default=None,
-        description="Time elapsed in minutes since the start of the heating process",
-    )
-    temperature_celsius: list[float] | None = Field(
-        default=None, description="Temperature of the sample in Celsius"
-    )
+    temperature: float = Field(description="Temperature reading in degC")
