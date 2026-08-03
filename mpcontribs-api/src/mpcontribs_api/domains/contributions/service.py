@@ -602,8 +602,8 @@ class ContributionService:
             stored = await self._unapproved_stored_count(contribution.project)
             cap = self._limits.max_unapproved_contributions_per_project
             if stored is not None and stored >= cap:
-                logger.warning(
-                    "contribution.unapproved_quota_exceeded",
+                raise PermissionError(
+                    "Attempted to add more than the allowed number of unapproved contributions",
                     project=contribution.project,
                     max_allowed=cap,
                     stored=stored,
@@ -612,11 +612,6 @@ class ContributionService:
                     rejected=1,
                     rejected_identifiers=[contribution.identifier],
                     rejected_identifiers_truncated=False,
-                )
-                raise PermissionError(
-                    "Attempted to add more than the allowed number of unapproved contributions",
-                    project=contribution.project,
-                    max_contribs=cap,
                 )
         return await self._contributions.upsert_contribution_by_id(id, contribution)
 
