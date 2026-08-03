@@ -354,7 +354,7 @@ class ContributionService:
             exc = PermissionError(
                 "Attempted to add more than the allowed number of unapproved contributions",
                 project=project_id,
-                max_contribs=cap,
+                max_allowed=cap,
             )
             failures.extend(
                 bulk_failure_from_exception(item.index, item.contribution.identifiers(), exc) for item in rejected
