@@ -5,6 +5,21 @@ from pydantic import BaseModel, Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+class QuotaLimits(BaseModel):
+    max_projects: int = Field(
+        default=3,
+        description="The maximum number of projects a single user is allowed to create",
+    )
+    max_unapproved_contributions_per_project: int = Field(
+        default=500,
+        description="The maximum number of unapproved contributions a single user is allowed to have per project",
+    )
+    max_columns: int = Field(
+        default=160,
+        description="The maximum number of columns a project is allowed to have",
+    )
+
+
 class RedisSettings(BaseModel):
     address: SecretStr
     url: SecretStr
@@ -178,6 +193,9 @@ class Settings(BaseSettings):
 
     # MPContribs_otel__*
     otel: ObservabilitySettings = Field(default_factory=ObservabilitySettings)
+
+    # MPContribs_consumer__*
+    consumer: QuotaLimits = Field(default_factory=QuotaLimits)
 
     # SMTP Settings
     mail_default_sender: str = Field(

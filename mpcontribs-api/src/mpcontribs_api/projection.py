@@ -5,8 +5,6 @@ Ie. data.band_gap.something will be properly retrieved and populated into the re
     SparseFieldsModel
 """
 
-from __future__ import annotations
-
 from collections.abc import Iterator
 from functools import lru_cache
 from typing import (
