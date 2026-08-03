@@ -9,7 +9,7 @@ from mpcontribs_api.domains.projects.models import (
     ProjectIn,
     ProjectOut,
     ProjectPatch,
-    check_column_limit,
+    validate_column_limit,
 )
 from mpcontribs_api.exceptions import PermissionError
 from mpcontribs_api.pagination import CursorParams
@@ -100,7 +100,7 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
 
     async def insert_project(self, project: ProjectIn) -> Project:
         """Insert a new project, rejecting a duplicate id. See ``insert_one``."""
-        check_column_limit(project.columns, self._limits.max_columns)
+        validate_column_limit(project.columns, self._limits.max_columns)
         await self._check_num_projects(project.owner)
         return await self.insert_one(project)
 
@@ -109,7 +109,7 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
         # Only enforce the column cap when the caller actually sends columns; an unset field is a
         # no-op and must not be checked against its empty default.
         if "columns" in update.model_fields_set:
-            check_column_limit(update.columns, self._limits.max_columns)
+            validate_column_limit(update.columns, self._limits.max_columns)
         return await self.patch(id, update)
 
     async def delete_project_by_id(self, id: str) -> None:
@@ -143,7 +143,7 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
         if self._user.username is None:
             raise PermissionError(required_role="authenticated")
 
-        check_column_limit(data.columns, self._limits.max_columns)
+        validate_column_limit(data.columns, self._limits.max_columns)
         existing = await self.document_model.find_one(self.document_model.id == id)
         project = self.document_model.from_input_model(data)
         project.id = id

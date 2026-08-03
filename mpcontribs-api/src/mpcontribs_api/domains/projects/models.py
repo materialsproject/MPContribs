@@ -9,7 +9,7 @@ from mpcontribs_api.domains._shared.types import PrefixedEmail, ShortStr
 from mpcontribs_api.exceptions import ValidationError
 
 
-def check_column_limit(columns: Any, max_columns: int) -> None:
+def validate_column_limit(columns: Any, max_columns: int) -> None:
     """Reject a *write* carrying more columns than ``max_columns`` allows.
 
     Allows legacy docs that exceed cap to be returned without raising an error.

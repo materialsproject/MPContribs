@@ -9,7 +9,7 @@ from mpcontribs_api.domains.projects.models import (
     ProjectPatch,
     Reference,
     Stats,
-    check_column_limit,
+    validate_column_limit,
 )
 from mpcontribs_api.exceptions import ValidationError as AppValidationError
 
@@ -268,7 +268,7 @@ def _columns(n: int) -> list[Column]:
 
 
 class TestColumnLengthQuota:
-    """The column cap is enforced by ``check_column_limit`` (called from the repository with the
+    """The column cap is enforced by ``validate_column_limit`` (called from the repository with the
     caller's effective ``max_columns``), not by the ``ProjectIn``/``ProjectPatch`` models. These
     tests pin the pure function's contract: the cap is inclusive, over-cap writes raise, and a
     non-list value is a no-op so legacy documents that already exceed the cap can still be read back.
@@ -276,24 +276,24 @@ class TestColumnLengthQuota:
 
     def test_at_cap_is_allowed(self):
         # Inclusive: exactly max_columns entries must pass.
-        check_column_limit(_columns(2), max_columns=2)
+        validate_column_limit(_columns(2), max_columns=2)
 
     def test_under_cap_is_allowed(self):
-        check_column_limit(_columns(1), max_columns=2)
+        validate_column_limit(_columns(1), max_columns=2)
 
     def test_over_cap_raises(self):
         with pytest.raises(AppValidationError):
-            check_column_limit(_columns(3), max_columns=2)
+            validate_column_limit(_columns(3), max_columns=2)
 
     def test_error_reports_offending_length(self):
         with pytest.raises(AppValidationError) as exc_info:
-            check_column_limit(_columns(5), max_columns=2)
+            validate_column_limit(_columns(5), max_columns=2)
         assert exc_info.value.context["column_length"] == 5
 
     def test_none_is_noop(self):
         # A read path may pass a non-list (e.g. an unset field); it must never raise so legacy
         # documents that predate the cap remain retrievable.
-        check_column_limit(None, max_columns=0)
+        validate_column_limit(None, max_columns=0)
 
     def test_model_does_not_enforce_cap(self):
         # Regression guard: the cap moved off the model into the repository. Constructing a model
