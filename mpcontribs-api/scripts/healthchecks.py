@@ -1,5 +1,6 @@
 import os
 import sys
+
 import requests
 
 for deployment in os.environ.get("DEPLOYMENTS", "ml:10002").split(","):
