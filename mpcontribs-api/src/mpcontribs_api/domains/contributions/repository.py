@@ -48,7 +48,7 @@ class MongoDbContributionRepository(
     async def count_contributions_for_project(self, project_name: str) -> int:
         """Count contributions already stored for a project.
 
-        Unscoped: the unapproved-contribution quota is a property of the project as a
+        Unscoped on purpose: the unapproved-contribution quota is a property of the project as a
         whole, not of what the current user can see. The cap comparison lives in the service.
         """
         return await self.document_model.find(self.document_model.project == project_name).count()
@@ -67,7 +67,7 @@ class MongoDbContributionRepository(
         match: dict[str, Any] = {"$or": [{"project": p, "identifier": i, "version": v} for p, i, v in keys]}
         collection = self.document_model.get_pymongo_collection()
         existing: set[tuple[str, str, int]] = set()
-        async for doc in collection.find(match, {"project": 1, "identifier": 1, "version": 1}):
+        async for doc in collection.find(match, {"_id": 0, "project": 1, "identifier": 1, "version": 1}):
             existing.add((doc["project"], doc["identifier"], doc["version"]))
         return existing
 
