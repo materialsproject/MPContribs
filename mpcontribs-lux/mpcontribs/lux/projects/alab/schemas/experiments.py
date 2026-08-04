@@ -46,16 +46,32 @@ class Experiment(BaseModel, extra="forbid"):
         description="Sub-experiment / replicate label within the project (e.g. DEMO_1-2)"
     )
 
+    targetFormula: str | None = Field(
+        default=None,
+        description=(
+            "The formula used internally to determine precursor weights."
+            "May differ from the true intended formula (global_formula) due to experimental"
+            "constraints (e.g. oxygen mass balancing corrections, excess"
+            "alkali for battery materials). Not always a chemically meaningful"
+            "representation of what was attempted. Can be null if there is no adjustment for experiment."
+        ),
+    )
+
     globalFormula: str = Field(description="Canonical formula for the target material")
 
     lastUpdated: datetime = Field(description="Last modification timestamp")
 
-    status: Literal["completed", "error", "active", "unknown"] = Field(
+    status: Literal["Completed", "Error", "Active", "Unknown"] = Field(
         description="Workflow status"
     )
 
     notes: str | None = Field(
         default=None, description="Optional notes about the experiment"
+    )
+
+    precursorPowders: list[str] | None = Field(
+        default=None,
+        description="List of precursor powder names used in the experiment",
     )
 
     # === Heating fields (prefix: heating_) ===
@@ -101,7 +117,7 @@ class Experiment(BaseModel, extra="forbid"):
     )
 
     # EXCLUDED FROM UPLOAD per team request
-    recovery_weight_collected_mg: float | None = ExcludeFromUpload(
+    recoveryWeightCollected: float | None = ExcludeFromUpload(
         description="Weight of powder collected after heating in mg (EMBARGOED)"
     )
 
