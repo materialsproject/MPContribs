@@ -1,15 +1,19 @@
 # Adding a package: once it has a uv-based justfile contract (install/lint/
-# format-check/typecheck/lock-check/test ci), add it to BOTH the paths-filter
+# format-check/typecheck/lock-check/test), add it to BOTH the paths-filter
 # `filters` below AND the `config` map in the discover step. Until a package is
 # migrated, leave it out - it stays covered by the legacy testing.yml instead.
+#
+# What runs where (see the `full` flag computed in discover):
+#   - push to any branch          -> unit suite only (`just test u`)
+#   - push/PR to dev or master    -> lint + format + typecheck + full `just test`
 
 name: ci
 
 on:
   pull_request:
-    branches: [master]
+    branches: [dev, master]
   push:
-    branches: [master]
+    branches: ["**"]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -23,7 +27,21 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       packages: ${{ steps.build.outputs.packages }}
+      full: ${{ steps.level.outputs.full }}
     steps:
+      - name: Determine gate level
+        id: level
+        # "full" = the lint/format/typecheck + whole-suite gate. It applies to
+        # any pull_request (only dev/master are targeted, per the trigger above)
+        # and to direct pushes to dev/master. Every other push gets unit only.
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ] \
+             || [ "${{ github.ref }}" = "refs/heads/dev" ] \
+             || [ "${{ github.ref }}" = "refs/heads/master" ]; then
+            echo "full=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "full=false" >> "$GITHUB_OUTPUT"
+          fi
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
         id: filter
@@ -67,7 +85,8 @@ jobs:
     with:
       package: ${{ matrix.package }}
       python-version: ${{ matrix.python-version }}
-      coverage-artifact: coverage-${{ matrix.package }}
+      test-suite: ${{ needs.discover.outputs.full == 'true' && 'all' || 'u' }}
+      run-quality: ${{ needs.discover.outputs.full == 'true' }}
 
   # Always-reporting aggregate gate. Make ONLY this a required status check
   gate:
