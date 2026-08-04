@@ -41,3 +41,7 @@ class WorkflowTask(BaseModel, extra="forbid"):
     completedAt: datetime | None = Field(
         default=None, description="When the task completed"
     )
+
+    message: str | None = Field(
+        default=None, description="Task result message or error"
+    )
