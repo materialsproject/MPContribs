@@ -69,6 +69,7 @@ dev = [
     "basedpyright>=1.29.0",
     "pydocstringformatter>=0.7.0",
     "pytest>=9.0.3",
+    "pytest-cov>=7.1.0",
     "pytest-xdist>=3.8.0",
     "httpx2>=0.28.0",
     "pytest-asyncio>=1.4.0",
