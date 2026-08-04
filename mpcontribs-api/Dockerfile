@@ -9,17 +9,28 @@ RUN pip install uv
 # /app for live reload, which would mask a /app/.venv and leave `python` falling
 # back to the system interpreter (missing deps)
 ENV UV_PROJECT_ENVIRONMENT=/opt/venv
+# requires-python is >=3.14 but the base image only ships 3.11, so uv downloads a
+
+# managed CPython 3.14. Pin its install dir to a stable, HOME-independent path so
+# the final stage can COPY the interpreter the venv's python symlinks point at.
+ENV UV_PYTHON_INSTALL_DIR=/opt/uv-python
+
 COPY pyproject.toml uv.lock ./
 COPY src src
 ARG CONTRIBS_VERSION
 RUN SETUPTOOLS_SCM_PRETEND_VERSION=${CONTRIBS_VERSION} uv sync --frozen --no-dev --no-editable
 RUN wget -q https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh && \
-  chmod +x wait-for-it.sh && mv wait-for-it.sh /usr/local/bin/
+    chmod +x wait-for-it.sh && mv wait-for-it.sh /usr/local/bin/
 
 FROM base
 ARG BUILDARCH
 ARG BUILDARCH=aarch64
 COPY --from=builder /opt/venv /opt/venv
+# The venv's interpreter is uv-managed CPython 3.14 living under this path; the
+# base image only has 3.11, so without this the /opt/venv/bin/python symlink
+# dangles and `python` silently falls back to 3.11 (ModuleNotFoundError on every
+# venv package, e.g. jinja2 in supervisord/conf.py at startup).
+COPY --from=builder /opt/uv-python /opt/uv-python
 COPY --from=builder /usr/local/bin/wait-for-it.sh /usr/local/bin/
 
 WORKDIR /app
