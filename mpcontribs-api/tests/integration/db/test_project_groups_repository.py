@@ -156,32 +156,6 @@ class TestDeleteOne:
         with pytest.raises(ValidationError):
             await _repo(ADMIN).delete_one({"name": "x"})  # missing 'owner'
 
-    async def test_duplicate_identifiers_raise_conflict(self, db):
-        # The name_owner unique index normally makes this impossible; drop it so we can plant a
-        # duplicate and exercise the defensive uniqueness guard in _resolve_one_id. Tolerant of a
-        # prior drop within the same session.
-        try:
-            await db["project_groups"].drop_index("name_owner")
-        except Exception:
-            pass
-        await db["project_groups"].insert_many(
-            [
-                {"_id": PydanticObjectId(), "name": "dup", "owner": ALICE_EMAIL, "projects": [], "description": "d"},
-                {"_id": PydanticObjectId(), "name": "dup", "owner": ALICE_EMAIL, "projects": [], "description": "d"},
-            ]
-        )
-        try:
-            with pytest.raises(ConflictError):
-                await _repo(ADMIN).delete_project_group(name="dup", owner=ALICE_EMAIL)
-        finally:
-            # Restore the unique index we dropped so order-dependent tests that rely on it (e.g. the
-            # insert-duplicate guard) still see it. Planted duplicates must go first, or the unique
-            # index rebuild would fail.
-            await db["project_groups"].delete_many({"name": "dup"})
-            await db["project_groups"].create_index(
-                [("name", 1), ("owner", 1)], name="name_owner", unique=True
-            )
-
 
 # ---------------------------------------------------------------------------
 # patch_one

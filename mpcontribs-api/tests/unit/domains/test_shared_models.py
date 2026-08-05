@@ -117,9 +117,9 @@ class TestIdentifierContract:
     def test_project_group_uses_name_and_owner(self):
         assert ProjectGroup.identifier_fields() == frozenset({"name", "owner"})
 
-    def test_contribution_uses_project_and_identifier(self):
-        assert Contribution.identifier_fields() == frozenset({"project", "identifier"})
-        assert ContributionIn.identifier_fields() == frozenset({"project", "identifier"})
+    def test_contribution_uses_project_identifier_version(self):
+        assert Contribution.identifier_fields() == frozenset({"project", "identifier", "version"})
+        assert ContributionIn.identifier_fields() == frozenset({"project", "identifier", "version"})
 
     def test_default_identifiers_reads_values_off_instance(self):
         oid = PydanticObjectId()

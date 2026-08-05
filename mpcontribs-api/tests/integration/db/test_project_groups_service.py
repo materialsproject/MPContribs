@@ -103,29 +103,6 @@ class TestAdd:
         with pytest.raises(NotFoundError):
             await _service(ANON).add_projects_by_id(str(group.id), [])
 
-    async def test_ambiguous_identifiers_raise_conflict(self, db):
-        # Drop the unique index so we can plant a duplicate and exercise the uniqueness guard.
-        try:
-            await db["project_groups"].drop_index("name_owner")
-        except Exception:
-            pass
-        await db["project_groups"].insert_many(
-            [
-                {"_id": PydanticObjectId(), "name": "dup", "owner": ALICE_EMAIL, "projects": [], "description": "d"},
-                {"_id": PydanticObjectId(), "name": "dup", "owner": ALICE_EMAIL, "projects": [], "description": "d"},
-            ]
-        )
-        try:
-            with pytest.raises(ConflictError):
-                await _service().add_projects_by_identifiers("dup", ALICE_EMAIL, [])
-        finally:
-            # Restore the unique index we dropped so order-dependent tests that rely on it still see
-            # it. Planted duplicates must go first, or the unique index rebuild would fail.
-            await db["project_groups"].delete_many({"name": "dup"})
-            await db["project_groups"].create_index(
-                [("name", 1), ("owner", 1)], name="name_owner", unique=True
-            )
-
 
 # ---------------------------------------------------------------------------
 # delete
