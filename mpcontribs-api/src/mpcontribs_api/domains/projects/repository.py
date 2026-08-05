@@ -93,7 +93,41 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
         - Resulting state must satisfy is_public <-> is_approved condition
 
         The ``initiative`` field is split out upstream in ``ProjectService.patch``, so it never
-        reaches this method.
+        reaches this method; an assignment that also edits plain fields goes through
+        :meth:`patch_project_with_initiative` instead.
+        """
+        await self._enforce_patch_rules(id, update)
+        return await self.patch(id, update)
+
+    async def patch_project_with_initiative(self, id: str, update: ProjectPatch, ref: DBRef | None) -> Project:
+        """Atomically apply a partial project update together with its canonical initiative link.
+
+        Args:
+            id (str): the id of the project to update
+            update (ProjectPatch): the partial update to apply; unset fields are dropped. The
+                ``initiative`` slug must already be stripped — the resolved ``ref`` carries the link.
+            ref (DBRef | None): the initiative reference to assign, or None to unassign
+        """
+        await self._enforce_patch_rules(id, update)
+        data = update.model_dump(exclude_unset=True)
+        data["initiative"] = ref
+        query = self.document_model.find_one(self._scope, self.document_model.id == id).update(
+            Set(data),
+            response_type=UpdateResponse.NEW_DOCUMENT,
+        )
+        updated = await query  # pyright: ignore[reportGeneralTypeIssues] # beanie UpdateQuery is awaitable
+        if updated is None:
+            raise NotFoundError(self._not_found(id))
+        return updated
+
+    async def _enforce_patch_rules(self, id: str, update: ProjectPatch) -> None:
+        """Enforce project patch invariants against the scoped target.
+
+        - Only an admin may change ``is_approved``.
+        - The resulting state must satisfy the is_public -> is_approved condition.
+
+        Raises ``NotFoundError`` when the project is invisible to the caller or absent, so both the
+        plain and initiative-bearing patch paths reject unseen documents identically.
         """
         data = update.model_dump(exclude_unset=True)
         if "is_approved" in data and not self._user.is_admin:
@@ -107,8 +141,6 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
         resulting_public = data.get("is_public", existing.is_public)
         if resulting_public and not resulting_approved:
             raise ValidationError("a project cannot be public until it is approved", id=id)
-
-        return await self.patch(id, update)
 
     async def delete_project_by_id(self, id: str) -> None:
         """Delete a scoped project by id. Restricted to the owner or an admin.
@@ -173,26 +205,6 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
         if project.is_public and not project.is_approved:
             raise ValidationError("a project cannot be public until it is approved", id=id)
         return await project.save()
-
-    async def set_initiative(self, id: str, ref: DBRef | None) -> Project:
-        """Set a scoped project's canonical initiative link.
-
-        The link is written as-is (a ``DBRef`` into ``initiatives`` or ``None``); all authorization
-        and limit checks are the caller's (see ``ProjectInitiativeService``). Scoping ensures a
-        project the caller cannot see is reported as not found rather than silently missed.
-
-        Args:
-            id (str): the id of the project to update
-            ref (DBRef | None): the initiative reference to assign, or None to unassign
-        """
-        query = self.document_model.find_one(self._scope, self.document_model.id == id).update(
-            Set({"initiative": ref}),
-            response_type=UpdateResponse.NEW_DOCUMENT,
-        )
-        updated = await query  # pyright: ignore[reportGeneralTypeIssues] # beanie UpdateQuery is awaitable
-        if updated is None:
-            raise NotFoundError(self._not_found(id))
-        return updated
 
     async def count_initiative_members(self, initiative_id: PydanticObjectId, exclude_project_id: str | None) -> int:
         """Count projects assigned to an initiative, ignoring user scope.

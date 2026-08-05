@@ -22,9 +22,11 @@ class ProjectService:
     async def patch(self, id: str, update: ProjectPatch) -> Project:
         """Apply a project patch, routing an ``initiative`` change through the assignment checks.
 
-        ``initiative`` carries the target initiative's ``slug`` (or ``null`` to unassign). It is
-        split out of the patch so it never reaches the raw ``$set`` as a bare string; any remaining
-        fields are applied first, then the initiative link is set.
+        ``initiative`` carries the target initiative's ``slug`` (or ``null`` to unassign). When
+        present it is split out of the patch (so it never reaches the raw ``$set`` as a bare
+        string), resolved to a link — running the both-rights and member-cap checks — then written
+        together with any co-submitted plain fields in a single atomic update, so the request never
+        persists a half-applied change.
         """
         if "initiative" not in update.model_fields_set:
             return await self._projects.patch_project_by_id(id=id, update=update)
@@ -35,10 +37,7 @@ class ProjectService:
         # Resolve the target link (and run the both-rights + limit checks) before touching anything.
         ref = await self._resolve_initiative_assignment(project_id=id, slug=slug)
 
-        # Apply any co-submitted plain fields first, so a single request can rename and assign.
-        if data:
-            await self._projects.patch_project_by_id(id=id, update=ProjectPatch(**data))
-        return await self._projects.set_initiative(id=id, ref=ref)
+        return await self._projects.patch_project_with_initiative(id=id, update=ProjectPatch(**data), ref=ref)
 
     async def _resolve_initiative_assignment(self, project_id: str, slug: str | None) -> DBRef | None:
         """Validate an initiative assignment and return the link to store (or None to unassign).
