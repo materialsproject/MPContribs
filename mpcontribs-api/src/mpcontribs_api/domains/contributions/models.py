@@ -109,7 +109,7 @@ class ContributionBase(BaseDocumentWithInput[PydanticObjectId]):
     @classmethod
     def identifier_fields(cls) -> frozenset[str]:
         """A contribution is uniquely identified (within a version) by ``project`` + ``identifier``."""
-        return frozenset({"project", "identifier"})
+        return frozenset({"project", "identifier", "version"})
 
 
 class Contribution(ContributionBase):
