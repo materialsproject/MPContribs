@@ -72,10 +72,6 @@ class MongoDbRepository[
         except InvalidId:
             raise ValidationError("Incorrect Id format. Must be MongoDB ObjectId format.", id=id) from None
 
-    def _not_found(self, id: str) -> str:
-        """Build a not-found message naming this repository's resource."""
-        return f"{self.document_model.__name__} with id {id} not found"
-
     async def get_many(
         self,
         filter: TFilter,
@@ -232,7 +228,7 @@ class MongoDbRepository[
         """
         doc = await self.document_model.find_one(self._scope, self.document_model.id == id, session=session)
         if doc is None:
-            raise NotFoundError(self._not_found(id))
+            raise NotFoundError(message=f"{self.document_model.__name__} not found by id", id=id)
         await doc.delete(session=session)
         return DeleteResponse(num_deleted=1)
 
@@ -266,7 +262,9 @@ class MongoDbRepository[
             id (str): the id of the document to update
             update (TPatch): the partial update to apply; unset fields are dropped
         """
-        return await self._patch_matching(self.document_model.id == id, update, NotFoundError(self._not_found(id)))
+        return await self._patch_matching(
+            self.document_model.id == id, update, NotFoundError(f"{self.document_model.__name__} not found", id=id)
+        )
 
     async def _patch_matching(
         self,
