@@ -126,22 +126,6 @@ class MongoDbRepository[
             )
         return {("_id" if key == "id" else key): value for key, value in identifiers.items()}
 
-    async def _resolve_one_id(self, identifiers: dict[str, Any], session: AsyncClientSession | None = None) -> Any:
-        """Resolve the single scoped ``_id`` matching ``identifiers``, or ``None`` if absent.
-
-        Enforces uniqueness: the identifier fields are meant to key at most one document, so if two
-        are found (a duplicate under a supposedly-unique key) this raises ``ConflictError`` rather
-        than silently picking one.
-        """
-        query = self._identifier_query(identifiers)
-        projection = self.out_model.projection(frozenset({"id"}))
-        docs = (
-            await self.document_model.find(self._scope, query, session=session).limit(2).project(projection).to_list()
-        )  # pyright: ignore[reportArgumentType]
-        if len(docs) > 1:
-            raise ConflictError("identifiers matched more than one document", identifiers=identifiers)
-        return docs[0].id if docs else None
-
     async def get_one(
         self,
         identifiers: dict[str, Any],
@@ -149,19 +133,13 @@ class MongoDbRepository[
     ) -> TOut | None:
         """Return the single scoped document matching ``identifiers``, projected to ``fields``.
 
-        Returns ``None`` when nothing matches, but ``ConflictError`` if the identifiers match
-        more than one document.
-
         Args:
             identifiers (dict[str, Any]): identifier field values keyed by ``identifier_fields``
             fields (frozenset[str] | None): fields to project; if None the full document is returned
         """
         query = self._identifier_query(identifiers)
         projection = self.out_model.projection(fields)
-        docs = await self.document_model.find(self._scope, query).limit(2).project(projection).to_list()  # pyright: ignore[reportArgumentType]
-        if len(docs) > 1:
-            raise ConflictError("identifiers matched more than one document", identifiers=identifiers)
-        return docs[0] if docs else None
+        return await self.document_model.find_one(self._scope, query, projection_model=projection)  # pyright: ignore[reportArgumentType]
 
     async def get_by_id(self, id: Any, fields: frozenset[str] | None = None) -> TDoc | TOut | None:
         """Return a single scoped document by id, projected to the requested fields.
@@ -231,18 +209,15 @@ class MongoDbRepository[
     ) -> DeleteResponse:
         """Delete the single scoped document matching ``identifiers``.
 
-        Uniqueness is checked before anything is deleted (see :meth:`_resolve_one_id`), so a
-        duplicate raises ``ConflictError`` and an absent resource raises ``NotFoundError`` — this
-        never deletes more than the one intended document.
-
         Args:
             identifiers (dict[str, Any]): identifier field values keyed by ``identifier_fields``
             session (AsyncClientSession | None): optional client session for transactions
         """
-        oid = await self._resolve_one_id(identifiers, session=session)
-        if oid is None:
+        query = self._identifier_query(identifiers)
+        result = await self.document_model.find_one(self._scope, query, session=session).delete(session=session)  # pyright: ignore[reportArgumentType]
+        if result is None or result.deleted_count == 0:
             raise NotFoundError(f"{self.document_model.__name__} not found", identifiers=identifiers)
-        return await self.delete_by_id(oid, session=session)
+        return DeleteResponse.from_delete_result(result)
 
     async def delete_by_id(self, id: Any, session: AsyncClientSession | None = None) -> DeleteResponse:
         """Delete a single scoped document by its primary key (``_id``).
@@ -291,25 +266,40 @@ class MongoDbRepository[
             id (str): the id of the document to update
             update (TPatch): the partial update to apply; unset fields are dropped
         """
+        return await self._patch_matching(self.document_model.id == id, update, NotFoundError(self._not_found(id)))
+
+    async def _patch_matching(
+        self,
+        match: Any,
+        update: TPatch,
+        not_found: NotFoundError,
+        session: AsyncClientSession | None = None,
+    ) -> TDoc:
+        """Apply a partial update to the single scoped document matching ``match``.
+
+        ``match`` is any beanie filter that keys at most one in-scope document — a primary-key
+        equality (:meth:`patch`) or a unique-identifier query (:meth:`patch_one`). An empty patch
+        is a no-op that still returns the existing document; a missing target raises ``not_found``.
+        """
         # Only retain set fields (patch)
         update_data = update.model_dump(exclude_unset=True)
         # If update is empty, return the model anyways (consistent behavior)
         if not update_data:
-            existing = await self.document_model.find_one(self._scope, self.document_model.id == id)
+            existing = await self.document_model.find_one(self._scope, match, session=session)
             if existing is None:
-                raise NotFoundError(self._not_found(id))
+                raise not_found
             return existing
 
         # Otherwise, update the fields fully (set)
         # Brendan TODO: Set will replace an entire field
         # - if we want to append to a list (ie. add a reference) we ned Push/AddToSet
-        query = self.document_model.find_one(self._scope, self.document_model.id == id).update(
+        query = self.document_model.find_one(self._scope, match, session=session).update(
             Set(update_data),
             response_type=UpdateResponse.NEW_DOCUMENT,
         )
         updated = await query  # pyright: ignore[reportGeneralTypeIssues] # beanie UpdateQuery is awaitable, but pyright doesn't see it
         if updated is None:
-            raise NotFoundError(self._not_found(id))
+            raise not_found
         return updated
 
     async def patch_one(
@@ -320,18 +310,14 @@ class MongoDbRepository[
     ) -> TDoc:
         """Partially update the single scoped document matching ``identifiers``.
 
-        Resolves the target by its unique identifier fields (raising ``ConflictError`` on a
-        duplicate, ``NotFoundError`` when absent) and then applies the patch via :meth:`patch`.
-
         Args:
             identifiers (dict[str, Any]): identifier field values keyed by ``identifier_fields``
             update (TPatch): the partial update to apply; unset fields are dropped
             session (AsyncClientSession | None): optional client session for transactions
         """
-        oid = await self._resolve_one_id(identifiers, session=session)
-        if oid is None:
-            raise NotFoundError(f"{self.document_model.__name__} not found", identifiers=identifiers)
-        return await self.patch(oid, update)
+        query = self._identifier_query(identifiers)
+        not_found = NotFoundError(f"{self.document_model.__name__} not found", identifiers=identifiers)
+        return await self._patch_matching(query, update, not_found, session=session)
 
     def _hash_payload(self, payload: dict[str, Any], *, separators: tuple[str, str] = (",", ":")) -> str:
         canonical = json.dumps(

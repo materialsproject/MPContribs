@@ -79,13 +79,19 @@ class ProjectGroupRepository(
         return await self.patch_one({"name": name, "owner": owner}, update)
 
     async def delete_project_group(self, name: SearchStr, owner: PrefixedEmail) -> DeleteResponse:
-        """Delete the single project group identified by ``name`` + ``owner``."""
-        oid = await self._resolve_one_id({"name": name, "owner": owner})
-        if oid is None:
+        """Delete the single project group identified by ``name`` + ``owner``.
+
+        Absence (in scope) takes precedence over the ownership gate: a non-admin may only delete
+        their own group, so deleting another owner's visible (public) group is forbidden rather
+        than silently a no-op. The ``name`` + ``owner`` unique index makes the match unambiguous.
+        """
+        doc = await self.document_model.find_one(self._scope, {"name": name, "owner": owner})  # pyright: ignore[reportArgumentType]
+        if doc is None:
             raise NotFoundError(f"{self.document_model.__name__} not found", name=name, owner=owner)
         if not (self._user.is_admin or owner == self._user.username):
             raise PermissionError(required_role="owner-or-admin")
-        return await self.delete_by_id(oid)
+        await doc.delete()
+        return DeleteResponse(num_deleted=1)
 
     async def delete_project_groups(self, filter: ProjectGroupFilter) -> DeleteResponse:
         """Bulk-delete project groups matching ``filter``, restricted to the caller's own.
