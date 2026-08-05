@@ -79,8 +79,7 @@ class InitiativeRepository(
                     limit=self._limits.max_unapproved_per_owner,
                 )
 
-        # ``BaseDocumentWithInput`` makes ``id`` required (no auto-default), so mint the ObjectId
-        # here — as ``ProjectGroup.from_input_model`` does — and force owner/flags server-side.
+        # ``BaseDocumentWithInput`` makes ``id`` required (no auto-default), so mint the ObjectId here
         initiative = self.document_model.model_validate(
             {
                 "_id": PydanticObjectId(),
@@ -98,8 +97,7 @@ class InitiativeRepository(
     async def patch_initiative(self, slug: str, update: InitiativePatch) -> Initiative:
         """Patch a scoped initiative by ``slug``, enforcing manage rights and approval rules.
 
-        - The caller must be able to *manage* the initiative (owner/collaborator/admin); mere
-          visibility (e.g. a public initiative) is not enough.
+        - The caller must be able to *manage* the initiative (owner/collaborator/admin)
         - Only an admin may change ``is_approved``.
         - The resulting state must satisfy ``is_public ⇒ is_approved`` (re-checked here because a
           partial ``$set`` does not run the document validator).
@@ -114,7 +112,7 @@ class InitiativeRepository(
 
         data = update.model_dump(exclude_unset=True)
         if "is_approved" in data and not self._user.is_admin:
-            raise PermissionError(required_role="admin")
+            raise PermissionError("only admins can set `is_approved`", required_role="admin")
 
         resulting_approved = data.get("is_approved", existing.is_approved)
         resulting_public = data.get("is_public", existing.is_public)
