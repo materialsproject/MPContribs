@@ -68,7 +68,7 @@ cramjam==2.11.0
     # via python-snappy
 crontab==1.0.5
     # via rq-scheduler
-cryptography==49.0.0
+cryptography==50.0.0
     # via pyopenssl
 css-html-js-minify==2.5.5
     # via mpcontribs-api (pyproject.toml)
@@ -236,7 +236,7 @@ matplotlib-inline==0.2.2
     #   ipython
 mimerender-pr36==0.0.2
     # via flask-mongorest-mpcontribs
-mistune==3.3.3
+mistune==3.3.4
     # via
     #   flasgger-tschaume
     #   nbconvert

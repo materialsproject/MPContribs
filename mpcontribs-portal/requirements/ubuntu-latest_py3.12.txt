@@ -56,7 +56,7 @@ decorator==5.3.1
     # via ipython
 defusedxml==0.7.1
     # via nbconvert
-django==3.2.25
+django==5.2.16
     # via
     #   django-settings-file
     #   mpcontribs-portal (pyproject.toml)
@@ -168,7 +168,7 @@ matplotlib-inline==0.2.2
     # via
     #   ipykernel
     #   ipython
-mistune==3.3.3
+mistune==3.3.4
     # via nbconvert
 monotonic==1.6
     # via bravado
