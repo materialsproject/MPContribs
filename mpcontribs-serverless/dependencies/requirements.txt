@@ -28,7 +28,7 @@ contourpy==1.0.6
     # via matplotlib
 cycler==0.11.0
     # via matplotlib
-ddtrace==4.3.0
+ddtrace==4.8.2
     # via -r requirements.in
 decorator==5.1.1
     # via ipython
@@ -115,7 +115,7 @@ pexpect==4.8.0
     # via ipython
 pickleshare==0.7.5
     # via ipython
-pillow==12.2.0
+pillow==12.3.0
     # via matplotlib
 pint==0.19.2
     # via mpcontribs-client
