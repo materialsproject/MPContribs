@@ -5,9 +5,11 @@ Validated replacement for `mpcontribs-lux/mpcontribs/lux/projects/alab/schemas/`
 ## Files
 
 - `__init__.py` — package registration, same pattern as the current repo's `schemas/__init__.py`
-- `base.py` — `ExcludeFromUpload` removed; `get_uploadable_fields` / `get_excluded_fields`, unchanged from the current repo
 - `experiments.py` — `Experiment` (top-level summary) + its two nested groups, `HeatingSummary` and `PowderRecoverySummary`
 - `sample_preparation.py`, `heating.py`, `powder_recovery.py`, `characterization.py` — one model per attached table
+- `timing.py` — `Timing` (`taskCreated`/`taskStarted`/`taskCompleted`, defined once), subclassed as `DoseTiming` in `sample_preparation.py` to add `doseTime`; every table embeds it as a nested `timing` field rather than repeating the three fields inline
+
+`base.py` (`ExcludeFromUpload` etc.) is **not** part of this handoff — MPContribs-Lux doesn't need it. It's still used on the pipeline's own upload side, just not shipped here.
 
 ## What changed vs. the schema currently in the repo
 
@@ -16,8 +18,9 @@ Validated replacement for `mpcontribs-lux/mpcontribs/lux/projects/alab/schemas/`
 - **Stage-prefix drop (this update)**: table columns that used to repeat their stage's prefix (`dosingCruciblePosition`, `heatingMethod`, `recoveryInitialCrucibleWeight`, etc.) are now bare (`cruciblePosition`, `method`, `initialCrucibleWeight`). Two fields in the `Heating` table keep a distinguishing suffix instead of going fully bare, because dropping the prefix would collide with that table's own logged reading: `heatingTemperature` → `temperatureTarget` (vs. the table's own logged `temperature`), `heatingTime` → `dwellTime` (vs. the table's own logged `time`) — matched in `HeatingSummary` too, so the summary and table use the identical field name for the same quantity. `Sample preparation`'s `accuracyPercent` → `doseAccuracyPercent` (kept the `Percent` suffix deliberately). `Powder recovery`'s `recoveryYieldPercent` is the one field that keeps its prefix, unlike everything else in that table — a deliberate exception, not an oversight.
 - **`Experiment` is lean**: `experimentType`, `experimentSubgroup`, `lastUpdated`, `status` are gone from the top level entirely (privacy/lean pass — they still exist in our internal pipeline snapshot, just not in what's released). Only `heating` (4 fields) and `powderRecovery` (1 field) remain as nested groups; `samplePreparation` and `characterization` no longer exist as top-level groups at all — their full detail lives only on the attached tables now.
 - **Timestamps are relative, not absolute**: every table's task timestamps (`taskCreated`/`taskStarted`/`taskCompleted`) and `samplePreparation`'s `doseTime` are hours-since-sample-creation floats, not datetimes — a privacy transform (no absolute dates in the released data). An event that would compute to a negative offset is nulled rather than kept negative.
+- **Timing consolidated into one shared class**: `taskCreated`/`taskStarted`/`taskCompleted` used to be redefined inline in each of the 4 table schemas; they're now defined once in `Timing` (`timing.py`) and embedded as a nested `timing` field on every table. `sample_preparation.py`'s extra `doseTime` field is handled by `DoseTiming`, a one-field subclass of `Timing`, embedded there as `timing: DoseTiming`. This is a schema-side-only reorganization — the underlying values, field names, and released data are unchanged.
 - **`characterization.xrdFileName`** is the AerisData scan reference, sanitized to `"{rgNumber}.xrdml"` — the original filename (which could embed the raw project/index and a scan date) is not exposed.
-- **No embargoed field is modeled anywhere.** `recovery_weight_collected_mg` and `xrd_total_mass_dispensed_mg` are excluded at pipeline extraction — they never reach any parquet table. The utility (`base.py`) is kept present and available for any future embargo need.
+- **No embargoed field is modeled anywhere.** `recovery_weight_collected_mg` and `xrd_total_mass_dispensed_mg` are excluded at pipeline extraction — they never reach any parquet table — so there's nothing to mark `ExcludeFromUpload` currently.
 
 ## Validation
 
