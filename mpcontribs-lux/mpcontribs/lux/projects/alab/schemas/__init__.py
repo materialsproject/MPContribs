@@ -1,35 +1,33 @@
 """
-A-Lab Pydantic Schemas
+A-Lab Pydantic Schemas (v5 semi-nested model)
 
-This package contains Pydantic schemas for all A-Lab parquet tables.
-These schemas are the source of truth for data validation.
+This package contains Pydantic schemas for the current A_Lab MPContribs
+model: one lean top-level Experiment (nested heating/powderRecovery
+summaries, camelCase, matching MODEL_SPEC.md), plus one model per attached
+table. These schemas are the source of truth for data validation and
+validate against the complete real released data with 0 errors.
 
-Each schema corresponds to one parquet file.
-Integrates team's validation patterns (constraints, Literal types) from results_schema.py.
+No embargoed field currently exists anywhere in this model -- both
+previously-embargoed fields (recovery_weight_collected_mg,
+xrd_total_mass_dispensed_mg) are excluded at pipeline extraction time and
+never reach any parquet table. The utility is kept available (base.py) for any future
+embargo need.
 """
 
-from .base import ExcludeFromUpload
-from .experiments import Experiment
-from .experiment_elements import ExperimentElement
-from .powder_doses import PowderDose, PowderItem
-from .temperature_logs import TemperatureLog, TemperatureLogEntry
-from .workflow_tasks import WorkflowTask
-from .xrd_data_points import XRDDataPoint
-from .xrd_refinements import XRDRefinement
-from .xrd_phases import XRDPhase
+from .characterization import Characterization
+from .experiments import Experiment, HeatingSummary, PowderRecoverySummary
+from .heating import Heating
+from .powder_recovery import PowderRecovery
+from .sample_preparation import SamplePreparation
 
 __all__ = [
-    # Base
-    "ExcludeFromUpload",
-    # Parquet table schemas (one per .parquet file)
+    # Top-level experiment summary + its nested groups
     "Experiment",
-    "ExperimentElement",
-    "PowderDose",
-    "PowderItem",
-    "TemperatureLogEntry",
-    "TemperatureLog",
-    "WorkflowTask",
-    "XRDDataPoint",
-    "XRDRefinement",
-    "XRDPhase",
+    "HeatingSummary",
+    "PowderRecoverySummary",
+    # Attached-table schemas (one per parquet file)
+    "SamplePreparation",
+    "Heating",
+    "PowderRecovery",
+    "Characterization",
 ]
