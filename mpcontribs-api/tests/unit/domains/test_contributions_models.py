@@ -123,7 +123,7 @@ class TestContributionBase:
         _make_contribution_in(data=valid_punctuation)
         assert True
         with pytest.raises(ValidationError, match="Punctuation found in Contribution.data keys"):
-             _make_contribution_in(data=invalid_punctuation)
+            _make_contribution_in(data=invalid_punctuation)
         with pytest.raises(ValidationError, match="Punctuation found in Contribution.data keys"):
             _make_contribution_in(data=too_many_pipes)
         with pytest.raises(ValidationError, match="Non-ASCII key found in Contribution.data"):
@@ -139,6 +139,7 @@ class TestContributionBase:
         _make_contribution_in(data=ascii_in_values)
         assert True
 
+
 # ---------------------------------------------------------------------------
 # Contribution identifier validation (material_id / chemical_system_id / formula)
 #
@@ -151,11 +152,23 @@ class TestMaterialIdValidation:
     @pytest.mark.parametrize(
         ("given", "expected"),
         [
+            # Numeric (MpId) form: leading zeros trimmed.
             ("mp-149", "mp-149"),
             ("mp-1234567", "mp-1234567"),
             ("mp-001", "mp-1"),  # leading zeros trimmed
             ("mp-0001234", "mp-1234"),
             ("  mp-42  ", "mp-42"),  # surrounding whitespace stripped
+            ("MP-149", "mp-149"),  # prefix lowercased
+            # Alphabetic (AlphaId) form: left-padded with 'a' to a fixed width of 8, never stripped.
+            ("mp-abcdefgh", "mp-abcdefgh"),  # already full width, unchanged
+            ("mp-b", "mp-aaaaaaab"),  # dropped leading 'a's re-padded by us
+            ("mp-bcd", "mp-aaaaabcd"),
+            ("mp-abc", "mp-aaaaaabc"),  # a leading 'a' is significant, not stripped
+            ("mp-aaaaaabc", "mp-aaaaaabc"),  # explicit padding is idempotent
+            ("MP-abc", "mp-aaaaaabc"),  # prefix lowercased
+            ("mp-ABC", "mp-aaaaaabc"),  # letters lowercased
+            ("mp-a", "mp-aaaaaaaa"),  # single letter padded to full width
+            ("  mp-xyz  ", "mp-aaaaaxyz"),  # surrounding whitespace stripped
         ],
     )
     def test_valid_material_id_is_normalized(self, given, expected):
@@ -163,7 +176,15 @@ class TestMaterialIdValidation:
 
     @pytest.mark.parametrize(
         "bad",
-        ["mp-12345678", "MP-1", "mp-", "mp-1a", "1234", "mvc-1", "mp-1.0"],
+        [
+            "mp-12345678",  # too many significant digits
+            "mp-",  # empty body
+            "mp-1a",  # mixed digits and letters
+            "1234",  # missing prefix
+            "mvc-1",  # wrong prefix
+            "mp-1.0",  # non-integer
+            "mp-abcdefghi",  # 9 letters, one over the cap
+        ],
     )
     def test_invalid_material_id_raises(self, bad):
         with pytest.raises(ValidationError, match="material_id"):
@@ -226,9 +247,7 @@ class TestIdentifierHierarchy:
     """chemical_system_id > formula > material_id: each level requires the ones above it."""
 
     def _build(self, **identity):
-        return ContributionIn(
-            _id=PydanticObjectId(), project="proj", data={}, **identity
-        )
+        return ContributionIn(_id=PydanticObjectId(), project="proj", data={}, **identity)
 
     def test_chemical_system_only_is_valid(self):
         contrib = self._build(chemical_system_id="Fe-O")

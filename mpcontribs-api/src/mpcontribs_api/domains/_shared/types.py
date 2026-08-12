@@ -12,35 +12,56 @@ from mpcontribs_api.exceptions import ValidationError
 
 ShortStr = Annotated[str, Field(min_length=3, max_length=30)]
 
-# "mp-" followed by one or more digits; leading zeros are trimmed afterwards.
-_MATERIAL_ID_RE = re.compile(r"^mp-([0-9]+)$")
+# A material id is ``mp-`` followed by either a numeric id (MpId) or an alphabetic id (AlphaId).
+# The whole value is lowercased first, so ``"MP-abc"`` and ``"mp-ABC"`` both normalize identically.
+_MATERIAL_ID_DIGITS_RE = re.compile(r"^mp-([0-9]+)$")
 _MAX_MATERIAL_ID_DIGITS = 7
+
+_MATERIAL_ID_ALPHA_RE = re.compile(r"^mp-([a-z]+)$")
+_ALPHA_ID_LENGTH = 8
 
 
 def _validate_material_id(v: str | None) -> str | None:
-    """Normalize a Materials Project id: ``mp-`` + up to 7 digits, leading zeros trimmed.
+    """Normalize a Materials Project id, accepting either the numeric (MpId) or alphabetic (AlphaId) form.
 
-    ``"mp-001"`` -> ``"mp-1"``. Rejects anything not shaped ``mp-<digits>`` and any value whose
-    significant (leading-zero-trimmed) digit count exceeds 7.
+    The value is lowercased first (``"MP-abc"`` / ``"mp-ABC"`` -> ``"mp-aaaaaabc"``).
+
+    MpId: ``mp-`` + up to 7 digits, leading zeros trimmed (``"mp-001"`` -> ``"mp-1"``).
+    AlphaId: ``mp-`` + up to 8 letters, left-padded with 'a's to 8 (``"mp-bcd"`` -> ``"mp-aaaaabcd"``).
+    Rejects anything not shaped ``mp-<digits>`` or ``mp-<letters>``, numeric ids with more than 7
+    significant digits, and alpha ids with more than 8 letters.
     """
     if v is None:
         return None
-    if not isinstance(v, str):
-        raise ValidationError(f"material_id must be a string, got '{type(v).__name__}'", material_id=v)
-    s = v.strip()
-    match = _MATERIAL_ID_RE.match(s)
-    if match is None:
-        raise ValidationError(
-            f"material_id '{v}' invalid. Must be 'mp-' followed by digits (e.g. 'mp-149')",
-            material_id=v,
-        )
-    trimmed = match.group(1).lstrip("0") or "0"
-    if len(trimmed) > _MAX_MATERIAL_ID_DIGITS:
-        raise ValidationError(
-            f"material_id '{v}' invalid. Numeric part must be at most {_MAX_MATERIAL_ID_DIGITS} digits",
-            material_id=v,
-        )
-    return f"mp-{trimmed}"
+    s = v.strip().lower()
+
+    digits_match = _MATERIAL_ID_DIGITS_RE.match(s)
+    if digits_match is not None:
+        trimmed = digits_match.group(1).lstrip("0") or "0"
+        if len(trimmed) > _MAX_MATERIAL_ID_DIGITS:
+            raise ValidationError(
+                f"material_id '{v}' invalid. Numeric part must be at most {_MAX_MATERIAL_ID_DIGITS} digits",
+                material_id=v,
+            )
+        return f"mp-{trimmed}"
+
+    alpha_match = _MATERIAL_ID_ALPHA_RE.match(s)
+    if alpha_match is not None:
+        # Left-pad with 'a's to a fixed width of 8; every provided letter is significant, so a caller
+        # who drops leading 'a's (``"mp-bcd"``) and one who spells them out (``"mp-aaaaabcd"``) agree.
+        letters = alpha_match.group(1)
+        if len(letters) > _ALPHA_ID_LENGTH:
+            raise ValidationError(
+                f"material_id '{v}' invalid. Alphabetic part must be at most {_ALPHA_ID_LENGTH} letters",
+                material_id=v,
+            )
+        return f"mp-{letters.rjust(_ALPHA_ID_LENGTH, 'a')}"
+
+    raise ValidationError(
+        f"material_id '{v}' invalid. Must be 'mp-' followed by digits (e.g. 'mp-149') "
+        "or up to 8 letters (e.g. 'mp-abcd')",
+        material_id=v,
+    )
 
 
 MaterialId = Annotated[str, BeforeValidator(_validate_material_id)]
