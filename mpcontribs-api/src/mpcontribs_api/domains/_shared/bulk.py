@@ -1,9 +1,12 @@
-from typing import Any
+from typing import Any, Self
 
-from pydantic import BaseModel
+import structlog
+from pydantic import BaseModel, model_validator
 from pymongo.errors import DuplicateKeyError
 
 from mpcontribs_api.exceptions import AppError, ConflictError
+
+logger = structlog.get_logger(__name__)
 
 
 class BulkFailure(BaseModel):
@@ -13,6 +16,16 @@ class BulkFailure(BaseModel):
     identifier: dict[str, Any] | None = None
     error_code: str
     message: str
+
+    @model_validator(mode="after")
+    def _emit_log(self) -> Self:
+        logger.info(
+            message=self.message,
+            error_code=self.error_code,
+            index=self.index,
+            identifier=self.identifier,
+        )
+        return self
 
 
 class BulkWriteSummary[T](BaseModel):

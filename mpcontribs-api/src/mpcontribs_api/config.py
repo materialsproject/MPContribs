@@ -1,5 +1,5 @@
 from functools import lru_cache
-from typing import Literal
+from typing import Literal, Self
 
 from pydantic import BaseModel, Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -149,7 +149,7 @@ class MongoSettings(BaseModel):
     timeout_ms: int = Field(default=60_000, description="The end-to-end allowed time for an operation")
 
     @model_validator(mode="after")
-    def _clamp_concurrency(self):
+    def _clamp_concurrency(self) -> Self:
         if self.max_pool_size:
             per_request_cap = max(1, self.max_pool_size // 2)
             if self.max_concurrent_transactions > per_request_cap:
