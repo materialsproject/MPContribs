@@ -91,17 +91,37 @@ def _validate_chemical_system_id(v: str | None) -> str | None:
 ChemicalSystemId = Annotated[str, BeforeValidator(_validate_chemical_system_id)]
 
 
-# Each token is an element symbol (upper, optional lower) followed by an optional integer count.
-_FORMULA_TOKEN_RE = re.compile(r"([A-Z][a-z]?)([0-9]*)")
+# Each token is an element symbol (upper, optional lower) followed by an optional count. The count
+# may be an integer or a decimal (e.g. ``"Si0.2C0.64"``), so fractional stoichiometries are allowed.
+_FORMULA_TOKEN_RE = re.compile(r"([A-Z][a-z]?)([0-9]*\.?[0-9]*)")
+
+
+def _normalize_count(count: str) -> str | None:
+    """Normalize an integer or decimal count, returning ``None`` if it is not positive.
+
+    Trims leading zeros (``"02"`` -> ``"2"``) and trailing fractional zeros (``"0.20"`` -> ``"0.2"``,
+    ``"2.0"`` -> ``"2"``), and infers an omitted leading zero (``".1"`` -> ``"0.1"``). A count that
+    collapses to zero (``"0"``, ``"0.0"``) or has no digits (``"."``) returns ``None``.
+    """
+    if "." in count:
+        int_part, frac_part = count.split(".", 1)
+        int_part = int_part.lstrip("0")
+        frac_part = frac_part.rstrip("0")
+        if frac_part:
+            return f"{int_part or '0'}.{frac_part}"
+        # Fractional part collapsed to zero -> treat as a whole number (``None`` if that is zero too).
+        return int_part or None
+    return count.lstrip("0") or None
 
 
 def _validate_formula(v: str | None) -> str | None:
     """Validate/normalize a formula: element symbols each optionally followed by a count.
 
     The value is NFKC-normalized first, so unicode subscripts/superscripts and full-width forms
-    fold to their ASCII equivalents (``"Fe₂O₃"`` -> ``"Fe2O3"``). Leading zeros in counts are then
-    trimmed (``"Fe02O3"`` -> ``"Fe2O3"``). Rejects unknown element symbols, stray characters, and
-    non-positive counts (``"Fe0"``).
+    fold to their ASCII equivalents (``"Fe₂O₃"`` -> ``"Fe2O3"``). Counts may be integers or decimals
+    (``"Si0.2C0.64"``); leading zeros and trailing fractional zeros are then trimmed
+    (``"Fe02O3"`` -> ``"Fe2O3"``, ``"Fe2.0O3"`` -> ``"Fe2O3"``). Rejects unknown element symbols,
+    stray characters, and non-positive counts (``"Fe0"``).
     """
     if v is None:
         return None
@@ -122,20 +142,20 @@ def _validate_formula(v: str | None) -> str | None:
                 invalid_symbol=symbol,
             )
         if count:
-            trimmed = count.lstrip("0")
-            if not trimmed:
+            normalized = _normalize_count(count)
+            if normalized is None:
                 raise ValidationError(
-                    f"formula '{v}' invalid. Count for '{symbol}' must be a positive integer",
+                    f"formula '{v}' invalid. Count for '{symbol}' must be a positive number",
                     formula=v,
                     invalid_count=count,
                 )
-            count = trimmed
+            count = normalized
         parts.append(f"{symbol}{count}")
         pos = match.end()
     if pos != len(s):
         raise ValidationError(
             f"formula '{v}' invalid. Must be valid element symbols each optionally followed by a "
-            "positive integer count (e.g. 'Fe2O3')",
+            "positive integer or decimal count (e.g. 'Fe2O3', 'Si0.2C0.64')",
             formula=v,
         )
     return "".join(parts)

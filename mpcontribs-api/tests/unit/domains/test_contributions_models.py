@@ -224,15 +224,36 @@ class TestFormulaValidation:
             ("Fe", "Fe"),
             ("Fe02O3", "Fe2O3"),  # leading zeros in counts trimmed
             ("FeO03", "FeO3"),
-            ("Fe₂O₃", "Fe2O3"),  # NFKC folds unicode subscripts
-            ("Co³O₄", "Co3O4"),  # ...and superscripts
-            ("Ｆｅ２Ｏ３", "Fe2O3"),  # ...and full-width forms
+            ("Si0.2Fe0.1C4", "Si0.2Fe0.1C4"),
+            ("Si00.04", "Si0.04"),
+            ("Fe0.1", "Fe0.1"),
+            ("Fe.1", "Fe0.1"),
+            ("Fe00.1", "Fe0.1"),
+            ("Fe2.0O3", "Fe2O3"),
+            ("Fe0.20O3", "Fe0.2O3"),
+            ("Fe₂O₃", "Fe2O3"),
+            ("Co³O₄", "Co3O4"),
+            ("Ｆｅ２Ｏ３", "Fe2O3"),
         ],
     )
     def test_valid_formula_is_normalized(self, given, expected):
         assert _make_contribution_in(formula=given).formula == expected
 
-    @pytest.mark.parametrize("bad", ["X", "fe2", "Fe2xO", "2FeO", "Fe0", ""])
+    @pytest.mark.parametrize(
+        "bad",
+        [
+            "X",
+            "fe2",
+            "Fe2xO",
+            "2FeO",
+            "Fe0",
+            "",
+            "Si0.0.4",
+            "Si0,1",
+            "Si0.0",
+            "Si.",
+        ],
+    )
     def test_invalid_formula_raises(self, bad):
         with pytest.raises(ValidationError, match="formula"):
             _make_contribution_in(formula=bad)
