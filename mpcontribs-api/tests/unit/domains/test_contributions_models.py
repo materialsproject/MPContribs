@@ -196,7 +196,20 @@ class TestChemicalSystemIdValidation:
     def test_valid_chemical_system_id(self, good):
         assert _make_contribution_in(chemical_system_id=good).chemical_system_id == good
 
-    @pytest.mark.parametrize("bad", ["Xx-O", "fe-o", "Fe-", "-Fe", "Fe--O", ""])
+    @pytest.mark.parametrize(
+        ("given", "expected"),
+        [
+            ("fe-o", "Fe-O"),  # all lowercase
+            ("FE-O", "Fe-O"),  # all uppercase
+            ("fE-o", "Fe-O"),  # mixed case
+            ("li-FE-o", "Li-Fe-O"),
+            ("h", "H"),
+        ],
+    )
+    def test_chemical_system_id_case_is_normalized(self, given, expected):
+        assert _make_contribution_in(chemical_system_id=given).chemical_system_id == expected
+
+    @pytest.mark.parametrize("bad", ["Xx-O", "Fe-", "-Fe", "Fe--O", ""])
     def test_invalid_chemical_system_id_raises(self, bad):
         with pytest.raises(ValidationError, match="chemical_system_id"):
             _make_contribution_in(chemical_system_id=bad)

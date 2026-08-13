@@ -71,19 +71,21 @@ def _validate_chemical_system_id(v: str | None) -> str | None:
     """Validate a hyphen-delimited chemical system of element symbols, e.g. ``"Fe-O"``."""
     if v is None:
         return None
-    if not isinstance(v, str):
-        raise ValidationError(f"chemical_system_id must be a string, got '{type(v).__name__}'", chemical_system_id=v)
     s = v.strip()
     if not s:
         raise ValidationError("chemical_system_id must not be empty", chemical_system_id=v)
+    normalized_tokens: list[str] = []
     for token in s.split("-"):
-        if not Element.is_valid_symbol(token):
+        # Normalize casing (e.g. "fe", "FE", "fE" -> "Fe") before validating.
+        normalized = token.capitalize()
+        if not Element.is_valid_symbol(normalized):
             raise ValidationError(
                 f"chemical_system_id '{v}' invalid. '{token}' is not a valid element symbol",
                 chemical_system_id=v,
                 invalid_token=token,
             )
-    return s
+        normalized_tokens.append(normalized)
+    return "-".join(normalized_tokens)
 
 
 ChemicalSystemId = Annotated[str, BeforeValidator(_validate_chemical_system_id)]
