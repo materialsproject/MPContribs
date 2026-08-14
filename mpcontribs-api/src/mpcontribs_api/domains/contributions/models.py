@@ -136,6 +136,20 @@ class ContributionIdentity(Identity):
     # (excludes ``project``/``unique_value``/``condition_key``, which don't participate).
     HIERARCHY_FIELDS: ClassVar[frozenset[str]] = frozenset({"material_id", "chemical_system_id", "formula"})
 
+    @staticmethod
+    def check_hierarchy(material_id: str | None, chemical_system_id: str | None, formula: str | None) -> None:
+        """Enforce the identifier specificity hierarchy ``chemical_system_id`` > ``formula`` > ``material_id."""
+        if not chemical_system_id:
+            raise ValidationError(
+                "chemical_system_id is required (identifier hierarchy: chemical_system_id > formula > material_id)."
+            )
+        if material_id is not None and formula is None:
+            raise ValidationError(
+                "formula is required when material_id is specified "
+                "(identifier hierarchy: chemical_system_id > formula > material_id).",
+                material_id=material_id,
+            )
+
 
 class ContributionBase(BaseDocumentWithInput[PydanticObjectId]):
     """Shared settings and fields for Contribution, ContributionIn, and ContributionOut."""

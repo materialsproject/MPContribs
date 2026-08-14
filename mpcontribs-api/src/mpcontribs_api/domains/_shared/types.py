@@ -324,17 +324,3 @@ class Identity(ABC):  # noqa: B024  # base kept abstract as a marker; from_docum
     def projection(cls) -> dict[str, int]:
         """A Mongo projection selecting exactly the identity fields."""
         return {f.name: 1 for f in fields(cls)}
-
-    @staticmethod
-    def check_hierarchy(material_id: str | None, chemical_system_id: str | None, formula: str | None) -> None:
-        """Enforce the identifier specificity hierarchy ``chemical_system_id`` > ``formula`` > ``material_id."""
-        if not chemical_system_id:
-            raise ValidationError(
-                "chemical_system_id is required (identifier hierarchy: chemical_system_id > formula > material_id)."
-            )
-        if material_id is not None and formula is None:
-            raise ValidationError(
-                "formula is required when material_id is specified "
-                "(identifier hierarchy: chemical_system_id > formula > material_id).",
-                material_id=material_id,
-            )
