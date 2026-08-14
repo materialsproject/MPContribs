@@ -1,6 +1,5 @@
 import re
-from collections.abc import Mapping
-from dataclasses import dataclass, fields
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Annotated, Any, ClassVar
 from warnings import deprecated
@@ -22,7 +21,7 @@ from pymongo import ASCENDING, IndexModel
 
 from mpcontribs_api.domains._shared.filters import BaseFilter
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
-from mpcontribs_api.domains._shared.types import ChemicalSystemId, Formula, MaterialId, ShortStr
+from mpcontribs_api.domains._shared.types import ChemicalSystemId, Formula, Identity, MaterialId, Scalar, ShortStr
 from mpcontribs_api.domains.attachments.models import Attachment, AttachmentFilter, AttachmentIn
 from mpcontribs_api.domains.structures.models import Structure, StructureFilter, StructureIn
 from mpcontribs_api.domains.tables.models import Table, TableFilter, TableIn
@@ -77,9 +76,6 @@ def _validate_nested_keys(value: Any) -> None:
             _validate_nested_keys(item)
 
 
-Scalar = str | int | float | bool
-
-
 def _value_at(data: dict[str, Any], path: str) -> Any:
     """Resolve a dotted ``path`` inside ``data``; raises ``KeyError`` if any segment is absent."""
     cursor: Any = data
@@ -119,9 +115,8 @@ def extract_unique_value(data: dict[str, Any] | None, unique_column: str) -> Sca
     return value
 
 
-# dataclass construction is cheaper than Pydantic.BaseModel
 @dataclass(frozen=True, slots=True)
-class Identity:
+class ContributionIdentity(Identity):
     """The full identity of a Contribution.
 
     Field declaration order IS the identity/index column order: ``index_model`` and ``projection``
@@ -137,49 +132,9 @@ class Identity:
     unique_value: Scalar | None = None
     condition_key: str = ""
 
-    def as_dict(self) -> dict[str, Any]:
-        """Identity as a flat dict keyed by field name (for Mongo match clauses and upsert)."""
-        return {f.name: getattr(self, f.name) for f in fields(self)}
-
-    @classmethod
-    def from_document(cls, doc: Mapping[str, Any]) -> Identity:
-        """Build from a raw Mongo document/projection, tolerating null-stripped fields."""
-        return cls(
-            project=doc["project"],
-            material_id=doc.get("material_id"),
-            chemical_system_id=doc["chemical_system_id"],
-            formula=doc.get("formula"),
-            unique_value=doc.get("unique_value"),
-            condition_key=doc.get("condition_key") or "",
-        )
-
-    @classmethod
-    def index_model(cls, name: str = "project_identity", *, unique: bool = True) -> IndexModel:
-        """The unique index enforcing identity — keys follow the field order so they can't drift."""
-        return IndexModel(keys=[(f.name, ASCENDING) for f in fields(cls)], name=name, unique=unique)
-
-    @classmethod
-    def projection(cls) -> dict[str, int]:
-        """A Mongo projection selecting exactly the identity fields."""
-        return {f.name: 1 for f in fields(cls)}
-
     # The identifier fields governed by the specificity hierarchy enforced in ``check_hierarchy``
     # (excludes ``project``/``unique_value``/``condition_key``, which don't participate).
     HIERARCHY_FIELDS: ClassVar[frozenset[str]] = frozenset({"material_id", "chemical_system_id", "formula"})
-
-    @staticmethod
-    def check_hierarchy(material_id: str | None, chemical_system_id: str | None, formula: str | None) -> None:
-        """Enforce the identifier specificity hierarchy ``chemical_system_id`` > ``formula`` > ``material_id."""
-        if not chemical_system_id:
-            raise ValidationError(
-                "chemical_system_id is required (identifier hierarchy: chemical_system_id > formula > material_id)."
-            )
-        if material_id is not None and formula is None:
-            raise ValidationError(
-                "formula is required when material_id is specified "
-                "(identifier hierarchy: chemical_system_id > formula > material_id).",
-                material_id=material_id,
-            )
 
 
 class ContributionBase(BaseDocumentWithInput[PydanticObjectId]):
@@ -204,7 +159,7 @@ class ContributionBase(BaseDocumentWithInput[PydanticObjectId]):
         name = "contributions"
         keep_nulls = False
         indexes = [
-            Identity.index_model(),
+            ContributionIdentity.index_model(),
             # Multikey indexes over each Link field's DBRef id so the component-delete
             # reference check (referenced_component_ids) is index-served, not a COLLSCAN.
             IndexModel(keys=[("structures.$id", ASCENDING)], name="ref_structures"),
@@ -245,9 +200,9 @@ class Contribution(ContributionBase):
         self.last_modified = datetime.now(UTC)
 
     @property
-    def identity(self) -> Identity:
+    def identity(self) -> ContributionIdentity:
         """This document's identity, read straight off its own stored fields."""
-        return Identity(
+        return ContributionIdentity(
             project=self.project,
             material_id=self.material_id,
             chemical_system_id=self.chemical_system_id,
@@ -275,7 +230,7 @@ class ContributionIn(ContributionBase):
     @model_validator(mode="after")
     def _check_identifier_hierarchy(self) -> ContributionIn:
         """Enforce ``chemical_system_id`` > ``formula`` > ``material_id`` (see :meth:`Identity.check_hierarchy`)."""
-        Identity.check_hierarchy(self.material_id, self.chemical_system_id, self.formula)
+        ContributionIdentity.check_hierarchy(self.material_id, self.chemical_system_id, self.formula)
         return self
 
     def has_components(self) -> bool:
@@ -286,13 +241,13 @@ class ContributionIn(ContributionBase):
         """Returns the total number of components (structures, tables, attachments) in the contribution"""
         return len(self.structures or []) + len(self.tables or []) + len(self.attachments or [])
 
-    def identity(self, unique_value: Scalar | None = None, condition_key: str = "") -> Identity:
-        """Build this contribution's :class:`Identity` from its flat fields plus server-resolved parts.
+    def identity(self, unique_value: Scalar | None = None, condition_key: str = "") -> ContributionIdentity:
+        """Build this contribution's :class:`ContributionIdentity` from its flat fields plus server-resolved parts.
 
         ``unique_value`` and ``condition_key`` are server-resolved, so they are passed in rather than
         read off the (untrusted) input model.
         """
-        return Identity(
+        return ContributionIdentity(
             project=self.project,
             material_id=self.material_id,
             chemical_system_id=self.chemical_system_id,

@@ -20,6 +20,7 @@ class BulkFailure(BaseModel):
     @model_validator(mode="after")
     def _emit_log(self) -> Self:
         logger.info(
+            "bulk item failed",
             message=self.message,
             error_code=self.error_code,
             index=self.index,

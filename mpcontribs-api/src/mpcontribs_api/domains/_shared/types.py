@@ -1,16 +1,23 @@
 import re
 import unicodedata
+from abc import ABC
+from collections.abc import Mapping
+from dataclasses import MISSING, dataclass, fields
 from enum import StrEnum
-from typing import Annotated
+from functools import cache
+from typing import Annotated, Any, Self, get_args, get_type_hints
 
 import polars as pl
 from fastapi import Query
 from pydantic import BeforeValidator, Field, PlainSerializer, WithJsonSchema
 from pymatgen.core import Element
+from pymongo import ASCENDING, IndexModel
 
 from mpcontribs_api.exceptions import ValidationError
 
 ShortStr = Annotated[str, Field(min_length=3, max_length=30)]
+
+Scalar = str | int | float | bool
 
 # A material id is ``mp-`` followed by either a numeric id (MpId) or an alphabetic id (AlphaId).
 # The whole value is lowercased first, so ``"MP-abc"`` and ``"mp-ABC"`` both normalize identically.
@@ -261,3 +268,73 @@ PolarsFrame = Annotated[
     ),
     WithJsonSchema({"type": "object"}, mode="serialization"),
 ]
+
+
+@cache
+def _optional_field_names(cls: type) -> frozenset[str]:
+    """Names of ``cls``'s dataclass fields whose type admits ``None`` (resolved through string annotations)."""
+    hints = get_type_hints(cls)
+    return frozenset(f.name for f in fields(cls) if type(None) in get_args(hints.get(f.name)))
+
+
+# dataclass construction is cheaper than Pydantic.BaseModel
+@dataclass(frozen=True, slots=True)
+class Identity(ABC):  # noqa: B024  # base kept abstract as a marker; from_document is a shared concrete helper
+    """The full identity of a document model.
+
+    Field declaration order IS the identity/index column order: ``index_model`` and ``projection``
+    iterate ``dataclasses.fields`` in that order, so the order is declared exactly once (below).
+    """
+
+    # WARNING: the order the fields are specified in reflects their ordering for indices. Changing the order
+    # creates index migration. Only change intentionally
+
+    def as_dict(self) -> dict[str, Any]:
+        """Identity as a flat dict keyed by field name (for Mongo match clauses and upsert)."""
+        return {f.name: getattr(self, f.name) for f in fields(self)}
+
+    @classmethod
+    def from_document(cls, doc: Mapping[str, Any]) -> Self:
+        """Build from a raw Mongo document/projection, tolerating null-stripped fields.
+
+        Generic over any ``@dataclass`` subclass: iterates the concrete class's own fields,
+        falling back to each field's default (or ``None`` for a defaultless Optional field) when the
+        document omits it, since Mongo strips nulls (``keep_nulls=False``). Required non-null fields
+        that are absent surface as a ``TypeError`` from the constructor.
+        """
+        optional = _optional_field_names(cls)
+        kwargs: dict[str, Any] = {}
+        for f in fields(cls):
+            if doc.get(f.name) is not None:
+                kwargs[f.name] = doc[f.name]
+            elif f.default is not MISSING:
+                kwargs[f.name] = f.default
+            elif f.default_factory is not MISSING:
+                kwargs[f.name] = f.default_factory()
+            elif f.name in optional:
+                kwargs[f.name] = None
+        return cls(**kwargs)
+
+    @classmethod
+    def index_model(cls, name: str = "project_identity", *, unique: bool = True) -> IndexModel:
+        """The unique index enforcing identity — keys follow the field order so they can't drift."""
+        return IndexModel(keys=[(f.name, ASCENDING) for f in fields(cls)], name=name, unique=unique)
+
+    @classmethod
+    def projection(cls) -> dict[str, int]:
+        """A Mongo projection selecting exactly the identity fields."""
+        return {f.name: 1 for f in fields(cls)}
+
+    @staticmethod
+    def check_hierarchy(material_id: str | None, chemical_system_id: str | None, formula: str | None) -> None:
+        """Enforce the identifier specificity hierarchy ``chemical_system_id`` > ``formula`` > ``material_id."""
+        if not chemical_system_id:
+            raise ValidationError(
+                "chemical_system_id is required (identifier hierarchy: chemical_system_id > formula > material_id)."
+            )
+        if material_id is not None and formula is None:
+            raise ValidationError(
+                "formula is required when material_id is specified "
+                "(identifier hierarchy: chemical_system_id > formula > material_id).",
+                material_id=material_id,
+            )

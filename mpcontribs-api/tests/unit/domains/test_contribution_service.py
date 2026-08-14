@@ -12,9 +12,9 @@ from mpcontribs_api.config import MongoSettings
 from mpcontribs_api.domains.attachments.models import Attachment, AttachmentIn
 from mpcontribs_api.domains.contributions.models import (
     Contribution,
+    ContributionIdentity,
     ContributionIn,
     ContributionPatch,
-    Identity,
 )
 from mpcontribs_api.domains.contributions.service import ContributionService
 from mpcontribs_api.domains.structures.models import (
@@ -505,7 +505,7 @@ class TestContributionIdentity:
         svc, contrib_repo, *_ = _make_service()
         contrib_repo.insert_many_contributions.return_value = None
         contrib_repo.existing_identities.return_value = {
-            Identity(project="proj", material_id="mp-1", chemical_system_id="Fe-O", formula="Fe2O3")
+            ContributionIdentity(project="proj", material_id="mp-1", chemical_system_id="Fe-O", formula="Fe2O3")
         }
 
         summary = await svc.insert_contributions([_contrib_in(identifier="mp-1")])

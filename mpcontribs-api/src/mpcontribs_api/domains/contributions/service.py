@@ -22,9 +22,9 @@ from mpcontribs_api.domains.attachments.repository import MongoDbAttachmentRepos
 from mpcontribs_api.domains.contributions.models import (
     Contribution,
     ContributionFilter,
+    ContributionIdentity,
     ContributionIn,
     ContributionPatch,
-    Identity,
     Scalar,
     extract_unique_value,
 )
@@ -195,7 +195,7 @@ class ContributionService:
         # First pass: validate accessibility + resolve each unique_value, collecting identity tuples
         # so the existence check can be batched into a single query.
         resolved: list[tuple[int, ContributionIn, Scalar | None]] = []
-        keys: list[Identity] = []
+        keys: list[ContributionIdentity] = []
         for i in indices:
             contrib = contributions[i]
             if contrib.project not in unique_columns:
@@ -246,9 +246,9 @@ class ContributionService:
             return failures, plan
 
         existing = await self._contributions.existing_identities(keys)
-        seen: set[Identity] = set()
+        seen: set[ContributionIdentity] = set()
         for i, contrib, unique_value in resolved:
-            key: Identity = contrib.identity(unique_value)
+            key: ContributionIdentity = contrib.identity(unique_value)
             if key in existing or key in seen:
                 failures.append(
                     BulkFailure(
@@ -530,7 +530,7 @@ class ContributionService:
         """
         set_fields = update.model_dump(exclude_unset=True)
         touches_unique = "data" in set_fields or "project" in set_fields
-        touches_identity = bool(Identity.HIERARCHY_FIELDS & set_fields.keys())
+        touches_identity = bool(ContributionIdentity.HIERARCHY_FIELDS & set_fields.keys())
         if not touches_unique and not touches_identity:
             return await self._contributions.patch_contribution_by_id(id, update)
 
@@ -571,7 +571,7 @@ class ContributionService:
         )
         material_id = set_fields["material_id"] if "material_id" in set_fields else existing_material_id
         formula = set_fields["formula"] if "formula" in set_fields else existing_formula
-        Identity.check_hierarchy(material_id, chemical_system_id, formula)
+        ContributionIdentity.check_hierarchy(material_id, chemical_system_id, formula)
 
     async def delete_contributions(self, filter: ContributionFilter) -> BulkDeleteSummary:
         """Delete a contribution and all of its child components

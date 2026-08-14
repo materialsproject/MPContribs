@@ -15,10 +15,10 @@ from mpcontribs_api.domains._shared.types import DownloadFormat, ShortMimeFormat
 from mpcontribs_api.domains.contributions.models import (
     Contribution,
     ContributionFilter,
+    ContributionIdentity,
     ContributionIn,
     ContributionOut,
     ContributionPatch,
-    Identity,
     Scalar,
 )
 from mpcontribs_api.exceptions import ConflictError, NotFoundError
@@ -133,7 +133,7 @@ class MongoDbContributionRepository(
         await doc.insert(session=session)
         return doc
 
-    async def existing_identities(self, identities: list[Identity]) -> set[Identity]:
+    async def existing_identities(self, identities: list[ContributionIdentity]) -> set[ContributionIdentity]:
         """Return the subset of identities that already exist, scoped to the user.
 
         One query answers the whole batch so the write path avoids a round-trip per contribution.
@@ -146,7 +146,7 @@ class MongoDbContributionRepository(
             identities: the identities to test for existence
 
         Returns:
-            set[Identity]: the subset of ``identities`` already present
+            set[ContributionIdentity]: the subset of ``identities`` already present
         """
         if not identities:
             return set()
@@ -154,9 +154,9 @@ class MongoDbContributionRepository(
         if self._scope:
             match = {"$and": [self._scope, match]}
         collection = self.document_model.get_pymongo_collection()
-        found: set[Identity] = set()
-        async for doc in collection.find(match, Identity.projection()):
-            found.add(Identity.from_document(doc))
+        found: set[ContributionIdentity] = set()
+        async for doc in collection.find(match, ContributionIdentity.projection()):
+            found.add(ContributionIdentity.from_document(doc))
         return found
 
     async def referenced_component_ids(

@@ -7,15 +7,28 @@ from pydantic import ValidationError as PydanticValidationError
 from mpcontribs_api.authz import User
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
 
+from mpcontribs_api.domains._shared.types import Identity
 from mpcontribs_api.domains.contributions.models import (
     Contribution,
     ContributionFilter,
+    ContributionIdentity,
     ContributionIn,
     ContributionOut,
     ContributionPatch,
     extract_unique_value,
 )
 from mpcontribs_api.exceptions import ValidationError
+
+# The identity/index column order, declared once here so the tests fail loudly if the field order
+# in ContributionIdentity ever drifts (which silently forces a Mongo index migration).
+IDENTITY_FIELD_ORDER = [
+    "project",
+    "material_id",
+    "chemical_system_id",
+    "formula",
+    "unique_value",
+    "condition_key",
+]
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -510,3 +523,147 @@ class TestContributionFilterIdValidator:
     def test_malformed_id_raises_validation_error(self):
         with pytest.raises(ValidationError):
             ContributionFilter(id="not-an-object-id")
+
+
+# ---------------------------------------------------------------------------
+# ContributionIdentity — the concrete identity dataclass (renamed from Identity,
+# which is now the shared abstract base holding the index/projection machinery)
+# ---------------------------------------------------------------------------
+
+
+def _identity(**overrides) -> ContributionIdentity:
+    """A fully-populated ContributionIdentity, overridable per test."""
+    defaults: dict = {
+        "project": "proj",
+        "material_id": "mp-1",
+        "chemical_system_id": "Fe-O",
+        "formula": "Fe2O3",
+        "unique_value": None,
+        "condition_key": "",
+    }
+    defaults.update(overrides)
+    return ContributionIdentity(**defaults)
+
+
+class TestContributionIdentityStructure:
+    def test_is_concrete_subclass_of_identity_abc(self):
+        # Identity is the abstract base; ContributionIdentity is the concrete, field-bearing subclass.
+        assert issubclass(ContributionIdentity, Identity)
+        assert ContributionIdentity is not Identity
+
+    def test_field_order_matches_index_and_projection(self):
+        # Field declaration order IS the index column order — reordering silently forces a Mongo
+        # index migration, so index_model keys, projection keys, and as_dict all pin the same order.
+        index_keys = [key for key, _direction in ContributionIdentity.index_model().document["key"].items()]
+        assert index_keys == IDENTITY_FIELD_ORDER
+        assert list(ContributionIdentity.projection().keys()) == IDENTITY_FIELD_ORDER
+        assert list(_identity().as_dict().keys()) == IDENTITY_FIELD_ORDER
+
+    def test_hierarchy_fields_are_the_identifier_triple(self):
+        assert ContributionIdentity.HIERARCHY_FIELDS == frozenset({"material_id", "chemical_system_id", "formula"})
+
+
+class TestContributionIdentityIndexModel:
+    def test_default_index_is_named_and_unique(self):
+        index = ContributionIdentity.index_model()
+        assert index.document["name"] == "project_identity"
+        assert index.document["unique"] is True
+
+    def test_unique_can_be_disabled(self):
+        assert ContributionIdentity.index_model(unique=False).document["unique"] is False
+
+
+class TestContributionIdentityProjection:
+    def test_projection_selects_exactly_the_identity_fields(self):
+        assert ContributionIdentity.projection() == dict.fromkeys(IDENTITY_FIELD_ORDER, 1)
+
+
+class TestContributionIdentityAsDict:
+    def test_as_dict_is_flat_and_keyed_by_field_name(self):
+        identity = _identity(unique_value="A", condition_key="cond")
+        assert identity.as_dict() == {
+            "project": "proj",
+            "material_id": "mp-1",
+            "chemical_system_id": "Fe-O",
+            "formula": "Fe2O3",
+            "unique_value": "A",
+            "condition_key": "cond",
+        }
+
+
+class TestContributionIdentityFromDocument:
+    def test_full_document_round_trips(self):
+        identity = _identity(unique_value="A", condition_key="cond")
+        assert ContributionIdentity.from_document(identity.as_dict()) == identity
+
+    def test_null_stripped_document_falls_back_to_defaults(self):
+        # Contributions are stored with keep_nulls=False, so a chem-system-only contribution's
+        # projected identity doc omits material_id/formula/unique_value/condition_key entirely.
+        rebuilt = ContributionIdentity.from_document({"project": "proj", "chemical_system_id": "Fe-O"})
+        assert rebuilt == ContributionIdentity(
+            project="proj",
+            material_id=None,
+            chemical_system_id="Fe-O",
+            formula=None,
+            unique_value=None,
+            condition_key="",
+        )
+
+    def test_explicit_null_is_treated_as_absent(self):
+        # A doc that carries an explicit null (rather than omitting the key) resolves identically.
+        rebuilt = ContributionIdentity.from_document(
+            {"project": "proj", "material_id": None, "chemical_system_id": "Fe-O", "formula": None}
+        )
+        assert rebuilt.material_id is None
+        assert rebuilt.formula is None
+
+    def test_missing_required_non_null_field_raises(self):
+        # project and chemical_system_id are non-null identity fields; their absence is data
+        # corruption, so from_document surfaces it as a TypeError rather than fabricating a value.
+        with pytest.raises(TypeError):
+            ContributionIdentity.from_document({"chemical_system_id": "Fe-O"})  # no project
+        with pytest.raises(TypeError):
+            ContributionIdentity.from_document({"project": "proj"})  # no chemical_system_id
+
+
+class TestContributionIdentityEqualityAndHashing:
+    """Identity equality/hashing is what powers conflict dedup in ContributionService."""
+
+    def test_identical_identities_are_equal_and_collapse_in_a_set(self):
+        # existing_identities returns a set and the insert path checks `key in existing/seen`,
+        # so two identities over the same fields must be equal and hash-collapse.
+        assert _identity() == _identity()
+        assert len({_identity(), _identity()}) == 1
+
+    def test_same_triple_distinct_unique_value_are_different_identities(self):
+        # The whole point of unique_value: same (project, ids) but a distinct discriminator is a
+        # distinct identity, so both survive as separate members and neither conflicts.
+        a = _identity(unique_value="A")
+        b = _identity(unique_value="B")
+        assert a != b
+        assert len({a, b}) == 2
+
+    def test_identity_is_frozen(self):
+        with pytest.raises(Exception):  # noqa: B017,PT011 -- dataclasses.FrozenInstanceError
+            _identity().project = "other"  # type: ignore[misc]
+
+
+class TestContributionIdentityCheckHierarchy:
+    """check_hierarchy enforces chemical_system_id > formula > material_id (shared ABC logic)."""
+
+    def test_full_identifier_stack_passes(self):
+        ContributionIdentity.check_hierarchy("mp-1", "Fe-O", "Fe2O3")
+
+    def test_chemical_system_only_passes(self):
+        ContributionIdentity.check_hierarchy(None, "Fe-O", None)
+
+    def test_missing_chemical_system_is_rejected(self):
+        with pytest.raises(ValidationError, match="chemical_system_id is required"):
+            ContributionIdentity.check_hierarchy(None, None, "Fe2O3")
+
+    def test_material_id_without_formula_is_rejected(self):
+        with pytest.raises(ValidationError, match="formula is required"):
+            ContributionIdentity.check_hierarchy("mp-1", "Fe-O", None)
+
+    def test_formula_without_material_id_is_allowed(self):
+        ContributionIdentity.check_hierarchy(None, "Fe-O", "Fe2O3")
