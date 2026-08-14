@@ -10,6 +10,12 @@ from pymongo.errors import BulkWriteError
 from mpcontribs_api.authz import ADMIN_GROUP, User
 from mpcontribs_api.config import MongoSettings, get_settings
 from mpcontribs_api.domains.attachments.models import Attachment, AttachmentIn
+from mpcontribs_api.domains.contributions.models import (
+    Contribution,
+    ContributionIdentity,
+    ContributionIn,
+    ContributionPatch,
+)
 from mpcontribs_api.domains.contributions import service as service_module
 from mpcontribs_api.domains.contributions.models import Contribution, ContributionIn
 from mpcontribs_api.domains.contributions.service import ContributionService
@@ -89,13 +95,44 @@ def _structure_in(**overrides) -> StructureIn:
     return StructureIn(**defaults)
 
 
-def _contrib_in(project="proj", identifier="mp-1", formula="Fe2O3", **kwargs) -> ContributionIn:
+_MP_ID_REGISTRY: dict[str, str] = {}
+
+
+def _mp_id_for(label: str) -> str:
+    """Map an arbitrary test label onto a stable, valid ``material_id`` (``mp-<n>``).
+
+    ``ContributionIn`` now validates ``material_id`` as ``mp-<digits>``, but these tests use
+    readable labels (``"dup"``, ``"ok"``, ...) purely to mint identities. This preserves the
+    pairing semantics they rely on — the same label always yields the same id (so intentional
+    duplicates still collide) and distinct labels yield distinct ids — while producing a value the
+    validator accepts. Values already shaped ``mp-<digits>`` pass through unchanged.
+    """
+    if label.startswith("mp-") and label[3:].isdigit():
+        return label
+    return _MP_ID_REGISTRY.setdefault(label, f"mp-{9_000_000 + len(_MP_ID_REGISTRY)}")
+
+
+def _contrib_in(
+    project="proj",
+    material_id="mp-1",
+    chemical_system_id="Fe-O",
+    formula="Fe2O3",
+    identifier=None,
+    data=None,
+    **kwargs,
+) -> ContributionIn:
+    # Many tests pass ``identifier=`` to mint distinct contributions; map it onto material_id so the
+    # identity tuple (project, material_id, chemical_system_id, formula, unique_value) differs.
+    if identifier is not None:
+        material_id = identifier
+    material_id = _mp_id_for(material_id)
     return ContributionIn(
         _id=_oid(),
         project=project,
-        identifier=identifier,
+        material_id=material_id,
+        chemical_system_id=chemical_system_id,
         formula=formula,
-        data={},
+        data={} if data is None else data,
         **kwargs,
     )
 
@@ -153,20 +190,19 @@ def _make_service(
     settings: MongoSettings | None = None,
     write_slots: asyncio.Semaphore | None = None,
     user: User | None = None,
-    unique_identifiers: bool = True,
+    unique_column: str | None = None,
 ) -> tuple[ContributionService, AsyncMock, AsyncMock, AsyncMock, AsyncMock, MagicMock]:
     contrib_repo = contributions or AsyncMock()
     struct_repo = structures or AsyncMock()
     table_repo = tables or AsyncMock()
     attach_repo = attachments or AsyncMock()
-    # Default version resolution: every referenced project reports the ``unique_identifiers`` flag
-    # and no contribution version exists yet, so the common path resolves version == 1 with no
-    # conflict. Tests exercising versioning pass their own ``projects`` mock or override
-    # ``contrib_repo.max_versions``.
+    # Default identity resolution: every referenced project reports its ``unique_column`` (None by
+    # default -> identity is the fixed-field triple), and no identity exists yet, so the common path
+    # resolves with no conflict. Tests exercising duplicates override ``existing_identities``.
     projects_repo = projects or AsyncMock()
     if projects is None:
-        projects_repo.unique_identifiers_by_id.side_effect = lambda ids: {pid: unique_identifiers for pid in ids}
-    contrib_repo.max_versions.return_value = {}
+        projects_repo.unique_columns_by_id.side_effect = lambda ids: {pid: unique_column for pid in ids}
+    contrib_repo.existing_identities.return_value = set()
     if client is None:
         client, _ = _make_fake_client()
     svc = ContributionService(
@@ -186,7 +222,7 @@ def _approved_projects_repo() -> AsyncMock:
     """A projects repo whose every project reads as approved (quota does not apply)."""
     repo = AsyncMock()
     repo.get_by_id = AsyncMock(return_value=MagicMock(is_approved=True))
-    repo.unique_identifiers_by_id.side_effect = lambda ids: {pid: True for pid in ids}
+    repo.unique_columns_by_id.side_effect = lambda ids: {pid: None for pid in ids}
     return repo
 
 
@@ -194,7 +230,7 @@ def _unapproved_projects_repo() -> AsyncMock:
     """A projects repo whose every project reads as unapproved (quota applies)."""
     repo = AsyncMock()
     repo.get_by_id = AsyncMock(return_value=MagicMock(is_approved=False))
-    repo.unique_identifiers_by_id.side_effect = lambda ids: {pid: True for pid in ids}
+    repo.unique_columns_by_id.side_effect = lambda ids: {pid: None for pid in ids}
     return repo
 
 
@@ -234,10 +270,9 @@ class TestInsertContributionsPreChecks:
         contrib_repo.insert_contribution.assert_not_called()
         client.start_session.assert_not_called()
 
-    async def test_duplicate_project_identifier_unique_project_conflicts_later_item(self):
-        """On a unique-identifier project, a repeated (project, identifier) in one batch no longer
-        fails the whole request (the old _reject_duplicate_keys behavior). The first occurrence is
-        inserted at version 1; later duplicates are per-item conflict failures."""
+    async def test_duplicate_identity_in_one_batch_conflicts_later_item(self):
+        """A repeated identity within one batch does not fail the whole request: the first occurrence
+        is inserted; later intra-batch duplicates are per-item conflict failures."""
         svc, contrib_repo, _, _, _, client = _make_service()
         contrib_repo.insert_many_contributions.return_value = None
         contribs = [
@@ -248,7 +283,6 @@ class TestInsertContributionsPreChecks:
 
         assert summary.total == 2
         assert len(summary.succeeded) == 1
-        assert summary.succeeded[0].version == 1
         assert [f.index for f in summary.failed] == [1]
         assert summary.failed[0].error_code == "conflict"
         # Index 0 still reached Mongo (one doc inserted)
@@ -287,7 +321,7 @@ def _projects_repo_by_approval(approval: dict[str, bool]) -> AsyncMock:
         return MagicMock(is_approved=approval[project_id])
 
     repo.get_by_id = AsyncMock(side_effect=_get_by_id)
-    repo.unique_identifiers_by_id.side_effect = lambda ids: {pid: True for pid in ids}
+    repo.unique_columns_by_id.side_effect = lambda ids: {pid: None for pid in ids}
     return repo
 
 
@@ -382,8 +416,8 @@ class TestInsertContributionsUnapprovedQuota:
 
         assert [f.index for f in summary.failed] == [1]
         assert len(summary.succeeded) == 2
-        inserted_ids = {d.identifier for d in contrib_repo.insert_many_contributions.call_args[0][0]}
-        assert inserted_ids == {"a", "c"}
+        inserted_ids = {d.material_id for d in contrib_repo.insert_many_contributions.call_args[0][0]}
+        assert inserted_ids == {_mp_id_for("a"), _mp_id_for("c")}
 
     async def test_breach_emits_structured_audit_log(self, monkeypatch):
         monkeypatch.setattr(get_settings().consumer, "max_unapproved_contributions_per_project", 2)
@@ -431,8 +465,13 @@ class TestUpsertContributionsUnapprovedQuota:
         contrib_repo = AsyncMock()
         contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
         contrib_repo.count_contributions_for_project.return_value = 2
-        contrib_repo.existing_versioned_keys.return_value = {("proj", "a", 1)}  # 'a' already exists
         svc, *_ = _make_service(contributions=contrib_repo, projects=_unapproved_projects_repo())
+        # Set after _make_service, which stubs existing_identities to an empty set. 'a' already exists.
+        contrib_repo.existing_identities.return_value = {
+            ContributionIdentity(
+                project="proj", material_id=_mp_id_for("a"), chemical_system_id="Fe-O", formula="Fe2O3"
+            )
+        }
 
         contribs = [
             _contrib_in(identifier="a"),  # update of an existing contribution -> always allowed
@@ -444,16 +483,22 @@ class TestUpsertContributionsUnapprovedQuota:
         assert len(summary.succeeded) == 2
         assert [f.index for f in summary.failed] == [2]
         assert summary.failed[0].error_code == "permission_denied"
-        upserted = {c.args[1].identifier for c in contrib_repo.upsert_contribution_by_identifiers.call_args_list}
-        assert upserted == {"a", "b"}
+        upserted = {c.args[1].material_id for c in contrib_repo.upsert_contribution_by_identifiers.call_args_list}
+        assert upserted == {_mp_id_for("a"), _mp_id_for("b")}
 
     async def test_pure_updates_are_never_capped(self, monkeypatch):
         monkeypatch.setattr(get_settings().consumer, "max_unapproved_contributions_per_project", 1)
         contrib_repo = AsyncMock()
         contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
         contrib_repo.count_contributions_for_project.return_value = 99  # far over cap
-        contrib_repo.existing_versioned_keys.return_value = {("proj", f"mp-{i}", 1) for i in range(3)}
         svc, *_ = _make_service(contributions=contrib_repo, projects=_unapproved_projects_repo())
+        # Every contribution in the batch is an existing document -> all are free updates.
+        contrib_repo.existing_identities.return_value = {
+            ContributionIdentity(
+                project="proj", material_id=f"mp-{i}", chemical_system_id="Fe-O", formula="Fe2O3"
+            )
+            for i in range(3)
+        }
 
         summary = await svc.upsert_contributions([_contrib_in(identifier=f"mp-{i}") for i in range(3)])
 
@@ -472,7 +517,7 @@ class TestUpsertContributionsUnapprovedQuota:
         assert len(summary.succeeded) == 3
         assert summary.failed == []
         contrib_repo.count_contributions_for_project.assert_not_called()
-        contrib_repo.existing_versioned_keys.assert_not_called()
+        contrib_repo.existing_identities.assert_not_called()
 
 
 # ---------------------------------------------------------------------------
@@ -652,8 +697,8 @@ class TestInsertContributionsTransactionPath:
         attach_repo.insert_components.return_value = []
 
         async def _insert(doc, session=None):
-            # Fail the second contribution by inspecting the doc identifier
-            if doc.identifier == "fail":
+            # Fail the second contribution by inspecting the doc's material_id
+            if doc.material_id == _mp_id_for("fail"):
                 raise ConflictError("conflict on insert")
             return doc
 
@@ -695,9 +740,9 @@ class TestInsertContributionsTransactionPath:
         ]
         await svc.insert_contributions(contribs)
 
-        captured_by_id = {c.identifier: c for c in captured}
-        assert captured_by_id["a"].structures == [struct_a]
-        assert captured_by_id["b"].structures == [struct_b]
+        captured_by_id = {c.material_id: c for c in captured}
+        assert captured_by_id[_mp_id_for("a")].structures == [struct_a]
+        assert captured_by_id[_mp_id_for("b")].structures == [struct_b]
 
 
 # ---------------------------------------------------------------------------
@@ -739,22 +784,28 @@ class TestInsertContributionsMixedBatch:
 
 
 # ---------------------------------------------------------------------------
-# Versioning — uniqueness rules + version assignment (insert & upsert)
+# ContributionIdentity — uniqueness rules + unique_value resolution (insert & upsert)
 # ---------------------------------------------------------------------------
 
 
-def _projects_mock(unique_map: dict[str, bool]) -> AsyncMock:
-    """A projects repo whose unique_identifiers_by_id returns only the known projects."""
+def _projects_mock(unique_map: dict[str, str | None]) -> AsyncMock:
+    """A projects repo whose unique_columns_by_id returns only the known projects.
+
+    ``unique_map`` maps each known project id to its ``unique_column`` (or None). Projects absent from
+    the map are treated as not found/accessible.
+    """
     repo = AsyncMock()
-    repo.unique_identifiers_by_id.side_effect = lambda ids: {pid: unique_map[pid] for pid in ids if pid in unique_map}
+    repo.unique_columns_by_id.side_effect = lambda ids: {pid: unique_map[pid] for pid in ids if pid in unique_map}
     return repo
 
 
-class TestContributionVersioning:
-    async def test_insert_unique_existing_key_conflicts(self):
-        svc, contrib_repo, *_ = _make_service()  # unique_identifiers=True by default
+class TestContributionIdentity:
+    async def test_insert_existing_identity_conflicts(self):
+        svc, contrib_repo, *_ = _make_service()
         contrib_repo.insert_many_contributions.return_value = None
-        contrib_repo.max_versions.return_value = {("proj", "mp-1"): 1}
+        contrib_repo.existing_identities.return_value = {
+            ContributionIdentity(project="proj", material_id="mp-1", chemical_system_id="Fe-O", formula="Fe2O3")
+        }
 
         summary = await svc.insert_contributions([_contrib_in(identifier="mp-1")])
 
@@ -763,37 +814,66 @@ class TestContributionVersioning:
         assert [f.error_code for f in summary.failed] == ["conflict"]
         contrib_repo.insert_many_contributions.assert_not_called()
 
-    async def test_insert_non_unique_assigns_max_plus_one(self):
-        svc, contrib_repo, *_ = _make_service(unique_identifiers=False)
+    async def test_insert_no_existing_identity_succeeds(self):
+        svc, contrib_repo, *_ = _make_service()
         contrib_repo.insert_many_contributions.return_value = None
-        contrib_repo.max_versions.return_value = {("proj", "mp-1"): 3}
 
         summary = await svc.insert_contributions([_contrib_in(identifier="mp-1")])
 
         assert len(summary.succeeded) == 1
-        assert summary.succeeded[0].version == 4
         docs = contrib_repo.insert_many_contributions.call_args[0][0]
-        assert docs[0].version == 4
+        assert docs[0].unique_value is None
 
-    async def test_insert_non_unique_no_existing_starts_at_one(self):
-        svc, contrib_repo, *_ = _make_service(unique_identifiers=False)
+    async def test_insert_unique_column_promotes_value_to_unique_value(self):
+        svc, contrib_repo, *_ = _make_service(unique_column="sample_id")
         contrib_repo.insert_many_contributions.return_value = None
-        # default max_versions -> {} (no existing contributions)
 
-        summary = await svc.insert_contributions([_contrib_in(identifier="mp-1")])
+        summary = await svc.insert_contributions([_contrib_in(data={"sample_id": "A"})])
 
-        assert summary.succeeded[0].version == 1
+        assert len(summary.succeeded) == 1
+        docs = contrib_repo.insert_many_contributions.call_args[0][0]
+        assert docs[0].unique_value == "A"
 
-    async def test_insert_non_unique_same_key_twice_sequences_versions(self):
-        svc, contrib_repo, *_ = _make_service(unique_identifiers=False)
+    async def test_insert_same_triple_distinct_unique_value_both_succeed(self):
+        svc, contrib_repo, *_ = _make_service(unique_column="sample_id")
         contrib_repo.insert_many_contributions.return_value = None
-        contrib_repo.max_versions.return_value = {("proj", "dup"): 5}
 
-        contribs = [_contrib_in(identifier="dup"), _contrib_in(identifier="dup")]
+        contribs = [_contrib_in(data={"sample_id": "A"}), _contrib_in(data={"sample_id": "B"})]
         summary = await svc.insert_contributions(contribs)
 
         assert len(summary.succeeded) == 2
-        assert sorted(d.version for d in summary.succeeded) == [6, 7]
+        docs = contrib_repo.insert_many_contributions.call_args[0][0]
+        assert sorted(d.unique_value for d in docs) == ["A", "B"]
+
+    async def test_insert_missing_unique_column_value_is_validation_failure(self):
+        svc, contrib_repo, *_ = _make_service(unique_column="sample_id")
+        contrib_repo.insert_many_contributions.return_value = None
+
+        summary = await svc.insert_contributions([_contrib_in(data={"other": 1})])
+
+        assert summary.succeeded == []
+        assert [f.error_code for f in summary.failed] == ["validation_error"]
+        contrib_repo.insert_many_contributions.assert_not_called()
+
+    async def test_insert_non_scalar_unique_column_value_is_validation_failure(self):
+        svc, contrib_repo, *_ = _make_service(unique_column="sample_id")
+        contrib_repo.insert_many_contributions.return_value = None
+
+        summary = await svc.insert_contributions([_contrib_in(data={"sample_id": {"nested": 1}})])
+
+        assert summary.succeeded == []
+        assert [f.error_code for f in summary.failed] == ["validation_error"]
+
+    async def test_insert_empty_unique_column_dup_triple_conflicts(self):
+        """With no unique_column, two contributions sharing the fixed-field triple collide."""
+        svc, contrib_repo, *_ = _make_service()  # unique_column=None
+        contrib_repo.insert_many_contributions.return_value = None
+
+        contribs = [_contrib_in(identifier="mp-1"), _contrib_in(identifier="mp-1")]
+        summary = await svc.insert_contributions(contribs)
+
+        assert len(summary.succeeded) == 1
+        assert [f.error_code for f in summary.failed] == ["conflict"]
 
     async def test_insert_project_not_found_is_validation_failure(self):
         svc, contrib_repo, *_ = _make_service(projects=_projects_mock({}))  # no projects known
@@ -804,32 +884,34 @@ class TestContributionVersioning:
         assert [f.error_code for f in summary.failed] == ["validation_error"]
         contrib_repo.insert_many_contributions.assert_not_called()
 
-    async def test_upsert_unique_forces_version_one(self):
-        svc, contrib_repo, *_ = _make_service()  # unique by default
+    async def test_upsert_does_not_conflict_on_existing_identity(self):
+        """Upsert targets an existing identity (update), so it must not pre-reject as a conflict."""
+        svc, contrib_repo, *_ = _make_service()
         contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
 
-        # A supplied version is ignored for unique-identifier projects (inferred as 1).
-        await svc.upsert_contributions([_contrib_in(identifier="mp-1", version=9)])
+        await svc.upsert_contributions([_contrib_in(identifier="mp-1")])
 
-        assert contrib_repo.upsert_contribution_by_identifiers.call_args.args[2] == 1
-        contrib_repo.max_versions.assert_not_called()
+        # existing_identities is not consulted on the upsert path
+        contrib_repo.existing_identities.assert_not_called()
+        contrib_repo.upsert_contribution_by_identifiers.assert_called_once()
 
-    async def test_upsert_non_unique_requires_version(self):
-        svc, contrib_repo, *_ = _make_service(unique_identifiers=False)
+    async def test_upsert_passes_resolved_unique_value_in_identifiers(self):
+        svc, contrib_repo, *_ = _make_service(unique_column="sample_id")
+        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
 
-        summary = await svc.upsert_contributions([_contrib_in(identifier="mp-1")])  # no version
+        await svc.upsert_contributions([_contrib_in(data={"sample_id": "A"})])
+
+        identifiers = contrib_repo.upsert_contribution_by_identifiers.call_args.args[0]
+        assert identifiers["unique_value"] == "A"
+
+    async def test_upsert_missing_unique_column_value_is_validation_failure(self):
+        svc, contrib_repo, *_ = _make_service(unique_column="sample_id")
+
+        summary = await svc.upsert_contributions([_contrib_in(data={"other": 1})])
 
         assert summary.succeeded == []
         assert [f.error_code for f in summary.failed] == ["validation_error"]
         contrib_repo.upsert_contribution_by_identifiers.assert_not_called()
-
-    async def test_upsert_non_unique_passes_supplied_version(self):
-        svc, contrib_repo, *_ = _make_service(unique_identifiers=False)
-        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
-
-        await svc.upsert_contributions([_contrib_in(identifier="mp-1", version=7)])
-
-        assert contrib_repo.upsert_contribution_by_identifiers.call_args.args[2] == 7
 
 
 # ---------------------------------------------------------------------------
@@ -881,7 +963,6 @@ class TestUpsertContributionsGuard:
         with pytest.raises(ValidationError):
             await svc.upsert_contributions([dirty])
         contrib_repo.upsert_contribution_by_identifiers.assert_not_called()
-        contrib_repo.find_one_contribution.assert_not_called()
         contrib_repo.insert_contribution.assert_not_called()
         contrib_repo.update_contribution.assert_not_called()
 
@@ -904,7 +985,6 @@ class TestUpsertContributionsAtomic:
         assert summary.failed == []
         assert contrib_repo.upsert_contribution_by_identifiers.call_count == 3
         # The legacy read-then-write path must not be used
-        contrib_repo.find_one_contribution.assert_not_called()
         contrib_repo.update_contribution.assert_not_called()
         contrib_repo.insert_contribution.assert_not_called()
 
@@ -912,11 +992,18 @@ class TestUpsertContributionsAtomic:
         svc, contrib_repo, *_ = _make_service()
         contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
 
-        contrib = _contrib_in(project="my-proj", identifier="mp-99")
+        contrib = _contrib_in(project="my-proj", material_id="mp-99")
         await svc.upsert_contributions([contrib])
 
         call = contrib_repo.upsert_contribution_by_identifiers.call_args
-        assert call.args[0] == {"project": "my-proj", "identifier": "mp-99"}
+        assert call.args[0] == {
+            "project": "my-proj",
+            "material_id": "mp-99",
+            "chemical_system_id": "Fe-O",
+            "formula": "Fe2O3",
+            "unique_value": None,
+            "condition_key": "",
+        }
         assert call.args[1] is contrib
 
     async def test_returns_repo_results_in_input_order(self):
@@ -924,9 +1011,9 @@ class TestUpsertContributionsAtomic:
         docs = [MagicMock(spec=Contribution, name=f"doc-{i}") for i in range(3)]
         returned = {}
 
-        async def _upsert(identifiers, contrib, version):
-            doc = docs[int(contrib.identifier.split("-")[1])]
-            returned[contrib.identifier] = doc
+        async def _upsert(identifiers, contrib):
+            doc = docs[int(contrib.material_id.split("-")[1])]
+            returned[contrib.material_id] = doc
             return doc
 
         contrib_repo.upsert_contribution_by_identifiers.side_effect = _upsert
@@ -964,8 +1051,8 @@ class TestUpsertContributionsAtomic:
     async def test_one_failure_is_reported_not_raised(self):
         svc, contrib_repo, *_ = _make_service()
 
-        async def _upsert(identifiers, contrib, version):
-            if contrib.identifier == "mp-1":
+        async def _upsert(identifiers, contrib):
+            if contrib.material_id == "mp-1":
                 raise ConflictError("boom")
             return MagicMock(spec=Contribution)
 
@@ -1402,3 +1489,53 @@ class TestDeleteContributionsNoneComponents:
         struct_repo.delete_by_ids.assert_not_called()
         table_repo.delete_by_ids.assert_not_called()
         attach_repo.delete_by_ids.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# patch_contribution_by_id — identifier hierarchy on the merged state
+# ---------------------------------------------------------------------------
+
+
+def _existing_doc(*, material_id, chemical_system_id, formula, project="proj"):
+    """A stand-in for the persisted document that patch re-reads to validate the merged identity."""
+    return SimpleNamespace(
+        id=_oid(),
+        project=project,
+        material_id=material_id,
+        chemical_system_id=chemical_system_id,
+        formula=formula,
+        data={},
+    )
+
+
+class TestPatchIdentifierHierarchy:
+    async def test_patch_material_id_onto_doc_without_formula_raises(self):
+        svc, contrib_repo, *_ = _make_service()
+        existing = _existing_doc(material_id=None, chemical_system_id="Fe-O", formula=None)
+        contrib_repo.get_contribution_by_id.return_value = existing
+
+        with pytest.raises(ValidationError, match="formula is required when material_id"):
+            await svc.patch_contribution_by_id(str(existing.id), ContributionPatch(material_id="mp-1"))
+
+        # Rejected before any write.
+        contrib_repo.patch_contribution_by_id.assert_not_called()
+
+    async def test_patch_material_id_when_existing_has_formula_ok(self):
+        svc, contrib_repo, *_ = _make_service()
+        existing = _existing_doc(material_id=None, chemical_system_id="Fe-O", formula="Fe2O3")
+        contrib_repo.get_contribution_by_id.return_value = existing
+        contrib_repo.patch_contribution_by_id.return_value = MagicMock(spec=Contribution)
+
+        await svc.patch_contribution_by_id(str(existing.id), ContributionPatch(material_id="mp-1"))
+
+        contrib_repo.patch_contribution_by_id.assert_called_once()
+
+    async def test_metadata_only_patch_skips_existing_read(self):
+        svc, contrib_repo, *_ = _make_service()
+        contrib_repo.patch_contribution_by_id.return_value = MagicMock(spec=Contribution)
+
+        await svc.patch_contribution_by_id("some-id", ContributionPatch(is_public=True))
+
+        # No identity/unique inputs touched -> no re-read, straight to the plain patch.
+        contrib_repo.get_contribution_by_id.assert_not_called()
+        contrib_repo.patch_contribution_by_id.assert_called_once()

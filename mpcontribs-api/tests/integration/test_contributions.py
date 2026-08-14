@@ -19,7 +19,8 @@ def contribution_repo(test_app, mock_contribution_repo):
 
 SAMPLE_CONTRIBUTION = ContributionOut(
     project="mp-project",
-    identifier="mp-001",
+    material_id="mp-001",
+    chemical_system_id="Fe-O",
     formula="Fe2O3",
     is_public=True,
     data={"band_gap": 2.1},

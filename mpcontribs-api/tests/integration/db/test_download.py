@@ -30,7 +30,8 @@ async def _insert(project: str, identifier: str, is_public: bool, **overrides) -
     doc = Contribution(
         _id=PydanticObjectId(),
         project=project,
-        identifier=identifier,
+        material_id=identifier,
+        chemical_system_id=overrides.pop("chemical_system_id", "Fe-O"),
         formula=overrides.pop("formula", "Fe2O3"),
         data=overrides.pop("data", {"band_gap": 2.1}),
         is_public=is_public,
@@ -88,17 +89,17 @@ class TestDownloadJsonl:
     async def test_admin_downloads_all_rows(self, db):
         await _seed_scope_fixture()
         rows = _parse_jsonl(await _download_bytes(_repo(ADMIN)))
-        assert {r["identifier"] for r in rows} == {"mp-public", "mp-group", "mp-private"}
+        assert {r["material_id"] for r in rows} == {"mp-public", "mp-group", "mp-private"}
 
     async def test_anonymous_sees_only_public(self, db):
         await _seed_scope_fixture()
         rows = _parse_jsonl(await _download_bytes(_repo(ANON)))
-        assert {r["identifier"] for r in rows} == {"mp-public"}
+        assert {r["material_id"] for r in rows} == {"mp-public"}
 
     async def test_group_member_sees_public_and_group(self, db):
         await _seed_scope_fixture()
         rows = _parse_jsonl(await _download_bytes(_repo(ALICE)))
-        assert {r["identifier"] for r in rows} == {"mp-public", "mp-group"}
+        assert {r["material_id"] for r in rows} == {"mp-public", "mp-group"}
 
     async def test_rows_carry_expected_fields(self, db):
         await _insert("pub-proj", "mp-1", is_public=True, formula="Li2O")
@@ -117,14 +118,14 @@ class TestDownloadFiltering:
         await _insert("pub-proj", "keep-me", is_public=True)
         await _insert("pub-proj", "drop-me", is_public=True)
         rows = _parse_jsonl(
-            await _download_bytes(_repo(ADMIN), filter=ContributionFilter(identifier="keep-me"))
+            await _download_bytes(_repo(ADMIN), filter=ContributionFilter(material_id="keep-me"))
         )
-        assert {r["identifier"] for r in rows} == {"keep-me"}
+        assert {r["material_id"] for r in rows} == {"keep-me"}
 
     async def test_empty_result_is_valid_empty_gzip(self, db):
         # No documents match -> the stream is genuinely empty and decompresses to b"".
         # (This path never enters the compress loop, so the missing-flush bug doesn't bite.)
-        raw = await _download_bytes(_repo(ADMIN), filter=ContributionFilter(identifier="no-such-id"))
+        raw = await _download_bytes(_repo(ADMIN), filter=ContributionFilter(material_id="no-such-id"))
         assert raw == b""
 
 
@@ -142,8 +143,8 @@ class TestDownloadCsv:
 
     async def test_csv_projects_only_requested_fields(self, db):
         await _insert("pub-proj", "mp-1", is_public=True)
-        fields = frozenset({"id", "identifier"})
+        fields = frozenset({"id", "material_id"})
         rows = _parse_csv(await _download_bytes(_repo(ADMIN), format="csv", fields=fields))
         # Only the requested columns (plus the always-present id) appear.
-        assert set(rows[0].keys()) <= {"id", "identifier"}
-        assert rows[0]["identifier"] == "mp-1"
+        assert set(rows[0].keys()) <= {"id", "material_id"}
+        assert rows[0]["material_id"] == "mp-1"

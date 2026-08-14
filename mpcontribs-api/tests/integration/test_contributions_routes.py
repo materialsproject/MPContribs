@@ -47,7 +47,8 @@ def _valid_contribution_body(**overrides) -> dict:
     body = {
         "_id": str(PydanticObjectId()),
         "project": "test-project",
-        "identifier": "mp-1234",
+        "material_id": "mp-1234",
+        "chemical_system_id": "Fe-O",
         "formula": "Fe2O3",
         "data": {"band_gap": 2.1},
     }
@@ -55,7 +56,7 @@ def _valid_contribution_body(**overrides) -> dict:
     return body
 
 
-SAMPLE_OUT = ContributionOut(project="p", identifier="mp-1", formula="Fe2O3")
+SAMPLE_OUT = ContributionOut(project="p", material_id="mp-1", formula="Fe2O3")
 
 
 # ===========================================================================
@@ -91,7 +92,7 @@ class TestInsertContributions:
         # Missing required 'formula'.
         r = client.post(
             "/api/v1/contributions",
-            json=[{"_id": str(PydanticObjectId()), "project": "p", "identifier": "mp-1"}],
+            json=[{"_id": str(PydanticObjectId()), "project": "p", "material_id": "mp-1"}],
         )
         assert r.status_code == 422
         contribution_service.insert_contributions.assert_not_called()
@@ -117,7 +118,7 @@ class TestUpsertContributions:
         contribution_service.upsert_contributions.return_value = BulkWriteSummary(total=1, succeeded=[], failed=[])
         client.put("/api/v1/contributions", json=[_valid_contribution_body()])
         contributions = contribution_service.upsert_contributions.call_args.kwargs["contributions"]
-        assert contributions[0].identifier == "mp-1234"
+        assert contributions[0].material_id == "mp-1234"
 
     def test_malformed_body_returns_422(self, client, contribution_service):
         r = client.put(
@@ -140,8 +141,8 @@ class TestContributionByIdRouting:
         contribution_repo.get_contribution_by_id.return_value = SAMPLE_OUT
         assert client.get(f"/api/v1/contributions/{PydanticObjectId()}").status_code == 200
 
-    def test_patch_by_id_conventional_path(self, client, contribution_repo):
-        contribution_repo.patch_contribution_by_id.return_value = SAMPLE_OUT
+    def test_patch_by_id_conventional_path(self, client, contribution_service):
+        contribution_service.patch_contribution_by_id.return_value = SAMPLE_OUT
         r = client.patch(f"/api/v1/contributions/{PydanticObjectId()}", json={"formula": "H2O"})
         assert r.status_code == 200
 

@@ -74,18 +74,20 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
         """Find a single project by id, scoped to the current user. See ``get_by_id``."""
         return await self.get_by_id(id, fields)
 
-    async def unique_identifiers_by_id(self, ids: list[str]) -> dict[str, bool]:
-        """Return ``{project_id: unique_identifiers}`` for the given project ids, scoped to the user.
+    async def unique_columns_by_id(self, ids: list[str]) -> dict[str, str | None]:
+        """Return ``{project_id: unique_column}`` for the given project ids, scoped to the user.
 
-        Used by the contribution write path to apply per-project version rules in one round-trip
-        instead of fetching each project separately. Projects the user cannot see (or that do not
-        exist) are simply absent from the result, so the caller can treat them as inaccessible.
+        Used by the contribution write path to resolve each project's identity discriminator in one
+        round-trip instead of fetching each project separately. ``unique_column`` is ``None`` when the
+        project sets none (identity is then the fixed-field triple). Projects the user cannot see (or
+        that do not exist) are simply absent from the result, so the caller can treat them as
+        inaccessible.
 
         Args:
             ids: project ids to look up
 
         Returns:
-            dict[str, bool]: mapping of project id to its ``unique_identifiers`` flag
+            dict[str, str | None]: mapping of project id to its ``unique_column`` (or ``None``)
         """
         if not ids:
             return {}
@@ -93,9 +95,9 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
         if self._scope:
             query = {"$and": [self._scope, query]}
         collection = self.document_model.get_pymongo_collection()
-        result: dict[str, bool] = {}
-        async for doc in collection.find(query, {"unique_identifiers": 1}):
-            result[doc["_id"]] = bool(doc.get("unique_identifiers"))
+        result: dict[str, str | None] = {}
+        async for doc in collection.find(query, {"unique_column": 1}):
+            result[doc["_id"]] = doc.get("unique_column")
         return result
 
     async def insert_project(self, project: ProjectIn) -> Project:

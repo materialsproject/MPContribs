@@ -10,7 +10,7 @@ from mpcontribs_api.domains.contributions.models import (
     ContributionPatch,
 )
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
-from mpcontribs_api.exceptions import NotFoundError, ValidationError
+from mpcontribs_api.exceptions import ConflictError, NotFoundError, ValidationError
 from mpcontribs_api.pagination import CursorParams
 
 pytestmark = [pytest.mark.db, pytest.mark.asyncio(loop_scope="session")]
@@ -30,11 +30,19 @@ def _repo(user: User = ADMIN) -> MongoDbContributionRepository:
     return MongoDbContributionRepository(user)
 
 
-def _contrib_in(project: str = "test-proj", identifier: str = "mp-1", **overrides) -> ContributionIn:
+# Tests use ``identifier=`` to mint distinct contributions; it maps onto material_id, which (with the
+# fixed chemical_system_id/formula defaults) makes each contribution's identity tuple differ.
+def _contrib_in(
+    project: str = "test-proj",
+    identifier: str = "mp-1",
+    chemical_system_id: str = "Fe-O",
+    **overrides,
+) -> ContributionIn:
     defaults: dict = {
         "_id": PydanticObjectId(),
         "project": project,
-        "identifier": identifier,
+        "material_id": identifier,
+        "chemical_system_id": chemical_system_id,
         "formula": "Fe2O3",
         "data": {"band_gap": 2.1},
     }
@@ -42,14 +50,21 @@ def _contrib_in(project: str = "test-proj", identifier: str = "mp-1", **override
     return ContributionIn(**defaults)
 
 
-async def _insert(project="test-proj", identifier="mp-1", is_public: bool = False, **overrides) -> Contribution:
+async def _insert(
+    project="test-proj",
+    identifier="mp-1",
+    chemical_system_id="Fe-O",
+    is_public: bool = False,
+    **overrides,
+) -> Contribution:
     # Build a Contribution directly so is_public can be set explicitly.
     # from_input_model() always forces is_public=False, which is correct for
     # user-submitted data but inconvenient for test setup.
     doc = Contribution(
         _id=PydanticObjectId(),
         project=project,
-        identifier=identifier,
+        material_id=identifier,
+        chemical_system_id=chemical_system_id,
         formula=overrides.pop("formula", "Fe2O3"),
         data=overrides.pop("data", {"band_gap": 2.1}),
         is_public=is_public,
@@ -73,7 +88,7 @@ class TestInsertContribution:
         doc = await _insert(identifier="ins-basic")
         found = await Contribution.find_one(Contribution.id == doc.id)
         assert found is not None
-        assert found.identifier == "ins-basic"
+        assert found.material_id == "ins-basic"
 
     async def test_is_public_defaults_to_false(self, db):
         doc = await _insert(identifier="ins-priv")
@@ -88,12 +103,49 @@ class TestInsertContribution:
         assert found.data == {"x": 1}
 
     async def test_insert_via_repo(self, db):
-        ci = _contrib_in(identifier="ins-via-repo")
+        ci = _contrib_in(identifier="mp-4001")
         doc = Contribution.from_input_model(ci)
         result = await _repo().insert_contribution(doc)
         found = await Contribution.find_one(Contribution.id == result.id)
         assert found is not None
-        assert found.identifier == "ins-via-repo"
+        assert found.material_id == "mp-4001"
+
+
+# ---------------------------------------------------------------------------
+# Identifier hierarchy: chemical_system_id > formula > material_id
+# A contribution may stop at the chemical-system level (null material_id/formula).
+# ---------------------------------------------------------------------------
+
+
+class TestNullableIdentifierHierarchy:
+    async def test_chemical_system_only_persists_with_null_identifiers(self, db):
+        ci = _contrib_in(project="chem-only", material_id=None, formula=None)
+        doc = Contribution.from_input_model(ci)
+        result = await _repo().insert_contribution(doc)
+        found = await Contribution.find_one(Contribution.id == result.id)
+        assert found is not None
+        assert found.chemical_system_id == "Fe-O"
+        # keep_nulls=False strips the absent identity fields; they read back as None.
+        assert found.material_id is None
+        assert found.formula is None
+
+    async def test_existing_identities_matches_null_identity(self, db):
+        ci = _contrib_in(project="chem-only", material_id=None, formula=None)
+        await _repo().insert_contribution(Contribution.from_input_model(ci))
+        key = ci.identity()
+        found = await _repo().existing_identities([key])
+        assert key in found
+
+    async def test_duplicate_chemical_system_only_collides_on_unique_index(self, db):
+        from pymongo.errors import DuplicateKeyError
+
+        ci = _contrib_in(project="chem-only", material_id=None, formula=None)
+        await _repo().insert_contribution(Contribution.from_input_model(ci))
+        dup = _contrib_in(project="chem-only", material_id=None, formula=None)
+        # Same (project, chemical_system_id) with null material_id/formula/unique_value is one
+        # unique key — the second insert must be rejected.
+        with pytest.raises(DuplicateKeyError):
+            await _repo().insert_contribution(Contribution.from_input_model(dup))
 
 
 # ---------------------------------------------------------------------------
@@ -103,14 +155,14 @@ class TestInsertContribution:
 
 class TestInsertManyContributions:
     async def test_all_docs_persisted(self, db):
-        docs = [Contribution.from_input_model(_contrib_in(identifier=f"bulk-{i}")) for i in range(5)]
+        docs = [Contribution.from_input_model(_contrib_in(identifier=f"mp-{4100 + i}")) for i in range(5)]
         await _repo().insert_many_contributions(docs)
         for doc in docs:
             found = await Contribution.find_one(Contribution.id == doc.id)
             assert found is not None
 
     async def test_returns_insert_result(self, db):
-        docs = [Contribution.from_input_model(_contrib_in(identifier=f"bulk-ret-{i}")) for i in range(3)]
+        docs = [Contribution.from_input_model(_contrib_in(identifier=f"mp-{4200 + i}")) for i in range(3)]
         result = await _repo().insert_many_contributions(docs)
         assert result is not None
 
@@ -196,7 +248,7 @@ class TestGetContributions:
             page = await _repo(ADMIN).get_contributions(
                 pagination=CursorParams(limit=2, cursor=cursor), filter=_noop_filter(), fields=None
             )
-            identifiers.update(c.identifier for c in page.items if c.identifier)
+            identifiers.update(c.material_id for c in page.items if c.material_id)
             cursor = page.next_cursor
             if cursor is None:
                 break
@@ -231,14 +283,14 @@ class TestGetContributions:
         formulas = {c.formula for c in page.items}
         assert formulas == {"Fe2O3"}
 
-    async def test_filter_by_identifier_ilike(self, db):
+    async def test_filter_by_material_id_ilike(self, db):
         await _insert(identifier="ilike-abc", is_public=True)
         await _insert(identifier="ilike-xyz", is_public=True)
-        f = ContributionFilter(identifier__ilike="ilike-a")
+        f = ContributionFilter(material_id__ilike="ilike-a")
         page = await _repo(ADMIN).get_contributions(
             pagination=CursorParams(), filter=f, fields=None
         )
-        identifiers = {c.identifier for c in page.items}
+        identifiers = {c.material_id for c in page.items}
         assert "ilike-abc" in identifiers
         assert "ilike-xyz" not in identifiers
 
@@ -258,7 +310,7 @@ class TestGetContributions:
         page = await _repo(ADMIN).get_contributions(
             pagination=CursorParams(), filter=f, fields=None
         )
-        identifiers = {c.identifier for c in page.items}
+        identifiers = {c.material_id for c in page.items}
         assert "nb-false" in identifiers
         assert "nb-true" not in identifiers
 
@@ -273,7 +325,7 @@ class TestGetContributionById:
         doc = await _insert(identifier="get-id")
         result = await _repo(ADMIN).get_contribution_by_id(str(doc.id), fields=None)
         assert result is not None
-        assert result.identifier == "get-id"
+        assert result.material_id == "get-id"
 
     async def test_returns_none_for_missing_id(self, db):
         result = await _repo(ADMIN).get_contribution_by_id(str(PydanticObjectId()), fields=None)
@@ -305,42 +357,6 @@ class TestGetContributionById:
         assert result is not None
         assert result.formula == "Fe2O3"
         assert not hasattr(result, "data")
-
-
-# ---------------------------------------------------------------------------
-# find_one_contribution (by project + identifier)
-# ---------------------------------------------------------------------------
-
-
-class TestFindOneContribution:
-    async def test_finds_existing_doc(self, db):
-        await _insert(project="find-proj", identifier="find-id")
-        result = await _repo(ADMIN).find_one_contribution("find-proj", "find-id")
-        assert result is not None
-        assert result.project == "find-proj"
-        assert result.identifier == "find-id"
-
-    async def test_returns_none_for_missing_combination(self, db):
-        await _insert(project="miss-proj", identifier="miss-id")
-        result = await _repo(ADMIN).find_one_contribution("miss-proj", "wrong-id")
-        assert result is None
-
-    async def test_scope_prevents_anon_finding_private(self, db):
-        await _insert(project="anon-scope", identifier="priv-doc", is_public=False)
-        result = await _repo(ANON).find_one_contribution("anon-scope", "priv-doc")
-        assert result is None
-
-    async def test_scope_allows_anon_finding_public(self, db):
-        await _insert(project="anon-scope-pub", identifier="pub-doc", is_public=True)
-        result = await _repo(ANON).find_one_contribution("anon-scope-pub", "pub-doc")
-        assert result is not None
-
-    async def test_project_identifier_combination_is_unique_lookup(self, db):
-        await _insert(project="same-proj", identifier="id-a")
-        await _insert(project="same-proj", identifier="id-b")
-        result = await _repo(ADMIN).find_one_contribution("same-proj", "id-a")
-        assert result is not None
-        assert result.identifier == "id-a"
 
 
 # ---------------------------------------------------------------------------
@@ -405,13 +421,22 @@ class TestPatchContributionById:
 
     async def test_raises_validation_error_for_bad_id(self, db):
         with pytest.raises(ValidationError):
-            await _repo(ADMIN).patch_contribution_by_id("bad-id", ContributionPatch(formula="X"))
+            await _repo(ADMIN).patch_contribution_by_id("bad-id", ContributionPatch(formula="Fe2O3"))
 
     async def test_anon_cannot_patch_private_doc(self, db):
         from mpcontribs_api.exceptions import NotFoundError
         doc = await _insert(identifier="patch-anon-priv", is_public=False)
         with pytest.raises(NotFoundError):
-            await _repo(ANON).patch_contribution_by_id(str(doc.id), ContributionPatch(formula="X"))
+            await _repo(ANON).patch_contribution_by_id(str(doc.id), ContributionPatch(formula="Fe2O3"))
+
+    async def test_patch_onto_existing_identity_raises_conflict(self, db):
+        # Two contributions differing only by material_id, so distinct identities.
+        await _insert(project="patch-dup", identifier="mp-100")
+        victim = await _insert(project="patch-dup", identifier="mp-200")
+        # Patching victim's material_id onto the first doc's makes the identities collide; the unique
+        # index rejects the write, which the repo surfaces as a ConflictError (409) not a raw 500.
+        with pytest.raises(ConflictError):
+            await _repo(ADMIN).patch_contribution_by_id(str(victim.id), ContributionPatch(material_id="mp-100"))
 
 
 # ---------------------------------------------------------------------------
@@ -463,7 +488,7 @@ class TestDeleteContributions:
         await _repo(ADMIN).delete_contributions(f)
         remaining = await Contribution.find().to_list()
         assert len(remaining) == 1
-        assert remaining[0].identifier == "bdel-keep"
+        assert remaining[0].material_id == "bdel-keep"
 
     async def test_bulk_delete_empty_collection_is_silent(self, db):
         await _repo(ADMIN).delete_contributions(_noop_filter())
@@ -474,29 +499,49 @@ class TestDeleteContributions:
         await _repo(ANON).delete_contributions(_noop_filter())
         # Anonymous scope: only public visible, so only the public doc is deleted.
         remaining = await Contribution.find().to_list()
-        identifiers = {d.identifier for d in remaining}
+        identifiers = {d.material_id for d in remaining}
         assert "bdel-scope-priv" in identifiers
 
 
 class TestUpsertContributionById:
     async def test_insert_when_id_absent_persists_document(self, db):
         new_id = PydanticObjectId()
-        payload = _contrib_in(identifier="ups-new", _id=new_id)
+        payload = _contrib_in(identifier="mp-4002", _id=new_id)
         result = await _repo(ADMIN).upsert_contribution_by_id(str(new_id), payload)
         # Must be the resolved document, not an un-awaited query object.
         assert isinstance(result, Contribution)
         stored = await Contribution.find_one(Contribution.id == new_id)
         assert stored is not None
-        assert stored.identifier == "ups-new"
+        assert stored.material_id == "mp-4002"
 
     async def test_update_when_id_present_applies_change(self, db):
-        existing = await _insert(identifier="ups-existing")
-        payload = _contrib_in(identifier="ups-existing", formula="Li2O", _id=existing.id)
+        existing = await _insert(identifier="mp-4003")
+        payload = _contrib_in(identifier="mp-4003", formula="Li2O", _id=existing.id)
         result = await _repo(ADMIN).upsert_contribution_by_id(str(existing.id), payload)
         assert isinstance(result, Contribution)
         stored = await Contribution.find_one(Contribution.id == existing.id)
         assert stored is not None
         assert stored.formula == "Li2O"
+
+    async def test_update_clears_unique_value_when_resolved_to_none(self, db):
+        # A doc previously stamped with a unique_value whose project later drops its unique_column:
+        # re-resolving to None must clear the stored value, not leave it stale (exclude_none would).
+        existing = await _insert(identifier="mp-4004", unique_value="batch-A")
+        assert existing.unique_value == "batch-A"
+        payload = _contrib_in(identifier="mp-4004", _id=existing.id)
+        await _repo(ADMIN).upsert_contribution_by_id(str(existing.id), payload, unique_value=None)
+        stored = await Contribution.find_one(Contribution.id == existing.id)
+        assert stored is not None
+        assert stored.unique_value is None
+
+    async def test_upsert_onto_existing_identity_raises_conflict(self, db):
+        # Two docs differing only by material_id; PUTting victim's identity onto the first's collides
+        # on the unique index, which the repo surfaces as a ConflictError (409) not a raw 500.
+        await _insert(project="uid-dup", identifier="mp-100")
+        victim = await _insert(project="uid-dup", identifier="mp-200")
+        payload = _contrib_in(project="uid-dup", identifier="mp-100", _id=victim.id)
+        with pytest.raises(ConflictError):
+            await _repo(ADMIN).upsert_contribution_by_id(str(victim.id), payload)
 
 
 class TestDeleteByIdsScope:
@@ -506,7 +551,7 @@ class TestDeleteByIdsScope:
         # Anonymous scope only sees public docs; deleting both ids must spare the private one.
         result = await _repo(ANON).delete_by_ids([pub.id, priv.id])
         assert result.num_deleted == 1
-        remaining = {d.identifier for d in await Contribution.find().to_list()}
+        remaining = {d.material_id for d in await Contribution.find().to_list()}
         assert "dbi-priv" in remaining
         assert "dbi-pub" not in remaining
 
