@@ -1,11 +1,37 @@
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
 
 from mpcontribs_api import pagination
 from mpcontribs_api.domains._shared.filters import BaseFilter
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
 from mpcontribs_api.domains._shared.types import PrefixedEmail, ShortStr
+from mpcontribs_api.exceptions import ValidationError
+
+
+def _validate_unique_column(value: str | None) -> str | None:
+    """Shape-only check for ``unique_column``: a non-empty, non-blank dotted-path string or None.
+
+    No subset-of-``columns`` check: ``columns`` is derived and eventually consistent, so a path may
+    legitimately not appear there yet. Correctness is enforced per contribution at write time.
+    """
+    if value is None:
+        return None
+    if not value.strip() or any(not segment for segment in value.split(".")):
+        raise ValidationError("unique_column must be a non-empty dotted path (no blank segments).", value=value)
+    return value
+
+
+def validate_column_limit(columns: Any, max_columns: int) -> None:
+    """Reject a *write* carrying more columns than ``max_columns`` allows.
+
+    Allows legacy docs that exceed cap to be returned without raising an error.
+    """
+    if isinstance(columns, list) and len(columns) > max_columns:
+        raise ValidationError(
+            f"columns cannot have more than {max_columns} entries",
+            column_length=len(columns),
+        )
 
 
 class Column(BaseModel):
@@ -44,7 +70,11 @@ class ProjectBase(BaseModel):
     authors: str
     description: str
     owner: PrefixedEmail
-    unique_identifiers: bool
+
+    # The single data column (dotted path) that disambiguates contributions sharing the same
+    # (material_id, chemical_system_id, formula). None -> that triple must be unique on its own. Its
+    # value is promoted to Contribution.unique_value on write (see contributions.extract_unique_value).
+    unique_column: str | None = None
 
     # Optional
     references: list[Reference] = Field(default_factory=list)
@@ -53,6 +83,13 @@ class ProjectBase(BaseModel):
     is_public: bool = False
     is_approved: bool = False
     license: Literal["CCA4", "CCPD"] | None = None
+
+    # Validated on every representation (input and stored) so a bad unique_column is rejected at the
+    # door, consistent with ProjectPatch. See _validate_unique_column.
+    @field_validator("unique_column")
+    @classmethod
+    def _check_unique_column(cls, v: str | None) -> str | None:
+        return _validate_unique_column(v)
 
     class Settings:
         name = "projects"
@@ -95,7 +132,7 @@ class ProjectOut(DocumentOut[ShortStr]):
     is_public: bool | None = None
     is_approved: bool | None = None
     long_title: str | None = None
-    unique_identifiers: bool | None = None
+    unique_column: str | None = None
     references: list[Reference] | None = None
     stats: Stats | None = None
     columns: list[Column] | None = None
@@ -103,7 +140,7 @@ class ProjectOut(DocumentOut[ShortStr]):
 
     @staticmethod
     def default_fields() -> tuple[str, ...]:
-        return ("id", "is_public", "title", "owner", "is_approved", "unique_identifiers")
+        return ("id", "is_public", "title", "owner", "is_approved", "unique_column")
 
 
 class ProjectFilter(BaseFilter):
@@ -128,7 +165,8 @@ class ProjectFilter(BaseFilter):
 
     is_public: bool | None = None
     is_approved: bool | None = None
-    unique_identifiers: bool | None = None
+    unique_column: str | None = None
+    unique_column__neq: str | None = None
 
     license: Literal["CCA4", "CCPD"] | None = None
     license__in: list[Literal["CCA4", "CCPD"]] | None = None
@@ -148,8 +186,6 @@ class ProjectIn(ProjectBase):
     recomputed from contributions). ``is_approved`` is accepted but only honored for admins.
     """
 
-    pass
-
 
 class ProjectPatch(BaseModel):
     """Nullable Project representation of user-supplied data for partial update (patch).
@@ -163,7 +199,7 @@ class ProjectPatch(BaseModel):
     authors: str | None = None
     description: str | None = None
     owner: PrefixedEmail | None = None
-    unique_identifiers: bool | None = None
+    unique_column: str | None = None
     references: list[Reference] = Field(default_factory=list)
     long_title: str | None = None
     other: dict[str, Any] = Field(default_factory=dict)
@@ -171,3 +207,8 @@ class ProjectPatch(BaseModel):
     # None => unset (left unchanged); admin-only when set (enforced in the repository).
     is_approved: bool | None = None
     license: Literal["CCA4", "CCPD"] | None = None
+
+    @field_validator("unique_column")
+    @classmethod
+    def _check_unique_column(cls, v: str | None) -> str | None:
+        return _validate_unique_column(v)

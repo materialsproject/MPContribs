@@ -106,7 +106,12 @@ def _table(value: float) -> TableIn:
 
 
 def _contrib_in(identifier: str, data: dict, **overrides) -> ContributionIn:
-    return ContributionIn(project=PID, identifier=identifier, formula="Fe2O3", data=data, **overrides)
+    # ``identifier`` is a human label; distill its letters into a valid ``mp-<letters>`` material_id
+    # (<=8 letters) so each contribution's identity tuple differs.
+    letters = "".join(c for c in identifier.lower() if c.isalpha())[:8] or "a"
+    return ContributionIn(
+        project=PID, material_id=f"mp-{letters}", chemical_system_id="Fe-O", formula="Fe2O3", data=data, **overrides
+    )
 
 
 # ---------------------------------------------------------------------------

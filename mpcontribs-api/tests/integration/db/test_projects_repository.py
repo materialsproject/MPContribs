@@ -2,9 +2,10 @@ import pytest
 
 from mpcontribs_api.authz import User
 from mpcontribs_api.domains.projects.models import Column, Project, ProjectIn, ProjectOut, ProjectPatch, Stats
+from mpcontribs_api.domains.consumers.models import ConsumerSettings
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
-from mpcontribs_api.exceptions import ConflictError, NotFoundError
 from mpcontribs_api.exceptions import PermissionError as AppPermissionError
+from mpcontribs_api.exceptions import ConflictError, NotFoundError, ValidationError
 from mpcontribs_api.pagination import CursorParams
 
 # All tests in this module share the session event loop so they can reuse the
@@ -22,8 +23,13 @@ ALICE = User(username="google:alice@example.com", groups=frozenset({"mp-team"}))
 ANON = User()
 
 
-def _repo(user: User) -> MongoDbProjectRepository:
-    return MongoDbProjectRepository(user)
+def _repo(user: User, limits: ConsumerSettings | None = None) -> MongoDbProjectRepository:
+    return MongoDbProjectRepository(user, limits)
+
+
+def _cols(n: int) -> list[dict[str, str]]:
+    """n column definitions (coerced into Column by ProjectIn/ProjectPatch)."""
+    return [{"path": f"data.col_{i}"} for i in range(n)]
 
 
 def _project_in(id: str, **overrides) -> ProjectIn:
@@ -33,7 +39,6 @@ def _project_in(id: str, **overrides) -> ProjectIn:
         "authors": "Test Author",
         "description": "Test description",
         "owner": "google:alice@example.com",
-        "unique_identifiers": True,
     }
     defaults.update(overrides)
     return ProjectIn(**defaults)
@@ -217,26 +222,28 @@ class TestFieldProjection:
 
 class TestPagination:
     async def test_limit_is_respected(self, db):
+        # Distinct owners: pagination is orthogonal to the per-owner project cap, so keep every
+        # project under its own owner rather than tripping max_projects.
         for i in range(5):
-            await _insert(f"pag-limit-{i:02d}", is_public=True, is_approved=True)
+            await _insert(f"pag-limit-{i:02d}", owner=f"google:pager{i}@example.com", is_public=True, is_approved=True)
         page = await _repo(ADMIN).get_projects(filter=_noop_filter(), pagination=CursorParams(limit=3), fields=None)
         assert len(page.items) == 3
 
     async def test_next_cursor_set_when_more_items(self, db):
         for i in range(4):
-            await _insert(f"pag-cursor-{i:02d}", is_public=True, is_approved=True)
+            await _insert(f"pag-cursor-{i:02d}", owner=f"google:pager{i}@example.com", is_public=True, is_approved=True)
         page = await _repo(ADMIN).get_projects(filter=_noop_filter(), pagination=CursorParams(limit=2), fields=None)
         assert page.next_cursor is not None
 
     async def test_next_cursor_none_on_last_page(self, db):
         for i in range(3):
-            await _insert(f"pag-last-{i:02d}", is_public=True, is_approved=True)
+            await _insert(f"pag-last-{i:02d}", owner=f"google:pager{i}@example.com", is_public=True, is_approved=True)
         page = await _repo(ADMIN).get_projects(filter=_noop_filter(), pagination=CursorParams(limit=10), fields=None)
         assert page.next_cursor is None
 
     async def test_cursor_fetches_next_page(self, db):
         for i in range(4):
-            await _insert(f"pag-next-{i:02d}", is_public=True, is_approved=True)
+            await _insert(f"pag-next-{i:02d}", owner=f"google:pager{i}@example.com", is_public=True, is_approved=True)
         page1 = await _repo(ADMIN).get_projects(filter=_noop_filter(), pagination=CursorParams(limit=2), fields=None)
         assert page1.next_cursor is not None
         page2 = await _repo(ADMIN).get_projects(
@@ -248,7 +255,7 @@ class TestPagination:
 
     async def test_all_items_covered_across_pages(self, db):
         for i in range(5):
-            await _insert(f"pag-all-{i:02d}", is_public=True, is_approved=True)
+            await _insert(f"pag-all-{i:02d}", owner=f"google:pager{i}@example.com", is_public=True, is_approved=True)
         all_ids: set[str] = set()
         cursor = None
         while True:
@@ -451,3 +458,63 @@ class TestServerOwnedFields:
         await _repo(ALICE).patch_project_by_id(id="srv-patch-plain", update=ProjectPatch(title="New Title"))
         found = await Project.find_one(Project.id == "srv-patch-plain")
         assert found.title == "New Title"
+# Per-user project-count quota (max_projects)
+# ---------------------------------------------------------------------------
+
+
+ALICE_EMAIL = "google:alice@example.com"
+
+
+class TestProjectCountQuota:
+    async def test_insert_can_reach_exactly_cap(self, db, monkeypatch):
+        # The cap is inclusive: a user may own up to (not fewer than) max_projects.
+        from mpcontribs_api.config import get_settings
+
+        monkeypatch.setattr(get_settings().consumer, "max_projects", 2)
+        await _insert("cap-1", owner=ALICE_EMAIL)
+        await _insert("cap-2", owner=ALICE_EMAIL)
+        assert await Project.find(Project.owner == ALICE_EMAIL).count() == 2
+
+    async def test_insert_over_cap_rejected(self, db, monkeypatch):
+        from mpcontribs_api.config import get_settings
+        from mpcontribs_api.exceptions import PermissionError as AppPermissionError
+
+        monkeypatch.setattr(get_settings().consumer, "max_projects", 2)
+        await _insert("cap-a", owner=ALICE_EMAIL)
+        await _insert("cap-b", owner=ALICE_EMAIL)
+        with pytest.raises(AppPermissionError):
+            await _insert("cap-c", owner=ALICE_EMAIL)
+
+    async def test_upsert_new_project_over_cap_rejected(self, db, monkeypatch):
+        # A brand-new project via upsert is counted against the caller's cap.
+        from mpcontribs_api.config import get_settings
+        from mpcontribs_api.exceptions import PermissionError as AppPermissionError
+
+        monkeypatch.setattr(get_settings().consumer, "max_projects", 1)
+        await _insert("owned-1", owner=ALICE_EMAIL)
+        data = _project_in("new-proj", owner=ALICE_EMAIL)
+        with pytest.raises(AppPermissionError):
+            await _repo(ALICE).upsert_project_by_id(id="new-proj", data=data)
+
+    async def test_upsert_existing_project_allowed_at_cap(self, db, monkeypatch):
+        # Regression: updating a project you already own must never be blocked by the cap, even
+        # when you are exactly at it. Only *new* projects count against the quota.
+        from mpcontribs_api.config import get_settings
+
+        monkeypatch.setattr(get_settings().consumer, "max_projects", 1)
+        await _insert("owned-only", owner=ALICE_EMAIL)
+        data = _project_in("owned-only", owner=ALICE_EMAIL, title="Updated Title")
+        result = await _repo(ALICE).upsert_project_by_id(id="owned-only", data=data)
+        assert result.title == "Updated Title"
+
+    async def test_injected_consumer_override_lowers_cap(self, db):
+        # A per-consumer override resolves to a ConsumerSettings injected into the repo; the cap it
+        # carries is enforced without touching global config. Here the override tightens the cap to 1.
+        repo = _repo(ALICE, ConsumerSettings(max_projects=1))
+        await repo.insert_project("override-1", _project_in("override-1", owner=ALICE_EMAIL))
+        from mpcontribs_api.exceptions import PermissionError as AppPermissionError
+
+        with pytest.raises(AppPermissionError):
+            await repo.insert_project("override-2", _project_in("override-2", owner=ALICE_EMAIL))
+
+

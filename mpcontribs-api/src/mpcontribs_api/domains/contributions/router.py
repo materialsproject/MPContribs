@@ -7,6 +7,7 @@ from fastapi_filter import FilterDepends
 from mpcontribs_api.config import get_settings
 from mpcontribs_api.dependencies import S3Dep, require_user
 from mpcontribs_api.domains._shared.bulk import BulkUpdateSummary, BulkWriteSummary
+from mpcontribs_api.domains._shared.models import DeleteResponse
 from mpcontribs_api.domains._shared.types import (
     DownloadFormat,
     FieldSelector,
@@ -61,12 +62,15 @@ async def get_contributions(
     return await repo.get_contributions(pagination=pagination, filter=filter, fields=selected)
 
 
-@router.delete("", dependencies=[Depends(require_user)])
+@router.delete("", response_model=DeleteResponse, dependencies=[Depends(require_user)])
 async def delete_contributions(
     repo: ContributionDep,
     filter: ContributionFilter = FilterDepends(ContributionFilter),
-):
-    return await repo.delete_contributions(filter=filter)
+) -> DeleteResponse:
+    # The repository returns a raw pymongo DeleteResult (or None when the filter matched nothing);
+    # convert it to the typed DeleteResponse so the endpoint has a stable, serializable contract.
+    result = await repo.delete_contributions(filter=filter)
+    return DeleteResponse.from_delete_result(result) if result is not None else DeleteResponse(num_deleted=0)
 
 
 @router.patch("", dependencies=[Depends(require_user)])
@@ -149,17 +153,10 @@ async def get_contribution_by_id(
 
 
 @router.put("/{id}", dependencies=[Depends(require_user)])
-async def upsert_contribution_by_id(repo: ContributionDep, id: str, contribution: ContributionIn):
-    return await repo.upsert_contribution_by_id(id=id, contribution=contribution)
+async def upsert_contribution_by_id(service: ContributionServiceDep, id: str, contribution: ContributionIn):
+    return await service.upsert_contribution_by_id(id=id, contribution=contribution)
 
 
 @router.patch("/{id}", dependencies=[Depends(require_user)])
-async def patch_contribution_by_id(
-    service: ContributionServiceDep,
-    id: str,
-    update: ContributionPatch,
-    replace_data: bool = False,
-):
-    # replace_data=false (default) merges the patch's `data` into the stored dict (an addition);
-    # replace_data=true overwrites `data` whole, dropping columns not in the patch.
-    return await service.patch_contribution(id=id, patch=update, replace_data=replace_data)
+async def patch_contribution_by_id(service: ContributionServiceDep, id: str, update: ContributionPatch):
+    return await service.patch_contribution_by_id(id=id, update=update)

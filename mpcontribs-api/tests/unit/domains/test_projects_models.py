@@ -1,4 +1,5 @@
 import pytest
+from mpcontribs_api.exceptions import ValidationError as AppValidationError
 from pydantic import ValidationError as PydanticValidationError
 
 from mpcontribs_api.domains.projects.models import (
@@ -9,7 +10,42 @@ from mpcontribs_api.domains.projects.models import (
     ProjectPatch,
     Reference,
     Stats,
+    validate_column_limit,
 )
+from mpcontribs_api.exceptions import ValidationError
+
+
+class TestUniqueColumnValidation:
+    def _make_input(self, **overrides):
+        defaults = {
+            "_id": "uc-proj",
+            "title": "Test Project",
+            "authors": "Alice",
+            "description": "A test project",
+            "owner": "google:alice@example.com",
+            "stats": Stats(columns=0, contributions=0, tables=0, structures=0, attachments=0, size=0.0),
+        }
+        defaults.update(overrides)
+        return ProjectIn(**defaults)
+
+    def test_none_is_allowed(self):
+        assert self._make_input().unique_column is None
+
+    def test_dotted_path_accepted_even_if_absent_from_columns(self):
+        # No subset-of-columns check: columns is derived/eventually-consistent.
+        assert self._make_input(unique_column="conditions.temp").unique_column == "conditions.temp"
+
+    def test_empty_string_rejected(self):
+        with pytest.raises(ValidationError):
+            self._make_input(unique_column="")
+
+    def test_blank_segment_rejected(self):
+        with pytest.raises(ValidationError):
+            self._make_input(unique_column="a..b")
+
+    def test_patch_validates_unique_column(self):
+        with pytest.raises(ValidationError):
+            ProjectPatch(unique_column="a..b")
 
 # ---------------------------------------------------------------------------
 # Column
@@ -154,7 +190,6 @@ class TestProjectOutProjection:
         assert "is_public" in result
 
     def test_parse_fields_unknown_raises(self):
-        from mpcontribs_api.exceptions import ValidationError as AppValidationError
 
         with pytest.raises(AppValidationError):
             ProjectOut.parse_fields(["nonexistent_field"])
@@ -220,7 +255,6 @@ class TestProjectFromInputModel:
             "authors": "Alice, Bob",
             "description": "A test project",
             "owner": "google:alice@example.com",
-            "unique_identifiers": True,
         }
         defaults.update(overrides)
         return ProjectIn(**defaults)
@@ -272,3 +306,41 @@ class TestProjectDecodeCursor:
     def test_malformed_cursor_raises_value_error(self):
         with pytest.raises(ValueError):
             Project.decode_cursor("!!!not-base64!!!")
+
+
+# ---------------------------------------------------------------------------
+# Column-length quota (max_columns)
+# ---------------------------------------------------------------------------
+
+
+def _columns(n: int) -> list[Column]:
+    return [Column(path=f"data.col_{i}") for i in range(n)]
+
+
+class TestColumnLengthQuota:
+    """The column cap is enforced by ``validate_column_limit`` (called from the repository with the
+    caller's effective ``max_columns``), not by the ``ProjectIn``/``ProjectPatch`` models. These
+    tests pin the pure function's contract: the cap is inclusive, over-cap writes raise, and a
+    non-list value is a no-op so legacy documents that already exceed the cap can still be read back.
+    """
+
+    def test_at_cap_is_allowed(self):
+        # Inclusive: exactly max_columns entries must pass.
+        validate_column_limit(_columns(2), max_columns=2)
+
+    def test_under_cap_is_allowed(self):
+        validate_column_limit(_columns(1), max_columns=2)
+
+    def test_over_cap_raises(self):
+        with pytest.raises(AppValidationError):
+            validate_column_limit(_columns(3), max_columns=2)
+
+    def test_error_reports_offending_length(self):
+        with pytest.raises(AppValidationError) as exc_info:
+            validate_column_limit(_columns(5), max_columns=2)
+        assert exc_info.value.context["column_length"] == 5
+
+    def test_none_is_noop(self):
+        # A read path may pass a non-list (e.g. an unset field); it must never raise so legacy
+        # documents that predate the cap remain retrievable.
+        validate_column_limit(None, max_columns=0)

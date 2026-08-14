@@ -273,7 +273,6 @@ class TestUpsertProject:
             "authors": "Alice",
             "description": "A project",
             "owner": "google:alice@example.com",
-            "unique_identifiers": True,
             "stats": {"columns": 0, "contributions": 0, "tables": 0, "structures": 0, "attachments": 0, "size": 0.0},
         }
         body.update(overrides)
@@ -309,7 +308,6 @@ class TestProjectMutationsRequireAuth:
             "authors": "Alice",
             "description": "A project",
             "owner": "google:alice@example.com",
-            "unique_identifiers": True,
             "stats": {"columns": 0, "contributions": 0, "tables": 0, "structures": 0, "attachments": 0, "size": 0.0},
         }
 

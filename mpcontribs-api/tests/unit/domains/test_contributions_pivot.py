@@ -1,7 +1,6 @@
 import math
 
 import pytest
-from beanie import PydanticObjectId
 
 from mpcontribs_api.domains._shared.types import to_snake_case
 from mpcontribs_api.domains.contributions.data import (
@@ -15,9 +14,8 @@ from mpcontribs_api.exceptions import DataKeyError, ValidationError
 
 def _contrib_in(data, **overrides) -> ContributionIn:
     defaults = {
-        "_id": PydanticObjectId(),
         "project": "prj",
-        "identifier": "mp-1",
+        "chemical_system_id": "Fe-O",
         "formula": "Fe2O3",
         "data": data,
     }

@@ -8,7 +8,7 @@ from pymongo.asynchronous.database import AsyncDatabase
 from types_aiobotocore_s3 import S3Client
 
 from mpcontribs_api.authz import User
-from mpcontribs_api.exceptions import AuthenticationError
+from mpcontribs_api.exceptions import AuthenticationError, PermissionError
 
 
 def get_db(request: Request) -> AsyncDatabase:
@@ -73,13 +73,15 @@ def require_user(user: UserDep) -> User:
     return user
 
 
-# AuthedDep = Annotated[User, Depends(require_user)]
+def require_admin(user: UserDep) -> User:
+    """Require an authenticated admin caller.
 
-
-# def require_role(role: str):
-#     def checker(user: AuthedDep) -> User:
-#         if not user.has_role(role):
-#             raise PermissionError(required_role=role)
-#         return user
-
-#     return Annotated[User, Depends(checker)]
+    Distinguishes the two failure modes: an anonymous caller gets 401 (authenticate first), while an
+    authenticated non-admin gets 403 (authenticated, but not permitted). Gates the admin-only
+    consumer-override routes.
+    """
+    if user.is_anonymous:
+        raise AuthenticationError("authentication required")
+    if not user.is_admin:
+        raise PermissionError(required_role="admin")
+    return user

@@ -47,7 +47,8 @@ def _valid_contribution_body(**overrides) -> dict:
     body = {
         "_id": str(PydanticObjectId()),
         "project": "test-project",
-        "identifier": "mp-1234",
+        "material_id": "mp-1234",
+        "chemical_system_id": "Fe-O",
         "formula": "Fe2O3",
         "data": {"band_gap": 2.1},
     }
@@ -55,7 +56,7 @@ def _valid_contribution_body(**overrides) -> dict:
     return body
 
 
-SAMPLE_OUT = ContributionOut(project="p", identifier="mp-1", formula="Fe2O3")
+SAMPLE_OUT = ContributionOut(project="p", material_id="mp-1", formula="Fe2O3")
 
 
 # ===========================================================================
@@ -91,7 +92,7 @@ class TestInsertContributions:
         # Missing required 'formula'.
         r = client.post(
             "/api/v1/contributions",
-            json=[{"_id": str(PydanticObjectId()), "project": "p", "identifier": "mp-1"}],
+            json=[{"_id": str(PydanticObjectId()), "project": "p", "material_id": "mp-1"}],
         )
         assert r.status_code == 422
         contribution_service.insert_contributions.assert_not_called()
@@ -117,7 +118,7 @@ class TestUpsertContributions:
         contribution_service.upsert_contributions.return_value = BulkWriteSummary(total=1, succeeded=[], failed=[])
         client.put("/api/v1/contributions", json=[_valid_contribution_body()])
         contributions = contribution_service.upsert_contributions.call_args.kwargs["contributions"]
-        assert contributions[0].identifier == "mp-1234"
+        assert contributions[0].material_id == "mp-1234"
 
     def test_malformed_body_returns_422(self, client, contribution_service):
         r = client.put(
@@ -141,14 +142,12 @@ class TestContributionByIdRouting:
         assert client.get(f"/api/v1/contributions/{PydanticObjectId()}").status_code == 200
 
     def test_patch_by_id_conventional_path(self, client, contribution_service):
-        # PATCH is routed through the service (it may fan a condition-bearing patch across the
-        # contribution's pivoted rows), so it returns a list of updated documents.
-        contribution_service.patch_contribution.return_value = [SAMPLE_OUT]
+        contribution_service.patch_contribution_by_id.return_value = SAMPLE_OUT
         r = client.patch(f"/api/v1/contributions/{PydanticObjectId()}", json={"formula": "H2O"})
         assert r.status_code == 200
 
-    def test_put_by_id_conventional_path(self, client, contribution_repo):
-        contribution_repo.upsert_contribution_by_id.return_value = SAMPLE_OUT
+    def test_put_by_id_conventional_path(self, client, contribution_service):
+        contribution_service.upsert_contribution_by_id.return_value = SAMPLE_OUT
         r = client.put(f"/api/v1/contributions/{PydanticObjectId()}", json=_valid_contribution_body())
         assert r.status_code == 200
 
@@ -283,11 +282,11 @@ class TestBulkUpdateContributions:
 
     def test_patch_by_id_forwards_is_public(self, client, contribution_service):
         # The single-contribution publish path: {"is_public": true} reaches the service patch.
-        contribution_service.patch_contribution.return_value = [SAMPLE_OUT]
+        contribution_service.patch_contribution_by_id.return_value = SAMPLE_OUT
         r = client.patch(f"/api/v1/contributions/{PydanticObjectId()}", json={"is_public": True})
         assert r.status_code == 200
-        patch = contribution_service.patch_contribution.call_args.kwargs["patch"]
-        assert patch.is_public is True
+        update = contribution_service.patch_contribution_by_id.call_args.kwargs["update"]
+        assert update.is_public is True
 
 
 class TestContributionMutationsRequireAuth:
@@ -316,21 +315,21 @@ class TestContributionMutationsRequireAuth:
         r = client.delete(f"/api/v1/contributions/{PydanticObjectId()}", headers=FORCE_ANON_HEADERS)
         assert r.status_code == 401
 
-    def test_put_by_id_anon_401(self, client, contribution_repo):
+    def test_put_by_id_anon_401(self, client, contribution_service):
         r = client.put(
             f"/api/v1/contributions/{PydanticObjectId()}",
             json=_valid_contribution_body(),
             headers=FORCE_ANON_HEADERS,
         )
         assert r.status_code == 401
-        contribution_repo.upsert_contribution_by_id.assert_not_called()
+        contribution_service.upsert_contribution_by_id.assert_not_called()
 
     def test_patch_by_id_anon_401(self, client, contribution_service):
         r = client.patch(
             f"/api/v1/contributions/{PydanticObjectId()}", json={"formula": "H2O"}, headers=FORCE_ANON_HEADERS
         )
         assert r.status_code == 401
-        contribution_service.patch_contribution.assert_not_called()
+        contribution_service.patch_contribution_by_id.assert_not_called()
 
     def test_get_collection_still_open_to_anon(self, client, contribution_repo):
         from mpcontribs_api.pagination import Page

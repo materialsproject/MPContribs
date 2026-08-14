@@ -38,9 +38,13 @@ def _service(client, user: User) -> ContributionService:
 
 
 async def _insert(project: str, identifier: str, *, is_public: bool) -> Contribution:
-    """Insert one contribution directly (bypassing the write pipeline) with a chosen visibility."""
+    """Insert one contribution directly (bypassing the write pipeline) with a chosen visibility.
+
+    ``identifier`` is a human label only; each case here uses a distinct project, so the identity
+    tuple (project + chemical_system_id + formula) is unique without a material_id.
+    """
     doc = Contribution.from_input_model(
-        ContributionIn(project=project, identifier=identifier, formula="Fe2O3", data={"x": 1.0})
+        ContributionIn(project=project, chemical_system_id="Fe-O", formula="Fe2O3", data={"x": 1.0})
     )
     doc.is_public = is_public
     await doc.insert()
@@ -99,7 +103,9 @@ class TestSinglePublish:
     async def test_patch_by_id_publishes_single_contribution(self, db, mongo_client):
         a = await _insert(PROJ_A, "c1", is_public=False)
 
-        result = await _service(mongo_client, ALICE).patch_contribution(str(a.id), ContributionPatch(is_public=True))
+        result = await _service(mongo_client, ALICE).patch_contribution_by_id(
+            str(a.id), ContributionPatch(is_public=True)
+        )
 
-        assert len(result) == 1
+        assert result.is_public is True
         assert await _is_public(a.id) is True

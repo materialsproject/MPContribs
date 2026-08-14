@@ -33,8 +33,9 @@ if metadata_uri:
     cluster = labels[f"{prefix}.cluster"].split("/", 1)[1]
     family = labels[f"{prefix}.task-definition-family"]
     version = int(labels[f"{prefix}.task-definition-version"])
-    task_arns = client.list_tasks(cluster=cluster, family=family).get("taskArns", [])  # pyright: ignore[reportAttributeAccessIssue] - boto3 dynamically dispatches, this is valid with ECS
-    tasks = client.describe_tasks(cluster=cluster, tasks=task_arns).get("tasks", [])  # pyright: ignore[reportAttributeAccessIssue] - boto3 dynamically dispatches, this is valid with ECS
+    task_arns = client.list_tasks(cluster=cluster, family=family).get("taskArns", [])  # pyright: ignore[reportAttributeAccessIssue] - boto3 dynamically routes methods
+    tasks = client.describe_tasks(cluster=cluster, tasks=task_arns).get("tasks", [])  # pyright: ignore[reportAttributeAccessIssue] - boto3 dynamically routes methods
+
     ntasks = 0
 
     for task in tasks:
