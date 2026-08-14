@@ -19,6 +19,7 @@ from mpcontribs_api.authz import (
 from mpcontribs_api.config import Settings, get_settings
 from mpcontribs_api.domains._redirects.router import router as redirects_router
 from mpcontribs_api.domains.attachments.models import Attachment
+from mpcontribs_api.domains.consumers.models import Consumer
 from mpcontribs_api.domains.contributions.models import Contribution
 from mpcontribs_api.domains.healthcheck.router import router as healthcheck_router
 from mpcontribs_api.domains.projects.models import Project
@@ -67,6 +68,7 @@ async def _setup_mongo(app: FastAPI, settings: Settings, stack: AsyncExitStack) 
             Attachment,
             Structure,
             Table,
+            Consumer,
         ],
     )
 

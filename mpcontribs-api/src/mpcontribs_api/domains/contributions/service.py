@@ -1,4 +1,5 @@
 import asyncio
+from collections import defaultdict
 from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import cast
@@ -19,6 +20,7 @@ from mpcontribs_api.domains._shared.bulk import (
 )
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
 from mpcontribs_api.domains.attachments.repository import MongoDbAttachmentRepository
+from mpcontribs_api.domains.consumers.models import ConsumerSettings
 from mpcontribs_api.domains.contributions.models import (
     Contribution,
     ContributionFilter,
@@ -38,6 +40,10 @@ from mpcontribs_api.exceptions import AppError, ConflictError, NotFoundError, Pe
 from mpcontribs_api.pagination import CursorParams
 
 logger = structlog.get_logger(__name__)
+
+# Upper bound on rejected identifiers attached to a single quota-breach log line, so an
+# adversarial mega-batch can't blow up the log payload. The counts are always exact.
+_QUOTA_LOG_IDENTIFIER_CAP = 100
 
 
 @dataclass(frozen=True, slots=True)
@@ -65,6 +71,7 @@ class ContributionService:
         attachments: MongoDbAttachmentRepository,
         tables: MongoDbTableRepository,
         settings: MongoSettings | None = None,
+        limits: ConsumerSettings | None = None,
     ):
         self._client = client
         self._user = user
@@ -74,6 +81,7 @@ class ContributionService:
         self._attachments = attachments
         self._tables = tables
         self._settings = settings or get_settings().mongo
+        self._limits = limits or ConsumerSettings()
 
     @property
     def _children(self) -> dict[str, MongoDbRepository]:
@@ -82,6 +90,20 @@ class ContributionService:
             "attachments": self._attachments,
             "tables": self._tables,
         }
+
+    async def _unapproved_stored_count(self, project_id: str) -> int | None:
+        """Contributions already stored for an unapproved ``project_id``, else ``None``.
+
+        Returns ``None`` when the quota does not apply — the project is approved, or it could not
+        be read in the current scope (existence/permission is enforced on insert, not here). The
+        caller turns the count into a remaining allowance against the cap.
+        """
+        project = await self._projects.get_by_id(project_id, fields=frozenset({"is_approved"}))
+        if not project or project.is_approved:
+            return None
+        # Soft limit: this count feeds a non-atomic check-then-write, so concurrent writes to the
+        # same project can overshoot the cap by a bounded amount. Acceptable for an anti-abuse quota.
+        return await self._contributions.count_contributions_for_project(project_id)
 
     async def insert_contributions(
         self,
@@ -301,6 +323,84 @@ class ContributionService:
                 remaining.append(i)
         return oversize, remaining
 
+    async def _split_quota_exceeded(
+        self,
+        plan: list[ResolvedWrite],
+        *,
+        is_upsert: bool,
+    ) -> tuple[list[BulkFailure], list[ResolvedWrite]]:
+        """Trim each unapproved project's newly-created contributions to its remaining quota."""
+        by_project: dict[str, list[ResolvedWrite]] = defaultdict(list)
+        for item in plan:
+            by_project[item.contribution.project].append(item)
+
+        cap = self._limits.max_unapproved_contributions_per_project
+        failures: list[BulkFailure] = []
+        survivors: list[ResolvedWrite] = []
+        for project_id, items in by_project.items():
+            stored = await self._unapproved_stored_count(project_id)
+            if stored is None:
+                survivors.extend(items)
+                continue
+            # Upserts against an existing row are updates (no new document); only absent identities count.
+            existing = await self._existing_identities(items) if is_upsert else set()
+            allowed = max(0, cap - stored)
+            rejected: list[ResolvedWrite] = []
+            for item in items:
+                identity = item.contribution.identity(item.unique_value, item.condition_key)
+                if identity in existing:
+                    survivors.append(item)
+                elif allowed > 0:
+                    survivors.append(item)
+                    allowed -= 1
+                else:
+                    rejected.append(item)
+            if not rejected:
+                continue
+            self._log_quota_exceeded(project_id, cap, stored, len(items) - len(rejected), rejected)
+            exc = PermissionError(
+                "Attempted to add more than the allowed number of unapproved contributions",
+                project=project_id,
+                max_allowed=cap,
+            )
+            failures.extend(
+                bulk_failure_from_exception(item.index, item.contribution.identifiers(), exc) for item in rejected
+            )
+        survivors.sort(key=lambda item: item.index)
+        return failures, survivors
+
+    async def _existing_identities(self, items: list[ResolvedWrite]) -> set[ContributionIdentity]:
+        """Return which of ``items``' identities already have a stored document."""
+        identities = [item.contribution.identity(item.unique_value, item.condition_key) for item in items]
+        return await self._contributions.existing_identities(identities)
+
+    @staticmethod
+    def _log_quota_exceeded(
+        project_id: str,
+        cap: int,
+        stored: int,
+        accepted: int,
+        rejected: list[ResolvedWrite],
+    ) -> None:
+        """Emit a structured audit event for an unapproved-project quota breach.
+
+        Request/user correlation (``consumer_id``, ``request_id``, ``trace_id``) is merged from the
+        per-request contextvars, so only the domain-specific dimensions are added here. The rejected
+        identifier list is capped to keep a pathological batch from bloating a single log line.
+        """
+        rejected_identifiers = [item.contribution.material_id for item in rejected[:_QUOTA_LOG_IDENTIFIER_CAP]]
+        logger.warning(
+            "contribution.unapproved_quota_exceeded",
+            project=project_id,
+            max_allowed=cap,
+            stored=stored,
+            attempted=accepted + len(rejected),
+            accepted=accepted,
+            rejected=len(rejected),
+            rejected_identifiers=rejected_identifiers,
+            rejected_identifiers_truncated=len(rejected) > _QUOTA_LOG_IDENTIFIER_CAP,
+        )
+
     async def _split_contributions(
         self, contributions: list[ContributionIn], *, is_upsert: bool
     ) -> tuple[list[BulkFailure], list[ResolvedWrite]]:
@@ -321,7 +421,9 @@ class ContributionService:
         # Resolve each contribution's identity (unique_value from the project's unique_column) and
         # reject duplicates, per project config and whether this is an insert or upsert.
         identity_failures, plan = await self._resolve_identity(sized_indices, contributions, is_upsert=is_upsert)
-        return (unauthorized_failures + oversize_failures + identity_failures, plan)
+        # Reject writes that would push an unapproved project past its contribution cap.
+        quota_failures, plan = await self._split_quota_exceeded(plan, is_upsert=is_upsert)
+        return (unauthorized_failures + oversize_failures + identity_failures + quota_failures, plan)
 
     async def _insert_no_components(
         self,
@@ -513,9 +615,24 @@ class ContributionService:
         return extract_unique_value(data, unique_column)
 
     async def upsert_contribution_by_id(self, id: str, contribution: ContributionIn) -> Contribution:
-        """Upsert a single contribution by Mongo id, resolving its server-owned ``unique_value``."""
+        """Upsert a single contribution by Mongo id, resolving its server-owned ``unique_value``.
+
+        A brand-new document (the id does not yet exist) counts against the project's
+        unapproved-contribution quota; updating an existing document is always allowed. The id-existence
+        check runs first so updates never pay for the (unscoped) stored-count query.
+        """
         if not self._user.can_write(contribution.project):
             raise PermissionError(f"not authorized to write to project '{contribution.project}'")
+        existing = await self._contributions.get_contribution_by_id(id, fields=None)
+        if existing is None:
+            stored = await self._unapproved_stored_count(contribution.project)
+            cap = self._limits.max_unapproved_contributions_per_project
+            if stored is not None and stored >= cap:
+                raise PermissionError(
+                    "Attempted to add more than the allowed number of unapproved contributions",
+                    project=contribution.project,
+                    max_allowed=cap,
+                )
         unique_value = await self._resolve_unique_value(contribution.project, contribution.data)
         return await self._contributions.upsert_contribution_by_id(id, contribution, unique_value)
 

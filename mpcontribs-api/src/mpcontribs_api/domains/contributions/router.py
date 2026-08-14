@@ -7,6 +7,7 @@ from fastapi_filter import FilterDepends
 from mpcontribs_api.config import get_settings
 from mpcontribs_api.dependencies import S3Dep, require_user
 from mpcontribs_api.domains._shared.bulk import BulkWriteSummary
+from mpcontribs_api.domains._shared.models import DeleteResponse
 from mpcontribs_api.domains._shared.types import (
     DownloadFormat,
     FieldSelector,
@@ -57,12 +58,15 @@ async def get_contributions(
     return await repo.get_contributions(pagination=pagination, filter=filter, fields=selected)
 
 
-@router.delete("", dependencies=[Depends(require_user)])
+@router.delete("", response_model=DeleteResponse, dependencies=[Depends(require_user)])
 async def delete_contributions(
     repo: ContributionDep,
     filter: ContributionFilter = FilterDepends(ContributionFilter),
-):
-    return await repo.delete_contributions(filter=filter)
+) -> DeleteResponse:
+    # The repository returns a raw pymongo DeleteResult (or None when the filter matched nothing);
+    # convert it to the typed DeleteResponse so the endpoint has a stable, serializable contract.
+    result = await repo.delete_contributions(filter=filter)
+    return DeleteResponse.from_delete_result(result) if result is not None else DeleteResponse(num_deleted=0)
 
 
 # TODO: Might want to take contributions in from request body and run model_validate_json on it (much faster)

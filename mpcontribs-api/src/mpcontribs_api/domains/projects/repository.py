@@ -2,12 +2,14 @@ from typing import Any
 
 from mpcontribs_api.authz import User
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
+from mpcontribs_api.domains.consumers.models import ConsumerSettings
 from mpcontribs_api.domains.projects.models import (
     Project,
     ProjectFilter,
     ProjectIn,
     ProjectOut,
     ProjectPatch,
+    validate_column_limit,
 )
 from mpcontribs_api.exceptions import PermissionError
 from mpcontribs_api.pagination import CursorParams
@@ -29,9 +31,10 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
     document_model = Project
     out_model = ProjectOut
 
-    def __init__(self, user: User) -> None:
+    def __init__(self, user: User, limits: ConsumerSettings | None = None) -> None:
         super().__init__(user)
         self._user = user
+        self._limits = limits or ConsumerSettings()
 
     @staticmethod
     def _build_scope(user: User) -> dict[str, Any]:
@@ -44,6 +47,19 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
             if user.groups:
                 ors.append({"_id": {"$in": sorted(user.groups)}})
         return {"$or": ors}
+
+    async def _check_num_projects(self, owner: str):
+        """Reject a *new* project that would push ``owner`` past the per-user cap."""
+        max_projects = self._limits.max_projects
+        # Soft limit: this count-then-insert is not atomic, so concurrent creates by the same owner
+        # can overshoot the cap by a bounded amount. Acceptable for an anti-abuse quota.
+        result = await Project.find(Project.owner == owner).count()
+        if result >= max_projects:
+            raise PermissionError(
+                f"Cannot be owner of more than {max_projects} projects",
+                owner=owner,
+                num_projects=result,
+            )
 
     async def get_projects(
         self,
@@ -86,10 +102,16 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
 
     async def insert_project(self, project: ProjectIn) -> Project:
         """Insert a new project, rejecting a duplicate id. See ``insert_one``."""
+        validate_column_limit(project.columns, self._limits.max_columns)
+        await self._check_num_projects(project.owner)
         return await self.insert_one(project)
 
     async def patch_project_by_id(self, id: str, update: ProjectPatch) -> Project:
         """Partially update a project by id, scoped to the current user. See ``patch``."""
+        # Only enforce the column cap when the caller actually sends columns; an unset field is a
+        # no-op and must not be checked against its empty default.
+        if "columns" in update.model_fields_set:
+            validate_column_limit(update.columns, self._limits.max_columns)
         return await self.patch(id, update)
 
     async def delete_project_by_id(self, id: str) -> None:
@@ -123,15 +145,19 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
         if self._user.username is None:
             raise PermissionError(required_role="authenticated")
 
+        validate_column_limit(data.columns, self._limits.max_columns)
         existing = await self.document_model.find_one(self.document_model.id == id)
         project = self.document_model.from_input_model(data)
         project.id = id
         if existing is not None:
             if not (self._user.is_admin or existing.owner == self._user.username):
                 raise PermissionError(required_role="owner-or-admin")
-            # Ownership is immutable via upsert; keep the original owner.
+            # Ownership is immutable via upsert; keep the original owner. Updating an existing
+            # project does not create a new one, so the per-user project cap does not apply.
             project.owner = existing.owner
         else:
-            # New project: the caller owns it, regardless of the submitted owner.
+            # New project: the caller owns it, regardless of the submitted owner. Enforce the
+            # per-user cap against the caller before creating another project under their name.
             project.owner = self._user.username
+            await self._check_num_projects(self._user.username)
         return await project.save()

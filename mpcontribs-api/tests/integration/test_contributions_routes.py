@@ -279,14 +279,14 @@ class TestContributionMutationsRequireAuth:
         r = client.delete(f"/api/v1/contributions/{PydanticObjectId()}", headers=FORCE_ANON_HEADERS)
         assert r.status_code == 401
 
-    def test_put_by_id_anon_401(self, client, contribution_repo):
+    def test_put_by_id_anon_401(self, client, contribution_service):
         r = client.put(
             f"/api/v1/contributions/{PydanticObjectId()}",
             json=_valid_contribution_body(),
             headers=FORCE_ANON_HEADERS,
         )
         assert r.status_code == 401
-        contribution_repo.upsert_contribution_by_id.assert_not_called()
+        contribution_service.upsert_contribution_by_id.assert_not_called()
 
     def test_patch_by_id_anon_401(self, client, contribution_repo):
         r = client.patch(

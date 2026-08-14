@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from mpcontribs_api.domains.attachments.router import router as attachments_router
+from mpcontribs_api.domains.consumers.router import router as consumers_router
 from mpcontribs_api.domains.contributions.router import router as contributions_router
 from mpcontribs_api.domains.limits.router import router as limits_router
 from mpcontribs_api.domains.projects.router import router as projects_router
@@ -15,3 +16,11 @@ router.include_router(limits_router, prefix="/limits", tags=["limits"])
 router.include_router(projects_router, prefix="/projects", tags=["projects"])
 router.include_router(structures_router, prefix="/structures", tags=["structures"])
 router.include_router(tables_router, prefix="/tables", tags=["tables"])
+# Admin-only override management. Hidden from the OpenAPI schema (include_in_schema=False) but
+# still routable; every route additionally enforces require_admin.
+router.include_router(
+    consumers_router,
+    prefix="/admin/consumers",
+    tags=["admin"],
+    include_in_schema=False,
+)

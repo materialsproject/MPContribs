@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
@@ -22,6 +20,18 @@ def _validate_unique_column(value: str | None) -> str | None:
     if not value.strip() or any(not segment for segment in value.split(".")):
         raise ValidationError("unique_column must be a non-empty dotted path (no blank segments).", value=value)
     return value
+
+
+def validate_column_limit(columns: Any, max_columns: int) -> None:
+    """Reject a *write* carrying more columns than ``max_columns`` allows.
+
+    Allows legacy docs that exceed cap to be returned without raising an error.
+    """
+    if isinstance(columns, list) and len(columns) > max_columns:
+        raise ValidationError(
+            f"columns cannot have more than {max_columns} entries",
+            column_length=len(columns),
+        )
 
 
 class Column(BaseModel):
@@ -161,8 +171,6 @@ class ProjectFilter(BaseFilter):
 # Keeping for business logic separation. May have specific implementation later
 class ProjectIn(Project):
     """Representation of user-supplied input."""
-
-    pass
 
 
 class ProjectPatch(BaseModel):

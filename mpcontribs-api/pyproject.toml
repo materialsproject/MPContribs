@@ -13,6 +13,13 @@ include-package-data = true
 where = ["src"]
 include = ["mpcontribs_api*"]
 
+[tool.commitizen]
+name = "cz_conventional_commits"
+tag_format = "v$version"
+version_scheme = "pep440"
+version_provider = "uv"
+update_changelog_on_bump = true
+
 [project]
 name = "mpcontribs-api"
 dynamic = ["version"]
@@ -62,6 +69,7 @@ dev = [
     "basedpyright>=1.29.0",
     "pydocstringformatter>=0.7.0",
     "pytest>=9.0.3",
+    "pytest-cov>=7.1.0",
     "pytest-xdist>=3.8.0",
     "httpx2>=0.28.0",
     "pytest-asyncio>=1.4.0",
