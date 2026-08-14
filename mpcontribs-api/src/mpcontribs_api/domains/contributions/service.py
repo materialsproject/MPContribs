@@ -503,33 +503,24 @@ class ContributionService:
             await self._contributions.insert_many_contributions(docs)
             return [(item.index, doc) for item, doc in zip(items, docs, strict=True)], []
         except BulkWriteError as exc:
-            return self._partition_bulk_write_error(items, docs, exc)
-
-    @staticmethod
-    def _partition_bulk_write_error(
-        items: list[PreparedWrite],
-        docs: list[Contribution],
-        exc: BulkWriteError,
-    ) -> tuple[list[tuple[int, Contribution]], list[BulkFailure]]:
-        """Map pymongo's per-position writeErrors back to the caller's original input indices."""
-        write_errors = exc.details.get("writeErrors", []) if exc.details else []
-        failed_positions = {err.get("index"): err for err in write_errors}
-        succeeded: list[tuple[int, Contribution]] = []
-        failed: list[BulkFailure] = []
-        for position, (item, doc) in enumerate(zip(items, docs, strict=True)):
-            err = failed_positions.get(position)
-            if err is None:
-                succeeded.append((item.index, doc))
-            else:
-                failed.append(
-                    BulkFailure(
-                        index=item.index,
-                        identifier=item.contribution.identity_dict(item.unique_value, item.condition_key),
-                        error_code="conflict" if err.get("code") == 11000 else "write_error",
-                        message=err.get("errmsg", "write failed"),
+            write_errors = exc.details.get("writeErrors", []) if exc.details else []
+            failed_positions = {err.get("index"): err for err in write_errors}
+            succeeded: list[tuple[int, Contribution]] = []
+            failed: list[BulkFailure] = []
+            for position, (item, doc) in enumerate(zip(items, docs, strict=True)):
+                err = failed_positions.get(position)
+                if err is None:
+                    succeeded.append((item.index, doc))
+                else:
+                    failed.append(
+                        BulkFailure(
+                            index=item.index,
+                            identifier=item.contribution.identity_dict(item.unique_value, item.condition_key),
+                            error_code="conflict" if err.get("code") == 11000 else "write_error",
+                            message=err.get("errmsg", "write failed"),
+                        )
                     )
-                )
-        return succeeded, failed
+            return succeeded, failed
 
     async def _insert_with_components(
         self,
