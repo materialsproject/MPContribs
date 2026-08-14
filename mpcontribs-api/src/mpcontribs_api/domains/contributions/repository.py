@@ -257,7 +257,7 @@ class MongoDbContributionRepository(
         fresh Contribution document is written with ``is_public=False``.
 
         Args:
-            identifiers: the identity dict ContributionIn.identifiers(unique_value) returns
+            identifiers: the identity dict ContributionIn.identity_dict(unique_value) returns
             contribution: the input payload to upsert
 
         Returns:

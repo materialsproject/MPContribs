@@ -168,7 +168,7 @@ class ContributionService:
                 unauthorized.append(
                     BulkFailure(
                         index=i,
-                        identifier=contrib.identifiers(),
+                        identifier=contrib.identity_dict(),
                         error_code=PermissionError.error_code,
                         message=f"not authorized to write to project '{contrib.project}'",
                     )
@@ -224,7 +224,7 @@ class ContributionService:
                 failures.append(
                     BulkFailure(
                         index=i,
-                        identifier=contrib.identifiers(),
+                        identifier=contrib.identity_dict(),
                         error_code=ValidationError.error_code,
                         message=f"project '{contrib.project}' not found or not accessible",
                     )
@@ -232,7 +232,7 @@ class ContributionService:
                 logger.info(
                     "project not found or not accessible",
                     project=contrib.project,
-                    identifiers=contrib.identifiers(),
+                    identifiers=contrib.identity_dict(),
                 )
                 continue
 
@@ -245,7 +245,7 @@ class ContributionService:
                     failures.append(
                         BulkFailure(
                             index=i,
-                            identifier=contrib.identifiers(),
+                            identifier=contrib.identity_dict(),
                             error_code=ValidationError.error_code,
                             message=err.message,
                         )
@@ -253,7 +253,7 @@ class ContributionService:
                     logger.info(
                         "missing or non-scalar unique_column value",
                         project=contrib.project,
-                        identifiers=contrib.identifiers(),
+                        identifiers=contrib.identity_dict(),
                     )
                     continue
 
@@ -275,7 +275,7 @@ class ContributionService:
                 failures.append(
                     BulkFailure(
                         index=i,
-                        identifier=contrib.identifiers(unique_value),
+                        identifier=contrib.identity_dict(unique_value),
                         error_code=ConflictError.error_code,
                         message=f"a contribution with this identity already exists for project '{contrib.project}'",
                     )
@@ -283,7 +283,7 @@ class ContributionService:
                 logger.info(
                     "duplicate contribution identity",
                     project=contrib.project,
-                    identifiers=contrib.identifiers(unique_value),
+                    identifiers=contrib.identity_dict(unique_value),
                 )
                 continue
             seen.add(key)
@@ -312,7 +312,7 @@ class ContributionService:
                 oversize.append(
                     BulkFailure(
                         index=i,
-                        identifier=contrib.identifiers(),
+                        identifier=contrib.identity_dict(),
                         error_code=ValidationError.error_code,
                         message=f"contribution has {count} components, exceeds cap of {cap}. "
                         "Recommend inserting the component alone, followed by bulk inserts of components",
@@ -364,7 +364,7 @@ class ContributionService:
                 max_allowed=cap,
             )
             failures.extend(
-                bulk_failure_from_exception(item.index, item.contribution.identifiers(), exc) for item in rejected
+                bulk_failure_from_exception(item.index, item.contribution.identity_dict(), exc) for item in rejected
             )
         survivors.sort(key=lambda item: item.index)
         return failures, survivors
@@ -468,7 +468,7 @@ class ContributionService:
                 failed.append(
                     BulkFailure(
                         index=item.index,
-                        identifier=item.contribution.identifiers(item.unique_value, item.condition_key),
+                        identifier=item.contribution.identity_dict(item.unique_value, item.condition_key),
                         error_code="conflict" if err.get("code") == 11000 else "write_error",
                         message=err.get("errmsg", "write failed"),
                     )
@@ -515,17 +515,17 @@ class ContributionService:
                 return await session.with_transaction(_txn)
         except AppError as exc:
             return bulk_failure_from_exception(
-                item.index, contrib.identifiers(item.unique_value, item.condition_key), exc
+                item.index, contrib.identity_dict(item.unique_value, item.condition_key), exc
             )
         except Exception as exc:
             logger.error(
                 "insert_contribution_failed",
                 index=item.index,
-                identifier=contrib.identifiers(item.unique_value, item.condition_key),
+                identifier=contrib.identity_dict(item.unique_value, item.condition_key),
                 exc_info=True,
             )
             return bulk_failure_from_exception(
-                item.index, contrib.identifiers(item.unique_value, item.condition_key), exc
+                item.index, contrib.identity_dict(item.unique_value, item.condition_key), exc
             )
 
     async def _do_insert(
@@ -557,7 +557,7 @@ class ContributionService:
         services. If any contribution in the batch carries components, the entire request is
         rejected before any database writes occur.
 
-        Each item is upserted atomically by ``ContributionIn.identifiers()`` via a single
+        Each item is upserted atomically by ``ContributionIn.identity_dict()`` via a single
         ``findOneAndUpdate(..., upsert=True)`` so two requests targeting the same key cannot
         race past the find branch — the unique index over those fields is the tiebreaker.
         Concurrent upserts within a batch are bounded by ``settings.mongo.max_concurrent_transactions``.
@@ -589,7 +589,7 @@ class ContributionService:
 
         async def _bounded_upsert(item: ResolvedWrite) -> Contribution | BulkFailure:
             contrib = item.contribution
-            identifiers = contrib.identifiers(item.unique_value, item.condition_key)
+            identifiers = contrib.identity_dict(item.unique_value, item.condition_key)
             async with sem:
                 try:
                     return await self._contributions.upsert_contribution_by_identifiers(identifiers, contrib)

@@ -270,7 +270,7 @@ class ContributionIn(ContributionBase):
             condition_key=condition_key,
         )
 
-    def identifiers(self, unique_value: Scalar | None = None, condition_key: str = "") -> dict[str, Any]:
+    def identity_dict(self, unique_value: Scalar | None = None, condition_key: str = "") -> dict[str, Any]:
         """Returns the identity fields of a contribution (outside of id) for reporting and upsert."""
         return self.identity(unique_value, condition_key).as_dict()
 
