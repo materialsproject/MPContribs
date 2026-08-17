@@ -141,11 +141,7 @@ class ContributionBase(BaseModel):
 class Contribution(ContributionBase, BaseDocumentWithInput[PydanticObjectId]):
     """Models what is actually stored in the database."""
 
-    # Strict validation applies to what is stored: pivot has already coerced input keys to clean
-    # snake_case by the time a Contribution is built, so the stored path validates every key as a plain
-    # key at every level rather than parsing the annotated-key grammar raw ContributionIn input carries.
-    # ContributionStoredData shares data.py's depth + key core with the input/patch aliases, so the
-    # stored and input paths cannot drift on depth or key rules (see validate_stored_contribution_data).
+    # Strict validation over stored data rather than coercsion
     data: ContributionStoredData
 
     # Server owner - uses Project.unique_column to extract the value from Contribution.data
@@ -158,9 +154,6 @@ class Contribution(ContributionBase, BaseDocumentWithInput[PydanticObjectId]):
 
     @classmethod
     def from_input_model(cls, data: ContributionIn) -> Contribution:
-        # Server-owned fields are not taken from input: the id is minted here (never accepted from the
-        # body), is_public starts False, components are inserted separately, last_modified is stamped
-        # by the before_event hook, and unique_value is resolved/stamped by the service.
         return cls.model_validate(
             {
                 **data.model_dump(exclude={"is_public", "structures", "tables", "attachments", "last_modified"}),
