@@ -375,6 +375,11 @@ class Identity(ABC):  # noqa: B024  # base kept abstract as a marker; from_docum
         return {f.name: getattr(self, f.name) for f in fields(self)}
 
     @classmethod
+    def model_fields(cls) -> frozenset[str]:
+        """Returns the field names as a frozenset"""
+        return frozenset(f.name for f in fields(cls))
+
+    @classmethod
     def from_document(cls, doc: Mapping[str, Any]) -> Self:
         """Build from a raw Mongo document/projection, tolerating null-stripped fields.
 
