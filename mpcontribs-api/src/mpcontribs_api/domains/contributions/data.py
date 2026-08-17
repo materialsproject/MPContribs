@@ -1,10 +1,12 @@
 from dataclasses import dataclass, field
+from functools import partial
 from typing import Annotated, Any
 
 from pydantic import BeforeValidator
 
 from mpcontribs_api.config import get_settings
 from mpcontribs_api.domains._shared.types import to_snake_case
+from mpcontribs_api.domains._shared.units import QuantityLeaf
 from mpcontribs_api.exceptions import DataKeyError, ValidationError
 
 settings = get_settings()
@@ -76,23 +78,6 @@ def parse_annotated_key(key: str) -> ParsedKey:
     return ParsedKey(path=path, unit=unit, conditions=conditions)
 
 
-# Users cannot use these values in their Contributions.data key names - reserved for describing numeric values
-RESERVED_LEAF_KEYS = frozenset(
-    {"value", "unit", "input_value", "input_unit", "error", "input_error", "precision", "display"}
-)
-
-
-def is_quantity_leaf(node: Any) -> bool:
-    """True when ``node`` is a stored quantity leaf (numeric ``value`` + only reserved keys."""
-    if not isinstance(node, dict):
-        return False
-    value = node.get("value")
-    if not isinstance(value, (int, float)) or isinstance(value, bool):
-        return False
-    # node.keys is a subset of RESERVED_LEAF_KEYS
-    return node.keys() <= RESERVED_LEAF_KEYS
-
-
 def _coerce_key(key: Any) -> str:
     """Coerce one dict key to ``snake_case``, rejecting non-ASCII or empty-after-coercion keys."""
     if not isinstance(key, str) or not key.isascii():
@@ -130,7 +115,7 @@ def coerce_keys(value: Any) -> Any:
 
 def _get_dict_depth(x: Any) -> int:
     # If x is a leaf (value + metadata) dict it counts as a single level of nesting (treat it as scalar)
-    if is_quantity_leaf(x):
+    if QuantityLeaf.is_leaf(x):
         return 0
     if isinstance(x, dict):
         return 1 + max((_get_dict_depth(v) for v in x.values()), default=0)
@@ -164,39 +149,46 @@ def _validate_plain_key(key: Any) -> None:
     coerced = to_snake_case(key)
     if not coerced:
         raise ValidationError(f"data key '{key}' reduces to an empty string after snake_case coercion")
-    if coerced in RESERVED_LEAF_KEYS:
+    if coerced in QuantityLeaf.reserved_keys():
         raise ValidationError(
             f"data key '{key}' is reserved for annotated-value leaves and may not be used",
             key=key,
-            reserved=sorted(RESERVED_LEAF_KEYS),
+            reserved=sorted(QuantityLeaf.reserved_keys()),
         )
 
 
-def _validate_nested_keys(value: Any) -> None:
+def _validate_nested_keys(value: Any, *, allow_leaf_fragments: bool = False) -> None:
     if isinstance(value, dict):
-        _validate_keys(value)
+        _validate_keys(value, allow_leaf_fragments=allow_leaf_fragments)
     elif isinstance(value, list):
         for item in value:
-            _validate_nested_keys(item)
+            _validate_nested_keys(item, allow_leaf_fragments=allow_leaf_fragments)
 
 
-def _validate_keys(data: dict[str, Any] | None) -> dict[str, Any] | None:
-    """Strict plain-key validation for a single dict level (used for nested levels)."""
+def _validate_keys(data: dict[str, Any] | None, *, allow_leaf_fragments: bool = False) -> dict[str, Any] | None:
+    """Strict plain-key validation for a single dict level (used for nested levels).
+
+    With ``allow_leaf_fragments`` (the patch/merge path), a dict whose keys are all reserved leaf
+    keys is accepted as a terminal fragment addressing fields *inside* a stored quantity leaf (e.g.
+    ``{'unit': 'kg'}``); the strict insert path leaves this off and rejects reserved keys as plain keys.
+    """
     if data is None:
         return None
     # A server-built quantity leaf legitimately uses the reserved key names; do not descend into it
     # (re-validation after normalization/expansion would otherwise reject its own keys).
-    if is_quantity_leaf(data):
+    if QuantityLeaf.is_leaf(data):
+        return data
+    if allow_leaf_fragments and QuantityLeaf.is_fragment(data):
         return data
     for key in data:
         _validate_plain_key(key)
     # Recurse into nested dicts, including dicts nested inside lists.
     for v in data.values():
-        _validate_nested_keys(v)
+        _validate_nested_keys(v, allow_leaf_fragments=allow_leaf_fragments)
     return data
 
 
-def _validate_data_keys(data: dict[str, Any] | None) -> dict[str, Any] | None:
+def _validate_data_keys(data: dict[str, Any] | None, *, allow_leaf_fragments: bool = False) -> dict[str, Any] | None:
     """Top-level ``data`` key validation, allowing the annotated pattern.
 
     Each top-level key may be either a plain key or the annotated form
@@ -204,6 +196,9 @@ def _validate_data_keys(data: dict[str, Any] | None) -> dict[str, Any] | None:
     held to the same plain-key rules (units are unconstrained); nested levels stay strictly plain.
     Expansion (see :mod:`mpcontribs_api.domains.contributions.pivot`) later rewrites annotated keys
     into plain ones, so stored keys always satisfy :func:`_validate_keys`.
+
+    ``allow_leaf_fragments`` is threaded to nested levels only (the patch/merge path); top-level keys
+    stay strict, since a reserved key at the root addresses no leaf.
     """
     if data is None:
         return None
@@ -224,18 +219,29 @@ def _validate_data_keys(data: dict[str, Any] | None) -> dict[str, Any] | None:
         for condition_name in parsed.conditions:
             _validate_plain_key(condition_name)
     for v in data.values():
-        _validate_nested_keys(v)
+        _validate_nested_keys(v, allow_leaf_fragments=allow_leaf_fragments)
     return data
 
 
-def validate_contribution_data(data: dict[str, Any] | None) -> dict[str, Any] | None:
-    """Run the full write-path ``data`` validation (depth + annotated/plain keys)."""
+def validate_contribution_data(
+    data: dict[str, Any] | None, *, allow_leaf_fragments: bool = False
+) -> dict[str, Any] | None:
+    """Run the write-path ``data`` validation (depth + annotated/plain keys).
+
+    ``allow_leaf_fragments`` (the merge-patch path) additionally accepts a nested dict of only reserved
+    leaf keys as a terminal fragment addressing a field inside a stored quantity leaf (e.g. ``{'bandgap':
+    {'unit': 'kg'}}``). The strict insert path rejects reserved keys as plain keys; a whole-dict
+    overwrite (``replace_data=True``) re-runs this strictly, since the payload becomes a full document.
+    """
     _validate_data_depth(data)
-    _validate_data_keys(data)
+    _validate_data_keys(data, allow_leaf_fragments=allow_leaf_fragments)
     return data
 
 
-ContributionData = Annotated[
+# Two field types over the same validator: inserts/whole-document writes are strict; a merge patch
+# additionally permits leaf fragments (see ``allow_leaf_fragments`` above).
+ContributionData = Annotated[dict[str, Any] | None, BeforeValidator(validate_contribution_data)]
+ContributionPatchData = Annotated[
     dict[str, Any] | None,
-    BeforeValidator(validate_contribution_data),
+    BeforeValidator(partial(validate_contribution_data, allow_leaf_fragments=True)),
 ]

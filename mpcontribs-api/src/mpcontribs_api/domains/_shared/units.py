@@ -1,6 +1,6 @@
 import math
 import re
-from typing import Any, ClassVar, Self
+from typing import Any, ClassVar, Self, cast
 
 import pint
 from pydantic import BaseModel
@@ -318,6 +318,71 @@ class QuantityLeaf(BaseModel):
         if display is not None:
             leaf["display"] = display
         return leaf
+
+    @classmethod
+    def patches_leaf(cls, target: Any, value: Any) -> bool:
+        """Whether ``value`` patches the stored quantity leaf ``target`` (vs. descending a group).
+
+        True when ``target`` is a quantity leaf and ``value`` is either a bare scalar (updates the
+        magnitude) or a leaf fragment / whole leaf (updates named leaf fields). A plain group value
+        falls through to normal descent, even onto a leaf (a deliberate mixed-shape edge).
+        """
+        return cls.is_leaf(target) and (not isinstance(value, dict) or cls.is_fragment(value))
+
+    @classmethod
+    def _leaf_overrides(cls, value: Any) -> dict[str, Any]:
+        """The submitted-field overrides a patch ``value`` applies to a stored leaf.
+
+        A bare scalar means "new magnitude" (``{'value': scalar}``); a fragment/leaf dict is used as-is.
+        """
+        return value if isinstance(value, dict) else {"value": value}
+
+    @classmethod
+    def flatten_merge_paths(cls, existing: Any, patch: dict[str, Any], prefix: str = "") -> dict[str, Any]:
+        """Dotted ``$set`` paths that additively merge ``patch`` into the stored ``existing`` value.
+
+        Resolves each patch entry against the *stored* shape so only named leaves are written and every
+        unmentioned sibling survives (the additive default). Per key:
+
+        - a patch onto a stored quantity leaf (a bare scalar, or a fragment like ``{'unit': 'kg'}``) sets
+          the *whole* re-derived leaf (see :meth:`patch_leaf`), so its canonical and ``input_*`` halves
+          stay in sync — a sub-path ``$set`` couldn't re-convert the siblings;
+        - any other nested dict is descended (so a plain group sets only the named leaves, keeping siblings);
+        - any other scalar/list sets its path directly.
+
+        An empty dict contributes nothing — merge never clears a subtree.
+        """
+        paths: dict[str, Any] = {}
+        existing_dict = existing if isinstance(existing, dict) else None
+        for key, value in patch.items():
+            path = f"{prefix}{key}"
+            target = existing_dict.get(key) if existing_dict is not None else None
+            if cls.patches_leaf(target, value):
+                paths[path] = cls.patch_leaf(cast(dict[str, Any], target), cls._leaf_overrides(value))
+            elif isinstance(value, dict):
+                paths.update(cls.flatten_merge_paths(target, value, prefix=f"{path}."))
+            else:
+                paths[path] = value
+        return paths
+
+    @classmethod
+    def merge_data(cls, existing: Any, patch: dict[str, Any]) -> dict[str, Any]:
+        """The post-merge view of ``existing`` after applying ``patch``, matching :meth:`flatten_merge_paths`.
+
+        Used to resolve identity (``unique_value``) against the same state the dotted ``$set`` will leave
+        behind, without re-reading after the write. Follows the identical per-key rule: re-derive a stored
+        quantity leaf that the patch touches, else descend nested dicts, else replace the key.
+        """
+        merged = dict(existing) if isinstance(existing, dict) else {}
+        for key, value in patch.items():
+            target = merged.get(key)
+            if cls.patches_leaf(target, value):
+                merged[key] = cls.patch_leaf(cast(dict[str, Any], target), cls._leaf_overrides(value))
+            elif isinstance(value, dict):
+                merged[key] = cls.merge_data(target, value)
+            else:
+                merged[key] = value
+        return merged
 
     @classmethod
     def try_from_value(cls, value: Any, key_unit: str | None) -> Self | None:
