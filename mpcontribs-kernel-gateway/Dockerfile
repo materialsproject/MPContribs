@@ -1,4 +1,4 @@
-FROM materialsproject/devops:python-3.1113.18 AS base
+FROM materialsproject/devops:python-3.1213.2 AS base
 RUN apt-get update && apt-get install -y --no-install-recommends libopenblas-dev libpq-dev curl && apt-get clean
 
 FROM base AS python-deps
@@ -14,7 +14,7 @@ RUN wget -q https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-
   chmod +x wait-for-it.sh && mv wait-for-it.sh /root/.local/bin/
 
 FROM base
-COPY --from=python-deps /root/.local/lib/python3.11/site-packages /root/.local/lib/python3.11/site-packages
+COPY --from=python-deps /root/.local/lib/python3.12/site-packages /root/.local/lib/python3.12/site-packages
 COPY --from=python-deps /root/.local/bin /root/.local/bin
 
 WORKDIR /app
