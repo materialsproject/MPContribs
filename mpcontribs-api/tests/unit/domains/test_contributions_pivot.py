@@ -1,12 +1,16 @@
 import math
+from functools import partial
 
 import pytest
 
-from mpcontribs_api.domains._shared.types import to_snake_case
+from mpcontribs_api.domains._shared.types import coerce_key, map_keys, to_snake_case
 from mpcontribs_api.domains.contributions.data import (
-    coerce_keys,
     parse_annotated_key,
 )
+
+# The recursive snake_case key walk formerly exposed as ``data.coerce_keys`` — now the shared
+# ``map_keys`` driven by ``coerce_key`` with the strict (ASCII-checking) key guard.
+_coerce_keys = partial(map_keys, coerce=partial(coerce_key, require_ascii=True))
 from mpcontribs_api.domains.contributions.models import ContributionIn
 from mpcontribs_api.domains.contributions.pivot import expand_contribution
 from mpcontribs_api.exceptions import DataKeyError, ValidationError
@@ -24,7 +28,7 @@ def _contrib_in(data, **overrides) -> ContributionIn:
 
 
 # ---------------------------------------------------------------------------
-# to_snake_case / coerce_keys
+# to_snake_case / map_keys + coerce_key
 # ---------------------------------------------------------------------------
 
 
@@ -51,26 +55,26 @@ class TestToSnakeCase:
         assert to_snake_case("***") == ""
 
 
-class TestCoerceKeys:
+class TestMapKeys:
     def test_recurses_dicts_and_lists(self):
-        out = coerce_keys({"Band Gap": {"pH-Value": 1}, "List": [{"Inner Key": 2}]})
+        out = _coerce_keys({"Band Gap": {"pH-Value": 1}, "List": [{"Inner Key": 2}]})
         assert out == {"band_gap": {"ph_value": 1}, "list": [{"inner_key": 2}]}
 
     def test_leaves_values_untouched(self):
         # only keys are coerced; string/number values pass through verbatim
-        assert coerce_keys({"Key": "Value.With/Punct"}) == {"key": "Value.With/Punct"}
+        assert _coerce_keys({"Key": "Value.With/Punct"}) == {"key": "Value.With/Punct"}
 
     def test_collision_raises(self):
         with pytest.raises(ValidationError, match="collide after snake_case coercion"):
-            coerce_keys({"Band Gap": 1, "band_gap": 2})
+            _coerce_keys({"Band Gap": 1, "band_gap": 2})
 
     def test_non_ascii_key_raises(self):
         with pytest.raises(ValidationError, match="Non-ASCII"):
-            coerce_keys({"ΔE": 1})
+            _coerce_keys({"ΔE": 1})
 
     def test_empty_after_coercion_raises(self):
         with pytest.raises(ValidationError, match="reduces to an empty string"):
-            coerce_keys({"***": 1})
+            _coerce_keys({"***": 1})
 
 
 # ---------------------------------------------------------------------------

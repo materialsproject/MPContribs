@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
-from mpcontribs_api.domains._shared.types import to_snake_case
+from mpcontribs_api.domains._shared.paths import set_nested
+from mpcontribs_api.domains._shared.types import coerce_key, map_keys
 from mpcontribs_api.domains._shared.units import QuantityLeaf, UnitError, parse_condition_value
 from mpcontribs_api.domains.contributions.data import (
     ParsedKey,
@@ -39,25 +40,22 @@ class ExpandedContribution:
     condition_key: str
 
 
-def _set_nested(target: dict[str, Any], segments: tuple[str, ...], value: Any) -> None:
-    """Write ``value`` at the dotted ``segments`` path inside ``target``.
+def _try_coerce_leaf(value: Any, key_unit: str | None = None) -> Any:
+    """Promote a scalar to a quantity leaf, or keep it verbatim when categorical.
+
+    The scalar half of the write-path "every numeric becomes a leaf" rule: a numeric (optionally
+    unit-carrying) value becomes a quantity-leaf dict via :meth:`QuantityLeaf.try_from_value`; a
+    categorical string or bool is kept as-is. ``key_unit`` (from a top-level annotated key) annotates
+    only a scalar value.
 
     Raises:
-        ValidationError: if a segment collides with an existing leaf, or two source columns resolve
-            to the same path (e.g. the same name+conditions with different units).
+        ValidationError: on a value whose unit cannot be parsed/reconciled.
     """
-    cursor = target
-    for seg in segments[:-1]:
-        existing = cursor.get(seg)
-        if existing is None:
-            existing = cursor[seg] = {}
-        elif not isinstance(existing, dict):
-            raise ValidationError(f"conflicting data paths: '{seg}' is both a value and a parent")
-        cursor = existing
-    leaf = segments[-1]
-    if leaf in cursor:
-        raise ValidationError(f"conflicting data columns resolve to the same path '{'.'.join(segments)}'")
-    cursor[leaf] = value
+    try:
+        leaf = QuantityLeaf.try_from_value(value, key_unit)
+    except UnitError as err:
+        raise ValidationError(f"could not parse value {value!r}: {err}") from err
+    return leaf.as_dict() if leaf is not None else value
 
 
 def normalize_node(value: Any, key_unit: str | None = None) -> Any:
@@ -70,33 +68,20 @@ def normalize_node(value: Any, key_unit: str | None = None) -> Any:
     - **list**: elements recurse, but scalar elements are left verbatim (a list is array data, not a
       column of measurements — mirrors :func:`mpcontribs_api.domains.contributions.stats.iter_leaves`,
       which never treats list scalars as columns).
-    - **scalar**: promoted to a quantity leaf via :meth:`QuantityLeaf.try_from_value` when it parses
-      as a number (optionally carrying a unit); otherwise kept verbatim (categorical string, bool).
+    - **scalar**: promoted to a quantity leaf via :func:`_try_coerce_leaf` when it parses as a number
+      (optionally carrying a unit); otherwise kept verbatim (categorical string, bool).
 
     ``key_unit`` (from a top-level annotated key) is applied only to a scalar value; when it labels a
-    dict/list value it has no scalar to annotate and is ignored.
+    dict/list value it has no scalar to annotate and is ignored (the recursive walk annotates no
+    nested scalar with a unit).
 
     Raises:
         ValidationError: on a key that empties after coercion, a sibling-key collision, or a value
             whose unit cannot be parsed/reconciled.
     """
-    if isinstance(value, dict):
-        out: dict[str, Any] = {}
-        for key, sub in value.items():
-            coerced = to_snake_case(key)
-            if not coerced:
-                raise ValidationError(f"data key '{key}' reduces to an empty string after snake_case coercion")
-            if coerced in out:
-                raise ValidationError(f"data keys collide after snake_case coercion: '{coerced}'")
-            out[coerced] = normalize_node(sub)
-        return out
-    if isinstance(value, list):
-        return [normalize_node(item) for item in value]
-    try:
-        leaf = QuantityLeaf.try_from_value(value, key_unit)
-    except UnitError as err:
-        raise ValidationError(f"could not parse value {value!r}: {err}") from err
-    return leaf.as_dict() if leaf is not None else value
+    if isinstance(value, (dict, list)):
+        return map_keys(value, coerce=coerce_key, on_scalar=_try_coerce_leaf)
+    return _try_coerce_leaf(value, key_unit)
 
 
 def expand_data(data: dict[str, Any]) -> list[ExpandedData]:
@@ -136,9 +121,7 @@ def expand_data(data: dict[str, Any]) -> list[ExpandedData]:
         # any other key (values and the unit are left verbatim).
         parsed_conditions: dict[str, Any] = {}
         for name, val in pk.conditions.items():
-            cname = to_snake_case(name)
-            if not cname:
-                raise ValidationError(f"condition name '{name}' reduces to empty after snake_case coercion")
+            cname = coerce_key(name)
             if cname in parsed_conditions:
                 raise ValidationError(f"condition names collide after snake_case coercion: '{cname}'")
             parsed_conditions[cname] = parse_condition_value(val)
@@ -147,15 +130,9 @@ def expand_data(data: dict[str, Any]) -> list[ExpandedData]:
         # First signature seen for this canonical key wins the stored condition columns.
         group_conditions.setdefault(ckey, parsed_conditions)
 
-    def _coerce_segments(pk: ParsedKey) -> tuple[str, ...]:
-        segments = tuple(to_snake_case(seg) for seg in pk.segments)
-        if any(not seg for seg in segments):
-            raise ValidationError(f"data key '{pk.path}' has a path segment that is empty after snake_case coercion")
-        return segments
-
     def _annotate_column(row_data: dict[str, Any], raw_key: str, pk: ParsedKey) -> None:
         leaf = normalize_node(data[raw_key], pk.unit if pk.is_annotated else None)
-        _set_nested(row_data, _coerce_segments(pk), leaf)
+        set_nested(row_data, tuple(coerce_key(seg) for seg in pk.segments), leaf)
 
     def _finalize(row_data: dict[str, Any], ckey: str) -> ExpandedData:
         # model_copy (in expand_contribution) and the patch path both skip Pydantic validators, so
@@ -174,9 +151,9 @@ def expand_data(data: dict[str, Any]) -> list[ExpandedData]:
     for ckey, members in groups.items():
         row_data = {}
         # Conditions become ordinary columns first, so a measurement colliding with a condition name
-        # is caught by _set_nested.
+        # is caught by set_nested.
         for name, leaf in group_conditions[ckey].items():
-            _set_nested(row_data, (name,), leaf)
+            set_nested(row_data, (name,), leaf)
         for raw_key, pk in members:
             _annotate_column(row_data, raw_key, pk)
         for raw_key, pk in broadcast:

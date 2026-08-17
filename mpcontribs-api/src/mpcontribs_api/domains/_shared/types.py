@@ -1,7 +1,7 @@
 import re
 import unicodedata
 from abc import ABC
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import MISSING, dataclass, fields
 from enum import StrEnum
 from functools import cache
@@ -13,7 +13,7 @@ from pydantic import BeforeValidator, Field, PlainSerializer, WithJsonSchema
 from pymatgen.core import Element
 from pymongo import ASCENDING, IndexModel
 
-from mpcontribs_api.exceptions import ValidationError
+from mpcontribs_api.exceptions import DataKeyError, ValidationError
 
 ShortStr = Annotated[str, Field(min_length=3, max_length=30)]
 
@@ -349,6 +349,58 @@ NFKCStr = Annotated[str, BeforeValidator(func=nfkc_normalize)]
 
 # Converts strs to pretty display form (keeps unicode and most formatting)
 DisplayStr = Annotated[str, BeforeValidator(func=nfc_normalize)]
+
+
+def coerce_key(key: Any, *, require_ascii: bool = False, reserved: frozenset[str] | None = None) -> str:
+    """Coerce one dict key to canonical ``snake_case``, enforcing the shared write-path key guards.
+
+    Always rejects a key that reduces to an empty string after coercion. The extra guards are opt-in
+    per call site, since not every caller wants them (e.g. the post-validation write path skips the
+    ASCII check because keys were already validated):
+
+    - ``require_ascii``: reject a non-``str`` or non-ASCII key before coercion.
+    - ``reserved``: reject a coerced key that lands in the reserved-leaf-key set.
+
+    Raises:
+        DataKeyError: on a non-ASCII (when required), empty-after-coercion, or reserved key. It is a
+            :class:`ValidationError` subclass, so callers catching either still see it.
+    """
+    if require_ascii and (not isinstance(key, str) or not key.isascii()):
+        raise DataKeyError("Non-ASCII key found in Contribution.data. All dict keys must be only ASCII")
+    coerced = to_snake_case(key)
+    if not coerced:
+        raise DataKeyError(f"data key '{key}' reduces to an empty string after snake_case coercion")
+    if reserved is not None and coerced in reserved:
+        raise DataKeyError(
+            f"data key '{key}' is reserved for annotated-value leaves and may not be used",
+            key=key,
+            reserved=sorted(reserved),
+        )
+    return coerced
+
+
+def map_keys(value: Any, *, coerce: Callable[[Any], str], on_scalar: Callable[[Any], Any] = lambda x: x) -> Any:
+    """Recursively rebuild ``value`` with every dict key coerced via ``coerce``.
+
+     Dicts have each key coerced (sibling collisions on the coerced name rejected) and their values
+     recursed; lists recurse element-wise; every scalar is passed through ``on_scalar`` (identity by
+    default). This is the shared walk behind the write-path key coercion.
+
+     Raises:
+         DataKeyError: if two sibling keys collide on the same coerced name (``coerce`` may raise its
+             own errors per key).
+    """
+    if isinstance(value, dict):
+        out: dict[str, Any] = {}
+        for key, sub in value.items():
+            coerced = coerce(key)
+            if coerced in out:
+                raise DataKeyError("data keys collide after coercion", value=coerced)
+            out[coerced] = map_keys(sub, coerce=coerce, on_scalar=on_scalar)
+        return out
+    if isinstance(value, list):
+        return [map_keys(item, coerce=coerce, on_scalar=on_scalar) for item in value]
+    return on_scalar(value)
 
 
 @cache

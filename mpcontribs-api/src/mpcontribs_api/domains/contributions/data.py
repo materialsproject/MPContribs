@@ -5,7 +5,7 @@ from typing import Annotated, Any
 from pydantic import BeforeValidator
 
 from mpcontribs_api.config import get_settings
-from mpcontribs_api.domains._shared.types import to_snake_case
+from mpcontribs_api.domains._shared.types import coerce_key
 from mpcontribs_api.domains._shared.units import QuantityLeaf
 from mpcontribs_api.exceptions import DataKeyError, ValidationError
 
@@ -78,41 +78,6 @@ def parse_annotated_key(key: str) -> ParsedKey:
     return ParsedKey(path=path, unit=unit, conditions=conditions)
 
 
-def _coerce_key(key: Any) -> str:
-    """Coerce one dict key to ``snake_case``, rejecting non-ASCII or empty-after-coercion keys."""
-    if not isinstance(key, str) or not key.isascii():
-        raise DataKeyError("Non-ASCII key found in Contribution.data. All dict keys must be only ASCII")
-    coerced = to_snake_case(key)
-    if not coerced:
-        raise DataKeyError(f"data key '{key}' reduces to an empty string after snake_case coercion")
-    return coerced
-
-
-def coerce_keys(value: Any) -> Any:
-    """Recursively rebuild ``value`` with every dict key coerced to ``snake_case``.
-
-    Walks dicts (coercing keys) and lists (element-wise), leaving scalars untouched. Used for the
-    nested/plain portions of ``data``; the annotated leaves produced by
-    :func:`mpcontribs_api.domains._shared.units.annotate_value` are already canonical and are never
-    routed through here.
-
-    Raises:
-        ValidationError: if a key is non-ASCII, reduces to an empty string after coercion, or two
-            sibling keys collide on the same coerced name.
-    """
-    if isinstance(value, dict):
-        out: dict[str, Any] = {}
-        for key, sub in value.items():
-            coerced = _coerce_key(key)
-            if coerced in out:
-                raise DataKeyError(f"data keys collide after snake_case coercion: '{coerced}'")
-            out[coerced] = coerce_keys(sub)
-        return out
-    if isinstance(value, list):
-        return [coerce_keys(item) for item in value]
-    return value
-
-
 def _get_dict_depth(x: Any) -> int:
     # If x is a leaf (value + metadata) dict it counts as a single level of nesting (treat it as scalar)
     if QuantityLeaf.is_leaf(x):
@@ -142,19 +107,9 @@ def _validate_plain_key(key: Any) -> None:
     run to ``_``. This only rejects keys that cannot be coerced into a usable token: non-ASCII, empty,
     or ones that reduce to an empty string after coercion (e.g. ``"***"``).
     """
-    if not isinstance(key, str) or not key.isascii():
-        raise ValidationError("Non-ASCII key found in Contribution.data. All dict keys must be only ASCII")
     if key == "":
         raise ValidationError("Empty key found in Contribution.data. Keys must be non-empty.")
-    coerced = to_snake_case(key)
-    if not coerced:
-        raise ValidationError(f"data key '{key}' reduces to an empty string after snake_case coercion")
-    if coerced in QuantityLeaf.reserved_keys():
-        raise ValidationError(
-            f"data key '{key}' is reserved for annotated-value leaves and may not be used",
-            key=key,
-            reserved=sorted(QuantityLeaf.reserved_keys()),
-        )
+    coerce_key(key, require_ascii=True, reserved=QuantityLeaf.reserved_keys())
 
 
 def _validate_nested_keys(value: Any, *, allow_leaf_fragments: bool = False) -> None:
