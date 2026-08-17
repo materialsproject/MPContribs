@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from mpcontribs_api.domains._shared.types import to_snake_case
-from mpcontribs_api.domains._shared.units import AnnotatedData, UnitError, parse_condition_value
+from mpcontribs_api.domains._shared.units import QuantityLeaf, UnitError, parse_condition_value
 from mpcontribs_api.domains.contributions.data import (
     ParsedKey,
     parse_annotated_key,
@@ -70,7 +70,7 @@ def normalize_node(value: Any, key_unit: str | None = None) -> Any:
     - **list**: elements recurse, but scalar elements are left verbatim (a list is array data, not a
       column of measurements — mirrors :func:`mpcontribs_api.domains.contributions.stats.iter_leaves`,
       which never treats list scalars as columns).
-    - **scalar**: promoted to a quantity leaf via :meth:`AnnotatedData.try_from_value` when it parses
+    - **scalar**: promoted to a quantity leaf via :meth:`QuantityLeaf.try_from_value` when it parses
       as a number (optionally carrying a unit); otherwise kept verbatim (categorical string, bool).
 
     ``key_unit`` (from a top-level annotated key) is applied only to a scalar value; when it labels a
@@ -93,7 +93,7 @@ def normalize_node(value: Any, key_unit: str | None = None) -> Any:
     if isinstance(value, list):
         return [normalize_node(item) for item in value]
     try:
-        leaf = AnnotatedData.try_from_value(value, key_unit)
+        leaf = QuantityLeaf.try_from_value(value, key_unit)
     except UnitError as err:
         raise ValidationError(f"could not parse value {value!r}: {err}") from err
     return leaf.as_dict() if leaf is not None else value
@@ -142,7 +142,7 @@ def expand_data(data: dict[str, Any]) -> list[ExpandedData]:
             if cname in parsed_conditions:
                 raise ValidationError(f"condition names collide after snake_case coercion: '{cname}'")
             parsed_conditions[cname] = parse_condition_value(val)
-        ckey = AnnotatedData.condition_key(parsed_conditions)
+        ckey = QuantityLeaf.condition_key(parsed_conditions)
         groups.setdefault(ckey, []).append((raw_key, pk))
         # First signature seen for this canonical key wins the stored condition columns.
         group_conditions.setdefault(ckey, parsed_conditions)

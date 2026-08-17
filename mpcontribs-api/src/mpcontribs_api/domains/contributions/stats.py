@@ -2,7 +2,7 @@ from collections.abc import Iterator
 from dataclasses import dataclass, field
 from typing import Any
 
-from mpcontribs_api.domains.contributions.data import is_quantity_leaf
+from mpcontribs_api.domains._shared.units import QuantityLeaf
 
 # Sentinel unit for a column whose leaves are not numeric (see module docstring).
 NON_NUMERIC_UNIT = "NaN"
@@ -44,7 +44,7 @@ def iter_leaves(data: dict[str, Any], prefix: str = "") -> Iterator[tuple[str, f
     for key, node in data.items():
         path = f"{prefix}.{key}" if prefix else key
         if isinstance(node, dict):
-            if is_quantity_leaf(node):
+            if QuantityLeaf.is_leaf(node):
                 yield path, float(node["value"]), node.get("unit")
             else:
                 yield from iter_leaves(node, path)
