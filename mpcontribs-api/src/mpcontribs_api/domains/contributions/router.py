@@ -17,7 +17,6 @@ from mpcontribs_api.domains._shared.types import (
 from mpcontribs_api.domains.contributions.dependencies import ContributionDep, ContributionServiceDep
 from mpcontribs_api.domains.contributions.models import (
     Contribution,
-    ContributionBulkUpdate,
     ContributionFilter,
     ContributionIn,
     ContributionOut,
@@ -74,17 +73,21 @@ async def delete_contributions(
 
 
 @router.patch("", dependencies=[Depends(require_user)])
-async def bulk_update_contributions(
+async def patch_contributions(
     service: ContributionServiceDep,
-    body: ContributionBulkUpdate,
+    body: ContributionPatch,
     filter: ContributionFilter = FilterDepends(ContributionFilter),
+    replace_data: bool = False,
 ) -> BulkUpdateSummary:
     """Update every contribution matching ``filter`` that the caller may write.
 
-    The update is constrained to the caller's writable projects (admins are unconstrained), so a
-    filter that also matches public contributions in other projects leaves those untouched.
+    Allows updates within the user's scope. If Identity fields are modified, updates occur per-row,
+    and may result in failures reported in BulkUpdateSummary.failed
+
+    ``data`` deep-merges into each row's stored ``data`` by default
+    Pass ``?replace_data=true`` to overwrite the whole ``data`` dict instead.
     """
-    return await service.bulk_update(filter=filter, update=body)
+    return await service.bulk_update(filter=filter, update=body, replace_data=replace_data)
 
 
 # TODO: Might want to take contributions in from request body and run model_validate_json on it (much faster)
@@ -158,5 +161,15 @@ async def upsert_contribution_by_id(service: ContributionServiceDep, id: str, co
 
 
 @router.patch("/{id}", dependencies=[Depends(require_user)])
-async def patch_contribution_by_id(service: ContributionServiceDep, id: str, update: ContributionPatch):
-    return await service.patch_contribution_by_id(id=id, update=update)
+async def patch_contribution_by_id(
+    service: ContributionServiceDep,
+    id: str,
+    update: ContributionPatch,
+    replace_data: bool = False,
+):
+    """Patch one contribution by id.
+
+    ``data`` deep-merges into the stored ``data`` by default (unmentioned leaves survive); pass
+    ``?replace_data=true`` to overwrite the whole ``data`` dict instead.
+    """
+    return await service.patch_contribution_by_id(id=id, update=update, replace_data=replace_data)
