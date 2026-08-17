@@ -26,7 +26,7 @@ attrs==26.1.0
     # via
     #   jsonschema
     #   referencing
-backports-zstd==1.6.0
+backports-zstd==1.7.0
     # via flask-compress
 beautifulsoup4==4.15.0
     # via nbconvert
@@ -54,7 +54,7 @@ cffi==2.1.1
     # via
     #   argon2-cffi-bindings
     #   cryptography
-charset-normalizer==3.5.0
+charset-normalizer==3.5.1
     # via requests
 click==8.4.2
     # via
@@ -92,7 +92,7 @@ envier==0.6.1
     # via ddtrace
 executing==2.2.1
     # via stack-data
-fastjsonschema==2.22.1
+fastjsonschema==2.22.2
     # via nbformat
 fastnumbers==5.2.0
     # via flask-mongorest-mpcontribs
@@ -261,7 +261,7 @@ nbconvert==7.17.1
     # via
     #   jupyter-server
     #   notebook
-nbformat==5.11.0
+nbformat==5.11.1
     # via
     #   jupyter-server
     #   mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
@@ -351,7 +351,7 @@ pure-eval==0.2.3
     # via stack-data
 pycparser==3.0
     # via cffi
-pygments==2.20.0
+pygments==2.21.0
     # via
     #   ipython
     #   ipython-pygments-lexers
@@ -381,7 +381,7 @@ python-dateutil==2.9.0.post0
     #   matplotlib
     #   pandas
     #   rq-scheduler
-python-json-logger==4.1.0
+python-json-logger==4.2.0
     # via jupyter-events
 python-mimeparse==2.0.0
     # via mimerender-pr36
@@ -527,7 +527,7 @@ wcwidth==0.8.2
     # via prompt-toolkit
 webcolors==25.10.0
     # via jsonschema
-webencodings==0.5.1
+webencodings==0.6.1
     # via
     #   bleach
     #   tinycss2
