@@ -23,7 +23,7 @@ from mpcontribs_api.domains._shared.filters import BaseFilter
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
 from mpcontribs_api.domains._shared.types import ChemicalSystemId, Formula, Identity, MaterialId, Scalar, ShortStr
 from mpcontribs_api.domains.attachments.models import Attachment, AttachmentFilter, AttachmentIn
-from mpcontribs_api.domains.contributions.data import ContributionData
+from mpcontribs_api.domains.contributions.data import ContributionData, ContributionPatchData
 from mpcontribs_api.domains.structures.models import Structure, StructureFilter, StructureIn
 from mpcontribs_api.domains.tables.models import Table, TableFilter, TableIn
 from mpcontribs_api.exceptions import ValidationError
@@ -333,7 +333,9 @@ class ContributionPatch(SparseFieldsModel):
     chemical_system_id: ChemicalSystemId | None = None
     formula: Formula | None = None
     is_public: bool | None = None
-    data: ContributionData = Field(default=None, description=CONTRIBUTION_DATA_INPUT_DESCRIPTION)
+    # Permissive validator: a merge patch may address a single field inside a stored quantity leaf
+    # (e.g. ``{"bandgap": {"unit": "kg"}}``). replace_data=True re-validates strictly in the service.
+    data: ContributionPatchData = Field(default=None, description=CONTRIBUTION_DATA_INPUT_DESCRIPTION)
     structures: list[Link[Structure]] | None = None
     tables: list[Link[Table]] | None = None
     attachments: list[Link[Attachment]] | None = None
@@ -343,6 +345,10 @@ class ContributionFilter(BaseFilter):
     id: PydanticObjectId | None = None
     id__in: list[PydanticObjectId] | None = None
     id__neq: PydanticObjectId | None = None
+
+    project: str | None = None
+    project__in: list[ShortStr] | None = None
+    project__neq: str | None = None
 
     material_id: str | None = None
     material_id__in: list[ShortStr] | None = None
@@ -390,10 +396,3 @@ class ContributionFilter(BaseFilter):
                 "Invalid ObjectId format. Must be 12-byte input or a 24-character hex string",
                 oid=v,
             ) from err
-
-
-# Right now, only is_public makes sense to update across multiple Contributions
-class ContributionBulkUpdate(BaseModel):
-    """Body of the filtered bulk-update route (``PATCH /api/v1/contributions``)."""
-
-    is_public: bool
