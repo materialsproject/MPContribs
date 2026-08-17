@@ -13,7 +13,7 @@ from mpcontribs_api.authz import User
 from mpcontribs_api.domains._shared.bulk import BulkUpdateSummary
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
 from mpcontribs_api.domains._shared.types import DownloadFormat, ShortMimeFormat
-from mpcontribs_api.domains.contributions.data import is_quantity_leaf
+from mpcontribs_api.domains._shared.units import QuantityLeaf
 from mpcontribs_api.domains.contributions.models import (
     Contribution,
     ContributionFilter,
@@ -36,47 +36,21 @@ from mpcontribs_api.pagination import CursorParams
 _UNSET: Any = object()
 
 
-def _is_atomic_leaf(value: Any) -> bool:
-    """Whether a merge should replace ``value`` whole rather than descend into it.
-
-    Non-dicts (scalars, lists) are always atomic. A dict is atomic only when it is a quantity leaf
-    (see :func:`mpcontribs_api.domains.contributions.data.is_quantity_leaf`); plain nested group dicts are
-    *not* atomic so their sibling keys survive the merge.
-    """
-    return not isinstance(value, dict) or is_quantity_leaf(value)
-
-
-def _flatten_for_merge(prefix: str, value: dict[str, Any]) -> dict[str, Any]:
-    """Flatten a nested dict into ``{dotted.path: leaf}`` entries for a merge ``$set``.
-
-    Recurses through plain group dicts so ``$set`` touches only the leaves named in the patch and
-    every unmentioned sibling key is preserved; stops at atomic leaves (see :func:`_is_atomic_leaf`).
-    An empty dict contributes nothing — merge adds/overwrites leaves, it never clears a subtree.
-    """
-    flattened: dict[str, Any] = {}
-    for key, leaf in value.items():
-        path = f"{prefix}.{key}"
-        if _is_atomic_leaf(leaf):
-            flattened[path] = leaf
-        else:
-            flattened.update(_flatten_for_merge(path, leaf))
-    return flattened
-
-
-def _build_update_set(update_data: dict[str, Any], *, replace_data: bool) -> dict[str, Any]:
+def _build_update_set(update_data: dict[str, Any], existing_data: Any, *, replace_data: bool) -> dict[str, Any]:
     """Translate a patch's field map into the document handed to ``$set``.
 
-    With ``replace_data`` the map is used verbatim, so a dict field (``data``) overwrites the stored
-    value whole. Otherwise dict-valued fields are flattened to dotted paths so they deep-merge into
-    the stored dict — adding/overwriting only the named leaves — while scalar and list fields always
+    With ``replace_data`` the map is used verbatim, so ``data`` overwrites the stored dict whole.
+    Otherwise the ``data`` dict is flattened against the stored ``existing_data`` into dotted paths
+    so it additively merges — only the named leaves are written, a bare scalar routes onto a stored
+    quantity leaf's ``value``, sibling survives. All other fields (scalars, lists, identity inputs)
     set directly.
     """
     if replace_data:
         return update_data
     document: dict[str, Any] = {}
     for field, value in update_data.items():
-        if isinstance(value, dict):
-            document.update(_flatten_for_merge(field, value))
+        if field == "data" and isinstance(value, dict):
+            document.update(QuantityLeaf.flatten_merge_paths(existing_data, value, prefix="data."))
         else:
             document[field] = value
     return document
@@ -136,17 +110,27 @@ class MongoDbContributionRepository(
         id: str,
         update: ContributionPatch,
         unique_value: Scalar | None = _UNSET,
+        *,
+        replace_data: bool = False,
+        existing_data: Any = None,
     ):
         """Partially update a contribution by id, scoped to the current user.
 
         ``unique_value`` is server-recomputed by the service when the patch changes ``data`` or
         ``project`` (the inputs to identity); left as ``_UNSET`` it is not touched. When set, it is
         folded into the ``$set`` so the identity index stays consistent with the patched ``data``.
+
+        ``data`` additively merges into the stored dict by default (unmentioned leaves survive, and a
+        bare scalar routes onto a stored quantity leaf's ``value``); the merge is resolved against the
+        caller-supplied ``existing_data``. Pass ``replace_data`` to overwrite the whole ``data`` dict
+        instead. See ``_build_update_set``.
         """
         try:
             if unique_value is _UNSET:
                 return await self.patch(self._convert_object_id(id), update)
-            update_data = update.model_dump(exclude_unset=True)
+            update_data = _build_update_set(
+                update.model_dump(exclude_unset=True), existing_data, replace_data=replace_data
+            )
             update_data["unique_value"] = unique_value
             query = self.document_model.find_one(
                 self._scope,
@@ -181,15 +165,16 @@ class MongoDbContributionRepository(
         self,
         filter: ContributionFilter,
         fields: dict[str, Any],
-        *,
-        project_constraint: frozenset[str] | None,
     ) -> BulkUpdateSummary:
-        """``$set`` ``fields`` on every scoped row matching ``filter``, optionally limited to projects.
+        """``$set`` ``fields`` on every scoped row matching ``filter``.
+
+        Callers that need to limit the update to specific projects (e.g. a non-admin's writable
+        projects) inject them into ``filter`` via ``project__in`` rather than a separate argument
+        here.
 
         Args:
             filter: the caller-supplied query, applied on top of the user scope
             fields: the field/value map handed verbatim to ``$set``
-            project_constraint: projects the update is limited to, or ``None`` for no limit
 
         Returns:
             BulkUpdateSummary: the counts of matched and modified contribs, and the list of the projects changed
@@ -197,8 +182,6 @@ class MongoDbContributionRepository(
         criteria: list[Any] = []
         if self._scope:
             criteria.append(self._scope)
-        if project_constraint is not None:
-            criteria.append({"project": {"$in": sorted(project_constraint)}})
         query = filter.filter(self.document_model.find(*criteria)).get_filter_query()
         collection = self.document_model.get_pymongo_collection()
         # Distinct projects among the *matched* rows (computed before the write, since ``fields`` may
@@ -208,6 +191,26 @@ class MongoDbContributionRepository(
         return BulkUpdateSummary(
             matched=result.matched_count, modified=result.modified_count, projects=sorted(projects)
         )
+
+    async def get_contribution_ids(
+        self,
+        filter: ContributionFilter,
+    ) -> list[PydanticObjectId]:
+        """Return the ids of scoped rows matching ``filter``.
+
+        Callers that need to limit the match to specific projects (e.g. a non-admin's writable
+        projects on a bulk write) inject them into ``filter`` via ``project__in`` rather than a
+        separate argument here.
+
+        Args:
+            filter: the caller-supplied query, applied on top of the user scope
+        """
+        criteria: list[Any] = []
+        if self._scope:
+            criteria.append(self._scope)
+        query = filter.filter(self.document_model.find(*criteria)).get_filter_query()
+        collection = self.document_model.get_pymongo_collection()
+        return [doc["_id"] async for doc in collection.find(query, {"_id": 1})]
 
     async def insert_many_contributions(
         self,
