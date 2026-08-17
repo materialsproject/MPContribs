@@ -20,11 +20,12 @@ from mpcontribs_api.domains._shared.bulk import (
     bulk_failure_from_exception,
 )
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
+from mpcontribs_api.domains._shared.units import QuantityLeaf
 from mpcontribs_api.domains.attachments.repository import MongoDbAttachmentRepository
 from mpcontribs_api.domains.consumers.models import ConsumerSettings
+from mpcontribs_api.domains.contributions.data import validate_contribution_data
 from mpcontribs_api.domains.contributions.models import (
     Contribution,
-    ContributionBulkUpdate,
     ContributionFilter,
     ContributionIdentity,
     ContributionIn,
@@ -666,28 +667,87 @@ class ContributionService:
         await self.update_project({doc.project for doc in succeeded})
         return BulkWriteSummary[Contribution](total=len(contributions), succeeded=succeeded, failed=failed)
 
-    async def bulk_update(self, filter: ContributionFilter, update: ContributionBulkUpdate) -> BulkUpdateSummary:
-        """Apply a filtered field update to every contribution matching ``filter`` the caller may write.
+    async def bulk_update(
+        self,
+        filter: ContributionFilter,
+        update: ContributionPatch,
+        *,
+        replace_data: bool = False,
+    ) -> BulkUpdateSummary:
+        """Apply a filtered patch to every contribution matching ``filter`` the caller may write.
 
-        Scoped to Contributions that a user can write to. Only the touched projects' rollups afterward, as the
-        other write paths do.
+        Updates constrained to user's scope. Only the touched projects' rollups are recomputed.
+
+        Two shapes, chosen by which fields the patch touches:
+
+        - **Fast path** — the patch touches no identity input. A single ``$set`` is applied to every
+          matched row in one ``update_many``.
+        - **Per-row path** — the patch changes an Identifer field (or ``data``). Each matched row is
+          patched individually via ``patch_contribution_by_id`` and any per-row conflict is reported
+          in ``failed``.
+
+        A ``data`` patch deep-merges into each row's stored ``data`` by default (unmentioned leaves
+        survive); pass ``replace_data`` to overwrite the whole ``data`` dict instead.
 
         Args:
             filter: the contributions to target, applied on top of the user scope
-            update: the fields to set; every field the caller supplied is applied verbatim
+            update: the fields to patch; unset fields are left untouched
+            replace_data: overwrite ``data`` wholesale rather than merging into the stored dict
 
         Returns:
-            BulkUpdateSummary: matched/modified counts and the projects touched
+            BulkUpdateSummary: matched/modified counts, the projects touched, and per-row failures
         """
         fields = update.model_dump(exclude_unset=True)
         if not fields:
             # Nothing to set: MongoDB rejects an empty $set, so short-circuit with a no-op result.
             return BulkUpdateSummary(matched=0, modified=0, projects=[])
-        # Admins may write any project; everyone else is limited to the projects they own/contribute to.
-        project_constraint = None if self._user.is_admin else self._user.writable_projects
-        update_summary = await self._contributions.bulk_update(filter, fields, project_constraint=project_constraint)
-        await self.update_project(project_ids=update_summary.projects)
-        return update_summary
+        filter = (
+            filter
+            if self._user.is_admin
+            else filter.model_copy(update={"project__in": sorted(self._user.writable_projects)})
+        )
+
+        touches_identity = bool(ContributionIdentity.model_fields() & fields.keys()) or "data" in fields
+        if not touches_identity:
+            # No identity/unique_value recompute needed, so a uniform $set is safe.
+            summary = await self._contributions.bulk_update(filter, fields)
+            await self.update_project(project_ids=summary.projects)
+            return summary
+
+        return await self._bulk_patch_per_row(filter, update, replace_data=replace_data)
+
+    async def _bulk_patch_per_row(
+        self,
+        filter: ContributionFilter,
+        update: ContributionPatch,
+        *,
+        replace_data: bool = False,
+    ) -> BulkUpdateSummary:
+        """Patch each row matching ``filter`` individually.
+
+        Concurrently validates reach contribution's identity, reporting failures in ``BulkUpdateSummary.failed``.
+        """
+        ids = await self._contributions.get_contribution_ids(filter)
+        if not ids:
+            return BulkUpdateSummary(matched=0, modified=0, projects=[])
+
+        sem = asyncio.Semaphore(self._settings.max_concurrent_transactions)
+
+        async def _patch_one(index: int, oid: PydanticObjectId) -> Contribution | BulkFailure:
+            async with sem:
+                try:
+                    return await self.patch_contribution_by_id(str(oid), update, replace_data=replace_data)
+                except Exception as exc:
+                    logger.info("bulk_patch_item_failed", id=str(oid))
+                    return bulk_failure_from_exception(index, {"id": str(oid)}, exc)
+
+        results = await asyncio.gather(*[_patch_one(i, oid) for i, oid in enumerate(ids)])
+        succeeded = [r for r in results if not isinstance(r, BulkFailure)]
+        failed = [r for r in results if isinstance(r, BulkFailure)]
+        projects = {doc.project for doc in succeeded if doc.project is not None}
+        # Update the project to keep columns and stats in-sync
+        await self.update_project(projects)
+        return BulkUpdateSummary(matched=len(ids), modified=len(succeeded), projects=sorted(projects), failed=failed)
 
     async def _resolve_unique_value(self, project: str, data: dict | None) -> Scalar | None:
         """Resolve the identity value for one contribution from its project's ``unique_column``.
@@ -723,7 +783,9 @@ class ContributionService:
         unique_value = await self._resolve_unique_value(contribution.project, contribution.data)
         return await self._contributions.upsert_contribution_by_id(id, contribution, unique_value)
 
-    async def patch_contribution_by_id(self, id: str, update: ContributionPatch) -> Contribution:
+    async def patch_contribution_by_id(
+        self, id: str, update: ContributionPatch, *, replace_data: bool = False
+    ) -> Contribution:
         """Patch a single contribution by id.
 
         Re-reads the existing document when the patch touches identity inputs, to (a) recompute
@@ -731,12 +793,23 @@ class ContributionService:
         against the *merged* state when ``material_id``/``chemical_system_id``/``formula``. Metadata-only
         patches (e.g. ``is_public``) skip the read entirely, so they don't risk failing on a legacy document
         missing the unique_column value.
+
+        ``data`` additively merges into the stored dict by default so unmentioned leaves survive (a
+        bare scalar routes onto a stored quantity leaf's ``value``); pass ``replace_data`` to overwrite
+        the whole ``data`` dict. On replace the payload becomes a standalone document, so it is
+        re-validated strictly (the permissive patch validator allows leaf fragments a full doc may not).
+        ``unique_value`` is resolved against the same post-write view the repository will persist, and
+        that view (``existing_data``) is handed to the repository so its dotted ``$set`` agrees.
         """
         set_fields = update.model_dump(exclude_unset=True)
         touches_unique = "data" in set_fields or "project" in set_fields
         touches_identity = bool(ContributionIdentity.HIERARCHY_FIELDS & set_fields.keys())
         if not touches_unique and not touches_identity:
             return await self._contributions.patch_contribution_by_id(id, update)
+
+        if replace_data and set_fields.get("data") is not None:
+            # A whole-dict overwrite must satisfy the strict insert-path rules (no leaf fragments).
+            validate_contribution_data(set_fields["data"])
 
         existing = await self._contributions.get_contribution_by_id(id, fields=None)
         if existing is None or existing.project is None:
@@ -753,9 +826,18 @@ class ContributionService:
             return await self._contributions.patch_contribution_by_id(id, update)
 
         project = set_fields.get("project") or existing.project
-        data = set_fields["data"] if "data" in set_fields else existing.data
+        # Resolve unique_value against the data the write will actually leave behind: the merged view
+        # when merging (so an untouched unique_column value survives), or the patch's data on replace.
+        if "data" not in set_fields:
+            data = existing.data
+        elif replace_data:
+            data = set_fields["data"]
+        else:
+            data = QuantityLeaf.merge_data(existing.data, set_fields["data"])
         unique_value = await self._resolve_unique_value(project, data)
-        return await self._contributions.patch_contribution_by_id(id, update, unique_value=unique_value)
+        return await self._contributions.patch_contribution_by_id(
+            id, update, unique_value=unique_value, replace_data=replace_data, existing_data=existing.data
+        )
 
     @staticmethod
     def _validate_identifier_hierarchy_merged(
