@@ -1,4 +1,4 @@
-FROM materialsproject/devops:python-3.1113.18 AS base
+FROM materialsproject/devops:python-3.1213.2 AS base
 RUN apt-get update && apt-get install -y --no-install-recommends supervisor libopenblas-dev libpq-dev vim && apt-get clean
 WORKDIR /app
 
@@ -28,7 +28,7 @@ RUN wget -q https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-
 FROM base
 ARG BUILDARCH
 ENV BUILDARCH=x86_64
-COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 COPY --from=builder /usr/lib/$BUILDARCH-linux-gnu/libsnappy* /usr/lib/$BUILDARCH-linux-gnu/
 

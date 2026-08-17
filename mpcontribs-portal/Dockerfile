@@ -1,4 +1,4 @@
-FROM materialsproject/devops:python-3.1113.18 AS base
+FROM materialsproject/devops:python-3.1213.2 AS base
 RUN apt-get update && apt-get install -y --no-install-recommends libopenblas-dev && apt-get clean
 FROM node:26.4.0-slim AS node
 
@@ -32,7 +32,7 @@ RUN wget -q https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-
   chmod +x wait-for-it.sh && mv wait-for-it.sh /usr/local/bin/
 
 FROM base AS python-builds
-COPY --from=python-deps /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=python-deps /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 COPY --from=python-deps /usr/local/bin /usr/local/bin
 COPY --from=python-deps /usr/local/share /usr/local/share
 WORKDIR /app
@@ -48,7 +48,7 @@ RUN SETUPTOOLS_SCM_PRETEND_VERSION=${CONTRIBS_VERSION} pip install $PIP_FLAGS $M
 RUN python manage.py collectstatic --noinput
 
 FROM base
-COPY --from=python-builds /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=python-builds /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 COPY --from=python-builds /usr/local/bin /usr/local/bin
 COPY --from=python-builds /usr/local/share /usr/local/share
 COPY --from=python-builds /app/static /app/static
