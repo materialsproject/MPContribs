@@ -1,30 +1,10 @@
-"""Unit parsing and SI canonicalization for annotated contribution data.
-
-Contribution ``data`` keys may be submitted in the annotated form
-``name (unit, cond1=val1, cond2=val2, ...)``. This module turns a raw value plus a unit string
-into a normalized leaf that is canonicalized to SI base units whenever Pint recognizes the unit,
-while always retaining the value/unit exactly as submitted (provenance).
-
-Design notes:
-
-- **SI-when-possible**: a recognized unit is converted to base units via Pint; ``value``/``unit``
-  hold the canonical form, ``input_value``/``input_unit`` hold the original. An unrecognized or
-  dimensionless unit is stored verbatim (``value``/``unit`` == ``input_*``).
-- **Uncertainties**: a string magnitude such as ``"4.2(3)"`` or ``"4.2+/-0.3"`` is parsed with the
-  ``uncertainties`` package; the nominal value lands in ``value`` and the (SI-propagated) standard
-  deviation in ``error``.
-- **Identity precision**: :func:`condition_key` renders numeric conditions from their canonical SI
-  magnitude at a fixed precision, so ``T=300K`` and ``T=300.0K`` (and, deliberately,
-  ``T=26.85degC``) collapse to the same key rather than splitting into separate pivoted rows.
-"""
-
 import math
 import re
-from typing import Any, Self
+from typing import Any, ClassVar, Self
 
 import pint
 from pydantic import BaseModel
-from uncertainties import UFloat, ufloat_fromstr
+from uncertainties import UFloat, ufloat, ufloat_fromstr
 from uncertainties.core import AffineScalarFunc
 
 from mpcontribs_api.config import get_settings
@@ -167,19 +147,20 @@ def _reconcile_units(mag: str, embedded_unit: str | None, key_unit: str | None) 
     return converted.magnitude, key_unit
 
 
-class AnnotatedData(BaseModel):
-    """The canonical shape of a ``Contribution.data`` quantity leaf, and its factory.
+class QuantityLeaf(BaseModel):
+    """The canonical shape of a ``Contribution.data`` quantity leaf, its factory, and its predicates.
 
     ``value``/``unit`` hold the SI-canonical form (or the submitted form when the unit is
-    unrecognized/dimensionless); ``input_value``/``input_unit`` hold the submitted form. ``error`` is
-    the (SI-propagated) standard deviation, present only when the magnitude carried an uncertainty;
-    ``input_error`` is the same uncertainty in the submitted unit. ``precision`` is the number of
-    significant digits the submission carried (string magnitudes only); it is ``None`` for a numeric
-    submission, which carries no trailing-zero information.
+        unrecognized/dimensionless)
+    ``input_value``/``input_unit`` hold the submitted form.
+    ``error`` is the (SI-propagated) standard deviation, present only when the magnitude carried an uncertainty
+    ``input_error`` is the same uncertainty in the submitted unit.
+    ``precision`` is the number of significant digits the submission carried (string magnitudes only); it is ``None``
+        for a numeric submission, which carries no trailing-zero information. ``display`` is an optional free-form
+        human-readable string (never derived; carried verbatim when supplied).
 
-    The leaf carries no human-readable ``display`` string: clients format the value however they
-    like from these fields (``input_value``/``input_unit``/``input_error``/``precision`` reproduce the
-    submitted form exactly).
+    The model fields *are* the reserved leaf keys (see :meth:`reserved_keys`): callers may not use
+    them as plain ``data`` keys.
     """
 
     value: float
@@ -189,6 +170,42 @@ class AnnotatedData(BaseModel):
     error: float | None = None
     input_error: float | None = None
     precision: int | None = None
+    display: str | None = None
+
+    # Each canonical leaf field paired with the ``input_*`` field that records its submitted form.
+    _INPUT_FIELD_OF: ClassVar[dict[str, str]] = {
+        "value": "input_value",
+        "unit": "input_unit",
+        "error": "input_error",
+    }
+
+    @classmethod
+    def reserved_keys(cls) -> frozenset[str]:
+        """The keys reserved for annotated-value leaves — the model fields themselves.
+
+        Callers may not use these as plain ``data`` keys; a stored leaf uses only these keys.
+        """
+        return frozenset(cls.model_fields)
+
+    @classmethod
+    def is_leaf(cls, node: Any) -> bool:
+        """True when ``node`` is a stored quantity leaf (numeric ``value`` + only reserved keys)."""
+        if not isinstance(node, dict):
+            return False
+        value = node.get("value")
+        if not isinstance(value, (int, float)) or isinstance(value, bool):
+            return False
+        return node.keys() <= cls.reserved_keys()
+
+    @classmethod
+    def is_fragment(cls, node: Any) -> bool:
+        """True when ``node`` addresses fields *inside* a leaf (all keys reserved; ``value`` optional).
+
+        Unlike :meth:`is_leaf` this does not require a numeric ``value``, so a partial fragment like
+        ``{'unit': 'kg'}`` qualifies. It lets a patch update a single field of a stored leaf; the strict
+        insert path still rejects reserved keys as plain keys, so fragments are a patch-only shape.
+        """
+        return isinstance(node, dict) and bool(node) and node.keys() <= cls.reserved_keys()
 
     @classmethod
     def from_submission(cls, value: Any, unit: str | None) -> Self:
@@ -215,11 +232,25 @@ class AnnotatedData(BaseModel):
         # Precision is only recoverable from a string submission
         cap = settings.mpcontribs.float_precision
         precision = min(_count_sig_figs(value), cap) if isinstance(value, str) else None
+        return cls._from_parts(nominal, error, unit, precision=precision)
 
+    @classmethod
+    def _from_parts(cls, nominal: float, error: float | None, unit: str | None, *, precision: int | None) -> Self:
+        """Canonicalize a pre-split ``(nominal, error, unit)`` submission into a leaf.
+
+        The post-parse half of :meth:`from_submission`, shared with :meth:`patch_leaf`: SI-convert
+        (propagating the uncertainty through Pint) when the unit is recognized, keep the ``input_*``
+        provenance when a unit is present or canonicalization changed the magnitude, and carry
+        ``precision`` through. ``nominal``/``error`` are the submitted magnitude and uncertainty in
+        ``unit``.
+        """
+        if unit:
+            unit = nfc_normalize(unit)
         # Canonicalize to SI base units when Pint recognizes the unit; otherwise keep the submitted form.
         canon_value, canon_unit, canon_error = nominal, unit, error
         if unit:
             try:
+                magnitude = ufloat(nominal, error) if error is not None else nominal
                 quantity = _UREG.Quantity(magnitude, unit).to_base_units()
             except Exception:  # broad catch: any Pint failure -> keep the submitted unit
                 pass
@@ -243,6 +274,50 @@ class AnnotatedData(BaseModel):
             input_error=error if keep_input else None,
             precision=precision,
         )
+
+    @classmethod
+    def patch_leaf(cls, existing: dict[str, Any], overrides: dict[str, Any]) -> dict[str, Any]:
+        """Re-derive a stored quantity leaf after a partial patch, re-canonicalizing to SI.
+
+        Handles conversion of values/errors/units during partial updates to keep coerced and
+        input values in-sync.
+
+        Args:
+            existing: the stored leaf dict being patched (a quantity leaf).
+            overrides: the patch fragment (a subset of reserved leaf keys).
+
+        Raises:
+            UnitError: if the merged magnitude cannot be parsed.
+        """
+
+        def submitted(canon_key: str) -> Any:
+            input_key = cls._INPUT_FIELD_OF[canon_key]
+            if canon_key in overrides:
+                return overrides[canon_key]
+            if input_key in overrides:
+                return overrides[input_key]
+            if existing.get(input_key) is not None:
+                return existing[input_key]
+            return existing.get(canon_key)
+
+        unit = submitted("unit")
+        magnitude = _parse_magnitude(submitted("value"))
+        nominal, parsed_error = _split_ufloat(magnitude)
+        # An explicit error override wins; otherwise an uncertainty embedded in the magnitude wins;
+        # otherwise the existing submitted error carries over.
+        if "error" in overrides or "input_error" in overrides:
+            error = overrides.get("error", overrides.get("input_error"))
+        elif parsed_error is not None:
+            error = parsed_error
+        else:
+            error = submitted("error")
+
+        precision = overrides.get("precision", existing.get("precision"))
+        leaf = cls._from_parts(nominal, error, unit, precision=precision).as_dict()
+        display = overrides.get("display", existing.get("display"))
+        if display is not None:
+            leaf["display"] = display
+        return leaf
 
     @classmethod
     def try_from_value(cls, value: Any, key_unit: str | None) -> Self | None:
@@ -305,7 +380,7 @@ class AnnotatedData(BaseModel):
         """
         if not conditions:
             return ""
-        return ", ".join(f"{name}={AnnotatedData.identity_scalar(conditions[name])}" for name in sorted(conditions))
+        return ", ".join(f"{name}={QuantityLeaf.identity_scalar(conditions[name])}" for name in sorted(conditions))
 
 
 # Leading signed number of a magnitude string (mantissa only; stops at an exponent or uncertainty).
@@ -347,12 +422,12 @@ def parse_condition_value(raw: str) -> dict[str, Any] | str:
     if not _NUMERIC_START.match(raw):
         return raw
     # Split the leading magnitude from the trailing unit ourselves, then build the leaf via
-    # AnnotatedData so conditions canonicalize exactly like measurement leaves (offset units included).
+    # QuantityLeaf so conditions canonicalize exactly like measurement leaves (offset units included).
     match = _MAGNITUDE_UNIT.match(raw)
     if match is None:
         return raw
     mag, unit = match.group("mag").strip(), match.group("unit").strip()
     try:
-        return AnnotatedData.from_submission(mag, unit or None).as_dict()
+        return QuantityLeaf.from_submission(mag, unit or None).as_dict()
     except UnitError:
         return raw
