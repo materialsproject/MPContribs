@@ -32,7 +32,7 @@ class ExpandedContribution:
     """One pivoted contribution paired with its server-computed ``condition_key``.
 
     ``condition_key`` is carried alongside (not on the input model) so it is never taken from the
-    request body — mirroring how the service resolves ``version``.
+    request body.
     """
 
     contribution: ContributionIn
