@@ -48,19 +48,20 @@ class BulkDeleteSummary[T](BaseModel):
 
 
 class BulkUpdateSummary(BaseModel):
-    """Result of a filtered bulk update.
-
-    No per-item result, reflects MongoDB's bulk update response.
+    """Result of a bulk update.
 
     Attributes:
         matched: documents the (scoped) filter matched
-        modified: documents whose stored value actually changed
+        modified: documents whose stored value actually changed (fast path) or were successfully
+            patched (per-row path)
         projects: the projects the update touched, so the caller can see its blast radius
+        failed: per-row failures (e.g. identity collisions); always empty on the fast path
     """
 
     matched: int
     modified: int
     projects: list[str]
+    failed: list[BulkFailure] = []
 
 
 def bulk_failure_from_exception(index: int, identifier: dict[str, Any] | None, exc: BaseException) -> BulkFailure:
