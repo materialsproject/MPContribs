@@ -1,7 +1,6 @@
-import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Annotated, Any, ClassVar
+from typing import Any, ClassVar
 
 from beanie import (
     Insert,
@@ -15,7 +14,7 @@ from beanie import (
 )
 from bson.errors import InvalidId
 from fastapi_filter import FilterDepends, with_prefix
-from pydantic import BaseModel, BeforeValidator, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from pymongo import ASCENDING, IndexModel
 
 from mpcontribs_api._openapi import CONTRIBUTION_DATA_INPUT_DESCRIPTION, CONTRIBUTION_DATA_OUTPUT_DESCRIPTION
@@ -23,58 +22,11 @@ from mpcontribs_api.domains._shared.filters import BaseFilter
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
 from mpcontribs_api.domains._shared.types import ChemicalSystemId, Formula, Identity, MaterialId, Scalar, ShortStr
 from mpcontribs_api.domains.attachments.models import Attachment, AttachmentFilter, AttachmentIn
-from mpcontribs_api.domains.contributions.data import ContributionData, ContributionPatchData
+from mpcontribs_api.domains.contributions.data import ContributionData, ContributionPatchData, ContributionStoredData
 from mpcontribs_api.domains.structures.models import Structure, StructureFilter, StructureIn
 from mpcontribs_api.domains.tables.models import Table, TableFilter, TableIn
 from mpcontribs_api.exceptions import ValidationError
 from mpcontribs_api.projection import SparseFieldsModel
-
-
-def _get_dict_depth(x) -> int:
-    if isinstance(x, dict):
-        return 1 + max((_get_dict_depth(v) for v in x.values()), default=0)
-    elif isinstance(x, list):
-        return max((_get_dict_depth(item) for item in x), default=0)
-    return 0
-
-
-def _validate_data_depth(data: dict[str, Any] | None) -> dict[str, Any] | None:
-    if data is None:
-        return None
-    depth = _get_dict_depth(data)
-    if depth > 7:
-        raise ValidationError("Depth of Contribution.data must be <= 7.", depth=depth)
-    return data
-
-
-# Forbid punctuation, excluding: '*', '/' and exactly 1 '|' anywhere in string
-_DATA_PUNCTUATION_PATTERN = re.compile(r"(?![^|]*\|[^|]*\|)[^\x21-\x29\x2B-\x2E\x3A-\x40\x5B-\x5E\x60\x7B\x7D-\x7E]*")
-
-
-def _validate_keys(data: dict[str, Any] | None) -> dict[str, Any] | None:
-    if data is None:
-        return None
-    keys = list(data.keys())
-    if not all(isinstance(k, str) and k.isascii() for k in keys):
-        raise ValidationError("Non-ASCII key found in Contribution.data. All dict keys must be only ASCII")
-    if any(k == "" for k in keys):
-        raise ValidationError("Empty key found in Contribution.data. Keys must be non-empty.")
-    if any(_DATA_PUNCTUATION_PATTERN.fullmatch(k) is None for k in keys):
-        raise ValidationError(
-            "Punctuation found in Contribution.data keys. Only '_', '*', '/', and at most 1 '|' permitted."
-        )
-    # Recurse into nested dicts, including dicts nested inside lists.
-    for v in data.values():
-        _validate_nested_keys(v)
-    return data
-
-
-def _validate_nested_keys(value: Any) -> None:
-    if isinstance(value, dict):
-        _validate_keys(value)
-    elif isinstance(value, list):
-        for item in value:
-            _validate_nested_keys(item)
 
 
 def _value_at(data: dict[str, Any], path: str) -> Any:
@@ -155,13 +107,11 @@ class ContributionIdentity(Identity):
 class ContributionBase(BaseModel):
     """Shared fields for Contribution, ContributionIn, and ContributionOut.
 
-    Intentionally a plain ``BaseModel`` (not a ``Document``): only the stored ``Contribution``
-    mixes in ``BaseDocumentWithInput``, so the input model never requires a client-supplied ``_id``.
-
     ``data`` uses the annotation-aware ``ContributionData`` validator: raw input may carry the pivot
     grammar (``conductivity (S/cm, T=300K)``, dotted paths) and punctuation folded to ``_`` on write,
     while non-ASCII, empty-after-coercion, and reserved leaf keys are still rejected. The *strict*
-    key check (``_validate_keys``) is applied only to the coerced, stored ``Contribution.data``.
+    plain-key check (``ContributionStoredData``) is applied only to the coerced, stored
+    ``Contribution.data`` (see :class:`Contribution`).
     """
 
     # Identifiers follow a specificity hierarchy: chemical_system_id > formula > material_id.
@@ -189,26 +139,16 @@ class ContributionBase(BaseModel):
 
 
 class Contribution(ContributionBase, BaseDocumentWithInput[PydanticObjectId]):
-    """Models what is actually stored in the database.
+    """Models what is actually stored in the database."""
 
-    Only the stored document mixes in ``BaseDocumentWithInput`` (required ``_id``); ``ContributionIn``
-    does not. Beanie reads ``Settings``/indexes off ``ContributionBase`` via the MRO.
-    """
+    # Strict validation applies to what is stored: pivot has already coerced input keys to clean
+    # snake_case by the time a Contribution is built, so the stored path validates every key as a plain
+    # key at every level rather than parsing the annotated-key grammar raw ContributionIn input carries.
+    # ContributionStoredData shares data.py's depth + key core with the input/patch aliases, so the
+    # stored and input paths cannot drift on depth or key rules (see validate_stored_contribution_data).
+    data: ContributionStoredData
 
-    # Strict key validation applies to what is stored: pivot has already coerced input keys to clean
-    # snake_case by the time a Contribution is built, so the punctuation rule never sees the
-    # annotation grammar that raw ContributionIn input is allowed to carry. Typed to match the base's
-    # ``dict | None`` so the stricter validators are an override of the same field, not a new type.
-    data: Annotated[
-        dict[str, Any] | None,
-        BeforeValidator(_validate_data_depth),
-        BeforeValidator(_validate_keys),
-    ]
-
-    # Server-owned: the service extracts this from data at the project's unique_column path and stamps
-    # it on the doc (see ContributionService._resolve_identity). None when the project sets no
-    # unique_column, in which case the identity is the (project, material_id, chemical_system_id,
-    # formula) tuple. Never trusted from the request body.
+    # Server owner - uses Project.unique_column to extract the value from Contribution.data
     unique_value: Scalar | None = None
     # Server-owned pivot-condition discriminator; "" until pivoting is wired in (see Identity).
     condition_key: str = ""

@@ -238,10 +238,28 @@ def validate_contribution_data(
     return data
 
 
-# Two field types over the same validator: inserts/whole-document writes are strict; a merge patch
-# additionally permits leaf fragments (see ``allow_leaf_fragments`` above).
+def validate_stored_contribution_data(data: dict[str, Any] | None) -> dict[str, Any] | None:
+    """Validate the persisted ``Contribution.data`` (depth + strict *plain* keys at every level).
+
+    This is the stored-document counterpart to :func:`validate_contribution_data`. By the time a
+    :class:`~mpcontribs_api.domains.contributions.models.Contribution` is built, pivot/expansion has
+    already coerced every key to canonical snake_case, so the stored payload must satisfy the plain-key
+    rules at *every* level — the annotated-key grammar (``name (unit, cond=...)``) is no longer allowed
+    even at the top level. The depth bound is the same settings-driven limit as the input path, so the
+    two cannot drift.
+    """
+    _validate_data_depth(data)
+    _validate_keys(data)
+    return data
+
+
+# Three field types over one shared validation core, so the input, patch, and stored paths cannot
+# drift on depth or key rules: inserts/whole-document writes are strict; a merge patch additionally
+# permits leaf fragments (see ``allow_leaf_fragments`` above); the stored document requires fully
+# coerced plain keys (no annotated-key grammar).
 ContributionData = Annotated[dict[str, Any] | None, BeforeValidator(validate_contribution_data)]
 ContributionPatchData = Annotated[
     dict[str, Any] | None,
     BeforeValidator(partial(validate_contribution_data, allow_leaf_fragments=True)),
 ]
+ContributionStoredData = Annotated[dict[str, Any] | None, BeforeValidator(validate_stored_contribution_data)]

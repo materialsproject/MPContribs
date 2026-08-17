@@ -138,11 +138,15 @@ class TestContributionBase:
         with pytest.raises(ValidationError, match="reduces to an empty string"):
             _make_contribution_in(data={"***": "fail"})
 
-        # The strict punctuation rule applies to the coerced, *stored* document. Pivot coerces input
-        # keys clean before a Contribution is built, so this only guards the stored invariant. The
-        # BeforeValidator runs before Beanie's collection lookup, so the ValidationError surfaces first.
-        with pytest.raises(ValidationError, match="Punctuation found in Contribution.data keys"):
-            Contribution(_id=PydanticObjectId(), project="p", chemical_system_id="Fe-O", data={"bad.key": 1})
+        # The stored document shares the input path's key rules (ContributionStoredData draws on the
+        # same data.py core), so a coercible-punctuation key is accepted here just as on input, while
+        # reserved and non-ASCII keys are still rejected. The BeforeValidator runs before Beanie's
+        # collection lookup, so any ValidationError surfaces first.
+        Contribution(_id=PydanticObjectId(), project="p", chemical_system_id="Fe-O", data={"bad.key": 1})
+        with pytest.raises(ValidationError, match="reserved"):
+            Contribution(_id=PydanticObjectId(), project="p", chemical_system_id="Fe-O", data={"group": {"unit": "x"}})
+        with pytest.raises(ValidationError, match="Non-ASCII key found in Contribution.data"):
+            Contribution(_id=PydanticObjectId(), project="p", chemical_system_id="Fe-O", data={"ΔE": 1})
 
     def test_reserved_leaf_keys_rejected(self):
         # A data key that coerces to a reserved value-leaf name is rejected on write.

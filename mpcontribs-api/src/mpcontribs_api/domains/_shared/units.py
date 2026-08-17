@@ -370,8 +370,7 @@ class QuantityLeaf(BaseModel):
         """The post-merge view of ``existing`` after applying ``patch``, matching :meth:`flatten_merge_paths`.
 
         Used to resolve identity (``unique_value``) against the same state the dotted ``$set`` will leave
-        behind, without re-reading after the write. Follows the identical per-key rule: re-derive a stored
-        quantity leaf that the patch touches, else descend nested dicts, else replace the key.
+        behind.
         """
         merged = dict(existing) if isinstance(existing, dict) else {}
         for key, value in patch.items():
@@ -388,8 +387,7 @@ class QuantityLeaf(BaseModel):
     def try_from_value(cls, value: Any, key_unit: str | None) -> Self | None:
         """Build a leaf from an arbitrary scalar, or return ``None`` when it is categorical.
 
-        Handles both spreadsheet forms and reconciles the two possible unit sources (decision:
-        the key unit wins on conflict):
+        3 accepted and handled case:
 
         - a number -> magnitude from the number, unit from ``key_unit`` (may be ``None``);
         - a string that does not start like a number (``"cubic"``) -> ``None`` (keep it verbatim);
