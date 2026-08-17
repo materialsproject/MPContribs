@@ -2,12 +2,12 @@
 
 Conditions are the most adversarial slice of the normalization surface: their raw values are typed
 by users (UI, client, raw REST) and flow through ``parse_condition_value`` ->
-``AnnotatedData.from_submission`` -> ``AnnotatedData.condition_key`` -> pivot grouping. These tests
+``QuantityLeaf.from_submission`` -> ``QuantityLeaf.condition_key`` -> pivot grouping. These tests
 pin the invariants that must hold for *any* input:
 
 - ``parse_condition_value`` never raises and never yields a non-finite leaf value.
 - Every produced leaf is JSON-serializable with ``allow_nan=False`` (so it can be stored and hashed).
-- ``AnnotatedData.condition_key`` is deterministic and independent of condition insertion order.
+- ``QuantityLeaf.condition_key`` is deterministic and independent of condition insertion order.
 - Physically-equal numeric conditions collapse to one identity string.
 - ``expand_data`` only ever raises ``ValidationError`` (never a bare KeyError/TypeError/etc.).
 """
@@ -20,7 +20,7 @@ from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
 from mpcontribs_api.domains._shared.units import (
-    AnnotatedData,
+    QuantityLeaf,
     UnitError,
     parse_condition_value,
 )
@@ -64,17 +64,17 @@ class TestConditionKeyProperties:
     def test_deterministic_and_order_independent(self, pairs):
         conditions = {name: parse_condition_value(value) for name, value in pairs}
         reversed_order = dict(reversed(list(conditions.items())))
-        key = AnnotatedData.condition_key(conditions)
-        assert key == AnnotatedData.condition_key(dict(conditions))  # deterministic
-        assert key == AnnotatedData.condition_key(reversed_order)  # independent of insertion order
+        key = QuantityLeaf.condition_key(conditions)
+        assert key == QuantityLeaf.condition_key(dict(conditions))  # deterministic
+        assert key == QuantityLeaf.condition_key(reversed_order)  # independent of insertion order
 
     @settings(max_examples=200, deadline=None, suppress_health_check=[HealthCheck.too_slow])
     @given(st.integers(min_value=-10_000, max_value=10_000))
     def test_equal_numeric_representations_collapse(self, n):
         # An integer rendered as int, float, and scientific notation is one physical value -> one key.
-        int_key = AnnotatedData.condition_key({"x": parse_condition_value(f"{n}K")})
-        float_key = AnnotatedData.condition_key({"x": parse_condition_value(f"{float(n)}K")})
-        sci_key = AnnotatedData.condition_key({"x": parse_condition_value(f"{n:e}K")})
+        int_key = QuantityLeaf.condition_key({"x": parse_condition_value(f"{n}K")})
+        float_key = QuantityLeaf.condition_key({"x": parse_condition_value(f"{float(n)}K")})
+        sci_key = QuantityLeaf.condition_key({"x": parse_condition_value(f"{n:e}K")})
         assert int_key == float_key == sci_key
 
     @settings(max_examples=300, deadline=None, suppress_health_check=[HealthCheck.too_slow])
@@ -86,8 +86,8 @@ class TestConditionKeyProperties:
     )
     def test_human_sci_notation_matches_e_notation(self, mantissa, exponent, mult, op):
         # For any mantissa/exponent, "<m>x10^<e>" must produce the same identity as "<m>e<e>".
-        human = AnnotatedData.condition_key({"x": parse_condition_value(f"{mantissa}{mult}10{op}{exponent} K")})
-        canonical = AnnotatedData.condition_key({"x": parse_condition_value(f"{mantissa}e{exponent} K")})
+        human = QuantityLeaf.condition_key({"x": parse_condition_value(f"{mantissa}{mult}10{op}{exponent} K")})
+        canonical = QuantityLeaf.condition_key({"x": parse_condition_value(f"{mantissa}e{exponent} K")})
         assert human == canonical
 
 
@@ -138,13 +138,13 @@ class TestNonFiniteMagnitudeGuard:
     @pytest.mark.parametrize("bad", [float("inf"), float("-inf"), float("nan")])
     def test_annotate_value_rejects_non_finite_float(self, bad):
         with pytest.raises(UnitError):
-            AnnotatedData.from_submission(bad, "K").as_dict()
+            QuantityLeaf.from_submission(bad, "K").as_dict()
 
     @pytest.mark.parametrize("bad", ["1e999", "-1e999", "1e999", "inf", "nan"])
     def test_annotate_value_rejects_overflowing_string(self, bad):
         # "inf"/"nan" as bare strings are unparseable floats; "1e999" overflows. All raise.
         with pytest.raises(UnitError):
-            AnnotatedData.from_submission(bad, "K").as_dict()
+            QuantityLeaf.from_submission(bad, "K").as_dict()
 
     def test_condition_falls_back_to_categorical_for_overflow(self):
         # A non-finite numeric condition is not stored as inf; it degrades to a categorical string.
@@ -157,7 +157,7 @@ class TestNonFiniteMagnitudeGuard:
 
     def test_uncertainty_with_non_finite_nominal_rejected(self):
         with pytest.raises(UnitError):
-            AnnotatedData.from_submission("1e999+/-1", "K").as_dict()
+            QuantityLeaf.from_submission("1e999+/-1", "K").as_dict()
 
 
 class TestConditionEdgeCases:

@@ -263,7 +263,7 @@ class TestBulkUpdateContributions:
         contribution_service.bulk_update.return_value = BulkUpdateSummary(matched=3, modified=2, projects=["mp-team"])
         r = client.patch("/api/v1/contributions", json={"is_public": True})
         assert r.status_code == 200
-        assert r.json() == {"matched": 3, "modified": 2, "projects": ["mp-team"]}
+        assert r.json() == {"matched": 3, "modified": 2, "projects": ["mp-team"], "failed": []}
 
     def test_forwards_update_and_filter(self, client, contribution_service):
         from mpcontribs_api.domains.contributions.models import ContributionFilter
@@ -275,10 +275,33 @@ class TestBulkUpdateContributions:
         assert kwargs["update"].is_public is True
         assert isinstance(kwargs["filter"], ContributionFilter)
 
-    def test_missing_is_public_returns_422(self, client, contribution_service):
+    def test_forwards_full_patch_body(self, client, contribution_service):
+        # The bulk patch now accepts the same fields as the single-item patch (not just is_public).
+        contribution_service.bulk_update.return_value = BulkUpdateSummary(matched=1, modified=1, projects=["mp-team"])
+        r = client.patch("/api/v1/contributions", json={"formula": "Fe2O3", "data": {"y": 9.0}})
+        assert r.status_code == 200
+        update = contribution_service.bulk_update.call_args.kwargs["update"]
+        assert update.formula == "Fe2O3"
+        assert update.data == {"y": 9.0}
+
+    def test_empty_patch_is_accepted_as_noop(self, client, contribution_service):
+        # An empty patch is a valid no-op (parity with the single-item patch), no longer a 422.
+        contribution_service.bulk_update.return_value = BulkUpdateSummary(matched=0, modified=0, projects=[])
         r = client.patch("/api/v1/contributions", json={})
-        assert r.status_code == 422
-        contribution_service.bulk_update.assert_not_called()
+        assert r.status_code == 200
+        contribution_service.bulk_update.assert_awaited_once()
+
+    def test_replace_data_query_param_forwarded(self, client, contribution_service):
+        # ?replace_data=true opts a data patch out of the additive-merge default (whole-dict overwrite).
+        contribution_service.bulk_update.return_value = BulkUpdateSummary(matched=0, modified=0, projects=[])
+        client.patch("/api/v1/contributions?replace_data=true", json={"data": {"y": 9.0}})
+        assert contribution_service.bulk_update.call_args.kwargs["replace_data"] is True
+
+    def test_replace_data_defaults_to_false(self, client, contribution_service):
+        # Omitting the flag keeps the additive-merge default.
+        contribution_service.bulk_update.return_value = BulkUpdateSummary(matched=0, modified=0, projects=[])
+        client.patch("/api/v1/contributions", json={"data": {"y": 9.0}})
+        assert contribution_service.bulk_update.call_args.kwargs["replace_data"] is False
 
     def test_patch_by_id_forwards_is_public(self, client, contribution_service):
         # The single-contribution publish path: {"is_public": true} reaches the service patch.
@@ -287,6 +310,15 @@ class TestBulkUpdateContributions:
         assert r.status_code == 200
         update = contribution_service.patch_contribution_by_id.call_args.kwargs["update"]
         assert update.is_public is True
+
+    def test_patch_by_id_forwards_replace_data(self, client, contribution_service):
+        # The single-item path exposes the same overwrite opt-out as the bulk path.
+        contribution_service.patch_contribution_by_id.return_value = SAMPLE_OUT
+        r = client.patch(
+            f"/api/v1/contributions/{PydanticObjectId()}?replace_data=true", json={"data": {"y": 9.0}}
+        )
+        assert r.status_code == 200
+        assert contribution_service.patch_contribution_by_id.call_args.kwargs["replace_data"] is True
 
 
 class TestContributionMutationsRequireAuth:

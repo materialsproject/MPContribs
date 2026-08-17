@@ -1,10 +1,10 @@
 import pytest
 
 from mpcontribs_api.authz import User
+from mpcontribs_api.domains._shared.units import QuantityLeaf
 from mpcontribs_api.domains.attachments.repository import MongoDbAttachmentRepository
 from mpcontribs_api.domains.contributions.models import (
     Contribution,
-    ContributionBulkUpdate,
     ContributionFilter,
     ContributionIn,
     ContributionPatch,
@@ -64,7 +64,7 @@ class TestBulkPublishAuthorization:
         b = await _insert(PROJ_B, "c1", is_public=False)
 
         summary = await _service(mongo_client, ALICE).bulk_update(
-            ContributionFilter(), ContributionBulkUpdate(is_public=True)
+            ContributionFilter(), ContributionPatch(is_public=True)
         )
 
         assert summary.projects == [PROJ_A]
@@ -78,7 +78,7 @@ class TestBulkPublishAuthorization:
         b = await _insert(PROJ_B, "pub", is_public=True)
 
         summary = await _service(mongo_client, ALICE).bulk_update(
-            ContributionFilter(is_public=True), ContributionBulkUpdate(is_public=False)
+            ContributionFilter(is_public=True), ContributionPatch(is_public=False)
         )
 
         assert (summary.matched, summary.modified) == (0, 0)
@@ -90,7 +90,7 @@ class TestBulkPublishAuthorization:
         b = await _insert(PROJ_B, "c1", is_public=False)
 
         summary = await _service(mongo_client, ADMIN).bulk_update(
-            ContributionFilter(), ContributionBulkUpdate(is_public=True)
+            ContributionFilter(), ContributionPatch(is_public=True)
         )
 
         assert set(summary.projects) == {PROJ_A, PROJ_B}
@@ -109,3 +109,125 @@ class TestSinglePublish:
 
         assert result.is_public is True
         assert await _is_public(a.id) is True
+
+
+async def _insert_row(project: str, *, formula: str, data: dict) -> Contribution:
+    """Insert one contribution with a chosen formula/data so callers control the identity tuple."""
+    doc = Contribution.from_input_model(
+        ContributionIn(project=project, chemical_system_id="Fe-O", formula=formula, data=data)
+    )
+    await doc.insert()
+    return doc
+
+
+async def _reload(cid) -> Contribution:
+    found = await Contribution.find_one(Contribution.id == cid)
+    assert found is not None
+    return found
+
+
+class TestBulkPatchPerRow:
+    """Filter patches that touch identity inputs run per row (recompute + collision reporting)."""
+
+    async def test_bulk_data_patch_merges_into_every_matched_row(self, db, mongo_client):
+        # Two distinct identities in Alice's writable project; a data patch is merged into both so
+        # each row keeps its own pre-existing ``x`` and gains the patched ``y``.
+        a = await _insert_row(PROJ_A, formula="Fe2O3", data={"x": 1.0})
+        b = await _insert_row(PROJ_A, formula="Fe3O4", data={"x": 2.0})
+
+        summary = await _service(mongo_client, ALICE).bulk_update(
+            ContributionFilter(chemical_system_id="Fe-O"), ContributionPatch(data={"y": 9.0})
+        )
+
+        assert (summary.matched, summary.modified) == (2, 2)
+        assert summary.projects == [PROJ_A]
+        assert summary.failed == []
+        # Additive by default: the unmentioned ``x`` survives on each row; ``y`` is added.
+        assert (await _reload(a.id)).data == {"x": 1.0, "y": 9.0}
+        assert (await _reload(b.id)).data == {"x": 2.0, "y": 9.0}
+
+    async def test_bulk_data_patch_replaces_data_when_replace_data_set(self, db, mongo_client):
+        # replace_data=True overwrites each row's ``data`` wholesale, dropping the unmentioned ``x``.
+        a = await _insert_row(PROJ_A, formula="Fe2O3", data={"x": 1.0})
+        b = await _insert_row(PROJ_A, formula="Fe3O4", data={"x": 2.0})
+
+        summary = await _service(mongo_client, ALICE).bulk_update(
+            ContributionFilter(chemical_system_id="Fe-O"),
+            ContributionPatch(data={"y": 9.0}),
+            replace_data=True,
+        )
+
+        assert (summary.matched, summary.modified) == (2, 2)
+        for cid in (a.id, b.id):
+            assert (await _reload(cid)).data == {"y": 9.0}
+
+    async def test_bare_scalar_updates_quantity_leaf_magnitude(self, db, mongo_client):
+        # A stored quantity leaf is conceptually a scalar: a bare-scalar patch is the new submitted
+        # magnitude. The leaf is re-derived end-to-end (unit kept, input_value updated), and the
+        # persisted leaf matches the pure patch_leaf helper.
+        leaf = QuantityLeaf.from_submission(2.0, "m").as_dict()
+        c = await _insert_row(PROJ_A, formula="Fe2O3", data={"bandgap": leaf})
+
+        summary = await _service(mongo_client, ALICE).bulk_update(
+            ContributionFilter(chemical_system_id="Fe-O"), ContributionPatch(data={"bandgap": 5.0})
+        )
+
+        assert (summary.matched, summary.modified) == (1, 1)
+        reloaded = (await _reload(c.id)).data["bandgap"]
+        assert reloaded == QuantityLeaf.patch_leaf(leaf, {"value": 5.0})
+        assert reloaded["input_value"] == 5.0
+        assert reloaded["unit"] == "m"
+
+    async def test_unit_change_re_syncs_and_re_converts_leaf(self, db, mongo_client):
+        # Updating the unit re-canonicalizes the whole leaf: input_unit tracks the new unit and the
+        # canonical value/error are re-converted to SI (2 m -> input 2 km -> 2000 m).
+        leaf = QuantityLeaf.from_submission(2.0, "m").as_dict()
+        c = await _insert_row(PROJ_A, formula="Fe2O3", data={"bandgap": leaf})
+
+        summary = await _service(mongo_client, ALICE).bulk_update(
+            ContributionFilter(chemical_system_id="Fe-O"), ContributionPatch(data={"bandgap": {"unit": "km"}})
+        )
+
+        assert (summary.matched, summary.modified) == (1, 1)
+        reloaded = (await _reload(c.id)).data["bandgap"]
+        assert reloaded == QuantityLeaf.patch_leaf(leaf, {"unit": "km"})
+        assert reloaded["input_unit"] == "km"
+        assert reloaded["input_value"] == 2.0
+        assert reloaded["value"] == 2000.0
+
+    async def test_identity_collision_reports_per_row_conflict(self, db, mongo_client):
+        # Setting formula to a value another matched row already owns collides on the identity index:
+        # the already-Fe2O3 row is a no-op success, the Fe3O4 row conflicts against it.
+        keep = await _insert_row(PROJ_A, formula="Fe2O3", data={"x": 1.0})
+        clash = await _insert_row(PROJ_A, formula="Fe3O4", data={"x": 2.0})
+
+        summary = await _service(mongo_client, ALICE).bulk_update(
+            ContributionFilter(chemical_system_id="Fe-O"), ContributionPatch(formula="Fe2O3")
+        )
+
+        assert summary.matched == 2
+        assert summary.modified == 1
+        assert len(summary.failed) == 1
+        assert summary.failed[0].error_code == "conflict"
+        # The clashing row is left untouched; the pre-existing Fe2O3 row is unchanged.
+        assert (await _reload(clash.id)).formula == "Fe3O4"
+        assert (await _reload(keep.id)).formula == "Fe2O3"
+
+    async def test_per_row_patch_respects_writable_constraint(self, db, mongo_client):
+        # A data patch (identity-touching) must honor the same writable-project gate as the fast path:
+        # Alice's row is patched, the foreign-project row (readable-but-not-writable) is not.
+        mine = await _insert_row(PROJ_A, formula="Fe2O3", data={"x": 1.0})
+        foreign = Contribution.from_input_model(
+            ContributionIn(project=PROJ_B, chemical_system_id="Fe-O", formula="Fe2O3", data={"x": 1.0})
+        )
+        foreign.is_public = True
+        await foreign.insert()
+
+        summary = await _service(mongo_client, ALICE).bulk_update(
+            ContributionFilter(chemical_system_id="Fe-O"), ContributionPatch(data={"y": 9.0})
+        )
+
+        assert (summary.matched, summary.modified) == (1, 1)
+        assert summary.projects == [PROJ_A]
+        assert (await _reload(mine.id)).data == {"x": 1.0, "y": 9.0}  # merged, not replaced
+        assert (await _reload(foreign.id)).data == {"x": 1.0}  # foreign project untouched

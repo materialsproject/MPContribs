@@ -1,83 +1,89 @@
-"""Unit tests for the contribution repository's dict merge/replace update helpers.
+"""Unit tests for the contribution data merge helpers.
 
-Covers the pure translation from a patch's field map to the ``$set`` document: with ``replace_data``
-a dict field overwrites whole; without it, dict fields deep-merge into dotted ``$set`` paths so
-unmentioned stored keys survive (an addition), stopping at atomic annotated-value leaves.
+Covers the additive-merge translation of a patch's ``data`` against the *stored* shape:
+``flatten_merge_paths`` produces the dotted ``$set`` paths Mongo receives, and ``merge_data`` produces
+the equivalent post-write view used to resolve identity. Both follow one rule — a patch onto a stored
+quantity leaf re-derives the whole leaf (so its canonical and ``input_*`` halves stay in sync, see
+``patch_leaf``), a plain group is descended so unmentioned siblings survive, and any other scalar
+sets its path directly. Precise SI-conversion behavior of ``patch_leaf`` is covered in ``test_units``.
 """
 
-from mpcontribs_api.domains.contributions.repository import (
-    _build_update_set,
-    _flatten_for_merge,
-    _is_atomic_leaf,
-)
+from mpcontribs_api.domains._shared.units import QuantityLeaf
+
+# A stored leaf submitted as "2 m" (metre is an SI base unit, so canonical == submitted).
+LEAF = QuantityLeaf.from_submission(2.0, "m").as_dict()
+
+# The merge helpers now live on QuantityLeaf; aliased here to keep the test bodies readable.
+flatten_merge_paths = QuantityLeaf.flatten_merge_paths
+merge_data = QuantityLeaf.merge_data
 
 
-class TestIsAtomicLeaf:
-    def test_scalars_and_lists_are_atomic(self):
-        assert _is_atomic_leaf(1)
-        assert _is_atomic_leaf("x")
-        assert _is_atomic_leaf([1, 2, 3])
-        assert _is_atomic_leaf(None)
+class TestIsLeafFragment:
+    def test_reserved_only_dict_is_a_fragment(self):
+        assert QuantityLeaf.is_fragment({"unit": "kg"})
+        assert QuantityLeaf.is_fragment({"value": 5, "unit": "kg"})
+        assert QuantityLeaf.is_fragment({"error": 0.1})
 
-    def test_annotated_leaf_is_atomic(self):
-        leaf = {"value": 1.0, "input_value": 1.0, "display": "1 eV", "unit": "eV"}
-        assert _is_atomic_leaf(leaf)
-
-    def test_plain_group_dict_is_not_atomic(self):
-        assert not _is_atomic_leaf({"a": 1, "b": 2})
-
-    def test_minimal_value_leaf_is_atomic(self):
-        # A bare-number leaf has only ``value`` (no input_value/display) and is still a leaf.
-        assert _is_atomic_leaf({"value": 1.0})
-        assert _is_atomic_leaf({"value": 1.0, "input_value": 1.0})
-
-    def test_dict_with_non_reserved_key_is_not_atomic(self):
-        # A numeric ``value`` alongside a non-reserved key is a descendable group, not a leaf.
-        assert not _is_atomic_leaf({"value": 1.0, "extra": 2})
-        # ``value`` present but non-numeric -> not a leaf either.
-        assert not _is_atomic_leaf({"value": "text"})
+    def test_non_reserved_or_empty_is_not_a_fragment(self):
+        assert not QuantityLeaf.is_fragment({"unit": "kg", "x": 1})  # mixed reserved + plain
+        assert not QuantityLeaf.is_fragment({"x": 1})
+        assert not QuantityLeaf.is_fragment({})
+        assert not QuantityLeaf.is_fragment(5)
+        assert not QuantityLeaf.is_fragment("eV")
 
 
-class TestFlattenForMerge:
-    def test_top_level_scalars_become_dotted_paths(self):
-        assert _flatten_for_merge("data", {"a": 1, "b": 2}) == {"data.a": 1, "data.b": 2}
+class TestFlattenMergePaths:
+    def test_new_scalar_key_sets_directly(self):
+        assert flatten_merge_paths({}, {"y": 9}, prefix="data.") == {"data.y": 9}
 
-    def test_nested_group_flattens_to_leaves(self):
-        # A plain nested group is descended so sibling leaves are addressed individually and any
-        # unmentioned sibling in the stored dict survives the merge.
-        out = _flatten_for_merge("data", {"group": {"x": 1, "y": 2}})
-        assert out == {"data.group.x": 1, "data.group.y": 2}
+    def test_leaf_patch_sets_the_whole_recomputed_leaf(self):
+        # A fragment touching a stored leaf writes the whole re-derived leaf at its path (not a
+        # sub-path), so value/unit/error and input_* can be re-synced together. Changing the unit to
+        # km re-converts the magnitude (2 m -> input 2 km -> 2000 m) and updates input_unit.
+        out = flatten_merge_paths({"bandgap": LEAF}, {"bandgap": {"unit": "km"}}, prefix="data.")
+        assert set(out) == {"data.bandgap"}  # whole leaf, not data.bandgap.unit
+        assert out["data.bandgap"] == QuantityLeaf.patch_leaf(LEAF, {"unit": "km"})
+        assert out["data.bandgap"]["value"] == 2000.0
+        assert out["data.bandgap"]["input_unit"] == "km"
 
-    def test_annotated_leaf_stays_whole(self):
-        leaf = {"value": 4.2, "input_value": 4.2, "display": "4.2 eV", "unit": "eV"}
-        out = _flatten_for_merge("data", {"bandgap": leaf})
-        # Not descended into value/unit/... — the leaf is set atomically.
-        assert out == {"data.bandgap": leaf}
+    def test_bare_scalar_onto_leaf_updates_magnitude(self):
+        # A bare scalar is the new submitted magnitude; the leaf is re-derived, keeping the unit.
+        out = flatten_merge_paths({"bandgap": LEAF}, {"bandgap": 5.0}, prefix="data.")
+        assert out == {"data.bandgap": QuantityLeaf.patch_leaf(LEAF, {"value": 5.0})}
+        assert out["data.bandgap"]["input_value"] == 5.0
+        assert out["data.bandgap"]["unit"] == "m"
 
-    def test_empty_dict_contributes_nothing(self):
-        assert _flatten_for_merge("data", {}) == {}
-        assert _flatten_for_merge("data", {"group": {}}) == {}
+    def test_plain_group_descends_and_keeps_siblings(self):
+        assert flatten_merge_paths({"grp": {"a": 1}}, {"grp": {"b": 2}}, prefix="data.") == {"data.grp.b": 2}
 
+    def test_bare_scalar_onto_non_leaf_sets_directly(self):
+        # Target is a plain group (not a quantity leaf) -> no leaf recompute, set the path itself.
+        assert flatten_merge_paths({"grp": {"a": 1}}, {"grp": 7}, prefix="data.") == {"data.grp": 7}
 
-class TestBuildUpdateSet:
-    def test_replace_passes_through_verbatim(self):
-        update = {"formula": "H2O", "data": {"a": 1}}
-        assert _build_update_set(update, replace_data=True) == update
-
-    def test_merge_flattens_only_dict_fields(self):
-        update = {"formula": "H2O", "version": 2, "data": {"a": 1, "grp": {"b": 2}}}
-        assert _build_update_set(update, replace_data=False) == {
-            "formula": "H2O",
-            "version": 2,
-            "data.a": 1,
-            "data.grp.b": 2,
+    def test_new_leaf_shaped_value_onto_absent_key_descends(self):
+        # No stored leaf to re-sync against -> ordinary descent (stored raw, canonicalized on insert).
+        assert flatten_merge_paths({}, {"q": {"value": 3, "unit": "m"}}, prefix="data.") == {
+            "data.q.value": 3,
+            "data.q.unit": "m",
         }
 
-    def test_merge_keeps_list_fields_direct(self):
-        update = {"structures": [{"$id": 1}]}
-        assert _build_update_set(update, replace_data=False) == update
+    def test_empty_dict_contributes_nothing(self):
+        assert flatten_merge_paths({"grp": {"a": 1}}, {"grp": {}}, prefix="data.") == {}
 
-    def test_merge_of_only_empty_dict_yields_empty_document(self):
-        # Signals the caller (update_contribution_by_identifiers) to treat the patch as a no-op
-        # rather than issue an empty (and MongoDB-rejected) $set.
-        assert _build_update_set({"data": {}}, replace_data=False) == {}
+
+class TestMergeData:
+    def test_leaf_patch_matches_flatten(self):
+        # merge_data is the post-write view flatten_merge_paths would produce, key by key.
+        merged = merge_data({"bandgap": LEAF}, {"bandgap": {"unit": "km"}})
+        assert merged["bandgap"] == QuantityLeaf.patch_leaf(LEAF, {"unit": "km"})
+
+    def test_bare_scalar_rederives_leaf(self):
+        merged = merge_data({"bandgap": LEAF}, {"bandgap": 5.0})
+        assert merged["bandgap"] == QuantityLeaf.patch_leaf(LEAF, {"value": 5.0})
+
+    def test_new_key_and_sibling_survival(self):
+        merged = merge_data({"x": 1, "grp": {"a": 1}}, {"y": 2, "grp": {"b": 2}})
+        assert merged == {"x": 1, "y": 2, "grp": {"a": 1, "b": 2}}
+
+    def test_none_base_treated_as_empty(self):
+        assert merge_data(None, {"y": 2}) == {"y": 2}

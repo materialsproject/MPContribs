@@ -10,10 +10,8 @@ from pymongo.errors import BulkWriteError
 from mpcontribs_api.authz import ADMIN_GROUP, User
 from mpcontribs_api.config import MongoSettings, get_settings
 from mpcontribs_api.domains.attachments.models import Attachment, AttachmentIn
-from mpcontribs_api.domains._shared.bulk import BulkUpdateSummary
 from mpcontribs_api.domains.contributions.models import (
     Contribution,
-    ContributionBulkUpdate,
     ContributionFilter,
     ContributionIdentity,
     ContributionIn,
@@ -1529,3 +1527,63 @@ class TestPatchIdentifierHierarchy:
         # No identity/unique inputs touched -> no re-read, straight to the plain patch.
         contrib_repo.get_contribution_by_id.assert_not_called()
         contrib_repo.patch_contribution_by_id.assert_called_once()
+
+
+# ---------------------------------------------------------------------------
+# patch_contribution_by_id — data merge vs replace + unique_value resolution
+# ---------------------------------------------------------------------------
+
+
+class TestPatchDataMergeReplace:
+    async def test_data_patch_defaults_to_merge_and_forwards_replace_false(self):
+        svc, contrib_repo, *_ = _make_service()
+        existing = _existing_doc(material_id=None, chemical_system_id="Fe-O", formula="Fe2O3")
+        existing.data = {"x": 1.0}
+        contrib_repo.get_contribution_by_id.return_value = existing
+        contrib_repo.patch_contribution_by_id.return_value = MagicMock(spec=Contribution)
+
+        await svc.patch_contribution_by_id(str(existing.id), ContributionPatch(data={"y": 9.0}))
+
+        # The repo performs the actual dotted-$set merge; the service just forwards replace_data=False.
+        assert contrib_repo.patch_contribution_by_id.call_args.kwargs["replace_data"] is False
+
+    async def test_replace_data_flag_forwarded_to_repo(self):
+        svc, contrib_repo, *_ = _make_service()
+        existing = _existing_doc(material_id=None, chemical_system_id="Fe-O", formula="Fe2O3")
+        existing.data = {"x": 1.0}
+        contrib_repo.get_contribution_by_id.return_value = existing
+        contrib_repo.patch_contribution_by_id.return_value = MagicMock(spec=Contribution)
+
+        await svc.patch_contribution_by_id(
+            str(existing.id), ContributionPatch(data={"y": 9.0}), replace_data=True
+        )
+
+        assert contrib_repo.patch_contribution_by_id.call_args.kwargs["replace_data"] is True
+
+    async def test_merge_resolves_unique_value_from_merged_state(self):
+        # The unique_column value lives in the stored data and is NOT in the patch. A merge preserves
+        # it, so unique_value must resolve against the merged view rather than raising "missing".
+        svc, contrib_repo, *_ = _make_service(unique_column="sample_id")
+        existing = _existing_doc(material_id=None, chemical_system_id="Fe-O", formula="Fe2O3")
+        existing.data = {"sample_id": 42, "x": 1.0}
+        contrib_repo.get_contribution_by_id.return_value = existing
+        contrib_repo.patch_contribution_by_id.return_value = MagicMock(spec=Contribution)
+
+        await svc.patch_contribution_by_id(str(existing.id), ContributionPatch(data={"y": 9.0}))
+
+        # Resolved from {sample_id:42, x:1, y:9}, so the untouched unique_value survives the merge.
+        assert contrib_repo.patch_contribution_by_id.call_args.kwargs["unique_value"] == 42
+
+    async def test_replace_resolves_unique_value_from_patch_data_only(self):
+        # On replace the stored data is discarded, so a unique_column absent from the patch is a
+        # genuine validation failure (the resulting document would lack it).
+        svc, contrib_repo, *_ = _make_service(unique_column="sample_id")
+        existing = _existing_doc(material_id=None, chemical_system_id="Fe-O", formula="Fe2O3")
+        existing.data = {"sample_id": 42}
+        contrib_repo.get_contribution_by_id.return_value = existing
+
+        with pytest.raises(ValidationError, match="unique_column"):
+            await svc.patch_contribution_by_id(
+                str(existing.id), ContributionPatch(data={"y": 9.0}), replace_data=True
+            )
+        contrib_repo.patch_contribution_by_id.assert_not_called()
