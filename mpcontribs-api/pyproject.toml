@@ -55,6 +55,7 @@ dependencies = [
     "rq<=2.3.2",  # see https://github.com/rq/Flask-RQ2/issues/620
     "supervisor",
     "setproctitle",
+    "setuptools<82.0.0",
     "uncertainties",
     "websocket_client",
     "zstandard",
