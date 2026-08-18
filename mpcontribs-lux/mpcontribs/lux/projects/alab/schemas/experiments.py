@@ -16,7 +16,9 @@ class HeatingSummary(BaseModel, extra="forbid"):
     """Nested data.heating group -- only these 4 fields survive at the
     summary level; the rest of heating's detail is table-only."""
 
-    method: str = Field(description="Heating method (standard / atmosphere / manual / none)")
+    method: str = Field(
+        description="Heating method (standard / atmosphere / manual / none)"
+    )
 
     temperatureTarget: float | None = Field(
         default=None,
@@ -27,7 +29,9 @@ class HeatingSummary(BaseModel, extra="forbid"):
         "Celsius, just not pint-typed on submission.",
     )
 
-    dwellTime: float | None = Field(default=None, description="Heating dwell time in minutes")
+    dwellTime: float | None = Field(
+        default=None, description="Heating dwell time in minutes"
+    )
 
     atmosphere: str = Field(description="Furnace atmosphere gas (e.g. Air, Ar)")
 
@@ -37,7 +41,9 @@ class PowderRecoverySummary(BaseModel, extra="forbid"):
     summary level; yield, crucible weight, failure classification, and
     first-tap mass are table-only."""
 
-    totalDosedMass: float = Field(description="Total powder mass dosed into the crucible, in mg")
+    totalDosedMass: float = Field(
+        description="Total powder mass dosed into the crucible, in mg"
+    )
 
 
 class Experiment(BaseModel, extra="forbid"):
@@ -54,7 +60,9 @@ class Experiment(BaseModel, extra="forbid"):
 
     globalFormula: str = Field(description="Canonical formula for the target material")
 
-    experimentElements: str = Field(description="Target element symbols (comma-separated)")
+    experimentElements: str = Field(
+        description="Target element symbols (comma-separated)"
+    )
 
     workflowTasks: list[str] = Field(
         description="Full observed sequence of task types, in execution order; "
