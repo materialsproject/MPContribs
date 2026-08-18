@@ -385,7 +385,20 @@ class ContributionService:
                     rejected.append(item)
             if not rejected:
                 continue
-            self._log_quota_exceeded(project_id, cap, stored, len(items) - len(rejected), rejected)
+
+            rejected_identifiers = [item.contribution.material_id for item in rejected[:_QUOTA_LOG_IDENTIFIER_CAP]]
+            if len(rejected_identifiers):
+                logger.warning(
+                    "contribution.unapproved_quota_exceeded",
+                    project=project_id,
+                    max_allowed=cap,
+                    stored=stored,
+                    attempted=len(items) + len(rejected),
+                    accepted=len(items),
+                    rejected=len(rejected),
+                    rejected_identifiers=rejected_identifiers,
+                    rejected_identifiers_truncated=len(rejected) > _QUOTA_LOG_IDENTIFIER_CAP,
+                )
             exc = PermissionError(
                 "Attempted to add more than the allowed number of unapproved contributions",
                 project=project_id,
