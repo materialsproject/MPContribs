@@ -10,11 +10,7 @@ from mpcontribs_api.exceptions import ValidationError
 
 
 def _validate_unique_column(value: str | None) -> str | None:
-    """Shape-only check for ``unique_column``: a non-empty, non-blank dotted-path string or None.
-
-    No subset-of-``columns`` check: ``columns`` is derived and eventually consistent, so a path may
-    legitimately not appear there yet. Correctness is enforced per contribution at write time.
-    """
+    """Shape-only check for ``unique_column``: a non-empty, non-blank dotted-path string or None."""
     if value is None:
         return None
     if not value.strip() or any(not segment for segment in value.split(".")):
@@ -84,8 +80,7 @@ class ProjectBase(BaseModel):
     is_approved: bool = False
     license: Literal["CCA4", "CCPD"] | None = None
 
-    # Validated on every representation (input and stored) so a bad unique_column is rejected at the
-    # door, consistent with ProjectPatch. See _validate_unique_column.
+    # Validated on every representation (input and stored) so a bad unique_column is rejected immediately
     @field_validator("unique_column")
     @classmethod
     def _check_unique_column(cls, v: str | None) -> str | None:
@@ -97,10 +92,7 @@ class ProjectBase(BaseModel):
 
 
 class Project(ProjectBase, BaseDocumentWithInput[ShortStr]):
-    """Document model of what is actually stored.
-
-    Binds ``id`` to ``ShortStr`` (a meaningful string id, always supplied) via the generic base.
-    """
+    """Document model of what is actually stored."""
 
     # Server-owned: derived from the project's contributions
     stats: Stats = Field(default_factory=Stats.empty)
@@ -204,7 +196,7 @@ class ProjectPatch(BaseModel):
     long_title: str | None = None
     other: dict[str, Any] = Field(default_factory=dict)
     is_public: bool = False
-    # None => unset (left unchanged); admin-only when set (enforced in the repository).
+    # None => unset (left unchanged); admin-only when set
     is_approved: bool | None = None
     license: Literal["CCA4", "CCPD"] | None = None
 
