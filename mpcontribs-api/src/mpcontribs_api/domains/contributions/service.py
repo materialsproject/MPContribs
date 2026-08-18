@@ -55,15 +55,12 @@ _QUOTA_LOG_IDENTIFIER_CAP = 100
 class PreparedWrite:
     """One expanded (pivoted) contribution carried through the bulk-write pipeline.
 
-    Expansion can turn a single submitted contribution into many rows (see
-    :func:`mpcontribs_api.domains.contributions.pivot.expand_contribution`); every row keeps the
-    ``index`` of the submission it came from so per-item failures report against the original batch
-    position, and carries the server-computed ``condition_key`` that (with project+identifier)
+    Every row keeps the ``index`` of the submission it came from so per-item failures report
+    against the original batch position, and carries the server-computed ``condition_key`` that
     identifies it.
 
-    ``unique_value`` is ``None`` until identity resolution (see ``_resolve_identity``) promotes the
-    project's ``unique_column`` value out of the contribution's ``data``; it then travels with the
-    row into the write.
+    ``unique_value`` is ``None`` until identity resolution promotes the project's ``unique_column``
+    value out of the contribution's ``data``.
     """
 
     index: int
@@ -131,9 +128,6 @@ class ContributionService:
         by ``settings.mongo.max_concurrent_transactions``. Per-item failures are returned in the
         summary's ``failed`` list; the request as a whole does not raise on partial failure.
 
-        A duplicate identity ``(project, material_id, chemical_system_id, formula, unique_value,
-        condition_key)`` is rejected as a conflict. See ``_resolve_identity``.
-
         Args:
             contributions: contributions to insert; may include nested structures/tables/attachments
 
@@ -162,14 +156,7 @@ class ContributionService:
         self,
         contributions: list[ContributionIn],
     ) -> tuple[list[BulkFailure], list[PreparedWrite]]:
-        """Annotate units and pivot each submission on its conditions, keeping the original index.
-
-        A submission may expand into several rows (one per condition signature) or be rejected as a
-        whole (malformed annotation or colliding columns). Any components on the submission ride
-        along on every resulting row (see :func:`...pivot.expand_contribution`). A rejection becomes
-        a single ``BulkFailure`` against the submission's original index; every surviving row carries
-        that index and its ``condition_key`` forward.
-        """
+        """Annotate units and pivot each submission on its conditions, keeping the original index."""
         failures: list[BulkFailure] = []
         prepared: list[PreparedWrite] = []
         for i, contrib in enumerate(contributions):
@@ -188,10 +175,6 @@ class ContributionService:
         items: Iterable[PreparedWrite],
     ) -> tuple[list[BulkFailure], list[PreparedWrite]]:
         """Reject contributions whose ``project`` the current user is not permitted to write.
-
-        Authorized iff the user is an admin (writes anything) or the contribution's ``project`` is
-        one of the user's groups. Anonymous users are blocked at the router, but carry no groups and
-        are not admins, so they fall through to authorized-for-nothing here (defense-in-depth).
 
         Partitions ``items`` into unauthorized ``BulkFailure`` entries and the remaining authorized
         items that should proceed. Mirrors ``_split_oversize`` (same shape) so callers can chain
@@ -256,7 +239,7 @@ class ContributionService:
 
         # First pass: validate accessibility + resolve each unique_value, collecting identity tuples
         # so the existence check can be batched into a single query. condition_key is server-computed
-        # by pivot and carried on each PreparedWrite, so it travels with the resolved row.
+        # by pivot and carried on each PreparedWrite
         resolved: list[tuple[int, ContributionIn, Scalar | None, str]] = []
         keys: list[ContributionIdentity] = []
         for item in items:
@@ -302,7 +285,7 @@ class ContributionService:
             keys.append(contrib.identity(unique_value, condition_key))
 
         # Second pass (insert only): reject identity collisions against existing docs and earlier
-        # items in this batch. Upsert skips this — an existing identity is the update target and the
+        # items in this batch. Upsert skips this - an existing identity is the update target and the
         # unique index arbitrates intra-batch races.
         if is_upsert:
             plan.extend(
