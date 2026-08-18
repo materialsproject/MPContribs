@@ -526,11 +526,8 @@ class ContributionService:
         """Per-submission transaction path, bounded by ``max_concurrent_transactions``.
 
         Rows that pivoted out of the same submission share an ``index`` and carry identical component
-        inputs (see :func:`mpcontribs_api.domains.contributions.pivot.expand_contribution`), so they
-        are grouped and written together in one transaction: the shared components are inserted once
-        (deduplicated by content hash in the components repo) and every row in the group links to the
-        resulting ids. A submission that did not pivot is simply a group of one, preserving the
-        previous one-transaction-per-row shape.
+        inputs, so they are grouped and written together in one transaction: the shared components are
+        inserted once and every row in the group links to the resulting ids.
         """
         if not items:
             return [], []
@@ -559,11 +556,7 @@ class ContributionService:
     async def _insert_group_with_components(self, group: list[PreparedWrite]) -> list[Contribution] | BulkFailure:
         """Run one submission's pivoted rows + their shared components inside a transaction.
 
-        Uses ``session.with_transaction`` so transient txn errors (write conflicts, primary step-
-        downs) get pymongo's retry treatment, and so the components and every pivoted row of the
-        submission commit or roll back together. Any exception is converted to a single
-        ``BulkFailure`` against the submission's index so the surrounding ``asyncio.gather`` sees a
-        normal return value for every coroutine.
+        Uses transactions to keep a contribution and its components in-sync. Failed writes are returned as BulkFailures.
         """
         index = group[0].index
         contrib = group[0].contribution
@@ -587,14 +580,7 @@ class ContributionService:
             return bulk_failure_from_exception(index, contrib.identity_dict(unique_value, condition_key), exc)
 
     async def _do_insert_group(self, group: list[PreparedWrite], session: AsyncClientSession) -> list[Contribution]:
-        """Insert the submission's shared components once, then every pivoted row, all in ``session``.
-        Every row in ``group`` came from the same submission and carries identical component inputs,
-        so the components are inserted a single time — the components repo deduplicates by content
-        hash and returns the already-stored document (its id) when the content exists — and each
-        row's contribution links to those shared ids. Components are inserted sequentially because a
-        session is single-threaded — sharing it across concurrent awaits would corrupt the wire
-        protocol.
-        """
+        """Perform the insert of Contributions and their components within a single session."""
         template = group[0].contribution
         structures = await self._structures.insert_components(template.structures or [], session=session)
         tables = await self._tables.insert_components(template.tables or [], session=session)
@@ -610,6 +596,7 @@ class ContributionService:
             inserted.append(await self._contributions.insert_contribution(doc, session=session))
         return inserted
 
+    # TODO: Allow components to be upserted
     async def upsert_contributions(self, contributions: list[ContributionIn]) -> BulkWriteSummary[Contribution]:
         """Upsert contributions by their identifying fields, reporting per-item outcomes.
 
@@ -758,12 +745,7 @@ class ContributionService:
         return extract_unique_value(data, unique_column)
 
     async def upsert_contribution_by_id(self, id: str, contribution: ContributionIn) -> Contribution:
-        """Upsert a single contribution by Mongo id, resolving its server-owned ``unique_value``.
-
-        A brand-new document (the id does not yet exist) counts against the project's
-        unapproved-contribution quota; updating an existing document is always allowed. The id-existence
-        check runs first so updates never pay for the (unscoped) stored-count query.
-        """
+        """Upsert a single contribution by Mongo id, resolving its server-owned ``unique_value``."""
         if not self._user.can_write(contribution.project):
             raise PermissionError(f"not authorized to write to project '{contribution.project}'")
         existing = await self._contributions.get_contribution_by_id(id, fields=None)
@@ -794,8 +776,7 @@ class ContributionService:
         bare scalar routes onto a stored quantity leaf's ``value``); pass ``replace_data`` to overwrite
         the whole ``data`` dict. On replace the payload becomes a standalone document, so it is
         re-validated strictly (the permissive patch validator allows leaf fragments a full doc may not).
-        ``unique_value`` is resolved against the same post-write view the repository will persist, and
-        that view (``existing_data``) is handed to the repository so its dotted ``$set`` agrees.
+        ``unique_value`` is resolved against the same post-write view the repository will persist.
         """
         set_fields = update.model_dump(exclude_unset=True)
         touches_unique = "data" in set_fields or "project" in set_fields
@@ -901,15 +882,10 @@ class ContributionService:
     async def update_project(self, project_ids: Iterable[str]) -> None:
         """Recompute ``Project.stats``/``Project.columns`` from current contributions, per project.
 
-        Called after a contribution write/delete so a project's rollup stays in sync with its
-        contributions. Recomputes from the DB (rather than applying a per-write delta) because
-        ``columns`` min/max cannot be maintained incrementally on delete. Runs after the write
-        commits — the stats are eventually consistent, not part of the write's transaction.
+        Called after a write/delete. Uses the DB directly rather than a delta from the operation.
 
         The recompute is best-effort: a failure to refresh one project's stats is logged and does
-        not fail the originating write (the data is already committed; stats self-heal on the next
-        write). Contributions in a batch almost always target a single project, so the affected set
-        is small and each project is aggregated sequentially.
+        not fail the originating write.
         """
         pids = {pid for pid in project_ids if pid}
         if not pids:
