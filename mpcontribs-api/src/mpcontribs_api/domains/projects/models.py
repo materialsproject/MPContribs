@@ -10,11 +10,7 @@ from mpcontribs_api.exceptions import ValidationError
 
 
 def _validate_unique_column(value: str | None) -> str | None:
-    """Shape-only check for ``unique_column``: a non-empty, non-blank dotted-path string or None.
-
-    No subset-of-``columns`` check: ``columns`` is derived and eventually consistent, so a path may
-    legitimately not appear there yet. Correctness is enforced per contribution at write time.
-    """
+    """Shape-only check for ``unique_column``: a non-empty, non-blank dotted-path string or None."""
     if value is None:
         return None
     if not value.strip() or any(not segment for segment in value.split(".")):
@@ -53,6 +49,11 @@ class Stats(BaseModel):
     attachments: int
     size: float
 
+    @classmethod
+    def empty(cls) -> Stats:
+        """A zeroed rollup for a project with no contributions yet."""
+        return cls(columns=0, contributions=0, tables=0, structures=0, attachments=0, size=0.0)
+
 
 class Reference(BaseModel):
     # TODO: Labels have some restrictions, not sure exactly what yet
@@ -60,18 +61,11 @@ class Reference(BaseModel):
     url: HttpUrl
 
 
-class Project(BaseDocumentWithInput[ShortStr]):
-    """Document model of what is actually stored.
-
-    Binds ``id`` to ``ShortStr`` (a meaningful string id, always supplied) via the generic base.
-    """
-
-    # Required
+class ProjectBase(BaseModel):
     title: ShortStr
     authors: str
     description: str
     owner: PrefixedEmail
-    stats: Stats
 
     # The single data column (dotted path) that disambiguates contributions sharing the same
     # (material_id, chemical_system_id, formula). None -> that triple must be unique on its own. Its
@@ -82,32 +76,40 @@ class Project(BaseDocumentWithInput[ShortStr]):
     references: list[Reference] = Field(default_factory=list)
     long_title: str | None = None
     other: dict[str, Any] = Field(default_factory=dict)
-    columns: list[Column] = Field(default_factory=list)
     is_public: bool = False
     is_approved: bool = False
     license: Literal["CCA4", "CCPD"] | None = None
 
+    # Validated on every representation (input and stored) so a bad unique_column is rejected immediately
     @field_validator("unique_column")
     @classmethod
     def _check_unique_column(cls, v: str | None) -> str | None:
         return _validate_unique_column(v)
 
-    # Empty method for now. Keeping for business logic later
+    class Settings:
+        name = "projects"
+        keep_nulls = False
+
+
+class Project(ProjectBase, BaseDocumentWithInput[ShortStr]):
+    """Document model of what is actually stored."""
+
+    # Server-owned: derived from the project's contributions
+    stats: Stats = Field(default_factory=Stats.empty)
+    columns: list[Column] = Field(default_factory=list)
+
     @classmethod
-    def from_input_model(cls, data: ProjectIn) -> Project:
-        return cls(**data.model_dump())
+    def from_input_model(cls, data: ProjectIn, id: str) -> Project:  # pyright: ignore[reportIncompatibleMethodOverride]
+        # ``id`` comes from the request path, not the body (see ``ProjectIn``).
+        return cls(_id=id, **data.model_dump())
 
     @staticmethod
     def decode_cursor(cursor: str) -> str:
         """Decodes cursor and returns it as a str.
 
-        Needs override over parent class since Project.id is a simple str
+        Needs to override the parent class since Project.id is a simple str
         """
         return pagination.decode_cursor(cursor)
-
-    class Settings:
-        name = "projects"
-        keep_nulls = False
 
 
 class ProjectOut(DocumentOut[ShortStr]):
@@ -129,8 +131,8 @@ class ProjectOut(DocumentOut[ShortStr]):
     license: Literal["CCA4", "CCPD"] | None = None
 
     @staticmethod
-    def default_fields() -> list[str]:
-        return ["id", "is_public", "title", "owner", "is_approved", "unique_column"]
+    def default_fields() -> tuple[str, ...]:
+        return ("id", "is_public", "title", "owner", "is_approved", "unique_column")
 
 
 class ProjectFilter(BaseFilter):
@@ -168,13 +170,22 @@ class ProjectFilter(BaseFilter):
         model = Project
 
 
-# Keeping for business logic separation. May have specific implementation later
-class ProjectIn(Project):
-    """Representation of user-supplied input."""
+# Left for namespace similarity between modules
+class ProjectIn(ProjectBase):
+    """User-supplied input for a project write.
+
+    Carries no ``id`` (it comes from the request path) and no ``stats``/``columns`` (server-owned,
+    recomputed from contributions). ``is_approved`` is accepted but only honored for admins.
+    """
 
 
 class ProjectPatch(BaseModel):
-    """Nullable Project representation of user-supplied data for partial update (patch)."""
+    """Nullable Project representation of user-supplied data for partial update (patch).
+
+    ``stats`` and ``columns`` are intentionally absent: they are server-owned and recomputed from
+    the project's contributions, never patched by a client. ``is_approved`` is accepted but the
+    repository allows only admins to change it.
+    """
 
     title: ShortStr | None = None
     authors: str | None = None
@@ -184,9 +195,9 @@ class ProjectPatch(BaseModel):
     references: list[Reference] = Field(default_factory=list)
     long_title: str | None = None
     other: dict[str, Any] = Field(default_factory=dict)
-    columns: list[Column] = Field(default_factory=list)
     is_public: bool = False
-    is_approved: bool = False
+    # None => unset (left unchanged); admin-only when set
+    is_approved: bool | None = None
     license: Literal["CCA4", "CCPD"] | None = None
 
     @field_validator("unique_column")

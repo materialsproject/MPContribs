@@ -102,8 +102,8 @@ class ConsumerOut(DocumentOut[PydanticObjectId]):
     settings: ConsumerSettings | None = None
 
     @staticmethod
-    def default_fields() -> list[str]:
-        return [*ConsumerOut.model_fields]
+    def default_fields() -> tuple[str, ...]:
+        return tuple(ConsumerOut.model_fields)
 
 
 class ConsumerFilter(BaseFilter):

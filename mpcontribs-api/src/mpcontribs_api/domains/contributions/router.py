@@ -6,7 +6,7 @@ from fastapi_filter import FilterDepends
 
 from mpcontribs_api.config import get_settings
 from mpcontribs_api.dependencies import S3Dep, require_user
-from mpcontribs_api.domains._shared.bulk import BulkWriteSummary
+from mpcontribs_api.domains._shared.bulk import BulkUpdateSummary, BulkWriteSummary
 from mpcontribs_api.domains._shared.models import DeleteResponse
 from mpcontribs_api.domains._shared.types import (
     DownloadFormat,
@@ -35,6 +35,9 @@ def _enforce_bulk_limit(contributions: list[ContributionIn]) -> None:
     list. Callers over the limit should chunk (the limit is advertised at ``GET /api/v1/limits``)
     or use the async bulk ingestion endpoint. Complements the body-size middleware, which bounds
     bytes rather than item count.
+
+    This bounds the *submitted* item count; the service re-applies the same limit to the *expanded*
+    row count after annotated-key pivoting (one submission can expand into many contributions).
     """
     limit = get_settings().mongo.bulk_write_limit
     count = len(contributions)
@@ -52,7 +55,7 @@ async def get_contributions(
     repo: ContributionDep,
     pagination: Annotated[CursorParams, Depends()],
     filter: ContributionFilter = FilterDepends(ContributionFilter),
-    fields: FieldSelector = ContributionOut.default_fields(),
+    fields: FieldSelector = None,
 ):
     selected = ContributionOut.parse_fields(fields)
     return await repo.get_contributions(pagination=pagination, filter=filter, fields=selected)
@@ -67,6 +70,24 @@ async def delete_contributions(
     # convert it to the typed DeleteResponse so the endpoint has a stable, serializable contract.
     result = await repo.delete_contributions(filter=filter)
     return DeleteResponse.from_delete_result(result) if result is not None else DeleteResponse(num_deleted=0)
+
+
+@router.patch("", dependencies=[Depends(require_user)])
+async def patch_contributions(
+    service: ContributionServiceDep,
+    body: ContributionPatch,
+    filter: ContributionFilter = FilterDepends(ContributionFilter),
+    replace_data: bool = False,
+) -> BulkUpdateSummary:
+    """Update every contribution matching ``filter`` that the caller may write.
+
+    Allows updates within the user's scope. If Identity fields are modified, updates occur per-row,
+    and may result in failures reported in BulkUpdateSummary.failed
+
+    ``data`` deep-merges into each row's stored ``data`` by default
+    Pass ``?replace_data=true`` to overwrite the whole ``data`` dict instead.
+    """
+    return await service.bulk_update(filter=filter, update=body, replace_data=replace_data)
 
 
 # TODO: Might want to take contributions in from request body and run model_validate_json on it (much faster)
@@ -96,7 +117,7 @@ async def download_contributions(
     format: DownloadFormat = DownloadFormat.JSONL,
     ignore_cache: bool = False,
     filter: ContributionFilter = FilterDepends(ContributionFilter),
-    fields: FieldSelector = ContributionOut.default_fields(),
+    fields: FieldSelector = None,
 ):
     selected = ContributionOut.parse_fields(fields)
     body = await repo.download_contributions(
@@ -128,7 +149,7 @@ async def delete_contribution_by_id(
 async def get_contribution_by_id(
     repo: ContributionDep,
     id: str,
-    fields: FieldSelector = ContributionOut.default_fields(),
+    fields: FieldSelector = None,
 ):
     selected = ContributionOut.parse_fields(fields)
     return await repo.get_contribution_by_id(id=id, fields=selected)
@@ -140,5 +161,15 @@ async def upsert_contribution_by_id(service: ContributionServiceDep, id: str, co
 
 
 @router.patch("/{id}", dependencies=[Depends(require_user)])
-async def patch_contribution_by_id(service: ContributionServiceDep, id: str, update: ContributionPatch):
-    return await service.patch_contribution_by_id(id=id, update=update)
+async def patch_contribution_by_id(
+    service: ContributionServiceDep,
+    id: str,
+    update: ContributionPatch,
+    replace_data: bool = False,
+):
+    """Patch one contribution by id.
+
+    ``data`` deep-merges into the stored ``data`` by default (unmentioned leaves survive); pass
+    ``?replace_data=true`` to overwrite the whole ``data`` dict instead.
+    """
+    return await service.patch_contribution_by_id(id=id, update=update, replace_data=replace_data)

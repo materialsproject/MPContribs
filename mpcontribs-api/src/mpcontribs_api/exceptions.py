@@ -66,6 +66,16 @@ class ValidationError(AppError):
     log_level = logging.INFO
 
 
+class UnitError(ValidationError):
+    """Raised when a magnitude or unit string cannot be parsed."""
+
+    error_code = "unit_error"
+
+
+class DataKeyError(ValidationError):
+    error_code = "data_key_error"
+
+
 class PayloadTooLargeError(AppError):
     status_code = 413
     error_code = "payload_too_large"

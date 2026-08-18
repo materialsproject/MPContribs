@@ -25,9 +25,11 @@ async def get_consumers(
     repo: ConsumerDep,
     pagination: Annotated[CursorParams, Depends()],
     filter: ConsumerFilter = FilterDepends(ConsumerFilter),
-    fields: FieldSelector = ConsumerOut.default_fields(),
+    fields: FieldSelector = None,
 ):
     """List consumer overrides (admin only)."""
+    if fields is None:
+        fields = list(ConsumerOut.default_fields())
     selected = ConsumerOut.parse_fields(fields)
     return await repo.get_consumers(filter=filter, pagination=pagination, fields=selected)
 
@@ -36,9 +38,11 @@ async def get_consumers(
 async def get_consumer_by_id(
     id: str,
     repo: ConsumerDep,
-    fields: FieldSelector = ConsumerOut.default_fields(),
+    fields: FieldSelector = None,
 ):
     """Get a single consumer override by document id (admin only)."""
+    if fields is None:
+        fields = list(ConsumerOut.default_fields())
     selected = ConsumerOut.parse_fields(fields)
     return await repo.get_consumer_by_id(id=id, fields=selected)
 

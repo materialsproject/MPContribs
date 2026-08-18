@@ -12,13 +12,14 @@ from mpcontribs_api.config import MongoSettings, get_settings
 from mpcontribs_api.domains.attachments.models import Attachment, AttachmentIn
 from mpcontribs_api.domains.contributions.models import (
     Contribution,
+    ContributionFilter,
     ContributionIdentity,
     ContributionIn,
     ContributionPatch,
 )
 from mpcontribs_api.domains.contributions import service as service_module
-from mpcontribs_api.domains.contributions.models import Contribution, ContributionIn
 from mpcontribs_api.domains.contributions.service import ContributionService
+from mpcontribs_api.domains.contributions.stats import ProjectAggregate
 from mpcontribs_api.domains.structures.models import (
     Lattice,
     Site,
@@ -28,7 +29,7 @@ from mpcontribs_api.domains.structures.models import (
     StructureIn,
 )
 from mpcontribs_api.domains.tables.models import Attributes, Labels, Table, TableIn
-from mpcontribs_api.exceptions import ConflictError, PermissionError, ValidationError
+from mpcontribs_api.exceptions import ConflictError, NotFoundError, PermissionError, ValidationError
 
 pytestmark = pytest.mark.asyncio
 
@@ -73,7 +74,7 @@ def _structure_in(**overrides) -> StructureIn:
         "name": "test-struct",
         "md5": "c" * 32,
         "lattice": Lattice(
-            matrix=pl.DataFrame([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]),
+            matrix=[[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]],
             pbc=[True, True, True],
             a=1.0, b=1.0, c=1.0,
             alpha=90.0, beta=90.0, gamma=90.0,
@@ -142,6 +143,7 @@ def _make_mongo_settings(
     max_components_per_contribution: int = 500,
     max_concurrent_transactions: int = 8,
     component_insert_chunk_size: int = 100,
+    bulk_write_limit: int = 1000,
 ) -> MongoSettings:
     return MongoSettings.model_validate({
         "uri": "mongodb://test",
@@ -150,6 +152,7 @@ def _make_mongo_settings(
         "max_components_per_contribution": max_components_per_contribution,
         "max_concurrent_transactions": max_concurrent_transactions,
         "component_insert_chunk_size": component_insert_chunk_size,
+        "bulk_write_limit": bulk_write_limit,
     })
 
 
@@ -276,8 +279,8 @@ class TestInsertContributionsPreChecks:
         svc, contrib_repo, _, _, _, client = _make_service()
         contrib_repo.insert_many_contributions.return_value = None
         contribs = [
-            _contrib_in(project="p", identifier="dup"),
-            _contrib_in(project="p", identifier="dup"),
+            _contrib_in(project="prj", identifier="dup"),
+            _contrib_in(project="prj", identifier="dup"),
         ]
         summary = await svc.insert_contributions(contribs)
 
@@ -463,7 +466,7 @@ class TestUpsertContributionsUnapprovedQuota:
         # cap 3, 2 stored -> one slot for a new document; updating an existing one is free.
         monkeypatch.setattr(get_settings().consumer, "max_unapproved_contributions_per_project", 3)
         contrib_repo = AsyncMock()
-        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
+        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution, project="proj")
         contrib_repo.count_contributions_for_project.return_value = 2
         svc, *_ = _make_service(contributions=contrib_repo, projects=_unapproved_projects_repo())
         # Set after _make_service, which stubs existing_identities to an empty set. 'a' already exists.
@@ -489,7 +492,7 @@ class TestUpsertContributionsUnapprovedQuota:
     async def test_pure_updates_are_never_capped(self, monkeypatch):
         monkeypatch.setattr(get_settings().consumer, "max_unapproved_contributions_per_project", 1)
         contrib_repo = AsyncMock()
-        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
+        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution, project="proj")
         contrib_repo.count_contributions_for_project.return_value = 99  # far over cap
         svc, *_ = _make_service(contributions=contrib_repo, projects=_unapproved_projects_repo())
         # Every contribution in the batch is an existing document -> all are free updates.
@@ -509,7 +512,7 @@ class TestUpsertContributionsUnapprovedQuota:
     async def test_approved_project_skips_quota(self, monkeypatch):
         monkeypatch.setattr(get_settings().consumer, "max_unapproved_contributions_per_project", 1)
         contrib_repo = AsyncMock()
-        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
+        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution, project="proj")
         svc, *_ = _make_service(contributions=contrib_repo, projects=_approved_projects_repo())
 
         summary = await svc.upsert_contributions([_contrib_in(identifier=f"mp-{i}") for i in range(3)])
@@ -744,6 +747,43 @@ class TestInsertContributionsTransactionPath:
         assert captured_by_id[_mp_id_for("a")].structures == [struct_a]
         assert captured_by_id[_mp_id_for("b")].structures == [struct_b]
 
+    async def test_pivoting_submission_shares_components_across_rows(self):
+        svc, contrib_repo, struct_repo, table_repo, attach_repo, client = _make_service()
+
+        shared = _fake_structure()
+        struct_repo.insert_components.return_value = [shared]
+        table_repo.insert_components.return_value = []
+        attach_repo.insert_components.return_value = []
+
+        captured: list[Contribution] = []
+
+        async def _insert(doc, session=None):
+            captured.append(doc)
+            return doc
+
+        contrib_repo.insert_contribution.side_effect = _insert
+
+        # One submission that pivots into two rows (T=300K / T=400K) and carries a structure.
+        contrib = _contrib_in(
+            identifier="mp-1",
+            data={"x (eV, T=300K)": 1, "x (eV, T=400K)": 2},
+            structures=[_structure_in()],
+        )
+        summary = await svc.insert_contributions([contrib])
+
+        # Components inserted once for the whole submission; both rows written in one transaction.
+        assert struct_repo.insert_components.call_count == 1
+        assert client.start_session.call_count == 1
+        assert contrib_repo.insert_contribution.call_count == 2
+        # Both pivoted rows link to the same shared structure and carry distinct condition keys.
+        assert len(captured) == 2
+        assert all(doc.structures == [shared] for doc in captured)
+        assert len({doc.condition_key for doc in captured}) == 2
+        # Summary is sized to the single submission but reports both pivoted rows as succeeded.
+        assert summary.total == 1
+        assert len(summary.succeeded) == 2
+        assert summary.failed == []
+
 
 # ---------------------------------------------------------------------------
 # insert_contributions — mixed batch (partitioned across paths)
@@ -887,7 +927,7 @@ class TestContributionIdentity:
     async def test_upsert_does_not_conflict_on_existing_identity(self):
         """Upsert targets an existing identity (update), so it must not pre-reject as a conflict."""
         svc, contrib_repo, *_ = _make_service()
-        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
+        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution, project="proj")
 
         await svc.upsert_contributions([_contrib_in(identifier="mp-1")])
 
@@ -897,7 +937,7 @@ class TestContributionIdentity:
 
     async def test_upsert_passes_resolved_unique_value_in_identifiers(self):
         svc, contrib_repo, *_ = _make_service(unique_column="sample_id")
-        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
+        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution, project="proj")
 
         await svc.upsert_contributions([_contrib_in(data={"sample_id": "A"})])
 
@@ -911,6 +951,7 @@ class TestContributionIdentity:
 
         assert summary.succeeded == []
         assert [f.error_code for f in summary.failed] == ["validation_error"]
+        assert "unique_column" in summary.failed[0].message
         contrib_repo.upsert_contribution_by_identifiers.assert_not_called()
 
 
@@ -964,7 +1005,6 @@ class TestUpsertContributionsGuard:
             await svc.upsert_contributions([dirty])
         contrib_repo.upsert_contribution_by_identifiers.assert_not_called()
         contrib_repo.insert_contribution.assert_not_called()
-        contrib_repo.update_contribution.assert_not_called()
 
 
 # ---------------------------------------------------------------------------
@@ -975,7 +1015,7 @@ class TestUpsertContributionsGuard:
 class TestUpsertContributionsAtomic:
     async def test_calls_atomic_repo_method_once_per_item(self):
         svc, contrib_repo, *_ = _make_service()
-        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
+        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution, project="proj")
 
         contribs = [_contrib_in(identifier=f"mp-{i}") for i in range(3)]
         summary = await svc.upsert_contributions(contribs)
@@ -990,7 +1030,7 @@ class TestUpsertContributionsAtomic:
 
     async def test_passes_identifiers_dict_and_input_to_repo(self):
         svc, contrib_repo, *_ = _make_service()
-        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
+        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution, project="proj")
 
         contrib = _contrib_in(project="my-proj", material_id="mp-99")
         await svc.upsert_contributions([contrib])
@@ -1009,6 +1049,8 @@ class TestUpsertContributionsAtomic:
     async def test_returns_repo_results_in_input_order(self):
         svc, contrib_repo, *_ = _make_service()
         docs = [MagicMock(spec=Contribution, name=f"doc-{i}") for i in range(3)]
+        for doc in docs:
+            doc.project = "proj"  # real project so update_project can aggregate the affected set
         returned = {}
 
         async def _upsert(identifiers, contrib):
@@ -1037,11 +1079,11 @@ class TestUpsertContributionsAtomic:
         tiebreaker — the service must not pre-deduplicate or otherwise swallow one.
         """
         svc, contrib_repo, *_ = _make_service()
-        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
+        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution, project="proj")
 
         contribs = [
-            _contrib_in(project="p", identifier="same"),
-            _contrib_in(project="p", identifier="same"),
+            _contrib_in(project="prj", identifier="same"),
+            _contrib_in(project="prj", identifier="same"),
         ]
         summary = await svc.upsert_contributions(contribs)
 
@@ -1054,7 +1096,7 @@ class TestUpsertContributionsAtomic:
         async def _upsert(identifiers, contrib):
             if contrib.material_id == "mp-1":
                 raise ConflictError("boom")
-            return MagicMock(spec=Contribution)
+            return MagicMock(spec=Contribution, project="proj")
 
         contrib_repo.upsert_contribution_by_identifiers.side_effect = _upsert
 
@@ -1124,7 +1166,7 @@ class TestWriteAuthorization:
 
     async def test_upsert_rejects_unauthorized_project_per_item(self):
         svc, contrib_repo, *_ = _make_service(user=_member_user("allowed"))
-        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
+        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution, project="proj")
 
         contribs = [
             _contrib_in(project="allowed", identifier="ok"),
@@ -1209,61 +1251,6 @@ class TestWriteAuthorization:
 
 
 # ---------------------------------------------------------------------------
-# Process-wide write_slots semaphore is honored
-# ---------------------------------------------------------------------------
-
-
-# class TestProcessWideWriteSlots:
-#     async def test_upsert_acquires_global_write_slot(self):
-#         write_slots = asyncio.Semaphore(1)
-#         svc, contrib_repo, *_ = _make_service(write_slots=write_slots)
-
-#         in_flight = 0
-#         peak = 0
-
-#         async def _upsert(identifiers, contrib):
-#             nonlocal in_flight, peak
-#             in_flight += 1
-#             peak = max(peak, in_flight)
-#             await asyncio.sleep(0)  # let other coroutines try to enter
-#             in_flight -= 1
-#             return MagicMock(spec=Contribution)
-
-#         contrib_repo.upsert_contribution_by_identifiers.side_effect = _upsert
-
-#         contribs = [_contrib_in(identifier=f"mp-{i}") for i in range(5)]
-#         await svc.upsert_contributions(contribs)
-
-#         assert peak == 1  # global semaphore of 1 must serialize all 5
-
-#     async def test_insert_with_components_acquires_global_write_slot(self):
-#         write_slots = asyncio.Semaphore(1)
-#         svc, contrib_repo, struct_repo, table_repo, attach_repo, _ = _make_service(write_slots=write_slots)
-
-#         struct_repo.insert_components.return_value = [_fake_structure()]
-#         table_repo.insert_components.return_value = []
-#         attach_repo.insert_components.return_value = []
-
-#         in_flight = 0
-#         peak = 0
-
-#         async def _insert(doc, session=None):
-#             nonlocal in_flight, peak
-#             in_flight += 1
-#             peak = max(peak, in_flight)
-#             await asyncio.sleep(0)
-#             in_flight -= 1
-#             return doc
-
-#         contrib_repo.insert_contribution.side_effect = _insert
-
-#         contribs = [_contrib_in(identifier=f"c{i}", structures=[_structure_in()]) for i in range(4)]
-#         await svc.insert_contributions(contribs)
-
-#         assert peak == 1
-
-
-# ---------------------------------------------------------------------------
 # delete_contributions — cascade delete (components-first), cursor loop
 # ---------------------------------------------------------------------------
 
@@ -1279,10 +1266,11 @@ def _link(ref_id: PydanticObjectId) -> SimpleNamespace:
     return SimpleNamespace(ref=SimpleNamespace(id=ref_id))
 
 
-def _contrib_doc(structures=None, attachments=None, tables=None, id_=None) -> SimpleNamespace:
+def _contrib_doc(structures=None, attachments=None, tables=None, id_=None, project="proj") -> SimpleNamespace:
     """A contribution page item exposing the attributes delete_contributions reads."""
     return SimpleNamespace(
         id=id_ or _oid(),
+        project=project,
         structures=[_link(s) for s in (structures or [])],
         attachments=[_link(a) for a in (attachments or [])],
         tables=[_link(t) for t in (tables or [])],
@@ -1478,7 +1466,7 @@ class TestDeleteContributionsNoneComponents:
 
     async def test_none_component_fields_do_not_raise(self):
         svc, contrib_repo, struct_repo, table_repo, attach_repo, _ = _make_service()
-        doc = SimpleNamespace(id=_oid(), structures=None, tables=None, attachments=None)
+        doc = SimpleNamespace(id=_oid(), project="proj", structures=None, tables=None, attachments=None)
         contrib_repo.get_contributions.side_effect = [_page([doc]), _page([])]
         contrib_repo.delete_contributions.side_effect = [_delete_result(1), _delete_result(0)]
 
@@ -1539,3 +1527,63 @@ class TestPatchIdentifierHierarchy:
         # No identity/unique inputs touched -> no re-read, straight to the plain patch.
         contrib_repo.get_contribution_by_id.assert_not_called()
         contrib_repo.patch_contribution_by_id.assert_called_once()
+
+
+# ---------------------------------------------------------------------------
+# patch_contribution_by_id — data merge vs replace + unique_value resolution
+# ---------------------------------------------------------------------------
+
+
+class TestPatchDataMergeReplace:
+    async def test_data_patch_defaults_to_merge_and_forwards_replace_false(self):
+        svc, contrib_repo, *_ = _make_service()
+        existing = _existing_doc(material_id=None, chemical_system_id="Fe-O", formula="Fe2O3")
+        existing.data = {"x": 1.0}
+        contrib_repo.get_contribution_by_id.return_value = existing
+        contrib_repo.patch_contribution_by_id.return_value = MagicMock(spec=Contribution)
+
+        await svc.patch_contribution_by_id(str(existing.id), ContributionPatch(data={"y": 9.0}))
+
+        # The repo performs the actual dotted-$set merge; the service just forwards replace_data=False.
+        assert contrib_repo.patch_contribution_by_id.call_args.kwargs["replace_data"] is False
+
+    async def test_replace_data_flag_forwarded_to_repo(self):
+        svc, contrib_repo, *_ = _make_service()
+        existing = _existing_doc(material_id=None, chemical_system_id="Fe-O", formula="Fe2O3")
+        existing.data = {"x": 1.0}
+        contrib_repo.get_contribution_by_id.return_value = existing
+        contrib_repo.patch_contribution_by_id.return_value = MagicMock(spec=Contribution)
+
+        await svc.patch_contribution_by_id(
+            str(existing.id), ContributionPatch(data={"y": 9.0}), replace_data=True
+        )
+
+        assert contrib_repo.patch_contribution_by_id.call_args.kwargs["replace_data"] is True
+
+    async def test_merge_resolves_unique_value_from_merged_state(self):
+        # The unique_column value lives in the stored data and is NOT in the patch. A merge preserves
+        # it, so unique_value must resolve against the merged view rather than raising "missing".
+        svc, contrib_repo, *_ = _make_service(unique_column="sample_id")
+        existing = _existing_doc(material_id=None, chemical_system_id="Fe-O", formula="Fe2O3")
+        existing.data = {"sample_id": 42, "x": 1.0}
+        contrib_repo.get_contribution_by_id.return_value = existing
+        contrib_repo.patch_contribution_by_id.return_value = MagicMock(spec=Contribution)
+
+        await svc.patch_contribution_by_id(str(existing.id), ContributionPatch(data={"y": 9.0}))
+
+        # Resolved from {sample_id:42, x:1, y:9}, so the untouched unique_value survives the merge.
+        assert contrib_repo.patch_contribution_by_id.call_args.kwargs["unique_value"] == 42
+
+    async def test_replace_resolves_unique_value_from_patch_data_only(self):
+        # On replace the stored data is discarded, so a unique_column absent from the patch is a
+        # genuine validation failure (the resulting document would lack it).
+        svc, contrib_repo, *_ = _make_service(unique_column="sample_id")
+        existing = _existing_doc(material_id=None, chemical_system_id="Fe-O", formula="Fe2O3")
+        existing.data = {"sample_id": 42}
+        contrib_repo.get_contribution_by_id.return_value = existing
+
+        with pytest.raises(ValidationError, match="unique_column"):
+            await svc.patch_contribution_by_id(
+                str(existing.id), ContributionPatch(data={"y": 9.0}), replace_data=True
+            )
+        contrib_repo.patch_contribution_by_id.assert_not_called()

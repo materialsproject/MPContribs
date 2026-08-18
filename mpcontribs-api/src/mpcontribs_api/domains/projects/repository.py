@@ -1,17 +1,20 @@
 from typing import Any
 
+from pymongo import UpdateOne
+
 from mpcontribs_api.authz import User
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
 from mpcontribs_api.domains.consumers.models import ConsumerSettings
 from mpcontribs_api.domains.projects.models import (
+    Column,
     Project,
     ProjectFilter,
     ProjectIn,
     ProjectOut,
     ProjectPatch,
-    validate_column_limit,
+    Stats,
 )
-from mpcontribs_api.exceptions import PermissionError
+from mpcontribs_api.exceptions import ConflictError, PermissionError
 from mpcontribs_api.pagination import CursorParams
 
 
@@ -100,18 +103,60 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
             result[doc["_id"]] = doc.get("unique_column")
         return result
 
-    async def insert_project(self, project: ProjectIn) -> Project:
-        """Insert a new project, rejecting a duplicate id. See ``insert_one``."""
-        validate_column_limit(project.columns, self._limits.max_columns)
+    async def set_stats_and_columns(self, updates: dict[str, tuple[Stats, list[Column]]]) -> None:
+        """Overwrite the derived ``stats``/``columns`` of the given projects in one bulk write.
+
+        A **system-computed write**: identity is the project ``_id`` alone and the user scope is
+        deliberately not applied. Stats are recomputed from a project's contributions after a write
+        (see ``ContributionService.update_project``) and must land even when the caller is a group
+        contributor who does not own the project. Missing ids match nothing and are silently skipped.
+
+        Args:
+            updates: ``{project_id: (stats, columns)}`` to persist
+        """
+        if not updates:
+            return
+        ops = [
+            UpdateOne(
+                {"_id": pid},
+                {
+                    "$set": {
+                        "stats": stats.model_dump(mode="json"),
+                        "columns": [c.model_dump(mode="json") for c in cols],
+                    }
+                },
+            )
+            for pid, (stats, cols) in updates.items()
+        ]
+        await self.document_model.get_pymongo_collection().bulk_write(ops, ordered=False)
+
+    async def insert_project(self, id: str, project: ProjectIn) -> Project:
+        """Insert a new project under ``id`` (supplied by the caller), rejecting a duplicate id.
+
+        Projects carry a meaningful ``ShortStr`` id that is not part of the input body, so — unlike
+        the generic ``insert_one`` — the id is passed explicitly and stamped onto the document here.
+        """
         await self._check_num_projects(project.owner)
-        return await self.insert_one(project)
+        document = Project.from_input_model(project, id=id)
+        existing = await self.document_model.find_one(self.document_model.id == id)
+        if existing:
+            raise ConflictError(f"Cannot insert document.\n Document with ID {id} exists")
+        await document.insert()
+        return document
 
     async def patch_project_by_id(self, id: str, update: ProjectPatch) -> Project:
-        """Partially update a project by id, scoped to the current user. See ``patch``."""
-        # Only enforce the column cap when the caller actually sends columns; an unset field is a
-        # no-op and must not be checked against its empty default.
-        if "columns" in update.model_fields_set:
-            validate_column_limit(update.columns, self._limits.max_columns)
+        """Partially update a project by id, scoped to the current user. See ``patch``.
+
+        ``is_approved`` is an admin-only curation flag: a non-admin that sets it (to any value) is
+        rejected. ``stats``/``columns`` are not on the patch model at all, so they cannot be
+        client-patched. Both remain server-owned.
+
+        Raises:
+            PermissionError: if a non-admin caller sets ``is_approved``
+        """
+        if update.is_approved is not None and not self._user.is_admin:
+            raise PermissionError(required_role="admin")
+        # ``columns`` are server-owned and absent from ProjectPatch, so there is nothing to cap here.
         return await self.patch(id, update)
 
     async def delete_project_by_id(self, id: str) -> None:
@@ -145,19 +190,30 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
         if self._user.username is None:
             raise PermissionError(required_role="authenticated")
 
-        validate_column_limit(data.columns, self._limits.max_columns)
+        # ``columns`` are server-owned (derived from contributions) and absent from ProjectIn, so
+        # there is no client-supplied column set to cap on the write path.
         existing = await self.document_model.find_one(self.document_model.id == id)
-        project = self.document_model.from_input_model(data)
-        project.id = id
+        project = self.document_model.from_input_model(data, id=id)
         if existing is not None:
             if not (self._user.is_admin or existing.owner == self._user.username):
                 raise PermissionError(required_role="owner-or-admin")
             # Ownership is immutable via upsert; keep the original owner. Updating an existing
             # project does not create a new one, so the per-user project cap does not apply.
             project.owner = existing.owner
+            # Server-owned rollups are never taken from the request body; keep the stored values
+            # (they self-heal on the next contribution write via ``ContributionService``).
+            project.stats = existing.stats
+            project.columns = existing.columns
+            # Approval is an admin-only curation flag: a non-admin cannot toggle it via a full
+            # overwrite, so preserve whatever is already stored.
+            if not self._user.is_admin:
+                project.is_approved = existing.is_approved
         else:
             # New project: the caller owns it, regardless of the submitted owner. Enforce the
             # per-user cap against the caller before creating another project under their name.
             project.owner = self._user.username
+            # A new project starts unapproved; only an admin may create it pre-approved.
+            if not self._user.is_admin:
+                project.is_approved = False
             await self._check_num_projects(self._user.username)
         return await project.save()

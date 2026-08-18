@@ -1,6 +1,6 @@
 from collections.abc import AsyncIterable
 from contextlib import AbstractAsyncContextManager
-from typing import Any
+from typing import Any, cast
 
 from beanie import PydanticObjectId, UpdateResponse
 from beanie.operators import Set
@@ -10,8 +10,10 @@ from pymongo.results import DeleteResult
 from types_aiobotocore_s3 import S3Client
 
 from mpcontribs_api.authz import User
+from mpcontribs_api.domains._shared.bulk import BulkUpdateSummary
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
 from mpcontribs_api.domains._shared.types import DownloadFormat, ShortMimeFormat
+from mpcontribs_api.domains._shared.units import QuantityLeaf
 from mpcontribs_api.domains.contributions.models import (
     Contribution,
     ContributionFilter,
@@ -21,11 +23,37 @@ from mpcontribs_api.domains.contributions.models import (
     ContributionPatch,
     Scalar,
 )
-from mpcontribs_api.exceptions import ConflictError, NotFoundError
+from mpcontribs_api.domains.contributions.stats import (
+    ColumnStat,
+    ProjectAggregate,
+    finalize_columns,
+    merge_contribution_columns,
+)
+from mpcontribs_api.exceptions import ConflictError, NotFoundError, PermissionError
 from mpcontribs_api.pagination import CursorParams
 
 # Sentinel for "leave unique_value untouched" on patch (distinct from a real None value).
 _UNSET: Any = object()
+
+
+def _build_update_set(update_data: dict[str, Any], existing_data: Any, *, replace_data: bool) -> dict[str, Any]:
+    """Translate a patch's field map into the document handed to ``$set``.
+
+    With ``replace_data`` the map is used verbatim, so ``data`` overwrites the stored dict whole.
+    Otherwise the ``data`` dict is flattened against the stored ``existing_data`` into dotted paths
+    so it additively merges — only the named leaves are written, a bare scalar routes onto a stored
+    quantity leaf's ``value``, sibling survives. All other fields (scalars, lists, identity inputs)
+    set directly.
+    """
+    if replace_data:
+        return update_data
+    document: dict[str, Any] = {}
+    for field, value in update_data.items():
+        if field == "data" and isinstance(value, dict):
+            document.update(QuantityLeaf.flatten_merge_paths(existing_data, value, prefix="data."))
+        else:
+            document[field] = value
+    return document
 
 
 class MongoDbContributionRepository(
@@ -41,6 +69,10 @@ class MongoDbContributionRepository(
 
     document_model = Contribution
     out_model = ContributionOut
+
+    def __init__(self, user: User) -> None:
+        super().__init__(user)
+        self._user = user
 
     @staticmethod
     def _build_scope(user: User) -> dict[str, Any]:
@@ -78,17 +110,27 @@ class MongoDbContributionRepository(
         id: str,
         update: ContributionPatch,
         unique_value: Scalar | None = _UNSET,
+        *,
+        replace_data: bool = False,
+        existing_data: Any = None,
     ):
         """Partially update a contribution by id, scoped to the current user.
 
         ``unique_value`` is server-recomputed by the service when the patch changes ``data`` or
         ``project`` (the inputs to identity); left as ``_UNSET`` it is not touched. When set, it is
         folded into the ``$set`` so the identity index stays consistent with the patched ``data``.
+
+        ``data`` additively merges into the stored dict by default (unmentioned leaves survive, and a
+        bare scalar routes onto a stored quantity leaf's ``value``); the merge is resolved against the
+        caller-supplied ``existing_data``. Pass ``replace_data`` to overwrite the whole ``data`` dict
+        instead. See ``_build_update_set``.
         """
         try:
             if unique_value is _UNSET:
                 return await self.patch(self._convert_object_id(id), update)
-            update_data = update.model_dump(exclude_unset=True)
+            update_data = _build_update_set(
+                update.model_dump(exclude_unset=True), existing_data, replace_data=replace_data
+            )
             update_data["unique_value"] = unique_value
             query = self.document_model.find_one(
                 self._scope,
@@ -118,6 +160,57 @@ class MongoDbContributionRepository(
             filter (ContribtionFilter): the filter to use to identify contributions to delete
         """
         return await filter.filter(self.document_model.find(self._scope)).delete_many()
+
+    async def bulk_update(
+        self,
+        filter: ContributionFilter,
+        fields: dict[str, Any],
+    ) -> BulkUpdateSummary:
+        """``$set`` ``fields`` on every scoped row matching ``filter``.
+
+        Callers that need to limit the update to specific projects (e.g. a non-admin's writable
+        projects) inject them into ``filter`` via ``project__in`` rather than a separate argument
+        here.
+
+        Args:
+            filter: the caller-supplied query, applied on top of the user scope
+            fields: the field/value map handed verbatim to ``$set``
+
+        Returns:
+            BulkUpdateSummary: the counts of matched and modified contribs, and the list of the projects changed
+        """
+        criteria: list[Any] = []
+        if self._scope:
+            criteria.append(self._scope)
+        query = filter.filter(self.document_model.find(*criteria)).get_filter_query()
+        collection = self.document_model.get_pymongo_collection()
+        # Distinct projects among the *matched* rows (computed before the write, since ``fields`` may
+        # change values the filter keyed on) so the caller can recompute those projects' rollups.
+        projects = {p for p in await collection.distinct("project", query) if p is not None}
+        result = await collection.update_many(query, {"$set": fields})
+        return BulkUpdateSummary(
+            matched=result.matched_count, modified=result.modified_count, projects=sorted(projects)
+        )
+
+    async def get_contribution_ids(
+        self,
+        filter: ContributionFilter,
+    ) -> list[PydanticObjectId]:
+        """Return the ids of scoped rows matching ``filter``.
+
+        Callers that need to limit the match to specific projects (e.g. a non-admin's writable
+        projects on a bulk write) inject them into ``filter`` via ``project__in`` rather than a
+        separate argument here.
+
+        Args:
+            filter: the caller-supplied query, applied on top of the user scope
+        """
+        criteria: list[Any] = []
+        if self._scope:
+            criteria.append(self._scope)
+        query = filter.filter(self.document_model.find(*criteria)).get_filter_query()
+        collection = self.document_model.get_pymongo_collection()
+        return [doc["_id"] async for doc in collection.find(query, {"_id": 1})]
 
     async def insert_many_contributions(
         self,
@@ -170,79 +263,75 @@ class MongoDbContributionRepository(
     async def referenced_component_ids(
         self,
         ref_field: str,
-        ids: list[PydanticObjectId],
+        ids: list[PydanticObjectId] | None = None,
         *,
         scoped: bool,
     ) -> set[PydanticObjectId]:
-        """Return the subset of ``ids`` referenced by contributions through ``ref_field``.
+        """Return component ids referenced through ``ref_field`` by matching contributions.
 
-        Beanie stores each ``Link`` as a DBRef (``{"$ref": ..., "$id": ObjectId}``), so a
-        component is referenced when its id appears under ``<ref_field>.$id`` on any matching
-        contribution.
+        Beanie stores each ``Link`` as a DBRef (``{"$ref": ..., "$id": ObjectId}``), so a component
+        is referenced when its id appears under ``<ref_field>.$id``. When ``ids`` is given, only that
+        candidate subset is tested and the returned set is a subset of ``ids`` (access-gate /
+        reachability check); when ``ids`` is ``None``, every referenced id is enumerated. ``scoped``
+        merges the user scope into the query (access gate) when ``True``; when ``False`` the check
+        spans every contribution (global integrity check).
 
         Args:
             ref_field: the contribution link field to inspect ("structures" | "tables" |
                 "attachments"). Always a fixed class-attr at the call site, never user input.
-            ids: candidate component ids to test
-            scoped: when ``True`` the user scope is applied (access gate / reachability); when
-                ``False`` the check spans every contribution (global integrity check)
-
-        Returns:
-            set[PydanticObjectId]: the ids in ``ids`` that are still referenced
+            ids: optional candidate list; when given, only ids in it are returned
+            scoped: when ``True`` the user scope is applied; when ``False`` the check spans every
+                contribution (global integrity check)
         """
-        if not ids:
+        if ids is None:
+            match: dict[str, Any] = {"$exists": True}
+            target: set[PydanticObjectId] | None = None
+        elif not ids:
             return set()
-        key = f"{ref_field}.$id"
-        query: dict[str, Any] = {key: {"$in": ids}}
+        else:
+            match = {"$in": ids}
+            target = set(ids)
+
+        query: dict[str, Any] = {f"{ref_field}.$id": match}
         if scoped and self._scope:
             query = {"$and": [self._scope, query]}
-        target = set(ids)
         referenced: set[PydanticObjectId] = set()
         collection = self.document_model.get_pymongo_collection()
         async for doc in collection.find(query, {ref_field: 1}):
             for ref in doc.get(ref_field) or []:
                 rid = ref.id if hasattr(ref, "id") else ref.get("$id")
-                if rid in target:
+                if rid is not None and (target is None or rid in target):
                     referenced.add(rid)
         return referenced
 
-    # TODO: should return document with update
-    async def list_referenced_component_ids(
-        self,
-        ref_field: str,
-        *,
-        scoped: bool,
-    ) -> set[PydanticObjectId]:
-        """Return every component id referenced through ``ref_field`` by matching contributions.
+    async def aggregate_project_stats(self, project_id: str) -> ProjectAggregate:
+        """Recompute derived stats/columns for one project from its current contributions.
 
-        Unlike :meth:`referenced_component_ids`, this takes no candidate list — it enumerates all
-        ids reachable from contributions in scope.
-
-        Args:
-            ref_field: the contribution link field to inspect ("structures" | "tables" |
-                "attachments"). Always a fixed class-attr at the call site, never user input.
-            scoped: when ``True`` the user scope is applied (access gate); when ``False`` the
-                check spans every contribution.
-
-        Returns:
-            set[PydanticObjectId]: all component ids referenced via ``ref_field``
+        Deliberately **unscoped**: this is a system-computed rollup, not a user-facing read. Stats
+        must reflect every contribution in the project (a group contributor who cannot see sibling
+        contributions must not persist an undercount), so no user scope is merged into the ``$match``.
         """
-        key = f"{ref_field}.$id"
-        query: dict[str, Any] = {key: {"$exists": True}}
-        if scoped and self._scope:
-            query = {"$and": [self._scope, query]}
-        referenced: set[PydanticObjectId] = set()
         collection = self.document_model.get_pymongo_collection()
-        async for doc in collection.find(query, {ref_field: 1}):
-            for ref in doc.get(ref_field) or []:
-                rid = ref.id if hasattr(ref, "id") else ref.get("$id")
-                if rid is not None:
-                    referenced.add(rid)
-        return referenced
+        match: dict[str, Any] = {"project": project_id}
 
-    async def update_contribution(self, doc: Contribution, update_data: dict[str, Any]) -> None:
-        """Apply a partial update to an existing Contribution document."""
-        await doc.update(Set(update_data))
+        agg = ProjectAggregate()
+        pipeline: list[dict[str, Any]] = [
+            {"$match": match},
+            {"$group": {"_id": None, "contributions": {"$sum": 1}, "size": {"$sum": {"$bsonSize": "$$ROOT"}}}},
+        ]
+        async for row in await collection.aggregate(pipeline):
+            agg.contributions = int(row.get("contributions", 0))
+            agg.size = float(row.get("size", 0))
+
+        agg.structures = len(await collection.distinct("structures.$id", match))
+        agg.tables = len(await collection.distinct("tables.$id", match))
+        agg.attachments = len(await collection.distinct("attachments.$id", match))
+
+        acc: dict[str, ColumnStat] = {}
+        async for doc in collection.find(match, {"data": 1}):
+            merge_contribution_columns(acc, doc.get("data") or {})
+        agg.columns = finalize_columns(acc)
+        return agg
 
     async def upsert_contribution_by_identifiers(
         self,
@@ -263,6 +352,11 @@ class MongoDbContributionRepository(
         Returns:
             Contribution: the document as it stands after the operation
         """
+        project = str(identifiers["project"])
+        # Make sure the user is allowed to upsert a contribution under the provided project
+        if not self._user.can_write(project):
+            raise PermissionError(f"not authorized to write to project '{project}'")
+
         doc = self.document_model.from_input_model(contribution)
         doc.unique_value = identifiers["unique_value"]
         doc.condition_key = identifiers["condition_key"]
@@ -280,7 +374,8 @@ class MongoDbContributionRepository(
             on_insert=doc,
             response_type=UpdateResponse.NEW_DOCUMENT,
         )
-        return await query  # pyright: ignore[reportGeneralTypeIssues] # beanie UpdateQuery is awaitable, but pyright doesn't see it
+        result = await query  # pyright: ignore[reportGeneralTypeIssues] # beanie UpdateQuery is awaitable, but pyright doesn't see it
+        return cast(Contribution, result)  # upsert always returns the resulting document
 
     async def upsert_contribution_by_id(
         self,
@@ -302,8 +397,19 @@ class MongoDbContributionRepository(
             unique_value: the resolved identity value to stamp on the document
 
         Returns:
-            ContributionOut: the upserted document"""
+            Contribution: the upserted document
+
+        Raises:
+            PermissionError: if the caller is not authorized to write to ``contribution.project``
+        """
+        if not self._user.can_write(contribution.project):
+            raise PermissionError(f"not authorized to write to project '{contribution.project}'")
+
+        oid = self._convert_object_id(id)
         doc = self.document_model.from_input_model(contribution)
+        # from_input_model mints a fresh id; upsert-by-id must key on the caller-supplied id so the
+        # inserted document lands under it (and on_insert stores it there).
+        doc.id = oid
         doc.unique_value = unique_value
         update_data = doc.model_dump(exclude={"id"}, exclude_none=True)
         update_data["unique_value"] = unique_value

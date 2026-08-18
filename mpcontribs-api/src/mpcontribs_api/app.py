@@ -70,6 +70,7 @@ async def _setup_mongo(app: FastAPI, settings: Settings, stack: AsyncExitStack) 
             Table,
             Consumer,
         ],
+        allow_index_dropping=True,  # allow old indices to be dropped from MongoDB when not specified in this package
     )
 
 
@@ -134,8 +135,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
 
     # Reject oversized request bodies before they're buffered into memory. Added before
-    # RequestContextMiddleware: Starlette inserts each added middleware at the front of the stack,
-    # so the later-added RequestContextMiddleware stays outermost and still access-logs rejections.
     app.add_middleware(BodySizeLimitMiddleware, max_bytes=settings.mongo.max_request_bytes)
     # Add request context to the logger
     app.add_middleware(RequestContextMiddleware)

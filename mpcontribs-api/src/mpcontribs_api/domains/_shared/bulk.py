@@ -42,9 +42,26 @@ class BulkWriteSummary[T](BaseModel):
     failed: list[BulkFailure]
 
 
-class BulkDeleteSummary(BaseModel):
+class BulkDeleteSummary[T](BaseModel):
     num_deleted: int
     num_children_deleted: int
+
+
+class BulkUpdateSummary(BaseModel):
+    """Result of a bulk update.
+
+    Attributes:
+        matched: documents the (scoped) filter matched
+        modified: documents whose stored value actually changed (fast path) or were successfully
+            patched (per-row path)
+        projects: the projects the update touched, so the caller can see its blast radius
+        failed: per-row failures (e.g. identity collisions); always empty on the fast path
+    """
+
+    matched: int
+    modified: int
+    projects: list[str]
+    failed: list[BulkFailure] = []
 
 
 def bulk_failure_from_exception(index: int, identifier: dict[str, Any] | None, exc: BaseException) -> BulkFailure:

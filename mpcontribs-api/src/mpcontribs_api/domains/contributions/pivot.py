@@ -1,0 +1,185 @@
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any
+
+from mpcontribs_api.domains._shared.paths import set_nested
+from mpcontribs_api.domains._shared.types import coerce_key, map_keys
+from mpcontribs_api.domains._shared.units import QuantityLeaf, UnitError, parse_condition_value
+from mpcontribs_api.domains.contributions.data import (
+    ParsedKey,
+    parse_annotated_key,
+    validate_contribution_data,
+)
+from mpcontribs_api.exceptions import ValidationError
+
+if TYPE_CHECKING:
+    from mpcontribs_api.domains.contributions.models import ContributionIn
+
+
+@dataclass(frozen=True, slots=True)
+class ExpandedData:
+    """One pivoted ``data`` payload paired with its canonical ``condition_key``.
+
+    Produced by :func:`expand_data` — the model-agnostic core shared by the insert path (via
+    :func:`expand_contribution`) and the patch path (:mod:`mpcontribs_api.domains.contributions`
+    service). ``condition_key`` is ``""`` when the payload carried no conditions.
+    """
+
+    data: dict[str, Any]
+    condition_key: str
+
+
+@dataclass(frozen=True, slots=True)
+class ExpandedContribution:
+    """One pivoted contribution paired with its server-computed ``condition_key``.
+
+    ``condition_key`` is carried alongside (not on the input model) so it is never taken from the
+    request body.
+    """
+
+    contribution: ContributionIn
+    condition_key: str
+
+
+def _try_coerce_leaf(value: Any, key_unit: str | None = None) -> Any:
+    """Promote a scalar to a quantity leaf, or keep it verbatim when categorical.
+
+    The scalar half of the write-path "every numeric becomes a leaf" rule: a numeric (optionally
+    unit-carrying) value becomes a quantity-leaf dict via :meth:`QuantityLeaf.try_from_value`; a
+    categorical string or bool is kept as-is. ``key_unit`` (from a top-level annotated key) annotates
+    only a scalar value.
+
+    Raises:
+        ValidationError: on a value whose unit cannot be parsed/reconciled.
+    """
+    try:
+        leaf = QuantityLeaf.try_from_value(value, key_unit)
+    except UnitError as err:
+        raise ValidationError(f"could not parse value {value!r}: {err}") from err
+    return leaf.as_dict() if leaf is not None else value
+
+
+def normalize_node(value: Any, key_unit: str | None = None) -> Any:
+    """Recursively coerce dict keys to ``snake_case`` and turn scalar measurements into quantity leaves.
+
+    This is the write-path core of "every numeric becomes a leaf":
+
+    - **dict**: each key is coerced to ``snake_case`` (sibling collisions rejected); values recurse
+      with no inherited unit — only a top-level annotated key carries a unit (``key_unit``).
+    - **list**: elements recurse, but scalar elements are left verbatim (a list is array data, not a
+      column of measurements — mirrors :func:`mpcontribs_api.domains.contributions.stats.iter_leaves`,
+      which never treats list scalars as columns).
+    - **scalar**: promoted to a quantity leaf via :func:`_try_coerce_leaf` when it parses as a number
+      (optionally carrying a unit); otherwise kept verbatim (categorical string, bool).
+
+    ``key_unit`` (from a top-level annotated key) is applied only to a scalar value; when it labels a
+    dict/list value it has no scalar to annotate and is ignored (the recursive walk annotates no
+    nested scalar with a unit).
+
+    Raises:
+        ValidationError: on a key that empties after coercion, a sibling-key collision, or a value
+            whose unit cannot be parsed/reconciled.
+    """
+    if isinstance(value, (dict, list)):
+        return map_keys(value, coerce=coerce_key, on_scalar=_try_coerce_leaf)
+    return _try_coerce_leaf(value, key_unit)
+
+
+def expand_data(data: dict[str, Any]) -> list[ExpandedData]:
+    """Annotate units and pivot a ``data`` mapping on its condition signatures.
+
+    Top-level keys are parsed as annotated keys; keys carrying conditions are grouped by their canonical
+    :func:`condition_key`, and each distinct group becomes one :class:`ExpandedData` whose ``data``
+    holds the group's conditions (as ordinary columns) plus its measurements plus every
+    condition-less column (broadcast). Condition-less annotated keys still get their unit annotated.
+
+    Returns:
+        - a single element with ``condition_key == ""`` when nothing pivots (no annotations at all,
+          or annotations but no conditions). When no annotation is present the returned ``data`` is
+          the same object as the input if snake_case coercion is a no-op, else the coerced copy.
+        - one element per distinct condition signature otherwise.
+
+    Raises:
+        ValidationError: on a malformed annotation, a path/column collision, or expanded data that
+            violates the depth/key rules.
+    """
+    parsed = {raw_key: parse_annotated_key(raw_key) for raw_key in data}
+
+    if not any(pk.is_annotated for pk in parsed.values()):
+        normalized = normalize_node(data)
+        return [ExpandedData(data=data if normalized == data else normalized, condition_key="")]
+
+    # Split columns into the condition-less broadcast set and the conditioned groups (keyed by the
+    # canonical condition_key so physically-equal signatures merge into one row).
+    broadcast: list[tuple[str, ParsedKey]] = []
+    groups: dict[str, list[tuple[str, ParsedKey]]] = {}
+    group_conditions: dict[str, dict[str, Any]] = {}
+    for raw_key, pk in parsed.items():
+        if not pk.conditions:
+            broadcast.append((raw_key, pk))
+            continue
+        # Condition names become data columns after pivoting, so they are coerced to snake_case like
+        # any other key (values and the unit are left verbatim).
+        parsed_conditions: dict[str, Any] = {}
+        for name, val in pk.conditions.items():
+            cname = coerce_key(name)
+            if cname in parsed_conditions:
+                raise ValidationError(f"condition names collide after snake_case coercion: '{cname}'")
+            parsed_conditions[cname] = parse_condition_value(val)
+        ckey = QuantityLeaf.condition_key(parsed_conditions)
+        groups.setdefault(ckey, []).append((raw_key, pk))
+        # First signature seen for this canonical key wins the stored condition columns.
+        group_conditions.setdefault(ckey, parsed_conditions)
+
+    def _annotate_column(row_data: dict[str, Any], raw_key: str, pk: ParsedKey) -> None:
+        leaf = normalize_node(data[raw_key], pk.unit if pk.is_annotated else None)
+        set_nested(row_data, tuple(coerce_key(seg) for seg in pk.segments), leaf)
+
+    def _finalize(row_data: dict[str, Any], ckey: str) -> ExpandedData:
+        # model_copy (in expand_contribution) and the patch path both skip Pydantic validators, so
+        # re-run the depth/key checks on the rewritten data here.
+        validate_contribution_data(row_data)
+        return ExpandedData(data=row_data, condition_key=ckey)
+
+    # No conditioned groups: single output, units annotated in place.
+    if not groups:
+        row_data: dict[str, Any] = {}
+        for raw_key, pk in broadcast:
+            _annotate_column(row_data, raw_key, pk)
+        return [_finalize(row_data, "")]
+
+    outputs: list[ExpandedData] = []
+    for ckey, members in groups.items():
+        row_data = {}
+        # Conditions become ordinary columns first, so a measurement colliding with a condition name
+        # is caught by set_nested.
+        for name, leaf in group_conditions[ckey].items():
+            set_nested(row_data, (name,), leaf)
+        for raw_key, pk in members:
+            _annotate_column(row_data, raw_key, pk)
+        for raw_key, pk in broadcast:
+            _annotate_column(row_data, raw_key, pk)
+        outputs.append(_finalize(row_data, ckey))
+    return outputs
+
+
+def expand_contribution(contribution: ContributionIn) -> list[ExpandedContribution]:
+    """Annotate units and pivot a submitted contribution on its condition signatures.
+
+    Thin wrapper over :func:`expand_data` that re-attaches each pivoted ``data`` payload to a copy of
+    the input model. A contribution with no conditions anywhere returns a single element (units
+    annotated in place, ``condition_key == ""``); a contribution with no annotations at all returns
+    the contribution unchanged.
+
+    Raises:
+        ValidationError: on a malformed annotation, a path/column collision, or expanded data that
+            violates the depth/key rules.
+    """
+    original = contribution.data or {}
+    rows = expand_data(original)
+
+    expanded: list[ExpandedContribution] = []
+    for row in rows:
+        # Preserve the original model (incl. ``data is None``) when expand_data made no change.
+        contrib = contribution if row.data is original else contribution.model_copy(update={"data": row.data})
+        expanded.append(ExpandedContribution(contribution=contrib, condition_key=row.condition_key))
+    return expanded

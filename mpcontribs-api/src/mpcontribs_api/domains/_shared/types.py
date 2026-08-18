@@ -1,7 +1,7 @@
 import re
 import unicodedata
 from abc import ABC
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import MISSING, dataclass, fields
 from enum import StrEnum
 from functools import cache
@@ -13,7 +13,7 @@ from pydantic import BeforeValidator, Field, PlainSerializer, WithJsonSchema
 from pymatgen.core import Element
 from pymongo import ASCENDING, IndexModel
 
-from mpcontribs_api.exceptions import ValidationError
+from mpcontribs_api.exceptions import DataKeyError, ValidationError
 
 ShortStr = Annotated[str, Field(min_length=3, max_length=30)]
 
@@ -178,7 +178,7 @@ _EMAIL_RE = re.compile(r"^[^:@\s]+:[^:@\s]+@[^@\s]+\.[^@\s]+$")
 def _validate_prefixed_email(v: str) -> str:
     v = v.strip()
     if not _EMAIL_RE.match(v):
-        raise ValidationError("must match '<provider>:<name>@<domain>', e.g. 'google:name@gmail.com'")
+        raise ValidationError("email must match '<provider>:<name>@<domain>', e.g. 'google:name@gmail.com'", email=v)
     return v
 
 
@@ -251,13 +251,6 @@ def _serialize_frame(data: pl.DataFrame) -> dict:
     return data.to_dict(as_series=False)
 
 
-# Beanie/pymongo would otherwise BSON-encode a pl.DataFrame by iterating it into bare column
-# lists, dropping the column names and the dict shape the Pydantic serializer produces — which
-# `_coerce_frame` cannot read back. Registering this on a Document's Settings.bson_encoders makes
-# the stored form match the serialized form, so frames round-trip losslessly.
-FRAME_BSON_ENCODERS = {pl.DataFrame: _serialize_frame}
-
-
 PolarsFrame = Annotated[
     pl.DataFrame,
     BeforeValidator(_coerce_frame),
@@ -268,6 +261,146 @@ PolarsFrame = Annotated[
     ),
     WithJsonSchema({"type": "object"}, mode="serialization"),
 ]
+
+
+def _nfkc_casefold(value: str) -> str:
+    """NFKC + casefold: the case-insensitive, compatibility-folded form used for search/matching.
+
+    Surrounding whitespace is stripped by :func:`nfkc_normalize` before casefolding.
+    """
+    return nfkc_normalize(value).casefold()
+
+
+def nfkc_normalize(value: str) -> str:
+    """Return ``value`` in Unicode NFKC (compatibility composition) form, preserving case.
+
+    NFKC folds *compatibility* variants onto a canonical form — the MICRO SIGN U+00B5 becomes the
+    Greek mu, the ``ﬁ`` ligature becomes ``fi``, full-width characters become half-width, and so on.
+    Unlike :func:`_nfkc_casefold` it does not casefold, so human-facing labels keep their original
+    case. It is a superset of :func:`nfc_normalize` (NFKC output is already NFC-stable).
+
+    Leading/trailing whitespace is stripped (NFKC first, so compatibility whitespace such as the
+    NBSP U+00A0 folds to a plain space and is then trimmed) so ``" Foo "`` and ``"Foo"`` collapse to
+    the same stored form.
+    """
+    return unicodedata.normalize("NFKC", value).strip()
+
+
+def nfc_normalize(value: str) -> str:
+    """Return ``value`` in Unicode NFC (canonical composition) form.
+
+    NFC folds canonically-equivalent codepoints onto one representative — e.g. the OHM SIGN
+    (U+2126) and Ångström sign (U+212B) collapse onto the Greek capital omega and ``Å``. This keeps
+    equivalent spellings of units, labels, and query terms comparable byte-for-byte. It is a no-op on
+    pure ASCII. NFC is deliberately *not* NFKC: it does not casefold or apply compatibility folding
+    (so the MICRO SIGN U+00B5 and Greek mu U+03BC stay distinct).
+
+    Leading/trailing whitespace is stripped so equivalent spellings compare byte-for-byte. Note NFC
+    (unlike NFKC) does not fold compatibility whitespace, but :meth:`str.strip` trims all Unicode
+    whitespace regardless, so an NBSP-padded value is still trimmed.
+    """
+    return unicodedata.normalize("NFC", value).strip()
+
+
+# Acronym boundary: an uppercase letter followed by an uppercase-then-lowercase
+# pair. The trailing capital begins a new word, so ``HTTPResponse`` splits as
+# ``HTTP|Response``
+_ACRONYM_BOUNDARY = re.compile(r"(?<=[A-Z])(?=[A-Z][a-z])")
+
+# camelCase/PascalCase boundary: a lowercase letter or digit immediately followed
+# by an uppercase letter (``bandGap`` -> ``band|Gap``). The ``0-9`` in the lookbehind
+# also splits ``digit->UPPER`` (``Al2O3`` -> ``al2_o3``)
+_CAMEL_BOUNDARY = re.compile(r"(?<=[a-z0-9])(?=[A-Z])")
+
+# Any run of characters that isn't an ASCII letter or digit collapses to a single
+# underscore (spaces, hyphens, punctuation, etc.).
+_NON_ALNUM_RUN = re.compile(r"[^a-zA-Z0-9]+")
+
+_SPECIAL_TERMS = {
+    "pH": "ph",
+}
+_SPECIAL_RE = re.compile("|".join(re.escape(k) for k in _SPECIAL_TERMS)) if _SPECIAL_TERMS else None
+
+
+def to_snake_case(name: str) -> str:
+    """Coerce a single key token to canonical ``snake_case``.
+
+    Rewrites known irregular terms, splits ``camelCase``/``PascalCase`` and
+    acronym boundaries, lowercases, and collapses every run of non-alphanumeric
+    characters to a single underscore, trimming leading/trailing underscores.
+    """
+    s = name
+    if _SPECIAL_RE is not None:
+        s = _SPECIAL_RE.sub(lambda m: _SPECIAL_TERMS[m.group()], s)
+    s = _ACRONYM_BOUNDARY.sub("_", s)
+    s = _CAMEL_BOUNDARY.sub("_", s)
+    s = _NON_ALNUM_RUN.sub("_", s)
+    return s.strip("_").lower()
+
+
+# Converts strs to snake case
+SnakeCaseStr = Annotated[str, BeforeValidator(func=to_snake_case)]
+
+# Converts strs to searchable form (NFKC compatibility fold + casefold)
+SearchStr = Annotated[str, BeforeValidator(func=_nfkc_casefold)]
+
+# NFKC-normalizes strs (compatibility fold, case preserved) — for human-facing labels/names
+NFKCStr = Annotated[str, BeforeValidator(func=nfkc_normalize)]
+
+# Converts strs to pretty display form (keeps unicode and most formatting)
+DisplayStr = Annotated[str, BeforeValidator(func=nfc_normalize)]
+
+
+def coerce_key(key: Any, *, require_ascii: bool = False, reserved: frozenset[str] | None = None) -> str:
+    """Coerce one dict key to canonical ``snake_case``, enforcing the shared write-path key guards.
+
+    Always rejects a key that reduces to an empty string after coercion. The extra guards are opt-in
+    per call site, since not every caller wants them (e.g. the post-validation write path skips the
+    ASCII check because keys were already validated):
+
+    - ``require_ascii``: reject a non-``str`` or non-ASCII key before coercion.
+    - ``reserved``: reject a coerced key that lands in the reserved-leaf-key set.
+
+    Raises:
+        DataKeyError: on a non-ASCII (when required), empty-after-coercion, or reserved key. It is a
+            :class:`ValidationError` subclass, so callers catching either still see it.
+    """
+    if require_ascii and (not isinstance(key, str) or not key.isascii()):
+        raise DataKeyError("Non-ASCII key found in Contribution.data. All dict keys must be only ASCII")
+    coerced = to_snake_case(key)
+    if not coerced:
+        raise DataKeyError(f"data key '{key}' reduces to an empty string after snake_case coercion")
+    if reserved is not None and coerced in reserved:
+        raise DataKeyError(
+            f"data key '{key}' is reserved for annotated-value leaves and may not be used",
+            key=key,
+            reserved=sorted(reserved),
+        )
+    return coerced
+
+
+def map_keys(value: Any, *, coerce: Callable[[Any], str], on_scalar: Callable[[Any], Any] = lambda x: x) -> Any:
+    """Recursively rebuild ``value`` with every dict key coerced via ``coerce``.
+
+     Dicts have each key coerced (sibling collisions on the coerced name rejected) and their values
+     recursed; lists recurse element-wise; every scalar is passed through ``on_scalar`` (identity by
+    default). This is the shared walk behind the write-path key coercion.
+
+     Raises:
+         DataKeyError: if two sibling keys collide on the same coerced name (``coerce`` may raise its
+             own errors per key).
+    """
+    if isinstance(value, dict):
+        out: dict[str, Any] = {}
+        for key, sub in value.items():
+            coerced = coerce(key)
+            if coerced in out:
+                raise DataKeyError("data keys collide after coercion", value=coerced)
+            out[coerced] = map_keys(sub, coerce=coerce, on_scalar=on_scalar)
+        return out
+    if isinstance(value, list):
+        return [map_keys(item, coerce=coerce, on_scalar=on_scalar) for item in value]
+    return on_scalar(value)
 
 
 @cache
@@ -292,6 +425,11 @@ class Identity(ABC):  # noqa: B024  # base kept abstract as a marker; from_docum
     def as_dict(self) -> dict[str, Any]:
         """Identity as a flat dict keyed by field name (for Mongo match clauses and upsert)."""
         return {f.name: getattr(self, f.name) for f in fields(self)}
+
+    @classmethod
+    def model_fields(cls) -> frozenset[str]:
+        """Returns the field names as a frozenset"""
+        return frozenset(f.name for f in fields(cls))
 
     @classmethod
     def from_document(cls, doc: Mapping[str, Any]) -> Self:

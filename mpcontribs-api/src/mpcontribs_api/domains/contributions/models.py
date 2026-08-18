@@ -1,8 +1,6 @@
-import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Annotated, Any, ClassVar
-from warnings import deprecated
+from typing import Any, ClassVar
 
 from beanie import (
     Insert,
@@ -16,64 +14,19 @@ from beanie import (
 )
 from bson.errors import InvalidId
 from fastapi_filter import FilterDepends, with_prefix
-from pydantic import BeforeValidator, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from pymongo import ASCENDING, IndexModel
 
+from mpcontribs_api._openapi import CONTRIBUTION_DATA_INPUT_DESCRIPTION, CONTRIBUTION_DATA_OUTPUT_DESCRIPTION
 from mpcontribs_api.domains._shared.filters import BaseFilter
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
 from mpcontribs_api.domains._shared.types import ChemicalSystemId, Formula, Identity, MaterialId, Scalar, ShortStr
 from mpcontribs_api.domains.attachments.models import Attachment, AttachmentFilter, AttachmentIn
+from mpcontribs_api.domains.contributions.data import ContributionData, ContributionPatchData, ContributionStoredData
 from mpcontribs_api.domains.structures.models import Structure, StructureFilter, StructureIn
 from mpcontribs_api.domains.tables.models import Table, TableFilter, TableIn
 from mpcontribs_api.exceptions import ValidationError
 from mpcontribs_api.projection import SparseFieldsModel
-
-
-def _get_dict_depth(x) -> int:
-    if isinstance(x, dict):
-        return 1 + max((_get_dict_depth(v) for v in x.values()), default=0)
-    elif isinstance(x, list):
-        return max((_get_dict_depth(item) for item in x), default=0)
-    return 0
-
-
-def _validate_data_depth(data: dict[str, Any] | None) -> dict[str, Any] | None:
-    if data is None:
-        return None
-    depth = _get_dict_depth(data)
-    if depth > 7:
-        raise ValidationError("Depth of Contribution.data must be <= 7.", depth=depth)
-    return data
-
-
-# Forbid punctuation, excluding: '*', '/' and exactly 1 '|' anywhere in string
-_DATA_PUNCTUATION_PATTERN = re.compile(r"(?![^|]*\|[^|]*\|)[^\x21-\x29\x2B-\x2E\x3A-\x40\x5B-\x5E\x60\x7B\x7D-\x7E]*")
-
-
-def _validate_keys(data: dict[str, Any] | None) -> dict[str, Any] | None:
-    if data is None:
-        return None
-    keys = list(data.keys())
-    if not all(isinstance(k, str) and k.isascii() for k in keys):
-        raise ValidationError("Non-ASCII key found in Contribution.data. All dict keys must be only ASCII")
-    if any(k == "" for k in keys):
-        raise ValidationError("Empty key found in Contribution.data. Keys must be non-empty.")
-    if any(_DATA_PUNCTUATION_PATTERN.fullmatch(k) is None for k in keys):
-        raise ValidationError(
-            "Punctuation found in Contribution.data keys. Only '_', '*', '/', and at most 1 '|' permitted."
-        )
-    # Recurse into nested dicts, including dicts nested inside lists.
-    for v in data.values():
-        _validate_nested_keys(v)
-    return data
-
-
-def _validate_nested_keys(value: Any) -> None:
-    if isinstance(value, dict):
-        _validate_keys(value)
-    elif isinstance(value, list):
-        for item in value:
-            _validate_nested_keys(item)
 
 
 def _value_at(data: dict[str, Any], path: str) -> Any:
@@ -151,8 +104,15 @@ class ContributionIdentity(Identity):
             )
 
 
-class ContributionBase(BaseDocumentWithInput[PydanticObjectId]):
-    """Shared settings and fields for Contribution, ContributionIn, and ContributionOut."""
+class ContributionBase(BaseModel):
+    """Shared fields for Contribution, ContributionIn, and ContributionOut.
+
+    ``data`` uses the annotation-aware ``ContributionData`` validator: raw input may carry the pivot
+    grammar (``conductivity (S/cm, T=300K)``, dotted paths) and punctuation folded to ``_`` on write,
+    while non-ASCII, empty-after-coercion, and reserved leaf keys are still rejected. The *strict*
+    plain-key check (``ContributionStoredData``) is applied only to the coerced, stored
+    ``Contribution.data`` (see :class:`Contribution`).
+    """
 
     # Identifiers follow a specificity hierarchy: chemical_system_id > formula > material_id.
     # chemical_system_id is always required
@@ -161,11 +121,7 @@ class ContributionBase(BaseDocumentWithInput[PydanticObjectId]):
     chemical_system_id: str
     formula: str | None = None
     is_public: bool = False
-    data: Annotated[
-        dict[str, Any],
-        BeforeValidator(_validate_data_depth),
-        BeforeValidator(_validate_keys),
-    ]
+    data: ContributionData
 
     last_modified: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
@@ -182,29 +138,26 @@ class ContributionBase(BaseDocumentWithInput[PydanticObjectId]):
         ]
 
 
-class Contribution(ContributionBase):
+class Contribution(ContributionBase, BaseDocumentWithInput[PydanticObjectId]):
     """Models what is actually stored in the database."""
 
-    # Server-owned: the service extracts this from data at the project's unique_column path and stamps
-    # it on the doc (see ContributionService._resolve_identity). None when the project sets no
-    # unique_column, in which case the identity is the (project, material_id, chemical_system_id,
-    # formula) tuple. Never trusted from the request body.
+    # Strict validation over stored data rather than coercsion
+    data: ContributionStoredData
+
+    # Server owner - uses Project.unique_column to extract the value from Contribution.data
     unique_value: Scalar | None = None
     # Server-owned pivot-condition discriminator; "" until pivoting is wired in (see Identity).
     condition_key: str = ""
     structures: list[Link[Structure]] | None = None
     tables: list[Link[Table]] | None = None
     attachments: list[Link[Attachment]] | None = None
-    needs_build: Annotated[bool | None, deprecated("'needs_build' is deprecated.")] = False
 
     @classmethod
     def from_input_model(cls, data: ContributionIn) -> Contribution:
-        # Server-owned fields are not taken from input: is_public starts False, components are
-        # inserted separately, last_modified is stamped by the before_event hook, and unique_value is
-        # resolved/stamped by the service (never trusted from the request body).
         return cls.model_validate(
             {
                 **data.model_dump(exclude={"is_public", "structures", "tables", "attachments", "last_modified"}),
+                "_id": PydanticObjectId(),
                 "is_public": False,
             }
         )
@@ -276,11 +229,6 @@ class ContributionIn(ContributionBase):
 
 
 class ContributionOut(DocumentOut[PydanticObjectId]):
-    """Models what the users are allowed to see in a return.
-
-    Users can specify further what they want to see if not everything is of interest
-    """
-
     project: str | None = None
     material_id: str | None = None
     chemical_system_id: str | None = None
@@ -289,17 +237,16 @@ class ContributionOut(DocumentOut[PydanticObjectId]):
     condition_key: str | None = None
     is_public: bool | None = None
     last_modified: datetime | None = None
-    needs_build: Annotated[bool | None, deprecated("'needs_build' is deprecated.")] = None
     # No input validators on the read path: stored documents are trusted, and re-validating here
     # would 500 on historical data that missed the correction (see carrier_transport contribs)
-    data: dict[str, Any] | None = None
+    data: dict[str, Any] | None = Field(default=None, description=CONTRIBUTION_DATA_OUTPUT_DESCRIPTION)
     structures: list[Link[Structure]] | None = None
     tables: list[Link[Table]] | None = None
     attachments: list[Link[Attachment]] | None = None
 
     @staticmethod
-    def default_fields() -> list[str]:
-        return [
+    def default_fields() -> tuple[str, ...]:
+        return (
             "id",
             "project",
             "material_id",
@@ -308,7 +255,7 @@ class ContributionOut(DocumentOut[PydanticObjectId]):
             "unique_value",
             "is_public",
             "last_modified",
-        ]
+        )
 
 
 class ContributionPatch(SparseFieldsModel):
@@ -319,25 +266,22 @@ class ContributionPatch(SparseFieldsModel):
     chemical_system_id: ChemicalSystemId | None = None
     formula: Formula | None = None
     is_public: bool | None = None
-    data: Annotated[
-        dict[str, Any] | None,
-        BeforeValidator(_validate_data_depth),
-        BeforeValidator(_validate_keys),
-    ] = None
+    # Permissive validator: a merge patch may address a single field inside a stored quantity leaf
+    # (e.g. ``{"bandgap": {"unit": "kg"}}``). replace_data=True re-validates strictly in the service.
+    data: ContributionPatchData = Field(default=None, description=CONTRIBUTION_DATA_INPUT_DESCRIPTION)
     structures: list[Link[Structure]] | None = None
     tables: list[Link[Table]] | None = None
     attachments: list[Link[Attachment]] | None = None
 
 
 class ContributionFilter(BaseFilter):
-    """How users can filter searches for Contributions.
-
-    Includes filters for linked documents (Components)
-    """
-
     id: PydanticObjectId | None = None
     id__in: list[PydanticObjectId] | None = None
     id__neq: PydanticObjectId | None = None
+
+    project: str | None = None
+    project__in: list[ShortStr] | None = None
+    project__neq: str | None = None
 
     material_id: str | None = None
     material_id__in: list[ShortStr] | None = None
@@ -364,8 +308,6 @@ class ContributionFilter(BaseFilter):
     condition_key__ilike: str | None = None
 
     is_public: bool | None = None
-
-    needs_build: bool | None = None
 
     table: TableFilter | None = FilterDepends(with_prefix("tables", TableFilter))
     attachment: AttachmentFilter | None = FilterDepends(with_prefix("attachments", AttachmentFilter))

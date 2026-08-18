@@ -101,6 +101,41 @@ class TestListProjects:
 
 
 # ---------------------------------------------------------------------------
+# _fields three-way selection semantics (omitted / empty / _all)
+# ---------------------------------------------------------------------------
+
+
+class TestFieldSelectionSemantics:
+    def test_omitted_fields_forwards_route_defaults(self, client, project_repo):
+        # No _fields query param -> the route's default_fields() (identity + summary columns).
+        project_repo.get_projects.return_value = Page(items=[], next_cursor=None)
+        client.get("/api/v1/projects", headers=AUTHED_HEADERS)
+        _, kwargs = project_repo.get_projects.call_args
+        assert kwargs["fields"] == frozenset(ProjectOut.default_fields())
+
+    def test_empty_fields_forwards_identity_only(self, client, project_repo):
+        # `?_fields=` (present but empty) -> only the identity field, the cheap "just ids" call.
+        project_repo.get_projects.return_value = Page(items=[], next_cursor=None)
+        client.get("/api/v1/projects", params={"_fields": ""}, headers=AUTHED_HEADERS)
+        _, kwargs = project_repo.get_projects.call_args
+        assert kwargs["fields"] == frozenset({"id"})
+
+    def test_all_sentinel_forwards_none(self, client, project_repo):
+        # `?_fields=_all` -> None, i.e. project every field.
+        project_repo.get_projects.return_value = Page(items=[], next_cursor=None)
+        client.get("/api/v1/projects", params={"_fields": "_all"}, headers=AUTHED_HEADERS)
+        _, kwargs = project_repo.get_projects.call_args
+        assert kwargs["fields"] is None
+
+    def test_empty_fields_detail_forwards_identity_only(self, client, project_repo):
+        # Same three-way rule on the detail route.
+        project_repo.get_project_by_id.return_value = SAMPLE_PROJECT
+        client.get("/api/v1/projects/mp-sample", params={"_fields": ""}, headers=AUTHED_HEADERS)
+        _, kwargs = project_repo.get_project_by_id.call_args
+        assert kwargs["fields"] == frozenset({"id"})
+
+
+# ---------------------------------------------------------------------------
 # GET /api/v1/projects/{id}
 # ---------------------------------------------------------------------------
 

@@ -129,18 +129,36 @@ class TestContributionBase:
             _make_contribution_in(data=invalid_nesting)
 
     def test_data_key_validation(self):
-        valid_punctuation = {"test*/|": "pass"}
-        invalid_punctuation = {"test.": "fail"}
-        too_many_pipes = {"test||": "fail"}
-        non_ascii = {"ΔE": "fail"}
-        _make_contribution_in(data=valid_punctuation)
-        assert True
-        with pytest.raises(ValidationError, match="Punctuation found in Contribution.data keys"):
-            _make_contribution_in(data=invalid_punctuation)
-        with pytest.raises(ValidationError, match="Punctuation found in Contribution.data keys"):
-            _make_contribution_in(data=too_many_pipes)
+        # Input keys are coerced to snake_case on write, so punctuation is folded (not rejected) and
+        # the annotation grammar is allowed. Only keys that can't be coerced are rejected on input.
+        _make_contribution_in(data={"test*/|": "pass"})  # folds to "test", accepted
+        _make_contribution_in(data={"a.b (eV, T=300K)": 1})  # annotated key + dotted path, accepted
         with pytest.raises(ValidationError, match="Non-ASCII key found in Contribution.data"):
-            _make_contribution_in(data=non_ascii)
+            _make_contribution_in(data={"ΔE": "fail"})
+        with pytest.raises(ValidationError, match="reduces to an empty string"):
+            _make_contribution_in(data={"***": "fail"})
+
+        # The stored document shares the input path's key rules (ContributionStoredData draws on the
+        # same data.py core), so a coercible-punctuation key is accepted here just as on input, while
+        # reserved and non-ASCII keys are still rejected. The BeforeValidator runs before Beanie's
+        # collection lookup, so any ValidationError surfaces first.
+        Contribution(_id=PydanticObjectId(), project="p", chemical_system_id="Fe-O", data={"bad.key": 1})
+        with pytest.raises(ValidationError, match="reserved"):
+            Contribution(_id=PydanticObjectId(), project="p", chemical_system_id="Fe-O", data={"group": {"unit": "x"}})
+        with pytest.raises(ValidationError, match="Non-ASCII key found in Contribution.data"):
+            Contribution(_id=PydanticObjectId(), project="p", chemical_system_id="Fe-O", data={"ΔE": 1})
+
+    def test_reserved_leaf_keys_rejected(self):
+        # A data key that coerces to a reserved value-leaf name is rejected on write.
+        for bad in ("value", "unit", "error", "precision", "input_value", "display"):
+            with pytest.raises(ValidationError, match="reserved"):
+                _make_contribution_in(data={bad: 1})
+        # rejected when nested, too
+        with pytest.raises(ValidationError, match="reserved"):
+            _make_contribution_in(data={"group": {"unit": "x"}})
+        # and when used as a condition name in an annotated key
+        with pytest.raises(ValidationError, match="reserved"):
+            _make_contribution_in(data={"x (eV, value=3)": 1})
 
     # There isn't currently value validation. This is to check that that is true
     def test_data_value_validation(self):
@@ -396,15 +414,37 @@ class TestContributionPatch:
         assert patch.chemical_system_id is None
         assert patch.formula is None
         assert patch.data is None
+        assert patch.is_public is None
 
     def test_partial_patch(self):
-        patch = ContributionPatch(formula="Li2O", needs_build=False)
+        patch = ContributionPatch(formula="Li2O")
         assert patch.formula == "Li2O"
         assert patch.project is None
+
+    def test_is_public_settable(self):
+        # A contribution's visibility is patchable (publishing), unlike on ``ContributionIn``.
+        assert ContributionPatch(is_public=True).is_public is True
+        assert ContributionPatch(is_public=False).is_public is False
 
     def test_data_can_be_set(self):
         patch = ContributionPatch(data={"new_key": 42})
         assert patch.data == {"new_key": 42}
+
+    def test_data_keys_validated_not_coerced(self):
+        # ContributionPatch only *validates* keys; it no longer rewrites them. snake_case coercion
+        # and unit annotation happen in the service (expand_data), not at the model layer.
+        patch = ContributionPatch(data={"Band Gap": 1, "nested": {"pH-Value": 7}})
+        assert patch.data == {"Band Gap": 1, "nested": {"pH-Value": 7}}
+
+    def test_data_annotated_key_accepted(self):
+        # Annotated keys (unit + conditions) pass model validation unchanged; the service expands them.
+        patch = ContributionPatch(data={"conductivity (S/cm, T=300K)": 1.2})
+        assert patch.data == {"conductivity (S/cm, T=300K)": 1.2}
+
+    def test_data_uncoercible_key_rejected(self):
+        # A key that reduces to an empty string after coercion is still rejected at validation time.
+        with pytest.raises(ValidationError, match="empty string after snake_case coercion"):
+            ContributionPatch(data={"***": 1})
 
 
 # ---------------------------------------------------------------------------
@@ -442,7 +482,7 @@ class TestExtractUniqueValue:
 
 class TestContributionOutDefaultFields:
     def test_default_fields_are_identity_and_metadata(self):
-        assert ContributionOut.default_fields() == [
+        assert ContributionOut.default_fields() == (
             "id",
             "project",
             "material_id",
@@ -451,7 +491,7 @@ class TestContributionOutDefaultFields:
             "unique_value",
             "is_public",
             "last_modified",
-        ]
+        )
 
 
 # ---------------------------------------------------------------------------

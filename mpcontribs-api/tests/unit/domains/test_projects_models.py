@@ -165,8 +165,17 @@ class TestProjectOut:
 
 
 class TestProjectOutProjection:
-    def test_parse_fields_none_returns_none(self):
-        assert ProjectOut.parse_fields(None) is None
+    def test_parse_fields_none_returns_default_fields(self):
+        # Omitted _fields (None) -> the route's default_fields() (plus identity), not "all".
+        assert ProjectOut.parse_fields(None) == frozenset(ProjectOut.default_fields())
+
+    def test_parse_fields_empty_returns_identity_only(self):
+        # Present-but-empty _fields -> identity fields only.
+        assert ProjectOut.parse_fields([]) == frozenset({"id"})
+
+    def test_parse_fields_all_sentinel_returns_none(self):
+        # `_all` -> every field.
+        assert ProjectOut.parse_fields(["_all"]) is None
 
     def test_parse_fields_valid_field(self):
         result = ProjectOut.parse_fields(["title"])
@@ -219,7 +228,15 @@ class TestProjectPatch:
     def test_default_lists_are_empty(self):
         patch = ProjectPatch()
         assert patch.references == []
-        assert patch.columns == []
+
+    def test_is_approved_defaults_to_none(self):
+        # None => unset, so an ordinary patch never implicitly touches approval.
+        assert ProjectPatch().is_approved is None
+
+    def test_columns_is_not_a_patch_field(self):
+        # ``columns`` is server-owned and must not be accepted on the patch model.
+        assert "columns" not in ProjectPatch.model_fields
+        assert "stats" not in ProjectPatch.model_fields
 
     def test_invalid_license_raises(self):
         with pytest.raises(PydanticValidationError):
@@ -231,40 +248,41 @@ class TestProjectPatch:
 # ---------------------------------------------------------------------------
 
 
-VALID_STATS = Stats(columns=0, contributions=0, tables=0, structures=0, attachments=0, size=0.0)
-
-
 class TestProjectFromInputModel:
     def _make_input(self, **overrides):
         defaults = {
-            "_id": "test-proj",
             "title": "Test Project",
             "authors": "Alice, Bob",
             "description": "A test project",
             "owner": "google:alice@example.com",
-            "stats": VALID_STATS,
         }
         defaults.update(overrides)
         return ProjectIn(**defaults)
 
     def test_from_input_model_creates_project(self):
         project_in = self._make_input()
-        project = Project.from_input_model(project_in)
+        project = Project.from_input_model(project_in, id="test-proj")
         assert isinstance(project, Project)
         assert project.id == "test-proj"
         assert project.title == "Test Project"
 
     def test_from_input_model_preserves_owner(self):
         project_in = self._make_input(owner="github:bob@github.com")
-        project = Project.from_input_model(project_in)
+        project = Project.from_input_model(project_in, id="test-proj")
         assert project.owner == "github:bob@github.com"
 
     def test_from_input_model_defaults(self):
         project_in = self._make_input()
-        project = Project.from_input_model(project_in)
+        project = Project.from_input_model(project_in, id="test-proj")
         assert project.is_public is False
         assert project.is_approved is False
         assert project.references == []
+        assert project.columns == []
+
+    def test_from_input_model_starts_with_empty_server_owned_fields(self):
+        # stats/columns aren't on the input model and default empty on the document.
+        project = Project.from_input_model(self._make_input(), id="test-proj")
+        assert project.stats == Stats.empty()
         assert project.columns == []
 
 
@@ -326,9 +344,3 @@ class TestColumnLengthQuota:
         # A read path may pass a non-list (e.g. an unset field); it must never raise so legacy
         # documents that predate the cap remain retrievable.
         validate_column_limit(None, max_columns=0)
-
-    def test_model_does_not_enforce_cap(self):
-        # Regression guard: the cap moved off the model into the repository. Constructing a model
-        # with more columns than any cap must NOT raise here — enforcement happens on write.
-        patch = ProjectPatch(columns=_columns(50))
-        assert len(patch.columns) == 50
