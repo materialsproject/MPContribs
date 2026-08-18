@@ -35,9 +35,9 @@ def _make_service(
 
     contributions = AsyncMock(name="contributions")
 
-    async def _referenced(ref_field, ids, *, scoped):
+    async def _referenced(ref_field, ids=None, *, scoped):
         pool = reachable if scoped else referenced
-        return {i for i in ids if i in pool}
+        return set(pool) if ids is None else {i for i in ids if i in pool}
 
     contributions.referenced_component_ids = AsyncMock(side_effect=_referenced)
 
@@ -160,11 +160,12 @@ def _make_read_service(*, reachable: set[PydanticObjectId]) -> tuple[ComponentSe
 
     contributions = AsyncMock(name="contributions")
 
-    async def _referenced(ref_field, ids, *, scoped):
+    async def _referenced(ref_field, ids=None, *, scoped):
+        if ids is None:
+            return set(reachable) if scoped else set()
         return {i for i in ids if i in reachable} if scoped else set()
 
     contributions.referenced_component_ids = AsyncMock(side_effect=_referenced)
-    contributions.list_referenced_component_ids = AsyncMock(return_value=reachable)
 
     service = ComponentService(components, contributions, ref_field="attachments")
     return service, components, contributions
@@ -198,8 +199,9 @@ async def test_get_many_restricts_to_reachable_ids():
 
     await svc.get_many(filter=AttachmentFilter(), pagination=None, fields=None)
 
-    contributions.list_referenced_component_ids.assert_awaited_once()
-    assert contributions.list_referenced_component_ids.await_args.kwargs["scoped"] is True
+    contributions.referenced_component_ids.assert_awaited_once()
+    assert contributions.referenced_component_ids.await_args.kwargs["scoped"] is True
+    assert contributions.referenced_component_ids.await_args.args[1:] == ()
     restrict = components.get_many.await_args.kwargs["restrict_ids"]
     assert set(restrict) == {a, b}
 

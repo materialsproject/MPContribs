@@ -260,30 +260,38 @@ class MongoDbContributionRepository(
             found.add(ContributionIdentity.from_document(doc))
         return found
 
-    async def _scan_referenced_ids(
+    async def referenced_component_ids(
         self,
         ref_field: str,
-        match: dict[str, Any],
+        ids: list[PydanticObjectId] | None = None,
         *,
         scoped: bool,
-        target: set[PydanticObjectId] | None = None,
     ) -> set[PydanticObjectId]:
         """Return component ids referenced through ``ref_field`` by matching contributions.
 
         Beanie stores each ``Link`` as a DBRef (``{"$ref": ..., "$id": ObjectId}``), so a component
-        is referenced when its id appears under ``<ref_field>.$id``. ``match`` is the query applied
-        to that path ("$in" a candidate list, or "$exists" to enumerate all). When ``target`` is
-        given only ids in it are kept (the candidate-subset case); otherwise every referenced id is
-        returned. ``scoped`` merges the user scope into the query (access gate) when ``True``.
+        is referenced when its id appears under ``<ref_field>.$id``. When ``ids`` is given, only that
+        candidate subset is tested and the returned set is a subset of ``ids`` (access-gate /
+        reachability check); when ``ids`` is ``None``, every referenced id is enumerated. ``scoped``
+        merges the user scope into the query (access gate) when ``True``; when ``False`` the check
+        spans every contribution (global integrity check).
 
         Args:
             ref_field: the contribution link field to inspect ("structures" | "tables" |
                 "attachments"). Always a fixed class-attr at the call site, never user input.
-            match: the query predicate for ``<ref_field>.$id``
+            ids: optional candidate list; when given, only ids in it are returned
             scoped: when ``True`` the user scope is applied; when ``False`` the check spans every
                 contribution (global integrity check)
-            target: optional candidate set; when given, only ids in it are returned
         """
+        if ids is None:
+            match: dict[str, Any] = {"$exists": True}
+            target: set[PydanticObjectId] | None = None
+        elif not ids:
+            return set()
+        else:
+            match = {"$in": ids}
+            target = set(ids)
+
         query: dict[str, Any] = {f"{ref_field}.$id": match}
         if scoped and self._scope:
             query = {"$and": [self._scope, query]}
@@ -295,34 +303,6 @@ class MongoDbContributionRepository(
                 if rid is not None and (target is None or rid in target):
                     referenced.add(rid)
         return referenced
-
-    async def referenced_component_ids(
-        self,
-        ref_field: str,
-        ids: list[PydanticObjectId],
-        *,
-        scoped: bool,
-    ) -> set[PydanticObjectId]:
-        """Return the subset of ``ids`` referenced by contributions through ``ref_field``.
-
-        Access-gate / reachability check for a known candidate list. See :meth:`_scan_referenced_ids`.
-        """
-        if not ids:
-            return set()
-        return await self._scan_referenced_ids(ref_field, {"$in": ids}, scoped=scoped, target=set(ids))
-
-    async def list_referenced_component_ids(
-        self,
-        ref_field: str,
-        *,
-        scoped: bool,
-    ) -> set[PydanticObjectId]:
-        """Return every component id referenced through ``ref_field`` by matching contributions.
-
-        Unlike :meth:`referenced_component_ids`, this takes no candidate list — it enumerates all
-        ids reachable from contributions in scope. See :meth:`_scan_referenced_ids`.
-        """
-        return await self._scan_referenced_ids(ref_field, {"$exists": True}, scoped=scoped)
 
     async def aggregate_project_stats(self, project_id: str) -> ProjectAggregate:
         """Recompute derived stats/columns for one project from its current contributions.
