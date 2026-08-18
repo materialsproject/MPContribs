@@ -65,7 +65,7 @@ class TestMapKeys:
         assert _coerce_keys({"Key": "Value.With/Punct"}) == {"key": "Value.With/Punct"}
 
     def test_collision_raises(self):
-        with pytest.raises(ValidationError, match="collide after snake_case coercion"):
+        with pytest.raises(ValidationError, match="data keys collide after coercion"):
             _coerce_keys({"Band Gap": 1, "band_gap": 2})
 
     def test_non_ascii_key_raises(self):
