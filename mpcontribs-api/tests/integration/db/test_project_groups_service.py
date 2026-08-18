@@ -63,7 +63,7 @@ class TestAdd:
         group = await _insert_group("add-id")
         await _insert_project("mp-1")
         await _insert_project("mp-2")
-        summary = await _service().add_projects_by_id(str(group.id), ["mp-1", "mp-2"])
+        summary = await _service().add_projects({"id": str(group.id)}, ["mp-1", "mp-2"])
         assert summary.succeeded == ["mp-1", "mp-2"]
         assert summary.failed == []
         assert await _members(group.id) == ["mp-1", "mp-2"]
@@ -71,20 +71,20 @@ class TestAdd:
     async def test_add_by_identifiers_links_projects(self, db):
         group = await _insert_group("add-ident")
         await _insert_project("mp-x")
-        summary = await _service().add_projects_by_identifiers("add-ident", ALICE_EMAIL, ["mp-x"])
+        summary = await _service().add_projects({"name": "add-ident", "owner": ALICE_EMAIL}, ["mp-x"])
         assert summary.succeeded == ["mp-x"]
         assert await _members(group.id) == ["mp-x"]
 
     async def test_add_is_idempotent(self, db):
         group = await _insert_group("add-idem")
         await _insert_project("mp-1")
-        await _service().add_projects_by_id(str(group.id), ["mp-1"])
-        await _service().add_projects_by_id(str(group.id), ["mp-1"])
+        await _service().add_projects({"id": str(group.id)}, ["mp-1"])
+        await _service().add_projects({"id": str(group.id)}, ["mp-1"])
         assert await _members(group.id) == ["mp-1"]
 
     async def test_missing_project_fails_and_leaves_group_unchanged(self, db):
         group = await _insert_group("add-missing")
-        summary = await _service().add_projects_by_id(str(group.id), ["ghost"])
+        summary = await _service().add_projects({"id": str(group.id)}, ["ghost"])
         assert summary.succeeded == []
         assert summary.failed[0].error_code == "not_found"
         assert await _members(group.id) == []
@@ -93,7 +93,7 @@ class TestAdd:
         # Bob's private project is invisible to Alice, so she cannot link it.
         group = await _insert_group("add-scope")
         await _insert_project("mp-bob", owner=BOB_EMAIL)
-        summary = await _service(ALICE).add_projects_by_id(str(group.id), ["mp-bob"])
+        summary = await _service(ALICE).add_projects({"id": str(group.id)}, ["mp-bob"])
         assert summary.succeeded == []
         assert summary.failed[0].error_code == "not_found"
         assert await _members(group.id) == []
@@ -101,7 +101,7 @@ class TestAdd:
     async def test_group_not_visible_raises_not_found(self, db):
         group = await _insert_group("add-priv")  # owned by Alice, invisible to anon
         with pytest.raises(NotFoundError):
-            await _service(ANON).add_projects_by_id(str(group.id), [])
+            await _service(ANON).add_projects({"id": str(group.id)}, [])
 
 
 # ---------------------------------------------------------------------------
@@ -129,24 +129,24 @@ class TestDelete:
         group = await _insert_group("rm-id")
         await _insert_project("mp-1")
         await _insert_project("mp-2")
-        await _service().add_projects_by_id(str(group.id), ["mp-1", "mp-2"])
-        summary = await _service().delete_projects_by_id(str(group.id), ["mp-1"])
+        await _service().add_projects({"id": str(group.id)}, ["mp-1", "mp-2"])
+        summary = await _service().delete_projects({"id": str(group.id)}, ["mp-1"])
         assert summary.succeeded == ["mp-1"]
         assert await _members(group.id) == ["mp-2"]
 
     async def test_delete_by_identifiers_unlinks_project(self, db):
         group = await _insert_group("rm-ident")
         await _insert_project("mp-1")
-        await _service().add_projects_by_id(str(group.id), ["mp-1"])
-        summary = await _service().delete_projects_by_identifiers("rm-ident", ALICE_EMAIL, ["mp-1"])
+        await _service().add_projects({"id": str(group.id)}, ["mp-1"])
+        summary = await _service().delete_projects({"name": "rm-ident", "owner": ALICE_EMAIL}, ["mp-1"])
         assert summary.succeeded == ["mp-1"]
         assert await _members(group.id) == []
 
     async def test_delete_non_member_reported_as_failure(self, db):
         group = await _insert_group("rm-nonmember")
         await _insert_project("mp-1")
-        await _service().add_projects_by_id(str(group.id), ["mp-1"])
-        summary = await _service().delete_projects_by_id(str(group.id), ["ghost"])
+        await _service().add_projects({"id": str(group.id)}, ["mp-1"])
+        summary = await _service().delete_projects({"id": str(group.id)}, ["ghost"])
         assert summary.succeeded == []
         assert summary.failed[0].error_code == "not_found"
         assert await _members(group.id) == ["mp-1"]

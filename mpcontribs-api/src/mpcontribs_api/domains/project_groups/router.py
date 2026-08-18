@@ -40,8 +40,8 @@ async def get_project_groups(
 
 
 @router.get("/item")
-async def get_project_group(
-    repo: ProjectGroupDep,
+async def get_one(
+    service: ProjectGroupServiceDep,
     name: SearchStr,
     owner: PrefixedEmail,
     fields: FieldSelector = ProjectGroupOut.default_fields(),
@@ -49,13 +49,13 @@ async def get_project_group(
     """Return the single project group identified by ``name`` + ``owner``.
 
     Args:
-        repo (ProjectGroupDep): the project group repo we depend on
+        service (ProjectGroupServiceDep): the project group service we depend on
         name (SearchStr): the project group's name
         owner (PrefixedEmail): the project group's owner
         fields (FieldSelector): the fields to return to a user
     """
     selected = ProjectGroupOut.parse_fields(fields)
-    return await repo.get_project_group(name=name, owner=owner, fields=selected)
+    return await service.get_one({"name": name, "owner": owner}, fields=selected)
 
 
 @router.post(
@@ -78,8 +78,8 @@ async def insert_project_group(
 
 
 @router.patch("/item", response_model=ProjectGroupOut, dependencies=[Depends(require_user)])
-async def patch_project_group(
-    repo: ProjectGroupDep,
+async def patch_one(
+    service: ProjectGroupServiceDep,
     name: SearchStr,
     owner: PrefixedEmail,
     update: ProjectGroupPatch,
@@ -87,17 +87,17 @@ async def patch_project_group(
     """Partially update the project group identified by ``name`` + ``owner``.
 
     Args:
-        repo (ProjectGroupDep): the project group repo we depend on
+        service (ProjectGroupServiceDep): the project group service we depend on
         name (SearchStr): the project group's name
         owner (PrefixedEmail): the project group's owner
         update (ProjectGroupPatch): the partial update to apply - unset fields are dropped
     """
-    return await repo.patch_project_group(name=name, owner=owner, update=update)
+    return await service.patch_one({"name": name, "owner": owner}, update=update)
 
 
 @router.delete("/item", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_user)])
-async def delete_project_group(
-    repo: ProjectGroupDep,
+async def delete_one(
+    service: ProjectGroupServiceDep,
     name: SearchStr,
     owner: PrefixedEmail,
 ):
@@ -106,11 +106,11 @@ async def delete_project_group(
     Raises 404 if no such group is visible to the caller, 409 if the identifiers are ambiguous.
 
     Args:
-        repo (ProjectGroupDep): the project group repo we depend on
+        service (ProjectGroupServiceDep): the project group service we depend on
         name (SearchStr): the project group's name
         owner (PrefixedEmail): the project group's owner
     """
-    await repo.delete_project_group(name=name, owner=owner)
+    await service.delete_one({"name": name, "owner": owner})
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -140,7 +140,7 @@ async def add_projects_by_identifiers(
     Each project is verified against the projects collection (scoped to the caller); unknown or
     invisible projects are reported per-item in the response rather than failing the whole request.
     """
-    return await service.add_projects_by_identifiers(name=name, owner=owner, project_ids=body.project_ids)
+    return await service.add_projects({"name": name, "owner": owner}, body.project_ids)
 
 
 @router.delete("/item/projects", response_model=BulkWriteSummary[str], dependencies=[Depends(require_user)])
@@ -154,7 +154,7 @@ async def delete_projects_by_identifiers(
 
     Ids that are not members of the group are reported per-item in the response.
     """
-    return await service.delete_projects_by_identifiers(name=name, owner=owner, project_ids=body.project_ids)
+    return await service.delete_projects({"name": name, "owner": owner}, body.project_ids)
 
 
 @router.post("/{id}/projects", response_model=BulkWriteSummary[str], dependencies=[Depends(require_user)])
@@ -163,8 +163,8 @@ async def add_projects_by_id(
     id: str,
     body: ProjectRefs,
 ):
-    """Add projects to the group identified by ``id``. See ``add_projects_by_identifiers``."""
-    return await service.add_projects_by_id(group_id=id, project_ids=body.project_ids)
+    """Add projects to the group identified by ``id``. See ``add_projects``."""
+    return await service.add_projects({"id": id}, body.project_ids)
 
 
 @router.delete("/{id}/projects", response_model=BulkWriteSummary[str], dependencies=[Depends(require_user)])
@@ -173,5 +173,5 @@ async def delete_projects_by_id(
     id: str,
     body: ProjectRefs,
 ):
-    """Delete projects from the group identified by ``id``. See ``delete_projects_by_identifiers``."""
-    return await service.delete_projects_by_id(group_id=id, project_ids=body.project_ids)
+    """Delete projects from the group identified by ``id``. See ``delete_projects``."""
+    return await service.delete_projects({"id": id}, body.project_ids)

@@ -127,15 +127,15 @@ class TestStructuresInsert:
 
 class TestStructuresByIdRouting:
     def test_get_by_id_conventional_path(self, client, structure_service):
-        structure_service.get_by_id.return_value = SAMPLE_STRUCTURE
+        structure_service.get_one.return_value = SAMPLE_STRUCTURE
         assert client.get(f"/api/v1/structures/{PydanticObjectId()}").status_code == 200
 
     def test_delete_by_id_conventional_path(self, client, structure_service):
-        structure_service.delete_by_id.return_value = ComponentDeleteResponse(num_deleted=1)
+        structure_service.delete_one.return_value = ComponentDeleteResponse(num_deleted=1)
         assert client.delete(f"/api/v1/structures/{PydanticObjectId()}").status_code == 200
 
     def test_patch_by_id_conventional_path(self, client, structure_service):
-        structure_service.patch_by_id.return_value = SAMPLE_STRUCTURE
+        structure_service.patch_one.return_value = SAMPLE_STRUCTURE
         r = client.patch(f"/api/v1/structures/{PydanticObjectId()}", json={"name": "renamed"})
         assert r.status_code == 200
 
@@ -186,15 +186,15 @@ class TestTablesInsert:
 
 class TestTablesByIdRouting:
     def test_get_by_id_conventional_path(self, client, table_service):
-        table_service.get_by_id.return_value = SAMPLE_TABLE
+        table_service.get_one.return_value = SAMPLE_TABLE
         assert client.get(f"/api/v1/tables/{PydanticObjectId()}").status_code == 200
 
     def test_delete_by_id_conventional_path(self, client, table_service):
-        table_service.delete_by_id.return_value = ComponentDeleteResponse(num_deleted=1)
+        table_service.delete_one.return_value = ComponentDeleteResponse(num_deleted=1)
         assert client.delete(f"/api/v1/tables/{PydanticObjectId()}").status_code == 200
 
     def test_patch_by_id_conventional_path(self, client, table_service):
-        table_service.patch_by_id.return_value = SAMPLE_TABLE
+        table_service.patch_one.return_value = SAMPLE_TABLE
         r = client.patch(f"/api/v1/tables/{PydanticObjectId()}", json={"name": "x"})
         assert r.status_code == 200
 
@@ -212,14 +212,14 @@ class TestAttachmentsRouterWiring:
         attachment_service.get_many.assert_awaited_once()
 
     def test_get_by_id_calls_attachment_service(self, client, attachment_service):
-        attachment_service.get_by_id.return_value = None
+        attachment_service.get_one.return_value = None
         client.get(f"/api/v1/attachments/{PydanticObjectId()}")
-        attachment_service.get_by_id.assert_awaited_once()
+        attachment_service.get_one.assert_awaited_once()
 
     def test_delete_by_id_calls_attachment_service(self, client, attachment_service):
-        attachment_service.delete_by_id.return_value = ComponentDeleteResponse(num_deleted=1)
+        attachment_service.delete_one.return_value = ComponentDeleteResponse(num_deleted=1)
         client.delete(f"/api/v1/attachments/{PydanticObjectId()}")
-        attachment_service.delete_by_id.assert_awaited_once()
+        attachment_service.delete_one.assert_awaited_once()
 
     def test_batch_delete_calls_attachment_service(self, client, attachment_service):
         attachment_service.delete.return_value = ComponentDeleteResponse(num_deleted=0)
@@ -310,12 +310,12 @@ class TestComponentMutationsRequireAuth:
     def test_structure_delete_by_id_anon_401(self, client, structure_service):
         r = client.delete(f"/api/v1/structures/{PydanticObjectId()}", headers=FORCE_ANON_HEADERS)
         assert r.status_code == 401
-        structure_service.delete_by_id.assert_not_called()
+        structure_service.delete_one.assert_not_called()
 
     def test_structure_patch_by_id_anon_401(self, client, structure_service):
         r = client.patch(f"/api/v1/structures/{PydanticObjectId()}", json={"name": "x"}, headers=FORCE_ANON_HEADERS)
         assert r.status_code == 401
-        structure_service.patch_by_id.assert_not_called()
+        structure_service.patch_one.assert_not_called()
 
     def test_tables_delete_anon_401(self, client, table_service):
         r = client.delete("/api/v1/tables", headers=FORCE_ANON_HEADERS)
@@ -325,7 +325,7 @@ class TestComponentMutationsRequireAuth:
     def test_attachment_delete_by_id_anon_401(self, client, attachment_service):
         r = client.delete(f"/api/v1/attachments/{PydanticObjectId()}", headers=FORCE_ANON_HEADERS)
         assert r.status_code == 401
-        attachment_service.delete_by_id.assert_not_called()
+        attachment_service.delete_one.assert_not_called()
 
     def test_structures_get_still_open_to_anon(self, client, structure_service):
         structure_service.get_many.return_value = Page(items=[], next_cursor=None)

@@ -13,7 +13,7 @@ from mpcontribs_api.domains._shared.types import (
     download_filename,
 )
 from mpcontribs_api.domains.attachments.dependencies import AttachmentServiceDep
-from mpcontribs_api.domains.attachments.models import AttachmentFilter, AttachmentOut
+from mpcontribs_api.domains.attachments.models import AttachmentFilter, AttachmentOut, AttachmentPatch
 from mpcontribs_api.pagination import CursorParams
 
 router = APIRouter()
@@ -30,14 +30,15 @@ async def get_attachments(
     return await service.get_many(filter=filter, fields=selected, pagination=pagination)
 
 
-@router.get("/{pk}")
-async def get_attachment(
+@router.get("/{id}")
+async def get_one(
     service: AttachmentServiceDep,
-    pk: str,
+    id: str,
     fields: FieldSelector = AttachmentOut.default_fields(),
 ):
+    """Return a single attachment addressed by its ``_id``."""
     selected = AttachmentOut.parse_fields(fields)
-    return await service.get_by_id(id=pk, fields=selected)
+    return await service.get_one(identifiers={"id": id}, fields=selected)
 
 
 @router.get("/download/{short_mime}")
@@ -73,5 +74,16 @@ async def delete_attachments(service: AttachmentServiceDep, filter: AttachmentFi
 
 
 @router.delete("/{id}", response_model=ComponentDeleteResponse, dependencies=[Depends(require_user)])
-async def delete_attachment_by_id(service: AttachmentServiceDep, id: str):
-    return await service.delete_by_id(id=id)
+async def delete_one(service: AttachmentServiceDep, id: str):
+    """Delete a single attachment addressed by its ``_id``."""
+    return await service.delete_one(identifiers={"id": id})
+
+
+@router.patch("/{id}", dependencies=[Depends(require_user)])
+async def patch_one(
+    service: AttachmentServiceDep,
+    id: str,
+    update: AttachmentPatch,
+):
+    """Patch a single attachment addressed by its ``_id`` or its content ``md5``."""
+    return await service.patch_one(identifiers={"id": id}, update=update)

@@ -3,8 +3,10 @@ from typing import Any
 from beanie import PydanticObjectId, UpdateResponse
 from beanie.operators import Set
 from bson import DBRef
+from pymongo.asynchronous.client_session import AsyncClientSession
 
 from mpcontribs_api.authz import User
+from mpcontribs_api.domains._shared.models import DeleteResponse
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
 from mpcontribs_api.domains.projects.models import (
     Project,
@@ -54,10 +56,6 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
         """Query the Project collection, scoped to the current user. See ``get_many``."""
         return await self.get_many(pagination=pagination, filter=filter, fields=fields)
 
-    async def get_project_by_id(self, id: str, fields: frozenset[str] | None) -> Project | ProjectOut | None:
-        """Find a single project by id, scoped to the current user. See ``get_by_id``."""
-        return await self.get_by_id(id, fields)
-
     async def unique_identifiers_by_id(self, ids: list[str]) -> dict[str, bool]:
         """Return ``{project_id: unique_identifiers}`` for the given project ids, scoped to the user.
 
@@ -86,18 +84,20 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
         """Insert a new project, rejecting a duplicate id. See ``insert_one``."""
         return await self.insert_one(project)
 
-    async def patch_project_by_id(self, id: str, update: ProjectPatch) -> Project:
+    async def patch_one(  # pyright: ignore[reportIncompatibleMethodOverride]
+        self, identifiers: dict[str, Any], update: ProjectPatch, session: AsyncClientSession | None = None
+    ) -> Project:
         """Partially update a scoped project by id, enforcing approval rules.
 
         - Only an admin may change ``is_approved``.
         - Resulting state must satisfy is_public <-> is_approved condition
 
-        The ``initiative`` field is split out upstream in ``ProjectService.patch``, so it never
+        The ``initiative`` field is split out upstream in ``ProjectService.patch_one``, so it never
         reaches this method; an assignment that also edits plain fields goes through
         :meth:`patch_project_with_initiative` instead.
         """
-        await self._enforce_patch_rules(id, update)
-        return await self.patch(id, update)
+        await self._enforce_patch_rules(identifiers["id"], update)
+        return await super().patch_one(identifiers, update, session=session)
 
     async def patch_project_with_initiative(self, id: str, update: ProjectPatch, ref: DBRef | None) -> Project:
         """Atomically apply a partial project update together with its canonical initiative link.
@@ -111,13 +111,13 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
         await self._enforce_patch_rules(id, update)
         data = update.model_dump(exclude_unset=True)
         data["initiative"] = ref
-        query = self.document_model.find_one(self._scope, self.document_model.id == id).update(
+        query = self.document_model.find_one(self._scope, self._identifier_query({"id": id})).update(
             Set(data),
             response_type=UpdateResponse.NEW_DOCUMENT,
         )
         updated = await query  # pyright: ignore[reportGeneralTypeIssues] # beanie UpdateQuery is awaitable
         if updated is None:
-            raise NotFoundError(self._not_found(id))
+            raise NotFoundError(f"{self.document_model.__name__} not found", id=id)
         return updated
 
     async def _enforce_patch_rules(self, id: str, update: ProjectPatch) -> None:
@@ -135,28 +135,32 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
 
         existing = await self.document_model.find_one(self._scope, self.document_model.id == id)
         if existing is None:
-            raise NotFoundError(self._not_found(id))
+            raise NotFoundError(f"{self.document_model.__name__} not found", id=id)
 
         resulting_approved = data.get("is_approved", existing.is_approved)
         resulting_public = data.get("is_public", existing.is_public)
         if resulting_public and not resulting_approved:
             raise ValidationError("a project cannot be public until it is approved", id=id)
 
-    async def delete_project_by_id(self, id: str) -> None:
+    async def delete_one(
+        self, identifiers: dict[str, Any], session: AsyncClientSession | None = None
+    ) -> DeleteResponse:
         """Delete a scoped project by id. Restricted to the owner or an admin.
 
         Visibility (public/approved or group membership) is not enough to delete: a project can
         only be dissolved by its owner (or an admin). A caller who cannot see the project gets a
-        404; a caller who can see it but does not own it gets a 403.
+        404; a caller who can see it but does not own it gets a 403. The auth check runs against the
+        resolved document; the write is delegated to the base :meth:`MongoDbRepository.delete_one`.
         """
-        existing = await self.document_model.find_one(self._scope, self.document_model.id == id)
+        id = identifiers["id"]
+        existing = await self.document_model.find_one(self._scope, self._identifier_query({"id": id}))
         if existing is None:
-            raise NotFoundError(self._not_found(id))
+            raise NotFoundError(f"{self.document_model.__name__} not found", id=id)
         if not (self._user.is_admin or existing.owner == self._user.username):
             raise PermissionError(required_role="owner-or-admin")
-        await self.delete_by_id(id)
+        return await super().delete_one(identifiers, session=session)
 
-    async def upsert_project_by_id(self, id: str, data: ProjectIn) -> Project:
+    async def upsert_one(self, identifiers: dict[str, Any], data: ProjectIn) -> Project:
         """Upsert a project by provided id, authorized to the current user.
 
         Update the document if the id exists, otherwise insert a new one under that id.
@@ -168,10 +172,10 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
         - **New project:** ``owner`` is forced to the caller; server-managed fields keep their
           defaults
 
-        Note: relies on the path param ``id`` for identity, not the body's id.
+        Note: relies on the identifier ``id`` for identity, not the body's id.
 
         Args:
-            id (str): the id of the project to upsert
+            identifiers (dict[str, Any]): the identifier of the project to upsert (``{"id": ...}``)
             data (ProjectIn): the data of the project to upsert
 
         Returns:
@@ -184,6 +188,7 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
         if self._user.username is None:
             raise PermissionError(required_role="authenticated")
 
+        id = identifiers["id"]
         existing = await self.document_model.find_one(self.document_model.id == id)
         project = self.document_model.from_input_model(data)
         project.id = id

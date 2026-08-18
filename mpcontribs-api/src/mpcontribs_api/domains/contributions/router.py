@@ -113,28 +113,28 @@ async def download_contributions(
 
 
 @router.delete("/{id}", dependencies=[Depends(require_user)])
-async def delete_contribution_by_id(
+async def delete_one(
     service: ContributionServiceDep,
     id: str,
 ):
-    return await service.delete_contributions(ContributionFilter.model_validate({"id": id}))
+    return await service.delete_one({"id": id})
 
 
 @router.get("/{id}")
-async def get_contribution_by_id(
-    repo: ContributionDep,
+async def get_one(
+    service: ContributionServiceDep,
     id: str,
     fields: FieldSelector = ContributionOut.default_fields(),
 ):
     selected = ContributionOut.parse_fields(fields)
-    return await repo.get_contribution_by_id(id=id, fields=selected)
+    return await service.get_one({"id": id}, fields=selected)
 
 
 @router.put("/{id}", dependencies=[Depends(require_user)])
-async def upsert_contribution_by_id(repo: ContributionDep, id: str, contribution: ContributionIn):
-    return await repo.upsert_contribution_by_id(id=id, contribution=contribution)
+async def upsert_one(service: ContributionServiceDep, id: str, contribution: ContributionIn):
+    return await service.upsert_one({"id": id}, contribution=contribution)
 
 
 @router.patch("/{id}", dependencies=[Depends(require_user)])
-async def patch_contribution_by_id(repo: ContributionDep, id: str, update: ContributionPatch):
-    return await repo.patch_contribution_by_id(id=id, update=update)
+async def patch_one(service: ContributionServiceDep, id: str, update: ContributionPatch):
+    return await service.patch_one({"id": id}, update=update)

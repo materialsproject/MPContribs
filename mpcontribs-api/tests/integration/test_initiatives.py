@@ -78,7 +78,7 @@ class TestGet:
         assert r.status_code == 200
 
     def test_get_by_slug_returns_200(self, client, initiative_repo):
-        initiative_repo.get_initiative.return_value = _stored()
+        initiative_repo.get_one.return_value = _stored()
         r = client.get("/api/v1/initiatives/battery-genome", headers=AUTHED_HEADERS)
         assert r.status_code == 200
         assert r.json()["slug"] == "battery-genome"
@@ -91,7 +91,7 @@ class TestGet:
 
 class TestPatch:
     def test_patch_returns_200(self, client, initiative_repo):
-        initiative_repo.patch_initiative.return_value = _stored(name="Renamed")
+        initiative_repo.patch_one.return_value = _stored(name="Renamed")
         r = client.patch(
             "/api/v1/initiatives/battery-genome",
             json={"name": "Renamed"},
@@ -109,7 +109,7 @@ class TestPatch:
         assert r.status_code == 401
 
     def test_not_found_propagates_404(self, client, initiative_repo):
-        initiative_repo.patch_initiative.side_effect = NotFoundError("nope")
+        initiative_repo.patch_one.side_effect = NotFoundError("nope")
         r = client.patch(
             "/api/v1/initiatives/missing",
             json={"name": "Renamed"},
@@ -125,7 +125,7 @@ class TestPatch:
 
 class TestDelete:
     def test_delete_returns_204(self, client, initiative_repo):
-        initiative_repo.delete_initiative.return_value = None
+        initiative_repo.delete_one.return_value = None
         r = client.delete("/api/v1/initiatives/battery-genome", headers=AUTHED_HEADERS)
         assert r.status_code == 204
         assert r.content == b""

@@ -107,11 +107,12 @@ class TestDocumentOut:
 
 
 class TestIdentifierContract:
-    def test_default_identifier_fields_is_primary_key(self):
-        # Content-addressed components fall back to the base default.
-        assert Attachment.identifier_fields() == frozenset({"id"})
+    def test_component_uses_md5(self):
+        # Content-addressed components identify by their content hash.
+        assert Attachment.identifier_fields() == frozenset({"md5"})
 
     def test_project_uses_id(self):
+        # Project inherits the base default (primary key) unchanged.
         assert Project.identifier_fields() == frozenset({"id"})
 
     def test_project_group_uses_name_and_owner(self):
@@ -125,7 +126,8 @@ class TestIdentifierContract:
         oid = PydanticObjectId()
         doc = Attachment.from_input(_attachment_in())
         doc.id = oid
-        assert doc.identifiers() == {"id": oid}
+        # identifiers() reads the declared identifier fields off the instance — md5 for components.
+        assert doc.identifiers() == {"md5": doc.md5}
 
     def test_contribution_identifiers_returns_natural_key_values(self):
         contrib = ContributionIn(

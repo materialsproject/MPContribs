@@ -1,8 +1,16 @@
+from typing import Any
+
 from beanie import Link
 
 from mpcontribs_api.domains._shared.bulk import BulkFailure, BulkWriteSummary
-from mpcontribs_api.domains._shared.types import PrefixedEmail, SearchStr, ShortStr
-from mpcontribs_api.domains.project_groups.models import ProjectGroup, ProjectGroupIn, ProjectGroupOut
+from mpcontribs_api.domains._shared.models import DeleteResponse
+from mpcontribs_api.domains._shared.types import ShortStr
+from mpcontribs_api.domains.project_groups.models import (
+    ProjectGroup,
+    ProjectGroupIn,
+    ProjectGroupOut,
+    ProjectGroupPatch,
+)
 from mpcontribs_api.domains.project_groups.repository import ProjectGroupRepository
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
 from mpcontribs_api.exceptions import NotFoundError
@@ -25,7 +33,7 @@ class ProjectGroupService:
 
     async def _project_exists(self, project_id: ShortStr) -> bool:
         """Whether a project with ``project_id`` exists and is visible to the caller."""
-        return await self._projects.get_by_id(project_id, fields=frozenset({"id"})) is not None
+        return await self._projects.get_one({"id": project_id}, fields=frozenset({"id"})) is not None
 
     async def insert(self, project_group: ProjectGroupIn) -> ProjectGroup:
         """Insert a new group after verifying every referenced project exists and is visible.
@@ -40,23 +48,30 @@ class ProjectGroupService:
             raise NotFoundError("One or more projects not found or not visible", ids=missing)
         return await self._groups.insert_project_group(project_group)
 
-    async def _resolve_by_id(self, group_id: str) -> ProjectGroupOut:
-        """Resolve a visible group by its ObjectId, or raise ``NotFoundError``."""
-        oid = self._groups._convert_object_id(group_id)
-        group = await self._groups.get_by_id(oid, fields=_GROUP_FIELDS)
-        if group is None:
-            raise NotFoundError("ProjectGroup not found", id=group_id)
-        return group  # pyright: ignore[reportReturnType]  # projected reads return the out model
+    async def get_one(self, identifiers: dict[str, Any], fields: frozenset[str] | None) -> ProjectGroupOut | None:
+        """Return the single group matching ``identifiers`` (``{"name", "owner"}`` or ``{"id"}``)."""
+        return await self._groups.get_one(identifiers, fields)
 
-    async def _resolve_by_identifiers(self, name: SearchStr, owner: PrefixedEmail) -> ProjectGroupOut:
-        """Resolve a visible group by its ``(name, owner)`` identifiers, or raise ``NotFoundError``.
+    async def patch_one(self, identifiers: dict[str, Any], update: ProjectGroupPatch) -> ProjectGroup:
+        """Patch the single group matching ``identifiers`` (``{"name", "owner"}`` or ``{"id"}``)."""
+        return await self._groups.patch_one(identifiers, update)
 
-        Propagates ``ConflictError`` from the repository if the identifiers are ambiguous.
+    async def delete_one(self, identifiers: dict[str, Any]) -> DeleteResponse:
+        """Delete the single group matching ``identifiers`` (``{"name", "owner"}`` or ``{"id"}``)."""
+        return await self._groups.delete_one(identifiers)
+
+    async def _resolve_one(self, identifiers: dict[str, Any]) -> ProjectGroupOut:
+        """Resolve a visible group matching ``identifiers``, or raise ``NotFoundError``.
+
+        ``identifiers`` is either the primary-key form ``{"id": <ObjectId str>}`` or the semantic
+        ``{"name": ..., "owner": ...}``. Propagates ``ConflictError`` from the repository if
+        ``(name, owner)`` identifiers are ambiguous.
         """
-        group = await self._groups.get_one({"name": name, "owner": owner}, fields=_GROUP_FIELDS)
+        query = self._groups.coerce_identifiers(identifiers)
+        group = await self._groups.get_one(query, fields=_GROUP_FIELDS)
         if group is None:
-            raise NotFoundError("ProjectGroup not found", name=name, owner=owner)
-        return group
+            raise NotFoundError("ProjectGroup not found", **identifiers)
+        return group  # pyright: ignore[reportReturnType]  # projected reads return the out model
 
     async def _add(self, group: ProjectGroupOut, project_ids: list[ShortStr]) -> BulkWriteSummary[str]:
         """Validate each project against the projects collection, then add the valid ones.
@@ -105,22 +120,10 @@ class ProjectGroupService:
             await self._groups.delete_project_refs(group.id, present)  # pyright: ignore[reportArgumentType]  # id is set on a resolved group
         return BulkWriteSummary(total=len(project_ids), succeeded=present, failed=failed)
 
-    async def add_projects_by_id(self, group_id: str, project_ids: list[ShortStr]) -> BulkWriteSummary[str]:
-        """Add projects to the group identified by ``group_id``."""
-        return await self._add(await self._resolve_by_id(group_id), project_ids)
+    async def add_projects(self, identifiers: dict[str, Any], project_ids: list[ShortStr]) -> BulkWriteSummary[str]:
+        """Add projects to the group matching ``identifiers`` (``{"id": ...}`` or ``{"name", "owner"}``)."""
+        return await self._add(await self._resolve_one(identifiers), project_ids)
 
-    async def add_projects_by_identifiers(
-        self, name: SearchStr, owner: PrefixedEmail, project_ids: list[ShortStr]
-    ) -> BulkWriteSummary[str]:
-        """Add projects to the group identified by ``(name, owner)``."""
-        return await self._add(await self._resolve_by_identifiers(name, owner), project_ids)
-
-    async def delete_projects_by_id(self, group_id: str, project_ids: list[ShortStr]) -> BulkWriteSummary[str]:
-        """Delete projects from the group identified by ``group_id``."""
-        return await self._delete(await self._resolve_by_id(group_id), project_ids)
-
-    async def delete_projects_by_identifiers(
-        self, name: SearchStr, owner: PrefixedEmail, project_ids: list[ShortStr]
-    ) -> BulkWriteSummary[str]:
-        """Delete projects from the group identified by ``(name, owner)``."""
-        return await self._delete(await self._resolve_by_identifiers(name, owner), project_ids)
+    async def delete_projects(self, identifiers: dict[str, Any], project_ids: list[ShortStr]) -> BulkWriteSummary[str]:
+        """Delete projects from the group matching ``identifiers`` (``{"id": ...}`` or ``{"name", "owner"}``)."""
+        return await self._delete(await self._resolve_one(identifiers), project_ids)

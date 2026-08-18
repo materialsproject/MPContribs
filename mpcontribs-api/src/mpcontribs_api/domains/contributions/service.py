@@ -2,7 +2,7 @@ import asyncio
 from collections import defaultdict
 from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import cast
+from typing import Any, cast
 
 import structlog
 from beanie import Link, PydanticObjectId
@@ -20,7 +20,13 @@ from mpcontribs_api.domains._shared.bulk import (
 )
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
 from mpcontribs_api.domains.attachments.repository import MongoDbAttachmentRepository
-from mpcontribs_api.domains.contributions.models import Contribution, ContributionFilter, ContributionIn
+from mpcontribs_api.domains.contributions.models import (
+    Contribution,
+    ContributionFilter,
+    ContributionIn,
+    ContributionOut,
+    ContributionPatch,
+)
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
 from mpcontribs_api.domains.structures.models import Structure
@@ -74,6 +80,44 @@ class ContributionService:
             "attachments": self._attachments,
             "tables": self._tables,
         }
+
+    async def get_one(
+        self, identifiers: dict[str, Any], fields: frozenset[str] | None
+    ) -> Contribution | ContributionOut | None:
+        """Return the single scoped contribution matching ``identifiers``.
+
+        Accepts either the bare ``{"id": ...}`` form or the semantic
+        ``{"project", "identifier", "version"}`` set, resolved by the base ``_identifier_query``.
+        """
+        return await self._contributions.get_one(self._contributions.coerce_identifiers(identifiers), fields)
+
+    async def patch_one(self, identifiers: dict[str, Any], update: ContributionPatch) -> Contribution:
+        """Partially update the single scoped contribution matching ``identifiers``."""
+        return await self._contributions.patch_one(self._contributions.coerce_identifiers(identifiers), update)
+
+    async def upsert_one(
+        self, identifiers: dict[str, Any], contribution: ContributionIn, version: int | None = None
+    ) -> Contribution:
+        """Upsert the single scoped contribution matching ``identifiers``. See repository ``upsert_one``."""
+        return await self._contributions.upsert_one(self._contributions.coerce_identifiers(identifiers), contribution, version)
+
+    async def delete_one(self, identifiers: dict[str, Any]) -> BulkDeleteSummary:
+        """Delete a single contribution and its child components, matching ``identifiers``.
+
+        Accepts either the bare ``{"id": ...}`` form or the semantic
+        ``{"project", "identifier", "version"}`` set. Cascades component deletion via
+        :meth:`delete_contributions` so children are never orphaned; a missing target is a zero-count
+        result (mirroring the bulk delete path, which does not 404).
+        """
+        identifiers = self._contributions.coerce_identifiers(identifiers)
+        if set(identifiers) == {"id"}:
+            filter = ContributionFilter(id=identifiers["id"])
+        else:
+            existing = await self._contributions.get_one(identifiers, frozenset({"id"}))
+            if existing is None:
+                return BulkDeleteSummary(num_deleted=0, num_children_deleted=0)
+            filter = ContributionFilter(id=existing.id)
+        return await self.delete_contributions(filter)
 
     async def insert_contributions(
         self,
@@ -468,9 +512,7 @@ class ContributionService:
             contrib = item.contribution
             async with sem:
                 try:
-                    return await self._contributions.upsert_contribution_by_identifiers(
-                        contrib.identifiers(), contrib, item.version
-                    )
+                    return await self._contributions.upsert_one(contrib.identifiers(), contrib, item.version)
                 except Exception as exc:
                     logger.error(
                         "upsert_contribution_failed", index=item.index, identifier=contrib.identifiers(), exc_info=True

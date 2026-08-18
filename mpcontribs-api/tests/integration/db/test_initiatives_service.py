@@ -71,30 +71,30 @@ class TestAssign:
     async def test_owner_of_both_can_assign(self, db):
         await _insert_project("proj-a", owner=ALICE_EMAIL)
         init = await _insert_initiative("init-a", ALICE)
-        updated = await _service(ALICE).patch("proj-a", ProjectPatch(initiative="init-a"))
+        updated = await _service(ALICE).patch_one({"id": "proj-a"}, ProjectPatch(initiative="init-a"))
         assert _assigned_id(updated) == init.id
 
     async def test_collaborator_can_assign_own_project(self, db):
         await _insert_project("proj-b", owner=BOB_EMAIL)
         init = await _insert_initiative("init-collab", ALICE)
         bob = _collaborator("init-collab")
-        updated = await _service(bob).patch("proj-b", ProjectPatch(initiative="init-collab"))
+        updated = await _service(bob).patch_one({"id": "proj-b"}, ProjectPatch(initiative="init-collab"))
         assert _assigned_id(updated) == init.id
 
     async def test_plain_patch_passes_through_untouched(self, db):
         await _insert_project("proj-plain", owner=ALICE_EMAIL)
         init = await _insert_initiative("init-plain", ALICE)
-        await _service(ALICE).patch("proj-plain", ProjectPatch(initiative="init-plain"))
+        await _service(ALICE).patch_one({"id": "proj-plain"}, ProjectPatch(initiative="init-plain"))
         # A patch that does not mention `initiative` must not disturb the existing assignment.
-        updated = await _service(ALICE).patch("proj-plain", ProjectPatch(title="new-title"))
+        updated = await _service(ALICE).patch_one({"id": "proj-plain"}, ProjectPatch(title="new-title"))
         assert updated.title == "new-title"
         assert _assigned_id(updated) == init.id
 
     async def test_unassign_clears_link(self, db):
         await _insert_project("proj-un", owner=ALICE_EMAIL)
         await _insert_initiative("init-un", ALICE)
-        await _service(ALICE).patch("proj-un", ProjectPatch(initiative="init-un"))
-        updated = await _service(ALICE).patch("proj-un", ProjectPatch(initiative=None))
+        await _service(ALICE).patch_one({"id": "proj-un"}, ProjectPatch(initiative="init-un"))
+        updated = await _service(ALICE).patch_one({"id": "proj-un"}, ProjectPatch(initiative=None))
         assert _assigned_id(updated) is None
 
 
@@ -109,30 +109,30 @@ class TestBothRights:
         # but she neither owns nor collaborates on it, so she still cannot assign to it.
         await _insert_project("proj-c", owner=CAROL_EMAIL)
         await _insert_initiative("init-c", ALICE)
-        await InitiativeRepository(ADMIN).patch_initiative(
-            "init-c", InitiativePatch(is_approved=True, is_public=True)
+        await InitiativeRepository(ADMIN).patch_one(
+            {"slug": "init-c"}, InitiativePatch(is_approved=True, is_public=True)
         )
         with pytest.raises(PermissionError):
-            await _service(CAROL).patch("proj-c", ProjectPatch(initiative="init-c"))
+            await _service(CAROL).patch_one({"id": "proj-c"}, ProjectPatch(initiative="init-c"))
 
     async def test_invisible_initiative_is_not_found(self, db):
         # Alice's private initiative is invisible to Carol, so it reads as not-found (not a 403).
         await _insert_project("proj-c2", owner=CAROL_EMAIL)
         await _insert_initiative("init-priv", ALICE)
         with pytest.raises(NotFoundError):
-            await _service(CAROL).patch("proj-c2", ProjectPatch(initiative="init-priv"))
+            await _service(CAROL).patch_one({"id": "proj-c2"}, ProjectPatch(initiative="init-priv"))
 
     async def test_manager_without_project_write_rejected(self, db):
         # Alice manages the initiative but cannot see/write Bob's private project.
         await _insert_project("proj-bob", owner=BOB_EMAIL)
         await _insert_initiative("init-d", ALICE)
         with pytest.raises(NotFoundError):
-            await _service(ALICE).patch("proj-bob", ProjectPatch(initiative="init-d"))
+            await _service(ALICE).patch_one({"id": "proj-bob"}, ProjectPatch(initiative="init-d"))
 
     async def test_assign_to_missing_initiative_is_not_found(self, db):
         await _insert_project("proj-ghost", owner=ALICE_EMAIL)
         with pytest.raises(NotFoundError):
-            await _service(ALICE).patch("proj-ghost", ProjectPatch(initiative="ghost-init"))
+            await _service(ALICE).patch_one({"id": "proj-ghost"}, ProjectPatch(initiative="ghost-init"))
 
 
 # ---------------------------------------------------------------------------
@@ -146,28 +146,28 @@ class TestMemberCap:
         await _insert_initiative("init-cap", ALICE)
         for i in range(cap):
             await _insert_project(f"cap-proj-{i}", owner=ALICE_EMAIL)
-            await _service(ALICE).patch(f"cap-proj-{i}", ProjectPatch(initiative="init-cap"))
+            await _service(ALICE).patch_one({"id": f"cap-proj-{i}"}, ProjectPatch(initiative="init-cap"))
         await _insert_project("cap-proj-over", owner=ALICE_EMAIL)
         with pytest.raises(ConflictError):
-            await _service(ALICE).patch("cap-proj-over", ProjectPatch(initiative="init-cap"))
+            await _service(ALICE).patch_one({"id": "cap-proj-over"}, ProjectPatch(initiative="init-cap"))
 
     async def test_reassigning_existing_member_is_idempotent(self, db):
         cap = get_settings().domain.initiatives.max_projects_per_unapproved
         await _insert_initiative("init-idem", ALICE)
         for i in range(cap):
             await _insert_project(f"idem-proj-{i}", owner=ALICE_EMAIL)
-            await _service(ALICE).patch(f"idem-proj-{i}", ProjectPatch(initiative="init-idem"))
+            await _service(ALICE).patch_one({"id": f"idem-proj-{i}"}, ProjectPatch(initiative="init-idem"))
         # At the cap, re-assigning a project that is already a member must not trip the limit.
-        again = await _service(ALICE).patch("idem-proj-0", ProjectPatch(initiative="init-idem"))
+        again = await _service(ALICE).patch_one({"id": "idem-proj-0"}, ProjectPatch(initiative="init-idem"))
         assert again.initiative is not None
 
     async def test_approved_initiative_has_no_member_cap(self, db):
         cap = get_settings().domain.initiatives.max_projects_per_unapproved
         await _insert_initiative("init-approved", ALICE)
-        await InitiativeRepository(ADMIN).patch_initiative("init-approved", InitiativePatch(is_approved=True))
+        await InitiativeRepository(ADMIN).patch_one({"slug": "init-approved"}, InitiativePatch(is_approved=True))
         for i in range(cap + 2):  # comfortably past the unapproved cap
             await _insert_project(f"appr-proj-{i}", owner=ALICE_EMAIL)
-            await _service(ALICE).patch(f"appr-proj-{i}", ProjectPatch(initiative="init-approved"))
+            await _service(ALICE).patch_one({"id": f"appr-proj-{i}"}, ProjectPatch(initiative="init-approved"))
         count = await MongoDbProjectRepository(ADMIN).count_initiative_members(
             initiative_id=(await InitiativeRepository(ADMIN).resolve_visible("init-approved")).id,  # type: ignore[union-attr]
             exclude_project_id=None,
@@ -185,7 +185,7 @@ class TestAdminAndUnassign:
         # Alice's private initiative is manageable by an admin even though the admin holds no role.
         await _insert_project("adm-proj", owner=ALICE_EMAIL)
         init = await _insert_initiative("adm-init", ALICE)
-        updated = await _service(ADMIN).patch("adm-proj", ProjectPatch(initiative="adm-init"))
+        updated = await _service(ADMIN).patch_one({"id": "adm-proj"}, ProjectPatch(initiative="adm-init"))
         assert _assigned_id(updated) == init.id
 
     async def test_project_owner_can_unassign_without_initiative_rights(self, db):
@@ -193,9 +193,9 @@ class TestAdminAndUnassign:
         # his own project — unassignment needs only project-write access.
         await _insert_project("detach-proj", owner=BOB_EMAIL)
         await _insert_initiative("detach-init", ALICE)
-        await _service(_collaborator("detach-init", username=BOB_EMAIL)).patch(
-            "detach-proj", ProjectPatch(initiative="detach-init")
+        await _service(_collaborator("detach-init", username=BOB_EMAIL)).patch_one(
+            {"id": "detach-proj"}, ProjectPatch(initiative="detach-init")
         )
         bob_plain = User(username=BOB_EMAIL, groups=frozenset())
-        updated = await _service(bob_plain).patch("detach-proj", ProjectPatch(initiative=None))
+        updated = await _service(bob_plain).patch_one({"id": "detach-proj"}, ProjectPatch(initiative=None))
         assert _assigned_id(updated) is None

@@ -9,7 +9,7 @@ from pymongo.asynchronous.client_session import AsyncClientSession
 from mpcontribs_api.authz import User
 from mpcontribs_api.domains._shared.models import DeleteResponse
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
-from mpcontribs_api.domains._shared.types import PrefixedEmail, SearchStr, ShortStr
+from mpcontribs_api.domains._shared.types import ShortStr
 from mpcontribs_api.domains.project_groups.models import (
     ProjectGroup,
     ProjectGroupFilter,
@@ -60,38 +60,26 @@ class ProjectGroupRepository(
         """
         return await self.get_many(pagination=pagination, filter=filter, fields=fields)
 
-    async def get_project_group(
-        self,
-        name: SearchStr,
-        owner: PrefixedEmail,
-        fields: frozenset[str] | None,
-    ) -> ProjectGroupOut | None:
-        """Return the single project group identified by ``name`` + ``owner``. See ``get_one``."""
-        return await self.get_one({"name": name, "owner": owner}, fields)
-
     async def insert_project_group(self, project_group: ProjectGroupIn) -> ProjectGroup:
         return await self.insert_one(in_resource=project_group)
 
-    async def patch_project_group(
-        self, name: SearchStr, owner: PrefixedEmail, update: ProjectGroupPatch
-    ) -> ProjectGroup:
-        """Patch the single project group identified by ``name`` + ``owner``. See ``patch_one``."""
-        return await self.patch_one({"name": name, "owner": owner}, update)
-
-    async def delete_project_group(self, name: SearchStr, owner: PrefixedEmail) -> DeleteResponse:
-        """Delete the single project group identified by ``name`` + ``owner``.
+    async def delete_one(
+        self, identifiers: dict[str, Any], session: AsyncClientSession | None = None
+    ) -> DeleteResponse:
+        """Delete the single project group matching ``identifiers`` (``{name, owner}`` or ``{id}``).
 
         Absence (in scope) takes precedence over the ownership gate: a non-admin may only delete
         their own group, so deleting another owner's visible (public) group is forbidden rather
         than silently a no-op. The ``name`` + ``owner`` unique index makes the match unambiguous.
+        The auth check runs against the resolved document; the write is delegated to the base
+        :meth:`MongoDbRepository.delete_one`.
         """
-        doc = await self.document_model.find_one(self._scope, {"name": name, "owner": owner})  # pyright: ignore[reportArgumentType]
+        doc = await self.document_model.find_one(self._scope, self._identifier_query(identifiers), session=session)  # pyright: ignore[reportArgumentType]
         if doc is None:
-            raise NotFoundError(f"{self.document_model.__name__} not found", name=name, owner=owner)
-        if not (self._user.is_admin or owner == self._user.username):
+            raise NotFoundError(f"{self.document_model.__name__} not found", **identifiers)
+        if not (self._user.is_admin or doc.owner == self._user.username):
             raise PermissionError(required_role="owner-or-admin")
-        await doc.delete()
-        return DeleteResponse(num_deleted=1)
+        return await super().delete_one(identifiers, session=session)
 
     async def delete_project_groups(self, filter: ProjectGroupFilter) -> DeleteResponse:
         """Bulk-delete project groups matching ``filter``, restricted to the caller's own.

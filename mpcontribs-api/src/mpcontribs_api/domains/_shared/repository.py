@@ -72,6 +72,26 @@ class MongoDbRepository[
         except InvalidId:
             raise ValidationError("Incorrect Id format. Must be MongoDB ObjectId format.", id=id) from None
 
+    def coerce_identifiers(self, identifiers: dict[str, Any]) -> dict[str, Any]:
+        """Return ``identifiers`` with a string ``id`` coerced to the model's primary-key type.
+
+        Externally supplied ids arrive as strings (path/query params). ObjectId-keyed models need
+        that string parsed into a ``PydanticObjectId`` before it can match ``_id``; string-keyed
+        models (e.g. ``Project``, whose id is its name) and every non-``id`` identifier key pass
+        through untouched. Idempotent: an already-parsed id is returned unchanged.
+
+        This is the single home for identifier coercion so services that resolve documents by id
+        (and reuse the parsed id for cross-repository lookups) do not each reimplement it.
+
+        Raises:
+            ValidationError: if ``id`` is a string that is not a valid ObjectId, for an
+                ObjectId-keyed model
+        """
+        id = identifiers.get("id")
+        if isinstance(id, str) and self.document_model.model_fields["id"].annotation is PydanticObjectId:
+            return {**identifiers, "id": self._convert_object_id(id)}
+        return identifiers
+
     async def get_many(
         self,
         filter: TFilter,
@@ -106,17 +126,20 @@ class MongoDbRepository[
     def _identifier_query(self, identifiers: dict[str, Any]) -> dict[str, Any]:
         """Turn a ``{field: value}`` identifier dict into a scoped Mongo query fragment.
 
-        The keys must be exactly the model's :meth:`identifier_fields`
-        ``id`` is remapped Mongo's ``_id`` (mirroring ``BaseFilter._get_filter_conditions``)
-        since a raw dict query does not go through Beanie's alias resolution.
+        The keys must be either the model's :meth:`identifier_fields` exactly, or the bare
+        primary-key form ``{"id": ...}`` (which addresses any document by its ``_id`` regardless of
+        its semantic identifier). ``id`` is remapped to Mongo's ``_id`` (mirroring
+        ``BaseFilter._get_filter_conditions``) since a raw dict query does not go through Beanie's
+        alias resolution.
 
         Args:
-            identifiers (dict[str, Any]): identifier field values keyed by ``identifier_fields``
+            identifiers (dict[str, Any]): identifier field values keyed by ``identifier_fields``,
+                or ``{"id": <primary key>}``
         """
         expected = self.document_model.identifier_fields()
-        if identifiers.keys() != expected:
+        if identifiers.keys() != expected and identifiers.keys() != {"id"}:
             raise ValidationError(
-                "identifiers must match the model's identifier fields exactly",
+                "identifiers must match the model's identifier fields, or be a bare {'id': ...}",
                 expected=sorted(expected),
                 received=sorted(identifiers.keys()),
             )
@@ -136,19 +159,6 @@ class MongoDbRepository[
         query = self._identifier_query(identifiers)
         projection = self.out_model.projection(fields)
         return await self.document_model.find_one(self._scope, query, projection_model=projection)  # pyright: ignore[reportArgumentType]
-
-    async def get_by_id(self, id: Any, fields: frozenset[str] | None = None) -> TDoc | TOut | None:
-        """Return a single scoped document by id, projected to the requested fields.
-
-        Args:
-            id (str): the id of the document to find
-            fields (frozenset[str] | None): fields to project; if None the full document is returned
-        """
-        return await self.document_model.find_one(
-            self._scope,
-            self.document_model.id == id,
-            projection_model=self.out_model.projection(fields),
-        )
 
     async def list_ids(self, filter: TFilter, session: AsyncClientSession | None = None) -> list[Any]:
         """Return just the ids of scoped documents matching ``filter``.
@@ -215,23 +225,6 @@ class MongoDbRepository[
             raise NotFoundError(f"{self.document_model.__name__} not found", identifiers=identifiers)
         return DeleteResponse.from_delete_result(result)
 
-    async def delete_by_id(self, id: Any, session: AsyncClientSession | None = None) -> DeleteResponse:
-        """Delete a single scoped document by its primary key (``_id``).
-
-        Scoping ensures callers cannot delete documents they are not permitted to see; an id that is
-        absent or out of scope raises ``NotFoundError``. Kept distinct from :meth:`delete_one`, whose
-        key is the semantic ``identifier_fields`` (which differs from ``_id`` for some resources).
-
-        Args:
-            id (Any): the primary key of the document to delete
-            session (AsyncClientSession | None): optional client session for transactions
-        """
-        doc = await self.document_model.find_one(self._scope, self.document_model.id == id, session=session)
-        if doc is None:
-            raise NotFoundError(message=f"{self.document_model.__name__} not found by id", id=id)
-        await doc.delete(session=session)
-        return DeleteResponse(num_deleted=1)
-
     async def delete_by_ids(self, ids: list[Any], session: AsyncClientSession | None = None) -> DeleteResponse:
         """Delete multiple scoped documents by id.
 
@@ -251,21 +244,6 @@ class MongoDbRepository[
             raise ValidationError("DeleteResult not returned internally")
         return DeleteResponse.from_delete_result(delete_result)
 
-    async def patch(self, id: Any, update: TPatch) -> TDoc:
-        """Partially update a single scoped document by id.
-
-        Only fields explicitly set on ``update`` are applied. An empty patch is a no-op that still
-        returns the existing document for consistent behavior. Scoping ensures callers cannot patch
-        documents they are not permitted to see.
-
-        Args:
-            id (str): the id of the document to update
-            update (TPatch): the partial update to apply; unset fields are dropped
-        """
-        return await self._patch_matching(
-            self.document_model.id == id, update, NotFoundError(f"{self.document_model.__name__} not found", id=id)
-        )
-
     async def _patch_matching(
         self,
         match: Any,
@@ -275,18 +253,26 @@ class MongoDbRepository[
     ) -> TDoc:
         """Apply a partial update to the single scoped document matching ``match``.
 
-        ``match`` is any beanie filter that keys at most one in-scope document — a primary-key
-        equality (:meth:`patch`) or a unique-identifier query (:meth:`patch_one`). An empty patch
+        ``match`` is any beanie filter that keys at most one in-scope document. An empty patch
         is a no-op that still returns the existing document; a missing target raises ``not_found``.
         """
         # Only retain set fields (patch)
         update_data = update.model_dump(exclude_unset=True)
+        existing = await self.document_model.find_one(self._scope, match, session=session)
         # If update is empty, return the model anyways (consistent behavior)
         if not update_data:
-            existing = await self.document_model.find_one(self._scope, match, session=session)
             if existing is None:
                 raise not_found
             return existing
+
+        # Server-derived fields depend on the resulting document, which a bare $set never revalidates.
+        # Load, apply the patch in memory, and fold the recomputed values in.
+        if self.document_model.HAS_DERIVED_FIELDS:
+            if existing is None:
+                raise not_found
+            for field, value in update_data.items():
+                setattr(existing, field, value)
+            update_data |= existing.derived_field_updates()
 
         # Otherwise, update the fields fully (set)
         # Brendan TODO: Set will replace an entire field

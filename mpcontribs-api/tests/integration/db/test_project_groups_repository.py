@@ -56,19 +56,19 @@ async def _insert(name: str, owner: str = ALICE_EMAIL, **overrides) -> ProjectGr
 class TestGetOne:
     async def test_returns_group_by_identifiers(self, db):
         await _insert("group-a")
-        found = await _repo(ADMIN).get_project_group(name="group-a", owner=ALICE_EMAIL, fields=None)
+        found = await _repo(ADMIN).get_one({"name": "group-a", "owner": ALICE_EMAIL}, fields=None)
         assert found is not None
         assert found.name == "group-a"
         assert found.owner == ALICE_EMAIL
 
     async def test_returns_none_when_absent(self, db):
-        found = await _repo(ADMIN).get_project_group(name="missing", owner=ALICE_EMAIL, fields=None)
+        found = await _repo(ADMIN).get_one({"name": "missing", "owner": ALICE_EMAIL}, fields=None)
         assert found is None
 
     async def test_out_of_scope_returns_none(self, db):
         # Alice's private group is invisible to an anonymous caller.
         await _insert("group-priv")
-        found = await _repo(ANON).get_project_group(name="group-priv", owner=ALICE_EMAIL, fields=None)
+        found = await _repo(ANON).get_one({"name": "group-priv", "owner": ALICE_EMAIL}, fields=None)
         assert found is None
 
 
@@ -85,20 +85,20 @@ def _role_user(group_id, username: str = "google:carol@example.com") -> User:
 class TestGroupRoleScope:
     async def test_role_grants_visibility(self, db):
         group = await _insert("role-vis")  # Alice's private group
-        found = await _repo(_role_user(group.id)).get_project_group(name="role-vis", owner=ALICE_EMAIL, fields=None)
+        found = await _repo(_role_user(group.id)).get_one({"name": "role-vis", "owner": ALICE_EMAIL}, fields=None)
         assert found is not None
         assert found.id == group.id
 
     async def test_without_role_not_visible(self, db):
         await _insert("role-none")
-        found = await _repo(BOB).get_project_group(name="role-none", owner=ALICE_EMAIL, fields=None)
+        found = await _repo(BOB).get_one({"name": "role-none", "owner": ALICE_EMAIL}, fields=None)
         assert found is None
 
     async def test_malformed_role_is_ignored(self, db):
         await _insert("role-bad")
         member = User(username="google:carol@example.com", groups=frozenset({"project-group:not-an-oid"}))
         # A malformed role id must not raise; it simply grants nothing.
-        found = await _repo(member).get_project_group(name="role-bad", owner=ALICE_EMAIL, fields=None)
+        found = await _repo(member).get_one({"name": "role-bad", "owner": ALICE_EMAIL}, fields=None)
         assert found is None
 
     async def test_role_appears_in_listing(self, db):
@@ -112,7 +112,7 @@ class TestGroupRoleScope:
         # Scope makes the group visible, but deletion remains owner-or-admin (403 for a role holder).
         group = await _insert("role-del")
         with pytest.raises(PermissionError):
-            await _repo(_role_user(group.id)).delete_project_group(name="role-del", owner=ALICE_EMAIL)
+            await _repo(_role_user(group.id)).delete_one({"name": "role-del", "owner": ALICE_EMAIL})
         assert await ProjectGroup.find_one(ProjectGroup.name == "role-del") is not None
 
 
@@ -124,32 +124,32 @@ class TestGroupRoleScope:
 class TestDeleteOne:
     async def test_deletes_matching_group(self, db):
         await _insert("del-a")
-        result = await _repo(ADMIN).delete_project_group(name="del-a", owner=ALICE_EMAIL)
+        result = await _repo(ADMIN).delete_one({"name": "del-a", "owner": ALICE_EMAIL})
         assert result.num_deleted == 1
         assert await ProjectGroup.find_one(ProjectGroup.name == "del-a") is None
 
     async def test_absent_raises_not_found(self, db):
         with pytest.raises(NotFoundError):
-            await _repo(ADMIN).delete_project_group(name="nope", owner=ALICE_EMAIL)
+            await _repo(ADMIN).delete_one({"name": "nope", "owner": ALICE_EMAIL})
 
     async def test_out_of_scope_raises_not_found(self, db):
         # Alice's group is out of scope for anon, so it "does not exist" for them.
         await _insert("del-scoped")
         with pytest.raises(NotFoundError):
-            await _repo(ANON).delete_project_group(name="del-scoped", owner=ALICE_EMAIL)
+            await _repo(ANON).delete_one({"name": "del-scoped", "owner": ALICE_EMAIL})
         # ...and it is untouched.
         assert await ProjectGroup.find_one(ProjectGroup.name == "del-scoped") is not None
 
     async def test_owner_can_delete_own(self, db):
         await _insert("del-own", owner=ALICE_EMAIL)
-        result = await _repo(ALICE).delete_project_group(name="del-own", owner=ALICE_EMAIL)
+        result = await _repo(ALICE).delete_one({"name": "del-own", "owner": ALICE_EMAIL})
         assert result.num_deleted == 1
 
     async def test_visible_public_non_owner_forbidden(self, db):
         # Bob can *see* Alice's public group but does not own it → 403, and it is left intact.
         await _insert("del-pub", owner=ALICE_EMAIL, is_public=True)
         with pytest.raises(PermissionError):
-            await _repo(BOB).delete_project_group(name="del-pub", owner=ALICE_EMAIL)
+            await _repo(BOB).delete_one({"name": "del-pub", "owner": ALICE_EMAIL})
         assert await ProjectGroup.find_one(ProjectGroup.name == "del-pub") is not None
 
     async def test_wrong_identifier_keys_raise_validation(self, db):
@@ -165,16 +165,12 @@ class TestDeleteOne:
 class TestPatchOne:
     async def test_updates_field(self, db):
         await _insert("patch-a", description="before")
-        updated = await _repo(ADMIN).patch_project_group(
-            name="patch-a", owner=ALICE_EMAIL, update=ProjectGroupPatch(description="after")
-        )
+        updated = await _repo(ADMIN).patch_one({"name": "patch-a", "owner": ALICE_EMAIL}, ProjectGroupPatch(description="after"))
         assert updated.description == "after"
 
     async def test_absent_raises_not_found(self, db):
         with pytest.raises(NotFoundError):
-            await _repo(ADMIN).patch_project_group(
-                name="ghost", owner=ALICE_EMAIL, update=ProjectGroupPatch(description="x")
-            )
+            await _repo(ADMIN).patch_one({"name": "ghost", "owner": ALICE_EMAIL}, ProjectGroupPatch(description="x"))
 
 
 # ---------------------------------------------------------------------------

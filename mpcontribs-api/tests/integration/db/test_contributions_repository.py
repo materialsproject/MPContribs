@@ -264,83 +264,95 @@ class TestGetContributions:
 
 
 # ---------------------------------------------------------------------------
-# get_contribution_by_id
+# get_one (by id)
 # ---------------------------------------------------------------------------
 
 
 class TestGetContributionById:
     async def test_returns_doc_for_valid_id(self, db):
         doc = await _insert(identifier="get-id")
-        result = await _repo(ADMIN).get_contribution_by_id(str(doc.id), fields=None)
+        result = await _repo(ADMIN).get_one({"id": doc.id}, fields=None)
         assert result is not None
         assert result.identifier == "get-id"
 
     async def test_returns_none_for_missing_id(self, db):
-        result = await _repo(ADMIN).get_contribution_by_id(str(PydanticObjectId()), fields=None)
+        result = await _repo(ADMIN).get_one({"id": PydanticObjectId()}, fields=None)
         assert result is None
 
     async def test_admin_can_get_private_doc(self, db):
         doc = await _insert(identifier="get-priv", is_public=False)
-        result = await _repo(ADMIN).get_contribution_by_id(str(doc.id), fields=None)
+        result = await _repo(ADMIN).get_one({"id": doc.id}, fields=None)
         assert result is not None
 
     async def test_anon_cannot_get_private_doc(self, db):
         doc = await _insert(identifier="get-anon-priv", is_public=False)
-        result = await _repo(ANON).get_contribution_by_id(str(doc.id), fields=None)
+        result = await _repo(ANON).get_one({"id": doc.id}, fields=None)
         assert result is None
 
     async def test_anon_can_get_public_doc(self, db):
         doc = await _insert(identifier="get-anon-pub", is_public=True)
-        result = await _repo(ANON).get_contribution_by_id(str(doc.id), fields=None)
+        result = await _repo(ANON).get_one({"id": doc.id}, fields=None)
         assert result is not None
-
-    async def test_raises_validation_error_for_bad_id_format(self, db):
-        with pytest.raises(ValidationError):
-            await _repo(ADMIN).get_contribution_by_id("not-an-objectid", fields=None)
 
     async def test_projection_limits_fields(self, db):
         doc = await _insert(identifier="get-proj", is_public=True)
         fields = ContributionOut.parse_fields(["formula"])
-        result = await _repo(ADMIN).get_contribution_by_id(str(doc.id), fields=fields)
+        result = await _repo(ADMIN).get_one({"id": doc.id}, fields=fields)
         assert result is not None
         assert result.formula == "Fe2O3"
         assert not hasattr(result, "data")
 
 
 # ---------------------------------------------------------------------------
-# find_one_contribution (by project + identifier)
+# get_one (by the semantic {project, identifier, version} triple)
 # ---------------------------------------------------------------------------
 
 
-class TestFindOneContribution:
+class TestGetContributionBySemanticIdentifiers:
     async def test_finds_existing_doc(self, db):
         await _insert(project="find-proj", identifier="find-id")
-        result = await _repo(ADMIN).find_one_contribution("find-proj", "find-id")
+        result = await _repo(ADMIN).get_one(
+            {"project": "find-proj", "identifier": "find-id", "version": 1}, fields=None
+        )
         assert result is not None
         assert result.project == "find-proj"
         assert result.identifier == "find-id"
 
     async def test_returns_none_for_missing_combination(self, db):
         await _insert(project="miss-proj", identifier="miss-id")
-        result = await _repo(ADMIN).find_one_contribution("miss-proj", "wrong-id")
+        result = await _repo(ADMIN).get_one(
+            {"project": "miss-proj", "identifier": "wrong-id", "version": 1}, fields=None
+        )
         assert result is None
 
     async def test_scope_prevents_anon_finding_private(self, db):
         await _insert(project="anon-scope", identifier="priv-doc", is_public=False)
-        result = await _repo(ANON).find_one_contribution("anon-scope", "priv-doc")
+        result = await _repo(ANON).get_one(
+            {"project": "anon-scope", "identifier": "priv-doc", "version": 1}, fields=None
+        )
         assert result is None
 
     async def test_scope_allows_anon_finding_public(self, db):
         await _insert(project="anon-scope-pub", identifier="pub-doc", is_public=True)
-        result = await _repo(ANON).find_one_contribution("anon-scope-pub", "pub-doc")
+        result = await _repo(ANON).get_one(
+            {"project": "anon-scope-pub", "identifier": "pub-doc", "version": 1}, fields=None
+        )
         assert result is not None
 
-    async def test_project_identifier_combination_is_unique_lookup(self, db):
+    async def test_project_identifier_version_is_unique_lookup(self, db):
         await _insert(project="same-proj", identifier="id-a")
         await _insert(project="same-proj", identifier="id-b")
-        result = await _repo(ADMIN).find_one_contribution("same-proj", "id-a")
+        result = await _repo(ADMIN).get_one(
+            {"project": "same-proj", "identifier": "id-a", "version": 1}, fields=None
+        )
         assert result is not None
         assert result.identifier == "id-a"
+
+    async def test_partial_identifier_set_is_rejected(self, db):
+        # The semantic set must be complete: version is part of the contribution's identity.
+        await _insert(project="partial-proj", identifier="partial-id")
+        with pytest.raises(ValidationError):
+            await _repo(ADMIN).get_one({"project": "partial-proj", "identifier": "partial-id"}, fields=None)
 
 
 # ---------------------------------------------------------------------------
@@ -379,65 +391,72 @@ class TestUpdateContribution:
 
 
 # ---------------------------------------------------------------------------
-# patch_contribution_by_id
+# patch_one (by id)
 # ---------------------------------------------------------------------------
 
 
 class TestPatchContributionById:
     async def test_updates_formula(self, db):
         doc = await _insert(identifier="patch-formula")
-        await _repo(ADMIN).patch_contribution_by_id(str(doc.id), ContributionPatch(formula="Li2O"))
+        await _repo(ADMIN).patch_one({"id": doc.id}, ContributionPatch(formula="Li2O"))
         found = await Contribution.find_one(Contribution.id == doc.id)
         assert found.formula == "Li2O"
 
     async def test_unset_fields_not_overwritten(self, db):
         doc = await _insert(identifier="patch-preserve", formula="Fe2O3")
-        await _repo(ADMIN).patch_contribution_by_id(str(doc.id), ContributionPatch(needs_build=False))
+        await _repo(ADMIN).patch_one({"id": doc.id}, ContributionPatch(needs_build=False))
         found = await Contribution.find_one(Contribution.id == doc.id)
         assert found.formula == "Fe2O3"
 
     async def test_empty_patch_is_a_noop(self, db):
         doc = await _insert(identifier="patch-empty", formula="Fe2O3")
-        result = await _repo(ADMIN).patch_contribution_by_id(str(doc.id), ContributionPatch())
+        result = await _repo(ADMIN).patch_one({"id": doc.id}, ContributionPatch())
         assert result is not None
         found = await Contribution.find_one(Contribution.id == doc.id)
         assert found.formula == "Fe2O3"
 
-    async def test_raises_validation_error_for_bad_id(self, db):
-        with pytest.raises(ValidationError):
-            await _repo(ADMIN).patch_contribution_by_id("bad-id", ContributionPatch(formula="X"))
+    async def test_patch_by_semantic_identifiers(self, db):
+        # The same patch reachable through the full {project, identifier, version} identity.
+        await _insert(project="patch-sem", identifier="sem-id", formula="Fe2O3")
+        await _repo(ADMIN).patch_one(
+            {"project": "patch-sem", "identifier": "sem-id", "version": 1}, ContributionPatch(formula="Li2O")
+        )
+        found = await Contribution.find_one(Contribution.project == "patch-sem")
+        assert found.formula == "Li2O"
 
     async def test_anon_cannot_patch_private_doc(self, db):
         from mpcontribs_api.exceptions import NotFoundError
         doc = await _insert(identifier="patch-anon-priv", is_public=False)
         with pytest.raises(NotFoundError):
-            await _repo(ANON).patch_contribution_by_id(str(doc.id), ContributionPatch(formula="X"))
+            await _repo(ANON).patch_one({"id": doc.id}, ContributionPatch(formula="X"))
 
 
 # ---------------------------------------------------------------------------
-# delete_contribution_by_id
+# delete_one (by id)
 # ---------------------------------------------------------------------------
 
 
 class TestDeleteContributionById:
     async def test_deleted_doc_not_found_afterwards(self, db):
         doc = await _insert(identifier="del-me")
-        await _repo(ADMIN).delete_contribution_by_id(str(doc.id))
+        await _repo(ADMIN).delete_one({"id": doc.id})
         found = await Contribution.find_one(Contribution.id == doc.id)
         assert found is None
 
     async def test_delete_nonexistent_throws_error(self, db):
         with pytest.raises(NotFoundError, match="not found"):
-            await _repo(ADMIN).delete_contribution_by_id(str(PydanticObjectId()))
+            await _repo(ADMIN).delete_one({"id": PydanticObjectId()})
 
-    async def test_raises_validation_error_for_bad_id(self, db):
-        with pytest.raises(ValidationError):
-            await _repo(ADMIN).delete_contribution_by_id("not-an-id")
+    async def test_delete_by_semantic_identifiers(self, db):
+        await _insert(project="del-sem", identifier="sem-id")
+        await _repo(ADMIN).delete_one({"project": "del-sem", "identifier": "sem-id", "version": 1})
+        found = await Contribution.find_one(Contribution.project == "del-sem")
+        assert found is None
 
     async def test_anon_cannot_delete_private_doc(self, db):
         doc = await _insert(identifier="del-anon-priv", is_public=False)
         with pytest.raises(NotFoundError, match="not found"):
-            await _repo(ANON).delete_contribution_by_id(str(doc.id))
+            await _repo(ANON).delete_one({"id": doc.id})
         # Scope prevents anonymous from seeing the doc, so it is never deleted.
         still_there = await Contribution.find_one(Contribution.id == doc.id)
         assert still_there is not None
@@ -482,7 +501,7 @@ class TestUpsertContributionById:
     async def test_insert_when_id_absent_persists_document(self, db):
         new_id = PydanticObjectId()
         payload = _contrib_in(identifier="ups-new", _id=new_id)
-        result = await _repo(ADMIN).upsert_contribution_by_id(str(new_id), payload)
+        result = await _repo(ADMIN).upsert_one({"id": new_id}, payload)
         # Must be the resolved document, not an un-awaited query object.
         assert isinstance(result, Contribution)
         stored = await Contribution.find_one(Contribution.id == new_id)
@@ -492,7 +511,19 @@ class TestUpsertContributionById:
     async def test_update_when_id_present_applies_change(self, db):
         existing = await _insert(identifier="ups-existing")
         payload = _contrib_in(identifier="ups-existing", formula="Li2O", _id=existing.id)
-        result = await _repo(ADMIN).upsert_contribution_by_id(str(existing.id), payload)
+        result = await _repo(ADMIN).upsert_one({"id": existing.id}, payload)
+        assert isinstance(result, Contribution)
+        stored = await Contribution.find_one(Contribution.id == existing.id)
+        assert stored is not None
+        assert stored.formula == "Li2O"
+
+    async def test_upsert_by_semantic_identifiers_with_version(self, db):
+        # The bulk-upsert path keys on {project, identifier} + resolved version.
+        existing = await _insert(project="ups-sem", identifier="sem-id", formula="Fe2O3")
+        payload = _contrib_in(project="ups-sem", identifier="sem-id", formula="Li2O")
+        result = await _repo(ADMIN).upsert_one(
+            {"project": "ups-sem", "identifier": "sem-id"}, payload, version=1
+        )
         assert isinstance(result, Contribution)
         stored = await Contribution.find_one(Contribution.id == existing.id)
         assert stored is not None

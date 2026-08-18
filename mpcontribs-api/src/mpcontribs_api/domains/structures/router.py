@@ -31,14 +31,15 @@ async def get_structures(
     return await service.get_many(filter=filter, fields=selected, pagination=pagination)
 
 
-@router.get("/{pk}")
-async def get_structure(
+@router.get("/{id}")
+async def get_one(
     service: StructureServiceDep,
-    pk: str,
+    id: str,
     fields: FieldSelector = StructureOut.default_fields(),
 ):
+    """Return a single structure addressed by its ``_id`` or its content ``md5``."""
     selected = StructureOut.parse_fields(fields)
-    return await service.get_by_id(id=pk, fields=selected)
+    return await service.get_one(identifiers={"id": id}, fields=selected)
 
 
 @router.get("/download/{short_mime}")
@@ -82,14 +83,16 @@ async def delete_structures(service: StructureServiceDep, filter: StructureFilte
 
 
 @router.delete("/{id}", response_model=ComponentDeleteResponse, dependencies=[Depends(require_user)])
-async def delete_structure_by_id(service: StructureServiceDep, id: str):
-    return await service.delete_by_id(id=id)
+async def delete_one(service: StructureServiceDep, id: str):
+    """Delete a single structure addressed by its ``_id`` or its content ``md5``."""
+    return await service.delete_one(identifiers={"id": id})
 
 
 @router.patch("/{id}", dependencies=[Depends(require_user)])
-async def patch_structure_by_id(
+async def patch_one(
     service: StructureServiceDep,
     id: str,
     update: StructurePatch,
 ):
-    return await service.patch_by_id(id=id, update=update)
+    """Patch a single structure addressed by its ``_id`` or its content ``md5``."""
+    return await service.patch_one(identifiers={"id": id}, update=update)

@@ -1,6 +1,8 @@
 from collections.abc import AsyncIterable
 from contextlib import AbstractAsyncContextManager
+from typing import Any
 
+from beanie import PydanticObjectId
 from fastapi_filter.contrib.beanie import Filter
 from pydantic import BaseModel
 from pymongo.asynchronous.client_session import AsyncClientSession
@@ -70,16 +72,24 @@ class ComponentService[
             pagination=pagination, filter=filter, fields=fields, restrict_ids=allowed
         )
 
-    async def get_by_id(self, id: str, fields: frozenset[str] | None) -> TDoc | TOut | None:
-        """Find a single component by id, gated by contribution reachability.
+    async def _resolve_component_id(self, identifiers: dict[str, Any]) -> PydanticObjectId | None:
+        """Return the component ``_id`` after finding it via identifiers, or None if absent."""
+        if "id" in identifiers:
+            return identifiers["id"]
+        existing = await self._components.get_one(identifiers, frozenset({"id"}))
+        return existing.id if existing is not None else None
 
-        Returns ``None`` (treated as not found) when no in-scope contribution references the id,
-        so callers cannot read a component belonging to a contribution they cannot see.
+    async def get_one(self, identifiers: dict[str, Any], fields: frozenset[str] | None) -> TDoc | TOut | None:
+        """Find a single component matching ``identifiers``, gated by contribution reachability.
+
+        Returns ``None``  when no in-scope contribution references the component.
+        Accepts either the bare ``{"id": ...}`` form or the content-hash ``{"md5": ...}`` form.
         """
-        oid = self._components._convert_object_id(id)
-        if not await self._contributions.referenced_component_ids(self._ref_field, [oid], scoped=True):
+        identifiers = self._components.coerce_identifiers(identifiers)
+        oid = await self._resolve_component_id(identifiers)
+        if oid is None or not await self._contributions.referenced_component_ids(self._ref_field, [oid], scoped=True):
             return None
-        return await self._components.get_component_by_id(id, fields)
+        return await self._components.get_one(identifiers, fields)
 
     async def insert(
         self,
@@ -89,16 +99,19 @@ class ComponentService[
         """Bulk-insert components, deduplicated by content hash. See ``insert_components``."""
         return await self._components.insert_components(components=components, session=session)
 
-    async def patch_by_id(self, id: str, update: TPatch) -> TDoc:
-        """Partially update a component by id, gated by contribution reachability.
+    async def patch_one(self, identifiers: dict[str, Any], update: TPatch) -> TDoc:
+        """Partially update a component matching ``identifiers``, gated by contribution reachability.
+
+        Accepts either the bare ``{"id": ...}`` form or the content-hash ``{"md5": ...}`` form.
 
         Raises:
-            NotFoundError: when no in-scope contribution references the id
+            NotFoundError: when no in-scope contribution references the component
         """
-        oid = self._components._convert_object_id(id)
-        if not await self._contributions.referenced_component_ids(self._ref_field, [oid], scoped=True):
-            raise NotFoundError(self._components._not_found(id))
-        return await self._components.patch_component_by_id(id=id, update=update)
+        identifiers = self._components.coerce_identifiers(identifiers)
+        oid = await self._resolve_component_id(identifiers)
+        if oid is None or not await self._contributions.referenced_component_ids(self._ref_field, [oid], scoped=True):
+            raise NotFoundError(f"{self._components.document_model.__name__} not found", **identifiers)
+        return await self._components.patch_one(identifiers, update)
 
     async def download(
         self,
@@ -146,11 +159,13 @@ class ComponentService[
             referenced_ids=sorted(referenced),
         )
 
-    async def delete_by_id(self, id: str) -> ComponentDeleteResponse:
-        """Delete a single component by id, subject to the access and integrity gates.
+    async def delete_one(self, identifiers: dict[str, Any]) -> ComponentDeleteResponse:
+        """Delete a single component matching ``identifiers``, subject to the access and integrity gates.
+
+        Accepts either the bare ``{"id": ...}`` form or the content-hash ``{"md5": ...}`` form.
 
         Args:
-            id (str): the str representation of the component's ObjectId
+            identifiers (dict[str, Any]): identifier field values, ``{"id": ...}`` or ``{"md5": ...}``
 
         Returns:
             ComponentDeleteResponse: the deletion result, or a skipped result if still referenced
@@ -158,10 +173,11 @@ class ComponentService[
         Raises:
             NotFoundError: if the component is not reachable via any in-scope contribution
         """
-        oid = self._components._convert_object_id(id)
-        if not await self._contributions.referenced_component_ids(self._ref_field, [oid], scoped=True):
-            raise NotFoundError(self._components._not_found(id))
+        identifiers = self._components.coerce_identifiers(identifiers)
+        oid = await self._resolve_component_id(identifiers)
+        if oid is None or not await self._contributions.referenced_component_ids(self._ref_field, [oid], scoped=True):
+            raise NotFoundError(f"{self._components.document_model.__name__} not found", **identifiers)
         if await self._contributions.referenced_component_ids(self._ref_field, [oid], scoped=False):
             return ComponentDeleteResponse(num_deleted=0, num_skipped=1, referenced_ids=[oid])
-        deleted = await self._components.delete_by_id(oid)
+        deleted = await self._components.delete_one({"id": oid})
         return ComponentDeleteResponse(num_deleted=deleted.num_deleted)

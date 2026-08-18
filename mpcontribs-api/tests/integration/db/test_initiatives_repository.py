@@ -43,7 +43,7 @@ async def _insert(slug: str, owner_user: User = ALICE, name: str = "An Initiativ
 
 
 async def _approve(slug: str) -> Initiative:
-    return await _repo(ADMIN).patch_initiative(slug, InitiativePatch(is_approved=True))
+    return await _repo(ADMIN).patch_one({"slug": slug}, InitiativePatch(is_approved=True))
 
 
 # ---------------------------------------------------------------------------
@@ -103,26 +103,24 @@ class TestApprovalAndPublic:
     async def test_only_admin_may_approve(self, db):
         await _insert("approve-me", ALICE)
         with pytest.raises(PermissionError):
-            await _repo(ALICE).patch_initiative("approve-me", InitiativePatch(is_approved=True))
+            await _repo(ALICE).patch_one({"slug": "approve-me"}, InitiativePatch(is_approved=True))
         approved = await _approve("approve-me")
         assert approved.is_approved is True
 
     async def test_cannot_make_public_while_unapproved(self, db):
         await _insert("public-fail", ALICE)
         with pytest.raises(ValidationError):
-            await _repo(ALICE).patch_initiative("public-fail", InitiativePatch(is_public=True))
+            await _repo(ALICE).patch_one({"slug": "public-fail"}, InitiativePatch(is_public=True))
 
     async def test_public_allowed_once_approved(self, db):
         await _insert("public-ok", ALICE)
         await _approve("public-ok")
-        patched = await _repo(ALICE).patch_initiative("public-ok", InitiativePatch(is_public=True))
+        patched = await _repo(ALICE).patch_one({"slug": "public-ok"}, InitiativePatch(is_public=True))
         assert patched.is_public is True
 
     async def test_admin_can_approve_and_publish_together(self, db):
         await _insert("publish-both", ALICE)
-        patched = await _repo(ADMIN).patch_initiative(
-            "publish-both", InitiativePatch(is_approved=True, is_public=True)
-        )
+        patched = await _repo(ADMIN).patch_one({"slug": "publish-both"}, InitiativePatch(is_approved=True, is_public=True))
         assert patched.is_approved is True and patched.is_public is True
 
 
@@ -134,38 +132,36 @@ class TestApprovalAndPublic:
 class TestManageAndScope:
     async def test_owner_can_rename(self, db):
         await _insert("rename-me", ALICE)
-        patched = await _repo(ALICE).patch_initiative("rename-me", InitiativePatch(name="Renamed"))
+        patched = await _repo(ALICE).patch_one({"slug": "rename-me"}, InitiativePatch(name="Renamed"))
         assert patched.name == "Renamed"
 
     async def test_collaborator_can_patch(self, db):
         await _insert("collab-patch", ALICE)
-        patched = await _repo(_collaborator("collab-patch")).patch_initiative(
-            "collab-patch", InitiativePatch(name="By Collaborator")
-        )
+        patched = await _repo(_collaborator("collab-patch")).patch_one({"slug": "collab-patch"}, InitiativePatch(name="By Collaborator"))
         assert patched.name == "By Collaborator"
 
     async def test_visible_but_unmanaged_cannot_patch(self, db):
         # An approved+public initiative is visible to everyone, but a stranger still cannot manage it.
         await _insert("visible-public", ALICE)
         await _approve("visible-public")
-        await _repo(ALICE).patch_initiative("visible-public", InitiativePatch(is_public=True))
+        await _repo(ALICE).patch_one({"slug": "visible-public"}, InitiativePatch(is_public=True))
         stranger = User(username="google:carol@example.com", groups=frozenset())
         with pytest.raises(PermissionError):
-            await _repo(stranger).patch_initiative("visible-public", InitiativePatch(name="hijack"))
+            await _repo(stranger).patch_one({"slug": "visible-public"}, InitiativePatch(name="hijack"))
 
     async def test_private_unapproved_scope(self, db):
         await _insert("scoped-priv", ALICE)
-        assert await _repo(ALICE).get_initiative("scoped-priv", fields=None) is not None  # owner
-        assert await _repo(ADMIN).get_initiative("scoped-priv", fields=None) is not None  # admin
-        assert await _repo(_collaborator("scoped-priv")).get_initiative("scoped-priv", fields=None) is not None
-        assert await _repo(ANON).get_initiative("scoped-priv", fields=None) is None  # anon
-        assert await _repo(BOB).get_initiative("scoped-priv", fields=None) is None  # unrelated user
+        assert await _repo(ALICE).get_one({"slug": "scoped-priv"}, fields=None) is not None  # owner
+        assert await _repo(ADMIN).get_one({"slug": "scoped-priv"}, fields=None) is not None  # admin
+        assert await _repo(_collaborator("scoped-priv")).get_one({"slug": "scoped-priv"}, fields=None) is not None
+        assert await _repo(ANON).get_one({"slug": "scoped-priv"}, fields=None) is None  # anon
+        assert await _repo(BOB).get_one({"slug": "scoped-priv"}, fields=None) is None  # unrelated user
 
     async def test_public_approved_visible_to_anon(self, db):
         await _insert("scoped-pub", ALICE)
         await _approve("scoped-pub")
-        await _repo(ALICE).patch_initiative("scoped-pub", InitiativePatch(is_public=True))
-        assert await _repo(ANON).get_initiative("scoped-pub", fields=None) is not None
+        await _repo(ALICE).patch_one({"slug": "scoped-pub"}, InitiativePatch(is_public=True))
+        assert await _repo(ANON).get_one({"slug": "scoped-pub"}, fields=None) is not None
 
 
 # ---------------------------------------------------------------------------
@@ -176,18 +172,18 @@ class TestManageAndScope:
 class TestDelete:
     async def test_owner_can_delete(self, db):
         await _insert("del-owner", ALICE)
-        result = await _repo(ALICE).delete_initiative("del-owner")
+        result = await _repo(ALICE).delete_one({"slug": "del-owner"})
         assert result.num_deleted == 1
-        assert await _repo(ADMIN).get_initiative("del-owner", fields=None) is None
+        assert await _repo(ADMIN).get_one({"slug": "del-owner"}, fields=None) is None
 
     async def test_collaborator_cannot_delete(self, db):
         await _insert("del-collab", ALICE)
         with pytest.raises(PermissionError):
-            await _repo(_collaborator("del-collab")).delete_initiative("del-collab")
+            await _repo(_collaborator("del-collab")).delete_one({"slug": "del-collab"})
 
     async def test_missing_is_not_found(self, db):
         with pytest.raises(NotFoundError):
-            await _repo(ADMIN).delete_initiative("nope-missing")
+            await _repo(ADMIN).delete_one({"slug": "nope-missing"})
 
 
 # ---------------------------------------------------------------------------
@@ -228,10 +224,10 @@ class TestListAndFilter:
 class TestAdminBypass:
     async def test_admin_can_patch_non_owned(self, db):
         await _insert("admin-patch", ALICE)
-        patched = await _repo(ADMIN).patch_initiative("admin-patch", InitiativePatch(name="Admin Renamed"))
+        patched = await _repo(ADMIN).patch_one({"slug": "admin-patch"}, InitiativePatch(name="Admin Renamed"))
         assert patched.name == "Admin Renamed"
 
     async def test_admin_can_delete_non_owned(self, db):
         await _insert("admin-del", ALICE)
-        result = await _repo(ADMIN).delete_initiative("admin-del")
+        result = await _repo(ADMIN).delete_one({"slug": "admin-del"})
         assert result.num_deleted == 1

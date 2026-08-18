@@ -1,8 +1,11 @@
+from typing import Any
+
 from bson import DBRef
 
 from mpcontribs_api.config import get_settings
+from mpcontribs_api.domains._shared.models import DeleteResponse
 from mpcontribs_api.domains.initiatives.repository import InitiativeRepository
-from mpcontribs_api.domains.projects.models import Project, ProjectPatch
+from mpcontribs_api.domains.projects.models import Project, ProjectIn, ProjectOut, ProjectPatch
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
 from mpcontribs_api.exceptions import ConflictError, NotFoundError, PermissionError
 
@@ -19,7 +22,7 @@ class ProjectService:
         self._initiatives = initiatives
         self._limits = get_settings().domain.initiatives
 
-    async def patch(self, id: str, update: ProjectPatch) -> Project:
+    async def patch_one(self, identifiers: dict[str, Any], update: ProjectPatch) -> Project:
         """Apply a project patch, routing an ``initiative`` change through the assignment checks.
 
         ``initiative`` carries the target initiative's ``slug`` (or ``null`` to unassign). When
@@ -28,8 +31,9 @@ class ProjectService:
         together with any co-submitted plain fields in a single atomic update, so the request never
         persists a half-applied change.
         """
+        id = identifiers["id"]
         if "initiative" not in update.model_fields_set:
-            return await self._projects.patch_project_by_id(id=id, update=update)
+            return await self._projects.patch_one(identifiers, update)
 
         data = update.model_dump(exclude_unset=True)
         slug = data.pop("initiative", None)
@@ -38,6 +42,18 @@ class ProjectService:
         ref = await self._resolve_initiative_assignment(project_id=id, slug=slug)
 
         return await self._projects.patch_project_with_initiative(id=id, update=ProjectPatch(**data), ref=ref)
+
+    async def get_one(self, identifiers: dict[str, Any], fields: frozenset[str] | None) -> Project | ProjectOut | None:
+        """Return the single scoped project matching ``identifiers`` (``{"id": ...}``)."""
+        return await self._projects.get_one(identifiers, fields)
+
+    async def upsert_one(self, identifiers: dict[str, Any], data: ProjectIn) -> Project:
+        """Upsert the project addressed by ``identifiers`` (``{"id": ...}``). See repository."""
+        return await self._projects.upsert_one(identifiers, data)
+
+    async def delete_one(self, identifiers: dict[str, Any]) -> DeleteResponse:
+        """Delete the scoped project addressed by ``identifiers`` (``{"id": ...}``). See repository."""
+        return await self._projects.delete_one(identifiers)
 
     async def _resolve_initiative_assignment(self, project_id: str, slug: str | None) -> DBRef | None:
         """Validate an initiative assignment and return the link to store (or None to unassign).

@@ -54,18 +54,6 @@ class MongoDbContributionRepository(
         """Query the Contribution collection, scoped to the current user. See ``get_many``."""
         return await self.get_many(pagination=pagination, filter=filter, fields=fields)
 
-    async def get_contribution_by_id(self, id: str, fields: frozenset[str] | None):
-        """Find a single contribution by id, scoped to the current user. See ``get_by_id``."""
-        return await self.get_by_id(self._convert_object_id(id), fields)
-
-    async def patch_contribution_by_id(self, id: str, update: ContributionPatch):
-        """Partially update a contribution by id, scoped to the current user. See ``patch``."""
-        return await self.patch(self._convert_object_id(id), update)
-
-    async def delete_contribution_by_id(self, id: str) -> None:
-        """Delete a contribution by id, scoped to the current user. See ``delete_by_id``."""
-        await self.delete_by_id(self._convert_object_id(id))
-
     async def delete_contributions(
         self,
         filter: ContributionFilter,
@@ -98,14 +86,6 @@ class MongoDbContributionRepository(
         """Insert a single pre-built Contribution document, optionally in a transaction."""
         await doc.insert(session=session)
         return doc
-
-    async def find_one_contribution(self, project: str, identifier: str) -> Contribution | None:
-        """Find a single contribution by (project, identifier), scoped to the current user."""
-        return await self.document_model.find_one(
-            self._scope,
-            self.document_model.project == project,
-            self.document_model.identifier == identifier,
-        )
 
     async def max_versions(self, keys: list[tuple[str, str]]) -> dict[tuple[str, str], int]:
         """Return ``{(project, identifier): max_version}`` for the given keys, scoped to the user.
@@ -226,62 +206,50 @@ class MongoDbContributionRepository(
         """Apply a partial update to an existing Contribution document."""
         await doc.update(Set(update_data))
 
-    async def upsert_contribution_by_identifiers(
+    async def upsert_one(
         self,
-        identifiers: dict[str, str],
+        identifiers: dict[str, Any],
         contribution: ContributionIn,
-        version: int,
+        version: int | None = None,
+        session: AsyncClientSession | None = None,
     ) -> Contribution:
-        """Atomically upsert a Contribution by its identifying fields and resolved version.
+        """Atomically upsert a single Contribution addressed by ``identifiers``.
 
-        Relies on the unique index over (project, identifier, version) so that concurrent requests
-        targeting the same key cannot both win the insert branch. Fields the caller did not set are
-        not touched (partial update). On insert a fresh Contribution document is written with
-        ``is_public=False``.
+        Accepts either the bare ``{"id": ...}`` form (individual PUT) or the semantic
+        ``{"project", "identifier"}``, matching through the base
+        :meth:`MongoDbRepository._identifier_query`. When ``version`` is supplied it is stamped on
+        the document and folded into the semantic match, so the unique index over
+        (project, identifier, version) lets concurrent requests targeting the same key not both win
+        the insert branch. Fields the caller did not set are not touched (partial update); on insert
+        a fresh Contribution document is written with ``is_public=False``.
 
         Args:
-            identifiers: the fields ContributionIn.identifiers() returns (project, identifier)
+            identifiers: ``{"id": ...}`` or the ``{"project", "identifier"}`` pair
             contribution: the input payload to upsert
-            version: the version resolved by the service (1 for unique-identifier projects, or the
-                caller-supplied version for non-unique ones); selects which row to update
+            version: the version resolved by the service (selects which row to update); required for
+                the semantic form, ignored for the id form
+            session: optional client session for transactions
 
         Returns:
             Contribution: the document as it stands after the operation
         """
         doc = self.document_model.from_input_model(contribution)
-        doc.version = version
+        match = identifiers
+        if version is not None:
+            doc.version = version
+            # The semantic (project, identifier) match must be pinned to the resolved version.
+            if "id" not in match:
+                match["version"] = version
         update_data = doc.model_dump(exclude={"id"}, exclude_none=True)
         query = self.document_model.find_one(
             self._scope,
-            self.document_model.project == identifiers["project"],
-            self.document_model.identifier == identifiers["identifier"],
-            self.document_model.version == version,
+            self._identifier_query(match),
+            session=session,
         ).upsert(
             Set(update_data),
             on_insert=doc,
             response_type=UpdateResponse.NEW_DOCUMENT,
-        )
-        return await query  # pyright: ignore[reportGeneralTypeIssues] # beanie UpdateQuery is awaitable, but pyright doesn't see it
-
-    async def upsert_contribution_by_id(self, id: str, contribution: ContributionIn):
-        """Upserts a single Contribution.
-
-        If Contributions with identical identifiers exist, update, otherwise insert
-
-        Args:
-            id (str): the id of the Contribution to upsert
-            contribution (ContributionIn): the Contribution to be upserted
-
-        Returns:
-            ContributionOut: the upserted document"""
-        doc = self.document_model.from_input_model(contribution)
-        query = self.document_model.find_one(
-            self._scope,
-            self.document_model.id == self._convert_object_id(id),
-        ).upsert(
-            Set(doc.model_dump(exclude={"id"}, exclude_none=True)),
-            on_insert=doc,
-            response_type=UpdateResponse.NEW_DOCUMENT,
+            session=session,
         )
         return await query  # pyright: ignore[reportGeneralTypeIssues] # beanie UpdateQuery is awaitable, but pyright doesn't see it
 

@@ -30,14 +30,14 @@ async def get_initiatives(
 
 
 @router.get("/{slug}")
-async def get_initiative(
+async def get_one(
     repo: InitiativeDep,
     slug: str,
     fields: FieldSelector = InitiativeOut.default_fields(),
 ):
     """Return the single initiative identified by ``slug``, scoped to the caller."""
     selected = InitiativeOut.parse_fields(fields)
-    return await repo.get_initiative(slug=slug, fields=selected)
+    return await repo.get_one({"slug": slug}, fields=selected)
 
 
 @router.post(
@@ -56,7 +56,7 @@ async def insert_initiative(
 
 
 @router.patch("/{slug}", response_model=InitiativeOut, dependencies=[Depends(require_user)])
-async def patch_initiative(
+async def patch_one(
     repo: InitiativeDep,
     slug: str,
     update: InitiativePatch,
@@ -66,14 +66,14 @@ async def patch_initiative(
     Requires manage rights (owner/collaborator/admin). ``is_approved`` is admin-only, and an
     initiative cannot be made public until it is approved.
     """
-    return await repo.patch_initiative(slug=slug, update=update)
+    return await repo.patch_one({"slug": slug}, update=update)
 
 
 @router.delete("/{slug}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_user)])
-async def delete_initiative(
+async def delete_one(
     repo: InitiativeDep,
     slug: str,
 ):
     """Delete the initiative identified by ``slug``. Restricted to its owner or an admin."""
-    await repo.delete_initiative(slug=slug)
+    await repo.delete_one({"slug": slug})
     return Response(status_code=status.HTTP_204_NO_CONTENT)

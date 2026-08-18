@@ -168,7 +168,7 @@ class ContributionIn(ContributionBase):
         """Returns this contribution's identifier values (see ``identifier_fields``).
 
         Overrides the base to narrow the value type to ``str`` for the callers (bulk error
-        reporting, ``upsert_contribution_by_identifiers``) that key on it.
+        reporting, ``upsert_one``) that key on it.
         """
         return {"project": self.project, "identifier": self.identifier}
 

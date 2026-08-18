@@ -10,7 +10,6 @@ from mpcontribs_api.config import get_settings
 from mpcontribs_api.domains._shared.models import Component, ComponentIn, DeleteResponse, DocumentOut
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
 from mpcontribs_api.domains._shared.types import MD5Hash
-from mpcontribs_api.exceptions import NotFoundError
 
 
 class MongoDbComponentsRepository[
@@ -94,10 +93,6 @@ class MongoDbComponentsRepository[
         """
         return (await self.insert_components(components=[component], session=session))[0]
 
-    async def get_component_by_id(self, id: str, fields: frozenset[str] | None) -> TDoc | TOut | None:
-        """Find a single component by id. See ``get_by_id``."""
-        return await self.get_by_id(self._convert_object_id(id), fields)
-
     async def delete_components(
         self,
         filter: TFilter,
@@ -115,37 +110,3 @@ class MongoDbComponentsRepository[
         query = filter.filter(self.document_model.find(self._scope, session=session))
         result = await query.delete(session=session)
         return DeleteResponse(num_deleted=result.deleted_count if result else 0)
-
-    async def delete_component_by_id(
-        self,
-        id: str,
-        session: AsyncClientSession | None = None,
-    ) -> DeleteResponse:
-        """Deletes a single component by Id.
-
-        Args:
-            id (str): the str representation of the component's ObjectId
-            session (AsyncClientSession | None): the current session, used to guarantee transactions
-
-        Returns:
-            DeleteResponse: A report of the deletion
-        """
-        return await self.delete_by_id(id=self._convert_object_id(id), session=session)
-
-    async def patch_component_by_id(self, id: str, update: TPatch) -> TDoc:
-        """Partially update a component by id, recomputing its content hash.
-
-        Components are content-addressed, so a content change must update ``md5``. Unlike the base
-        ``patch`` (an in-place ``$set``), this loads the full document, applies the set fields,
-        recomputes ``md5`` from ``hash_fields``, and saves — keeping md5 consistent with content.
-        """
-        oid = self._convert_object_id(id)
-        doc = await self.document_model.find_one(self._scope, self.document_model.id == oid)
-        if doc is None:
-            raise NotFoundError(self._not_found(id))
-        update_data = update.model_dump(exclude_unset=True)
-        for field, value in update_data.items():
-            setattr(doc, field, value)
-        doc.md5 = doc.compute_md5()
-        await doc.save()
-        return doc

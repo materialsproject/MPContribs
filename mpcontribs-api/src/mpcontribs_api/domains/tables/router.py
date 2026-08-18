@@ -31,14 +31,15 @@ async def get_tables(
     return await service.get_many(filter=filter, fields=selected, pagination=pagination)
 
 
-@router.get("/{pk}")
-async def get_table(
+@router.get("/{id}")
+async def get_one(
     service: TableServiceDep,
-    pk: str,
+    id: str,
     fields: FieldSelector = TableOut.default_fields(),
 ):
+    """Return a single table addressed by its ``_id`` or its content ``md5``."""
     selected = TableOut.parse_fields(fields)
-    return await service.get_by_id(id=pk, fields=selected)
+    return await service.get_one(identifiers={"id": id}, fields=selected)
 
 
 @router.get("/download/{short_mime}")
@@ -82,14 +83,16 @@ async def delete_tables(service: TableServiceDep, filter: TableFilter = FilterDe
 
 
 @router.delete("/{id}", response_model=ComponentDeleteResponse, dependencies=[Depends(require_user)])
-async def delete_table_by_id(service: TableServiceDep, id: str):
-    return await service.delete_by_id(id=id)
+async def delete_one(service: TableServiceDep, id: str):
+    """Delete a single table addressed by its ``_id``"""
+    return await service.delete_one(identifiers={"id": id})
 
 
 @router.patch("/{id}", dependencies=[Depends(require_user)])
-async def patch_table_by_id(
+async def patch_one(
     service: TableServiceDep,
     id: str,
     update: TablePatch,
 ):
-    return await service.patch_by_id(id=id, update=update)
+    """Patch a single table addressed by its ``_id``."""
+    return await service.patch_one(identifiers={"id": id}, update=update)

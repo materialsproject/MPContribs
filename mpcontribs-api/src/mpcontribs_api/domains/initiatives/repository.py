@@ -1,6 +1,7 @@
 from typing import Any
 
 from beanie import PydanticObjectId
+from pymongo.asynchronous.client_session import AsyncClientSession
 from pymongo.errors import DuplicateKeyError
 
 from mpcontribs_api.authz import User
@@ -50,10 +51,6 @@ class InitiativeRepository(
         """Return a scoped, filtered, paginated page of initiatives. See ``get_many``."""
         return await self.get_many(pagination=pagination, filter=filter, fields=fields)
 
-    async def get_initiative(self, slug: str, fields: frozenset[str] | None) -> InitiativeOut | None:
-        """Return the single scoped initiative identified by ``slug``. See ``get_one``."""
-        return await self.get_one({"slug": slug}, fields)
-
     async def resolve_visible(self, slug: str) -> Initiative | None:
         """Return the full scoped initiative document for ``slug`` (or None), for write-path checks."""
         return await self.document_model.find_one(self._scope, self.document_model.slug == slug)
@@ -94,14 +91,20 @@ class InitiativeRepository(
             raise ConflictError("an initiative with this slug already exists", slug=data.slug) from exc
         return initiative
 
-    async def patch_initiative(self, slug: str, update: InitiativePatch) -> Initiative:
+    async def patch_one(  # pyright: ignore[reportIncompatibleMethodOverride]
+        self, identifiers: dict[str, Any], update: InitiativePatch, session: AsyncClientSession | None = None
+    ) -> Initiative:
         """Patch a scoped initiative by ``slug``, enforcing manage rights and approval rules.
 
         - The caller must be able to *manage* the initiative (owner/collaborator/admin)
         - Only an admin may change ``is_approved``.
         - The resulting state must satisfy ``is_public ⇒ is_approved`` (re-checked here because a
           partial ``$set`` does not run the document validator).
+
+        ``identifiers`` is the ``{"slug": ...}`` form; the auth checks run against the resolved
+        document, and the write itself is delegated to the base :meth:`MongoDbRepository.patch_one`.
         """
+        slug = identifiers["slug"]
         existing = await self.resolve_visible(slug)
         if existing is None:
             raise NotFoundError("Initiative not found", slug=slug)
@@ -119,18 +122,24 @@ class InitiativeRepository(
         if resulting_public and not resulting_approved:
             raise ValidationError("an initiative cannot be public until it is approved", slug=slug)
 
-        return await self.patch(existing.id, update)
+        return await super().patch_one(identifiers, update, session=session)
 
-    async def delete_initiative(self, slug: str) -> DeleteResponse:
+    async def delete_one(
+        self, identifiers: dict[str, Any], session: AsyncClientSession | None = None
+    ) -> DeleteResponse:
         """Delete a scoped initiative by ``slug``. Restricted to the owner or an admin.
 
         Collaborators may contribute projects but may not dissolve the effort. Deleting an
         initiative does not touch member projects; their ``initiative`` link simply dangles until
         re-pointed (reads resolve a missing link to null).
+
+        ``identifiers`` is the ``{"slug": ...}`` form; the write is delegated to the base
+        :meth:`MongoDbRepository.delete_one`.
         """
+        slug = identifiers["slug"]
         existing = await self.resolve_visible(slug)
         if existing is None:
             raise NotFoundError("Initiative not found", slug=slug)
         if not (self._user.is_admin or existing.owner == self._user.username):
             raise PermissionError(required_role="owner-or-admin")
-        return await self.delete_by_id(existing.id)
+        return await super().delete_one(identifiers, session=session)

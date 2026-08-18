@@ -100,7 +100,7 @@ class TestInsertComponent:
 
 
 # ---------------------------------------------------------------------------
-# delete_components / delete_component_by_id
+# delete_components / delete_one
 # ---------------------------------------------------------------------------
 
 
@@ -113,9 +113,9 @@ class TestDeleteComponents:
         assert remaining == {keep.md5}
 
     async def test_delete_by_id_removes_one(self, db):
-        """delete_component_by_id matches a string id by converting it to ObjectId."""
+        """The inherited base delete_one removes a single component by its primary key."""
         [doc] = await _repo().insert_components([_attachment(1)])
-        result = await _repo().delete_component_by_id(str(doc.id))
+        result = await _repo().delete_one({"id": doc.id})
         assert result.num_deleted == 1
         assert await _count() == 0
 
@@ -123,32 +123,58 @@ class TestDeleteComponents:
         from mpcontribs_api.exceptions import NotFoundError
 
         with pytest.raises(NotFoundError):
-            await _repo().delete_component_by_id(str(PydanticObjectId()))
+            await _repo().delete_one({"id": PydanticObjectId()})
+
+    async def test_delete_by_md5_removes_one(self, db):
+        """A component is addressable by its content md5 (its declared identifier) as well as by id."""
+        [doc] = await _repo().insert_components([_attachment(1)])
+        result = await _repo().delete_one({"md5": doc.md5})
+        assert result.num_deleted == 1
+        assert await _count() == 0
 
 
 # ---------------------------------------------------------------------------
-# patch_component_by_id
+# get_one / patch_one address a component by id or by its content md5
+# ---------------------------------------------------------------------------
+
+
+class TestAddressComponentByMd5:
+    async def test_get_one_by_md5(self, db):
+        [doc] = await _repo().insert_components([_attachment(1)])
+        by_md5 = await _repo().get_one({"md5": doc.md5}, fields=None)
+        by_id = await _repo().get_one({"id": doc.id}, fields=None)
+        assert by_md5 is not None
+        assert by_md5.id == by_id.id == doc.id
+
+    async def test_patch_one_by_md5(self, db):
+        [doc] = await _repo().insert_components([_attachment(1, name="data.csv")])
+        updated = await _repo().patch_one({"md5": doc.md5}, AttachmentPatch(name="renamed.png"))
+        assert updated.name == "renamed.png"
+
+
+# ---------------------------------------------------------------------------
+# patch_one recomputes the derived md5
 # ---------------------------------------------------------------------------
 
 
 class TestPatchComponent:
     async def test_patch_updates_field(self, db):
         [doc] = await _repo().insert_components([_attachment(1, name="data.csv")])
-        updated = await _repo().patch_component_by_id(str(doc.id), AttachmentPatch(name="renamed.png"))
+        updated = await _repo().patch_one({"id": doc.id}, AttachmentPatch(name="renamed.png"))
         assert updated.name == "renamed.png"
 
     async def test_empty_patch_returns_existing(self, db):
         [doc] = await _repo().insert_components([_attachment(1, name="data.csv")])
-        updated = await _repo().patch_component_by_id(str(doc.id), AttachmentPatch())
+        updated = await _repo().patch_one({"id": doc.id}, AttachmentPatch())
         assert updated.id == doc.id
 
     async def test_patch_content_recomputes_md5(self, db):
         # name is not a hash field, so renaming must NOT change md5.
         [doc] = await _repo().insert_components([_attachment(1)])
-        renamed = await _repo().patch_component_by_id(str(doc.id), AttachmentPatch(name="renamed.png"))
+        renamed = await _repo().patch_one({"id": doc.id}, AttachmentPatch(name="renamed.png"))
         assert renamed.md5 == doc.md5
         # content IS a hash field, so changing it must recompute md5.
-        rehashed = await _repo().patch_component_by_id(str(doc.id), AttachmentPatch(content=999))
+        rehashed = await _repo().patch_one({"id": doc.id}, AttachmentPatch(content=999))
         assert rehashed.md5 != doc.md5
         persisted = await Attachment.find_one(Attachment.id == doc.id)
         assert persisted.md5 == rehashed.md5
@@ -215,7 +241,7 @@ class TestTableFrameRoundTrip:
         assert raw["total_data_rows"] == 2
 
         # Read back: reassembled into the same DataFrame (index folded back as the first column).
-        out = await repo.get_component_by_id(str(doc.id), TableOut.parse_fields(["data"]))
+        out = await repo.get_one({"id": doc.id}, TableOut.parse_fields(["data"]))
         assert out.data.columns == ["T [K]", "1e16", "1e17"]
         assert out.data.equals(frame)
         # The raw storage keys must not leak onto the response model.

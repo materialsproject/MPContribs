@@ -519,12 +519,12 @@ class TestContributionVersioning:
 
     async def test_upsert_unique_forces_version_one(self):
         svc, contrib_repo, *_ = _make_service()  # unique by default
-        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
+        contrib_repo.upsert_one.return_value = MagicMock(spec=Contribution)
 
         # A supplied version is ignored for unique-identifier projects (inferred as 1).
         await svc.upsert_contributions([_contrib_in(identifier="mp-1", version=9)])
 
-        assert contrib_repo.upsert_contribution_by_identifiers.call_args.args[2] == 1
+        assert contrib_repo.upsert_one.call_args.args[2] == 1
         contrib_repo.max_versions.assert_not_called()
 
     async def test_upsert_non_unique_requires_version(self):
@@ -534,15 +534,15 @@ class TestContributionVersioning:
 
         assert summary.succeeded == []
         assert [f.error_code for f in summary.failed] == ["validation_error"]
-        contrib_repo.upsert_contribution_by_identifiers.assert_not_called()
+        contrib_repo.upsert_one.assert_not_called()
 
     async def test_upsert_non_unique_passes_supplied_version(self):
         svc, contrib_repo, *_ = _make_service(unique_identifiers=False)
-        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
+        contrib_repo.upsert_one.return_value = MagicMock(spec=Contribution)
 
         await svc.upsert_contributions([_contrib_in(identifier="mp-1", version=7)])
 
-        assert contrib_repo.upsert_contribution_by_identifiers.call_args.args[2] == 7
+        assert contrib_repo.upsert_one.call_args.args[2] == 7
 
 
 # ---------------------------------------------------------------------------
@@ -593,8 +593,7 @@ class TestUpsertContributionsGuard:
         dirty = _contrib_in(structures=[_structure_in()])
         with pytest.raises(ValidationError):
             await svc.upsert_contributions([dirty])
-        contrib_repo.upsert_contribution_by_identifiers.assert_not_called()
-        contrib_repo.find_one_contribution.assert_not_called()
+        contrib_repo.upsert_one.assert_not_called()
         contrib_repo.insert_contribution.assert_not_called()
         contrib_repo.update_contribution.assert_not_called()
 
@@ -607,7 +606,7 @@ class TestUpsertContributionsGuard:
 class TestUpsertContributionsAtomic:
     async def test_calls_atomic_repo_method_once_per_item(self):
         svc, contrib_repo, *_ = _make_service()
-        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
+        contrib_repo.upsert_one.return_value = MagicMock(spec=Contribution)
 
         contribs = [_contrib_in(identifier=f"mp-{i}") for i in range(3)]
         summary = await svc.upsert_contributions(contribs)
@@ -615,20 +614,19 @@ class TestUpsertContributionsAtomic:
         assert summary.total == 3
         assert len(summary.succeeded) == 3
         assert summary.failed == []
-        assert contrib_repo.upsert_contribution_by_identifiers.call_count == 3
+        assert contrib_repo.upsert_one.call_count == 3
         # The legacy read-then-write path must not be used
-        contrib_repo.find_one_contribution.assert_not_called()
         contrib_repo.update_contribution.assert_not_called()
         contrib_repo.insert_contribution.assert_not_called()
 
     async def test_passes_identifiers_dict_and_input_to_repo(self):
         svc, contrib_repo, *_ = _make_service()
-        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
+        contrib_repo.upsert_one.return_value = MagicMock(spec=Contribution)
 
         contrib = _contrib_in(project="my-proj", identifier="mp-99")
         await svc.upsert_contributions([contrib])
 
-        call = contrib_repo.upsert_contribution_by_identifiers.call_args
+        call = contrib_repo.upsert_one.call_args
         assert call.args[0] == {"project": "my-proj", "identifier": "mp-99"}
         assert call.args[1] is contrib
 
@@ -642,7 +640,7 @@ class TestUpsertContributionsAtomic:
             returned[contrib.identifier] = doc
             return doc
 
-        contrib_repo.upsert_contribution_by_identifiers.side_effect = _upsert
+        contrib_repo.upsert_one.side_effect = _upsert
 
         contribs = [_contrib_in(identifier=f"mp-{i}") for i in range(3)]
         summary = await svc.upsert_contributions(contribs)
@@ -655,7 +653,7 @@ class TestUpsertContributionsAtomic:
         assert summary.total == 0
         assert summary.succeeded == []
         assert summary.failed == []
-        contrib_repo.upsert_contribution_by_identifiers.assert_not_called()
+        contrib_repo.upsert_one.assert_not_called()
 
     async def test_same_key_concurrent_upserts_both_go_through_atomic_call(self):
         """Race-safety regression: two items with the same (project, identifier) in one batch
@@ -663,7 +661,7 @@ class TestUpsertContributionsAtomic:
         tiebreaker — the service must not pre-deduplicate or otherwise swallow one.
         """
         svc, contrib_repo, *_ = _make_service()
-        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
+        contrib_repo.upsert_one.return_value = MagicMock(spec=Contribution)
 
         contribs = [
             _contrib_in(project="p", identifier="same"),
@@ -672,7 +670,7 @@ class TestUpsertContributionsAtomic:
         summary = await svc.upsert_contributions(contribs)
 
         assert len(summary.succeeded) == 2
-        assert contrib_repo.upsert_contribution_by_identifiers.call_count == 2
+        assert contrib_repo.upsert_one.call_count == 2
 
     async def test_one_failure_is_reported_not_raised(self):
         svc, contrib_repo, *_ = _make_service()
@@ -682,7 +680,7 @@ class TestUpsertContributionsAtomic:
                 raise ConflictError("boom")
             return MagicMock(spec=Contribution)
 
-        contrib_repo.upsert_contribution_by_identifiers.side_effect = _upsert
+        contrib_repo.upsert_one.side_effect = _upsert
 
         contribs = [_contrib_in(identifier=f"mp-{i}") for i in range(3)]
         summary = await svc.upsert_contributions(contribs)
@@ -750,7 +748,7 @@ class TestWriteAuthorization:
 
     async def test_upsert_rejects_unauthorized_project_per_item(self):
         svc, contrib_repo, *_ = _make_service(user=_member_user("allowed"))
-        contrib_repo.upsert_contribution_by_identifiers.return_value = MagicMock(spec=Contribution)
+        contrib_repo.upsert_one.return_value = MagicMock(spec=Contribution)
 
         contribs = [
             _contrib_in(project="allowed", identifier="ok"),
@@ -764,7 +762,7 @@ class TestWriteAuthorization:
         assert summary.failed[0].error_code == "permission_denied"
         assert "forbidden" in summary.failed[0].message
         # Only the authorized item reached the atomic repo method
-        contrib_repo.upsert_contribution_by_identifiers.assert_called_once()
+        contrib_repo.upsert_one.assert_called_once()
 
     async def test_upsert_anonymous_authorized_for_nothing(self):
         svc, contrib_repo, *_ = _make_service(user=User())  # anonymous: no username, no groups
@@ -774,7 +772,7 @@ class TestWriteAuthorization:
         assert summary.total == 1
         assert summary.succeeded == []
         assert [f.error_code for f in summary.failed] == ["permission_denied"]
-        contrib_repo.upsert_contribution_by_identifiers.assert_not_called()
+        contrib_repo.upsert_one.assert_not_called()
 
 
 # ---------------------------------------------------------------------------
@@ -798,7 +796,7 @@ class TestWriteAuthorization:
 #             in_flight -= 1
 #             return MagicMock(spec=Contribution)
 
-#         contrib_repo.upsert_contribution_by_identifiers.side_effect = _upsert
+#         contrib_repo.upsert_one.side_effect = _upsert
 
 #         contribs = [_contrib_in(identifier=f"mp-{i}") for i in range(5)]
 #         await svc.upsert_contributions(contribs)
