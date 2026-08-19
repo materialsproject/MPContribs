@@ -199,6 +199,12 @@ def _make_service(
     struct_repo = structures or AsyncMock()
     table_repo = tables or AsyncMock()
     attach_repo = attachments or AsyncMock()
+    # ``coerce_identifiers`` is a *sync* repo method (see MongoDbRepository), but a bare AsyncMock
+    # would turn it into a coroutine factory: the service passes its result straight into get_one/
+    # patch_one without awaiting, leaking un-awaited coroutines. Make it a sync passthrough on every
+    # repo so it behaves like the real thing (returns the identifiers dict unchanged).
+    for repo in (contrib_repo, struct_repo, table_repo, attach_repo):
+        repo.coerce_identifiers = MagicMock(side_effect=lambda identifiers: identifiers)
     # Default identity resolution: every referenced project reports its ``unique_column`` (None by
     # default -> identity is the fixed-field triple), and no identity exists yet, so the common path
     # resolves with no conflict. Tests exercising duplicates override ``existing_identities``.
