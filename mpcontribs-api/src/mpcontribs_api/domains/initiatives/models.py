@@ -44,6 +44,10 @@ class Initiative(BaseDocumentWithInput[PydanticObjectId]):
         validate_on_save = True
 
     @classmethod
+    def from_input_model(cls, data: InitiativeIn, owner: PrefixedEmail) -> Self:  # pyright: ignore[reportIncompatibleMethodOverride]
+        return cls(_id=PydanticObjectId(), **data.model_dump(), owner=owner)
+
+    @classmethod
     def identifier_fields(cls) -> frozenset[str]:
         """An ``Initiative`` is uniquely identified by its globally-unique ``slug``."""
         return frozenset({"slug"})
@@ -77,8 +81,8 @@ class InitiativeOut(DocumentOut[PydanticObjectId]):
     is_approved: bool | None = None
 
     @staticmethod
-    def default_fields() -> list[str]:
-        return ["slug", "name", "owner", "is_public", "is_approved"]
+    def default_fields() -> tuple[str, ...]:
+        return ("slug", "name", "owner", "is_public", "is_approved")
 
 
 class InitiativePatch(SparseFieldsModel):
