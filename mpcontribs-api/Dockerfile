@@ -1,4 +1,4 @@
-FROM materialsproject/devops:python-3.1113.18 AS base
+FROM materialsproject/devops:python-3.1213.2 AS base
 RUN apt-get update && apt-get install -y --no-install-recommends supervisor libopenblas-dev libpq-dev vim && apt-get clean
 WORKDIR /app
 
@@ -14,7 +14,7 @@ COPY src src
 ARG CONTRIBS_VERSION
 RUN SETUPTOOLS_SCM_PRETEND_VERSION=${CONTRIBS_VERSION} uv sync --frozen --no-dev --no-editable
 RUN wget -q https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh && \
-  chmod +x wait-for-it.sh && mv wait-for-it.sh /usr/local/bin/
+    chmod +x wait-for-it.sh && mv wait-for-it.sh /usr/local/bin/
 
 FROM base
 ARG BUILDARCH

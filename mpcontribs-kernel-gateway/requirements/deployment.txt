@@ -26,7 +26,7 @@ bleach[css]==6.4.0
     # via nbconvert
 blinker==1.9.0
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
-boltons==26.0.0
+boltons==26.1.0
     # via mpcontribs-client
 bravado==12.0.1
     # via mpcontribs-client
@@ -34,13 +34,13 @@ bravado-core==6.4.1
     # via bravado
 bytecode==0.18.1
     # via ddtrace
-cachetools==7.1.4
+cachetools==7.1.7
     # via mpcontribs-client
-certifi==2026.6.17
+certifi==2026.7.22
     # via requests
-cffi==2.1.0
+cffi==2.1.1
     # via argon2-cffi-bindings
-charset-normalizer==3.4.9
+charset-normalizer==3.5.1
     # via requests
 choreographer==1.3.0
     # via kaleido
@@ -52,12 +52,10 @@ contourpy==1.3.3
     # via matplotlib
 cycler==0.12.1
     # via matplotlib
-ddtrace==4.3.0
+ddtrace==4.8.2
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
 debugpy==1.8.21
     # via ipykernel
-decorator==5.3.1
-    # via ipython
 defusedxml==0.7.1
     # via nbconvert
 dnspython==2.8.0
@@ -68,7 +66,7 @@ envier==0.6.1
     # via ddtrace
 executing==2.2.1
     # via stack-data
-fastjsonschema==2.21.2
+fastjsonschema==2.22.2
     # via nbformat
 filetype==1.2.0
     # via mpcontribs-client
@@ -82,7 +80,7 @@ fonttools==4.63.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
-idna==3.18
+idna==3.19
     # via
     #   anyio
     #   jsonschema
@@ -91,14 +89,14 @@ importlib-resources==7.1.0
     # via swagger-spec-validator
 ipykernel==7.3.0
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
-ipython==9.15.0
+ipython==9.16.1
     # via
     #   ipykernel
     #   ipywidgets
     #   mpcontribs-client
 ipython-pygments-lexers==1.1.1
     # via ipython
-ipywidgets==8.1.8
+ipywidgets==8.1.9
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
 isoduration==20.11.0
     # via jsonschema
@@ -150,7 +148,7 @@ jupyter-server-terminals==0.5.4
     # via jupyter-server
 jupyterlab-pygments==0.3.0
     # via nbconvert
-jupyterlab-widgets==3.0.16
+jupyterlab-widgets==3.0.17
     # via ipywidgets
 kaleido==1.3.0
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
@@ -168,7 +166,7 @@ markupsafe==3.0.3
     # via
     #   jinja2
     #   nbconvert
-matplotlib==3.11.0
+matplotlib==3.11.1
     # via
     #   -r python/requirements.txt
     #   pymatgen-core
@@ -176,11 +174,11 @@ matplotlib-inline==0.2.2
     # via
     #   ipykernel
     #   ipython
-mistune==3.3.3
+mistune==3.3.4
     # via nbconvert
 monotonic==1.6
     # via bravado
-monty==2026.5.18
+monty==2026.7.16
     # via pymatgen-core
 mpcontribs-client==5.10.5
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
@@ -196,7 +194,7 @@ nbclient==0.11.0
     # via nbconvert
 nbconvert==7.17.1
     # via jupyter-server
-nbformat==5.10.4
+nbformat==5.11.1
     # via
     #   jupyter-server
     #   nbclient
@@ -216,15 +214,15 @@ numpy==2.4.6
     #   pymatgen-core
     #   scipy
     #   spglib
-opentelemetry-api==1.43.0
+opentelemetry-api==1.44.0
     # via ddtrace
-orjson==3.11.9
+orjson==3.12.0
     # via
     #   kaleido
     #   pymatgen-core
 overrides==7.7.0
     # via jupyter-server
-packaging==26.2
+packaging==26.3
     # via
     #   ipykernel
     #   jupyter-events
@@ -235,7 +233,7 @@ packaging==26.2
     #   plotly
 palettable==3.3.3
     # via pymatgen-core
-pandas==3.0.3
+pandas==3.0.5
     # via
     #   -r python/requirements.txt
     #   mpcontribs-client
@@ -250,7 +248,7 @@ pillow==12.3.0
     # via matplotlib
 pint==0.25.3
     # via mpcontribs-client
-platformdirs==4.10.0
+platformdirs==4.11.3
     # via
     #   choreographer
     #   jupyter-core
@@ -259,9 +257,9 @@ plotly==6.9.0
     # via
     #   mpcontribs-client
     #   pymatgen-core
-prometheus-client==0.25.0
+prometheus-client==0.26.0
     # via jupyter-server
-prompt-toolkit==3.0.52
+prompt-toolkit==3.0.53
     # via ipython
 psutil==7.2.2
     # via
@@ -276,7 +274,7 @@ pure-eval==0.2.3
     # via stack-data
 pycparser==3.0
     # via cffi
-pygments==2.20.0
+pygments==2.21.0
     # via
     #   ipython
     #   ipython-pygments-lexers
@@ -285,7 +283,7 @@ pyisemail==2.0.1
     # via mpcontribs-client
 pymatgen==2026.5.4
     # via mpcontribs-client
-pymatgen-core==2026.5.18
+pymatgen-core==2026.8.13
     # via pymatgen
 pymongo==4.17.0
     # via mpcontribs-client
@@ -301,9 +299,9 @@ python-dateutil==2.9.0.post0
     #   jupyter-client
     #   matplotlib
     #   pandas
-python-json-logger==4.1.0
+python-json-logger==4.2.0
     # via jupyter-events
-pytz==2026.2
+pytz==2026.3.post1
     # via bravado-core
 pyyaml==6.0.3
     # via
@@ -363,7 +361,7 @@ six==1.17.0
     #   bravado-core
     #   python-dateutil
     #   rfc3339-validator
-soupsieve==2.8.4
+soupsieve==2.9.2
     # via beautifulsoup4
 spglib==2.7.0
     # via pymatgen-core
@@ -383,18 +381,18 @@ terminado==0.18.1
     #   jupyter-server-terminals
 tinycss2==1.5.1
     # via bleach
-tornado==6.5.7
+tornado==6.5.8
     # via
     #   ipykernel
     #   jupyter-client
     #   jupyter-kernel-gateway
     #   jupyter-server
     #   terminado
-tqdm==4.68.4
+tqdm==4.70.0
     # via
     #   mpcontribs-client
     #   pymatgen-core
-traitlets==5.15.1
+traitlets==5.16.1
     # via
     #   ipykernel
     #   ipython
@@ -436,13 +434,13 @@ wcwidth==0.8.2
     # via prompt-toolkit
 webcolors==25.10.0
     # via jsonschema
-webencodings==0.5.1
+webencodings==0.6.1
     # via
     #   bleach
     #   tinycss2
 websocket-client==1.9.0
     # via jupyter-server
-widgetsnbextension==4.0.15
+widgetsnbextension==4.0.16
     # via ipywidgets
-wrapt==2.2.2
+wrapt==2.3.0
     # via ddtrace

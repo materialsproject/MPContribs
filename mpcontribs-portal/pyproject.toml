@@ -27,7 +27,7 @@ authors = [
 dependencies = [
     "boltons",
     "boto3",
-    "ddtrace==4.3.0",
+    "ddtrace==4.8.2",
     "Django>=3.2,<4.0",
     "django-extensions",
     "django-settings-file",
