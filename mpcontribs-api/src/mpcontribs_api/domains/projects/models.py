@@ -118,10 +118,6 @@ class Project(ProjectBase, BaseDocumentWithInput[ShortStr]):
     def server_managed_fields(cls) -> tuple:
         return ("is_public", "is_approved", "stats", "mp_category")
 
-    class Settings:
-        name = "projects"
-        keep_nulls = False
-
 
 class ProjectOut(DocumentOut[ShortStr]):
     """Full response of all public-facing fields."""
