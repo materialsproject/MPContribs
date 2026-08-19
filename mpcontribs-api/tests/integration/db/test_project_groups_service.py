@@ -36,11 +36,11 @@ async def _insert_project(pid: str, owner: str = ALICE_EMAIL, **overrides):
         "owner": owner,
     }
     payload.update(overrides)
-    return await MongoDbProjectRepository(ADMIN).insert_project(pid, ProjectIn(**payload))
+    return await MongoDbProjectRepository(ADMIN).insert_one(pid, ProjectIn(**payload))
 
 
 async def _insert_group(name: str, owner: str = ALICE_EMAIL) -> ProjectGroup:
-    return await ProjectGroupRepository(ADMIN).insert_project_group(
+    return await ProjectGroupRepository(ADMIN).insert_one(
         ProjectGroupIn(name=name, owner=owner, projects=[], description="d")
     )
 

@@ -5,10 +5,10 @@ from fastapi_filter.contrib.beanie import Filter
 from fastapi_filter.contrib.beanie.filter import _odm_operator_transformer
 from pydantic import ValidationInfo, field_validator
 
+from mpcontribs_api.domains._shared.types import nfc_normalize
+
 # Register a custom __contains filter suffix to search where lists are a superset of a provided list
 _odm_operator_transformer.setdefault("contains", lambda value: {"$all": value})
-
-from mpcontribs_api.domains._shared.types import nfc_normalize
 
 
 def _normalize_query_values(value: Any) -> Any:

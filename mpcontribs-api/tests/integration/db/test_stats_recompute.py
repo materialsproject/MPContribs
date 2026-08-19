@@ -67,7 +67,7 @@ async def _make_project() -> Project:
         description="Recompute lifecycle fixture",
         owner="google:admin@example.com",
     )
-    return await MongoDbProjectRepository(ADMIN).insert_project(PID, project_in)
+    return await MongoDbProjectRepository(ADMIN).insert_one(PID, project_in)
 
 
 def _structure(charge: float | None) -> StructureIn:
@@ -151,7 +151,7 @@ class TestStatsRecomputeLifecycle:
         await _assert_empty()
 
         # --- insert one contribution with two structures + two tables (+ data) ---
-        summary = await svc.insert_contributions(
+        summary = await svc.insert_many(
             [
                 _contrib_in(
                     "with-components",
@@ -177,7 +177,7 @@ class TestStatsRecomputeLifecycle:
         assert (cols["energy"].min, cols["energy"].max) == (-5.0, -5.0)
 
         # --- remove it -> back to empty ---
-        # NOTE: svc.delete_contributions() cannot delete a contribution that references a real table
+        # NOTE: svc.delete_many() cannot delete a contribution that references a real table
         # component: its cascade re-reads the contribution through ContributionFilter, whose nested
         # component sub-filters make Beanie fetch the linked components, and the fetched Table.data
         # frame fails to round-trip (Table.data is a PolarsFrame that pymongo stores as bare column
@@ -192,7 +192,7 @@ class TestStatsRecomputeLifecycle:
         await _assert_empty()
 
         # --- insert one contribution with no components ---
-        summary = await svc.insert_contributions([_contrib_in("no-components", data={"band_gap": 3.0})])
+        summary = await svc.insert_many([_contrib_in("no-components", data={"band_gap": 3.0})])
         assert summary.failed == []
         project = await _project()
         assert project.stats.contributions == 1
@@ -204,17 +204,17 @@ class TestStatsRecomputeLifecycle:
         assert (cols["band_gap"].min, cols["band_gap"].max) == (3.0, 3.0)
 
         # --- remove it -> empty again ---
-        deleted = await svc.delete_contributions(ContributionFilter(id=summary.succeeded[0].id))
+        deleted = await svc.delete_many(ContributionFilter(id=summary.succeeded[0].id))
         assert deleted.num_deleted == 1
         await _assert_empty()
 
         # --- add two contributions whose data overlaps ("shared") and diverges ("b" is new) ---
-        await svc.insert_contributions([_contrib_in("c-one", data={"a": 1.0, "shared": 5.0})])
+        await svc.insert_many([_contrib_in("c-one", data={"a": 1.0, "shared": 5.0})])
         project = await _project()
         assert project.stats.contributions == 1
         assert set(_columns_by_path(project)) == {"a", "shared"}
 
-        await svc.insert_contributions([_contrib_in("c-two", data={"shared": 9.0, "b": 2.0})])
+        await svc.insert_many([_contrib_in("c-two", data={"shared": 9.0, "b": 2.0})])
         project = await _project()
         assert project.stats.contributions == 2
         cols = _columns_by_path(project)

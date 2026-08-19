@@ -51,11 +51,11 @@ async def _insert(id: str, **overrides) -> Project:
     through overrides); the id comes from the path, and stats/columns keep their server defaults.
     """
     project_in = _project_in(id, **overrides)
-    return await _repo(ADMIN).insert_project(id, project_in)
+    return await _repo(ADMIN).insert_one(id, project_in)
 
 
 # ---------------------------------------------------------------------------
-# insert_project
+# insert_one
 # ---------------------------------------------------------------------------
 
 
@@ -88,7 +88,7 @@ class TestAuthorizationScope:
     async def test_admin_sees_all(self, db):
         await _insert("scope-priv", is_public=False)
         await _insert("scope-pub", is_public=True, is_approved=True)
-        page = await _repo(ADMIN).get_projects(filter=_noop_filter(), pagination=CursorParams(), fields=None)
+        page = await _repo(ADMIN).get_many(filter=_noop_filter(), pagination=CursorParams(), fields=None)
         ids = {p.id for p in page.items}
         assert "scope-priv" in ids
         assert "scope-pub" in ids
@@ -97,7 +97,7 @@ class TestAuthorizationScope:
         await _insert("anon-priv", is_public=False)
         await _insert("anon-pub", is_public=True, is_approved=True)
         await _insert("anon-pub-unapproved", is_public=True, is_approved=False)
-        page = await _repo(ANON).get_projects(filter=_noop_filter(), pagination=CursorParams(), fields=None)
+        page = await _repo(ANON).get_many(filter=_noop_filter(), pagination=CursorParams(), fields=None)
         ids = {p.id for p in page.items}
         assert "anon-pub" in ids
         assert "anon-priv" not in ids
@@ -107,7 +107,7 @@ class TestAuthorizationScope:
         await _insert("auth-alice-priv", owner="google:alice@example.com", is_public=False)
         await _insert("auth-bob-priv", owner="google:bob@example.com", is_public=False)
         await _insert("auth-pub", is_public=True, is_approved=True)
-        page = await _repo(ALICE).get_projects(filter=_noop_filter(), pagination=CursorParams(), fields=None)
+        page = await _repo(ALICE).get_many(filter=_noop_filter(), pagination=CursorParams(), fields=None)
         ids = {p.id for p in page.items}
         assert "auth-alice-priv" in ids
         assert "auth-pub" in ids
@@ -148,7 +148,7 @@ class TestGetProjectById:
 
 
 # ---------------------------------------------------------------------------
-# get_projects — id filtering
+# get_many — id filtering
 #
 # Regression: Beanie stores the primary key under Mongo's ``_id`` (``id`` is an
 # alias), but fastapi-filter keys queries on the raw field name. Without the
@@ -162,7 +162,7 @@ class TestGetProjectsIdFilter:
         from mpcontribs_api.domains.projects.models import ProjectFilter
 
         await _insert("filter-id-hit")
-        page = await _repo(ADMIN).get_projects(
+        page = await _repo(ADMIN).get_many(
             filter=ProjectFilter(id="filter-id-hit"), pagination=CursorParams(), fields=None
         )
         assert {p.id for p in page.items} == {"filter-id-hit"}
@@ -173,7 +173,7 @@ class TestGetProjectsIdFilter:
         await _insert("filter-id-in-a")
         await _insert("filter-id-in-b")
         await _insert("filter-id-in-c")
-        page = await _repo(ADMIN).get_projects(
+        page = await _repo(ADMIN).get_many(
             filter=ProjectFilter(id__in=["filter-id-in-a", "filter-id-in-b"]),
             pagination=CursorParams(),
             fields=None,
@@ -185,7 +185,7 @@ class TestGetProjectsIdFilter:
 
         await _insert("filter-id-neq-keep")
         await _insert("filter-id-neq-drop")
-        page = await _repo(ADMIN).get_projects(
+        page = await _repo(ADMIN).get_many(
             filter=ProjectFilter(id__neq="filter-id-neq-drop"), pagination=CursorParams(), fields=None
         )
         ids = {p.id for p in page.items}
@@ -194,7 +194,7 @@ class TestGetProjectsIdFilter:
 
 
 # ---------------------------------------------------------------------------
-# get_projects — tags filtering
+# get_many — tags filtering
 #
 # ``tags__contains`` maps to MongoDB ``$all``: a project matches only when its
 # tags are a superset of every value supplied (the query list is a subset of
@@ -210,7 +210,7 @@ class TestGetProjectsTagsFilter:
         await _insert("tags-superset", tags=["alpha", "beta", "gamma"])
         await _insert("tags-partial", tags=["alpha", "beta"])
         await _insert("tags-none", tags=["delta"])
-        page = await _repo(ADMIN).get_projects(
+        page = await _repo(ADMIN).get_many(
             filter=ProjectFilter(tags__contains=["alpha", "gamma"]),
             pagination=CursorParams(),
             fields=None,
@@ -222,7 +222,7 @@ class TestGetProjectsTagsFilter:
 
         await _insert("tags-single-hit", tags=["alpha", "beta"])
         await _insert("tags-single-miss", tags=["beta", "gamma"])
-        page = await _repo(ADMIN).get_projects(
+        page = await _repo(ADMIN).get_many(
             filter=ProjectFilter(tags__contains=["alpha"]),
             pagination=CursorParams(),
             fields=None,
@@ -236,7 +236,7 @@ class TestGetProjectsTagsFilter:
         await _insert("tags-csv-miss", tags=["alpha"])
         # FilterDepends collapses the list query param to a comma string; the
         # BaseFilter validator must re-expand it.
-        page = await _repo(ADMIN).get_projects(
+        page = await _repo(ADMIN).get_many(
             filter=ProjectFilter(tags__contains="alpha,beta"),
             pagination=CursorParams(),
             fields=None,
@@ -253,7 +253,7 @@ class TestFieldProjection:
     async def test_projection_returns_only_requested_fields(self, db):
         await _insert("proj-fields", is_public=True, is_approved=True)
         fields = ProjectOut.parse_fields(["title"])
-        page = await _repo(ADMIN).get_projects(filter=_noop_filter(), pagination=CursorParams(), fields=fields)
+        page = await _repo(ADMIN).get_many(filter=_noop_filter(), pagination=CursorParams(), fields=fields)
         assert len(page.items) == 1
         item = page.items[0]
         assert item.title == "proj-fields"
@@ -262,7 +262,7 @@ class TestFieldProjection:
 
     async def test_no_projection_returns_all_fields(self, db):
         await _insert("proj-all", is_public=True, is_approved=True)
-        page = await _repo(ADMIN).get_projects(filter=_noop_filter(), pagination=CursorParams(), fields=None)
+        page = await _repo(ADMIN).get_many(filter=_noop_filter(), pagination=CursorParams(), fields=None)
         item = page.items[0]
         assert item.title is not None
         assert item.authors is not None
@@ -279,27 +279,27 @@ class TestPagination:
         # project under its own owner rather than tripping max_projects.
         for i in range(5):
             await _insert(f"pag-limit-{i:02d}", owner=f"google:pager{i}@example.com", is_public=True, is_approved=True)
-        page = await _repo(ADMIN).get_projects(filter=_noop_filter(), pagination=CursorParams(limit=3), fields=None)
+        page = await _repo(ADMIN).get_many(filter=_noop_filter(), pagination=CursorParams(limit=3), fields=None)
         assert len(page.items) == 3
 
     async def test_next_cursor_set_when_more_items(self, db):
         for i in range(4):
             await _insert(f"pag-cursor-{i:02d}", owner=f"google:pager{i}@example.com", is_public=True, is_approved=True)
-        page = await _repo(ADMIN).get_projects(filter=_noop_filter(), pagination=CursorParams(limit=2), fields=None)
+        page = await _repo(ADMIN).get_many(filter=_noop_filter(), pagination=CursorParams(limit=2), fields=None)
         assert page.next_cursor is not None
 
     async def test_next_cursor_none_on_last_page(self, db):
         for i in range(3):
             await _insert(f"pag-last-{i:02d}", owner=f"google:pager{i}@example.com", is_public=True, is_approved=True)
-        page = await _repo(ADMIN).get_projects(filter=_noop_filter(), pagination=CursorParams(limit=10), fields=None)
+        page = await _repo(ADMIN).get_many(filter=_noop_filter(), pagination=CursorParams(limit=10), fields=None)
         assert page.next_cursor is None
 
     async def test_cursor_fetches_next_page(self, db):
         for i in range(4):
             await _insert(f"pag-next-{i:02d}", owner=f"google:pager{i}@example.com", is_public=True, is_approved=True)
-        page1 = await _repo(ADMIN).get_projects(filter=_noop_filter(), pagination=CursorParams(limit=2), fields=None)
+        page1 = await _repo(ADMIN).get_many(filter=_noop_filter(), pagination=CursorParams(limit=2), fields=None)
         assert page1.next_cursor is not None
-        page2 = await _repo(ADMIN).get_projects(
+        page2 = await _repo(ADMIN).get_many(
             filter=_noop_filter(), pagination=CursorParams(limit=2, cursor=page1.next_cursor), fields=None
         )
         ids1 = {p.id for p in page1.items}
@@ -312,7 +312,7 @@ class TestPagination:
         all_ids: set[str] = set()
         cursor = None
         while True:
-            page = await _repo(ADMIN).get_projects(
+            page = await _repo(ADMIN).get_many(
                 filter=_noop_filter(), pagination=CursorParams(limit=2, cursor=cursor), fields=None
             )
             all_ids.update(p.id for p in page.items)
@@ -363,7 +363,7 @@ class TestDeleteProject:
     async def test_deleted_project_not_in_default_query(self, db):
         await _insert("del-me", is_public=True, is_approved=True)
         await _repo(ADMIN).delete_one({"id": "del-me"})
-        page = await _repo(ADMIN).get_projects(filter=_noop_filter(), pagination=CursorParams(), fields=None)
+        page = await _repo(ADMIN).get_many(filter=_noop_filter(), pagination=CursorParams(), fields=None)
         ids = {p.id for p in page.items}
         assert "del-me" not in ids
 
@@ -678,10 +678,10 @@ class TestProjectCountQuota:
         # A per-consumer override resolves to a ConsumerSettings injected into the repo; the cap it
         # carries is enforced without touching global config. Here the override tightens the cap to 1.
         repo = _repo(ALICE, ConsumerSettings(max_projects=1))
-        await repo.insert_project("override-1", _project_in("override-1", owner=ALICE_EMAIL))
+        await repo.insert_one("override-1", _project_in("override-1", owner=ALICE_EMAIL))
         from mpcontribs_api.exceptions import PermissionError as AppPermissionError
 
         with pytest.raises(AppPermissionError):
-            await repo.insert_project("override-2", _project_in("override-2", owner=ALICE_EMAIL))
+            await repo.insert_one("override-2", _project_in("override-2", owner=ALICE_EMAIL))
 
 

@@ -45,7 +45,7 @@ def _group_in(name: str, owner: str = ALICE_EMAIL, **overrides) -> ProjectGroupI
 
 
 async def _insert(name: str, owner: str = ALICE_EMAIL, **overrides) -> ProjectGroup:
-    return await _repo(ADMIN).insert_project_group(_group_in(name, owner, **overrides))
+    return await _repo(ADMIN).insert_one(_group_in(name, owner, **overrides))
 
 
 # ---------------------------------------------------------------------------
@@ -103,7 +103,7 @@ class TestGroupRoleScope:
 
     async def test_role_appears_in_listing(self, db):
         group = await _insert("role-list")
-        page = await _repo(_role_user(group.id)).get_project_groups(
+        page = await _repo(_role_user(group.id)).get_many(
             pagination=CursorParams(), filter=ProjectGroupFilter(), fields=None
         )
         assert group.id in {g.id for g in page.items}
@@ -183,14 +183,14 @@ class TestDeleteByFilter:
         await _insert("bulk-1")
         await _insert("bulk-2")
         await _insert("other", owner="google:bob@example.com")
-        result = await _repo(ADMIN).delete_project_groups(
+        result = await _repo(ADMIN).delete_many(
             filter=ProjectGroupFilter(owner=ALICE_EMAIL)
         )
         assert result.num_deleted == 2
         assert await ProjectGroup.find_one(ProjectGroup.owner == "google:bob@example.com") is not None
 
     async def test_no_match_returns_zero(self, db):
-        result = await _repo(ADMIN).delete_project_groups(
+        result = await _repo(ADMIN).delete_many(
             filter=ProjectGroupFilter(owner="google:nobody@example.com")
         )
         assert result.num_deleted == 0
@@ -200,14 +200,14 @@ class TestDeleteByFilter:
         # someone else must survive even though the filter would otherwise match it.
         await _insert("own-bulk", owner=ALICE_EMAIL, is_public=True)
         await _insert("other-bulk", owner=BOB_EMAIL, is_public=True)
-        result = await _repo(ALICE).delete_project_groups(filter=ProjectGroupFilter(is_public=True))
+        result = await _repo(ALICE).delete_many(filter=ProjectGroupFilter(is_public=True))
         assert result.num_deleted == 1
         assert await ProjectGroup.find_one(ProjectGroup.name == "own-bulk") is None
         assert await ProjectGroup.find_one(ProjectGroup.name == "other-bulk") is not None
 
 
 # ---------------------------------------------------------------------------
-# insert_project_group
+# insert_one
 #
 # The input model carries no ``_id`` (the server assigns the ObjectId) and takes
 # plain project ids, which from_input_model resolves into stored Links/DBRefs.

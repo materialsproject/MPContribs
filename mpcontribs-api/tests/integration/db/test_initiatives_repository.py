@@ -65,7 +65,7 @@ class TestInsert:
 
     async def test_anonymous_cannot_create(self, db):
         with pytest.raises(PermissionError):
-            await _repo(ANON).insert_initiative(InitiativeIn(slug="anon-init", name="x"))
+            await _repo(ANON).insert_one(InitiativeIn(slug="anon-init", name="x"))
 
     async def test_invalid_slug_rejected(self, db):
         with pytest.raises(ValidationError):
@@ -91,7 +91,7 @@ class TestUnapprovedPerOwnerLimit:
     async def test_admin_is_exempt(self, db):
         limit = get_settings().domain.initiatives.max_unapproved_per_owner
         for i in range(limit + 2):
-            await _repo(ADMIN).insert_initiative(InitiativeIn(slug=f"admin-{i}", name="x"))
+            await _repo(ADMIN).insert_one(InitiativeIn(slug=f"admin-{i}", name="x"))
 
 
 # ---------------------------------------------------------------------------
@@ -195,7 +195,7 @@ class TestListAndFilter:
     async def test_list_scoped_to_caller(self, db):
         await _insert("mine-1", ALICE)
         await _insert("bobs-1", BOB)  # Bob's private initiative, invisible to Alice
-        page = await _repo(ALICE).get_initiatives(CursorParams(), InitiativeFilter(), fields=None)
+        page = await _repo(ALICE).get_many(CursorParams(), InitiativeFilter(), fields=None)
         slugs = {i.slug for i in page.items}
         assert "mine-1" in slugs
         assert "bobs-1" not in slugs
@@ -204,7 +204,7 @@ class TestListAndFilter:
         await _insert("appr-1", ALICE)
         await _insert("unappr-1", ALICE)
         await _approve("appr-1")
-        page = await _repo(ADMIN).get_initiatives(CursorParams(), InitiativeFilter(is_approved=True), fields=None)
+        page = await _repo(ADMIN).get_many(CursorParams(), InitiativeFilter(is_approved=True), fields=None)
         slugs = {i.slug for i in page.items}
         assert "appr-1" in slugs
         assert "unappr-1" not in slugs
@@ -212,7 +212,7 @@ class TestListAndFilter:
     async def test_filter_by_owner(self, db):
         await _insert("owned-alice", ALICE)
         await _insert("owned-bob", BOB)
-        page = await _repo(ADMIN).get_initiatives(CursorParams(), InitiativeFilter(owner=BOB_EMAIL), fields=None)
+        page = await _repo(ADMIN).get_many(CursorParams(), InitiativeFilter(owner=BOB_EMAIL), fields=None)
         assert {i.slug for i in page.items} == {"owned-bob"}
 
 
