@@ -6,7 +6,6 @@ from beanie import PydanticObjectId, UpdateResponse
 from beanie.operators import Set
 from pymongo.asynchronous.client_session import AsyncClientSession
 from pymongo.errors import DuplicateKeyError
-from pymongo.results import DeleteResult
 from types_aiobotocore_s3 import S3Client
 
 from mpcontribs_api.authz import User
@@ -30,7 +29,6 @@ from mpcontribs_api.domains.contributions.stats import (
     merge_contribution_columns,
 )
 from mpcontribs_api.exceptions import ConflictError, NotFoundError, PermissionError
-from mpcontribs_api.pagination import CursorParams
 
 # Sentinel for "leave unique_value untouched" on patch (distinct from a real None value).
 _UNSET: Any = object()
@@ -92,15 +90,6 @@ class MongoDbContributionRepository(
         """
         return await self.document_model.find(self.document_model.project == project_name).count()
 
-    async def get_contributions(
-        self,
-        filter: ContributionFilter,
-        pagination: CursorParams | None = None,
-        fields: frozenset[str] | None = None,
-    ):
-        """Query the Contribution collection, scoped to the current user. See ``get_many``."""
-        return await self.get_many(pagination=pagination, filter=filter, fields=fields)
-
     async def patch_one(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         identifiers: dict[str, Any],
@@ -145,18 +134,7 @@ class MongoDbContributionRepository(
                 identifiers=identifiers,
             ) from err
 
-    async def delete_contributions(
-        self,
-        filter: ContributionFilter,
-    ) -> DeleteResult | None:
-        """Bulk deletion of Contributions described by the filter.
-
-        Args:
-            filter (ContribtionFilter): the filter to use to identify contributions to delete
-        """
-        return await filter.filter(self.document_model.find(self._scope)).delete_many()
-
-    async def bulk_update(
+    async def patch_many(
         self,
         filter: ContributionFilter,
         fields: dict[str, Any],
@@ -187,9 +165,10 @@ class MongoDbContributionRepository(
             matched=result.matched_count, modified=result.modified_count, projects=sorted(projects)
         )
 
-    async def get_contribution_ids(
+    async def list_ids(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         filter: ContributionFilter,
+        session: AsyncClientSession | None = None,
     ) -> list[PydanticObjectId]:
         """Return the ids of scoped rows matching ``filter``.
 
@@ -199,6 +178,7 @@ class MongoDbContributionRepository(
 
         Args:
             filter: the caller-supplied query, applied on top of the user scope
+            session: unused; accepted to match the base ``list_ids`` signature
         """
         criteria: list[Any] = []
         if self._scope:
@@ -207,7 +187,7 @@ class MongoDbContributionRepository(
         collection = self.document_model.get_pymongo_collection()
         return [doc["_id"] async for doc in collection.find(query, {"_id": 1})]
 
-    async def insert_many_contributions(
+    async def insert_many(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         docs: list[Contribution],
         session: AsyncClientSession | None = None,
@@ -220,7 +200,7 @@ class MongoDbContributionRepository(
         """
         return await self.document_model.insert_many(docs, ordered=False, session=session)
 
-    async def insert_contribution(
+    async def insert_one(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         doc: Contribution,
         session: AsyncClientSession | None = None,
@@ -328,26 +308,23 @@ class MongoDbContributionRepository(
         agg.columns = finalize_columns(acc)
         return agg
 
-    async def upsert_one(
+    async def upsert_one(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         identifiers: dict[str, Any],
         contribution: ContributionIn,
+        unique_value: Scalar | None = _UNSET,
         session: AsyncClientSession | None = None,
     ) -> Contribution:
-        """Atomically upsert a Contribution by its full identity.
+        """Atomically upsert a single Contribution, keyed by the shape of ``identifiers``.
 
-        Relies on the unique index over (project, material_id, chemical_system_id, formula,
-        unique_value, condition_key) so that concurrent requests targeting the same identity cannot both win the
-        insert branch. Fields the caller did not set are not touched (partial update). On insert a
-        fresh Contribution document is written with ``is_public=False``.
-
-        Args:
-            identifiers: the identity dict ContributionIn.identity_dict(unique_value) returns
-            contribution: the input payload to upsert
-
-        Returns:
-            Contribution: the document as it stands after the operation
+        Relies on the unique index over the identity fields as the concurrency tiebreaker.
+        On insert a fresh document is written with ``is_public=False``.
         """
+        if identifiers.keys() == {"id"}:
+            return await self._upsert_by_id(
+                identifiers["id"], contribution, None if unique_value is _UNSET else unique_value
+            )
+
         project = str(identifiers["project"])
         # Make sure the user is allowed to upsert a contribution under the provided project
         if not self._user.can_write(project):
@@ -373,31 +350,13 @@ class MongoDbContributionRepository(
         result = await query  # pyright: ignore[reportGeneralTypeIssues] # beanie UpdateQuery is awaitable, but pyright doesn't see it
         return cast(Contribution, result)  # upsert always returns the resulting document
 
-    async def upsert_contribution_by_id(
+    async def _upsert_by_id(
         self,
         id: str,
         contribution: ContributionIn,
         unique_value: Scalar | None = None,
-    ):
-        """Upserts a single Contribution by its Mongo ``_id``.
-
-        If a Contribution with this id exists it is updated, otherwise inserted. ``unique_value`` is
-        server-resolved by the service from the project's ``unique_column`` and stamped on the doc so
-        the identity index stays correct. Because it is server-owned it is forced into the ``$set``
-        (bypassing ``exclude_none``), so re-resolving to ``None`` clears a previously-stored value on
-        update rather than leaving it stale.
-
-        Args:
-            id (str): the id of the Contribution to upsert
-            contribution (ContributionIn): the Contribution to be upserted
-            unique_value: the resolved identity value to stamp on the document
-
-        Returns:
-            Contribution: the upserted document
-
-        Raises:
-            PermissionError: if the caller is not authorized to write to ``contribution.project``
-        """
+    ) -> Contribution:
+        """Upsert a single Contribution keyed on its Mongo ``_id`` (see :meth:`upsert_one`)."""
         if not self._user.can_write(contribution.project):
             raise PermissionError(f"not authorized to write to project '{contribution.project}'")
 
@@ -412,7 +371,7 @@ class MongoDbContributionRepository(
         try:
             query = self.document_model.find_one(
                 self._scope,
-                self.document_model.id == self._convert_object_id(id),
+                self.document_model.id == oid,
             ).upsert(
                 Set(update_data),
                 on_insert=doc,

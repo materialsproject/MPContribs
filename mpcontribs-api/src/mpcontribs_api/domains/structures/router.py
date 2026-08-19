@@ -74,12 +74,12 @@ async def insert_structures(
     service: StructureServiceDep,
     structures: list[StructureIn],
 ):
-    return await service.insert(components=structures)
+    return await service.insert_many(components=structures)
 
 
 @router.delete("", response_model=ComponentDeleteResponse, dependencies=[Depends(require_user)])
 async def delete_structures(service: StructureServiceDep, filter: StructureFilter = FilterDepends(StructureFilter)):
-    return await service.delete(filter=filter)
+    return await service.delete_many(filter=filter)
 
 
 @router.delete("/{id}", response_model=ComponentDeleteResponse, dependencies=[Depends(require_user)])

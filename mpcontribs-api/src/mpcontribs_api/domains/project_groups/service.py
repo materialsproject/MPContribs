@@ -35,7 +35,7 @@ class ProjectGroupService:
         """Whether a project with ``project_id`` exists and is visible to the caller."""
         return await self._projects.get_one({"id": project_id}, fields=frozenset({"id"})) is not None
 
-    async def insert(self, project_group: ProjectGroupIn) -> ProjectGroup:
+    async def insert_one(self, project_group: ProjectGroupIn) -> ProjectGroup:
         """Insert a new group after verifying every referenced project exists and is visible.
 
         Non-admins are set as owner automatically, while admins can specify owners.
@@ -46,7 +46,7 @@ class ProjectGroupService:
         missing = [pid for pid in project_group.projects if not await self._project_exists(pid)]
         if missing:
             raise NotFoundError("One or more projects not found or not visible", ids=missing)
-        return await self._groups.insert_project_group(project_group)
+        return await self._groups.insert_one(in_resource=project_group)
 
     async def get_one(self, identifiers: dict[str, Any], fields: frozenset[str] | None) -> ProjectGroupOut | None:
         """Return the single group matching ``identifiers`` (``{"name", "owner"}`` or ``{"id"}``)."""

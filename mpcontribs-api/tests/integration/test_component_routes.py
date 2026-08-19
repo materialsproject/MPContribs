@@ -101,28 +101,28 @@ class TestStructuresList:
 
 class TestStructuresDelete:
     def test_batch_delete_returns_200(self, client, structure_service):
-        structure_service.delete.return_value = ComponentDeleteResponse(num_deleted=3)
+        structure_service.delete_many.return_value = ComponentDeleteResponse(num_deleted=3)
         r = client.delete("/api/v1/structures")
         assert r.status_code == 200
         assert r.json() == {"num_deleted": 3, "num_skipped": 0, "referenced_ids": []}
 
     def test_service_delete_called(self, client, structure_service):
-        structure_service.delete.return_value = ComponentDeleteResponse(num_deleted=0)
+        structure_service.delete_many.return_value = ComponentDeleteResponse(num_deleted=0)
         client.delete("/api/v1/structures")
-        structure_service.delete.assert_awaited_once()
+        structure_service.delete_many.assert_awaited_once()
 
 
 class TestStructuresInsert:
     def test_post_route_exists(self, client, structure_service):
         # Empty body -> handler invoked; service returns a summary-shaped object.
-        structure_service.insert.return_value = {"total": 0, "succeeded": [], "failed": []}
+        structure_service.insert_many.return_value = {"total": 0, "succeeded": [], "failed": []}
         r = client.post("/api/v1/structures", json=[])
         assert r.status_code != 404
 
     def test_post_forwards_to_service(self, client, structure_service):
-        structure_service.insert.return_value = {"total": 0, "succeeded": [], "failed": []}
+        structure_service.insert_many.return_value = {"total": 0, "succeeded": [], "failed": []}
         client.post("/api/v1/structures", json=[])
-        structure_service.insert.assert_awaited_once()
+        structure_service.insert_many.assert_awaited_once()
 
 
 class TestStructuresByIdRouting:
@@ -169,7 +169,7 @@ class TestTablesList:
 
 class TestTablesDelete:
     def test_batch_delete_returns_200(self, client, table_service):
-        table_service.delete.return_value = ComponentDeleteResponse(num_deleted=2)
+        table_service.delete_many.return_value = ComponentDeleteResponse(num_deleted=2)
         assert client.delete("/api/v1/tables").json() == {
             "num_deleted": 2,
             "num_skipped": 0,
@@ -179,9 +179,9 @@ class TestTablesDelete:
 
 class TestTablesInsert:
     def test_post_forwards_to_service(self, client, table_service):
-        table_service.insert.return_value = {"total": 0, "succeeded": [], "failed": []}
+        table_service.insert_many.return_value = {"total": 0, "succeeded": [], "failed": []}
         client.post("/api/v1/tables", json=[])
-        table_service.insert.assert_awaited_once()
+        table_service.insert_many.assert_awaited_once()
 
 
 class TestTablesByIdRouting:
@@ -222,9 +222,9 @@ class TestAttachmentsRouterWiring:
         attachment_service.delete_one.assert_awaited_once()
 
     def test_batch_delete_calls_attachment_service(self, client, attachment_service):
-        attachment_service.delete.return_value = ComponentDeleteResponse(num_deleted=0)
+        attachment_service.delete_many.return_value = ComponentDeleteResponse(num_deleted=0)
         client.delete("/api/v1/attachments")
-        attachment_service.delete.assert_awaited_once()
+        attachment_service.delete_many.assert_awaited_once()
 
 
 # ===========================================================================
@@ -300,12 +300,12 @@ class TestComponentMutationsRequireAuth:
     def test_structures_post_anon_401(self, client, structure_service):
         r = client.post("/api/v1/structures", json=[], headers=FORCE_ANON_HEADERS)
         assert r.status_code == 401
-        structure_service.insert.assert_not_called()
+        structure_service.insert_many.assert_not_called()
 
     def test_structures_delete_anon_401(self, client, structure_service):
         r = client.delete("/api/v1/structures", headers=FORCE_ANON_HEADERS)
         assert r.status_code == 401
-        structure_service.delete.assert_not_called()
+        structure_service.delete_many.assert_not_called()
 
     def test_structure_delete_by_id_anon_401(self, client, structure_service):
         r = client.delete(f"/api/v1/structures/{PydanticObjectId()}", headers=FORCE_ANON_HEADERS)
@@ -320,7 +320,7 @@ class TestComponentMutationsRequireAuth:
     def test_tables_delete_anon_401(self, client, table_service):
         r = client.delete("/api/v1/tables", headers=FORCE_ANON_HEADERS)
         assert r.status_code == 401
-        table_service.delete.assert_not_called()
+        table_service.delete_many.assert_not_called()
 
     def test_attachment_delete_by_id_anon_401(self, client, attachment_service):
         r = client.delete(f"/api/v1/attachments/{PydanticObjectId()}", headers=FORCE_ANON_HEADERS)
@@ -350,16 +350,16 @@ class TestComponentInsertRequiresWriter:
     def test_structures_post_non_writer_403(self, client, structure_service):
         r = client.post("/api/v1/structures", json=[], headers=NON_WRITER_HEADERS)
         assert r.status_code == 403
-        structure_service.insert.assert_not_called()
+        structure_service.insert_many.assert_not_called()
 
     def test_tables_post_non_writer_403(self, client, table_service):
         r = client.post("/api/v1/tables", json=[], headers=NON_WRITER_HEADERS)
         assert r.status_code == 403
-        table_service.insert.assert_not_called()
+        table_service.insert_many.assert_not_called()
 
     def test_structures_post_writer_allowed(self, client, structure_service):
         # The default AUTHED_HEADERS identity carries the mp-team group -> writer.
-        structure_service.insert.return_value = {"total": 0, "succeeded": [], "failed": []}
+        structure_service.insert_many.return_value = {"total": 0, "succeeded": [], "failed": []}
         r = client.post("/api/v1/structures", json=[])
         assert r.status_code == 200
-        structure_service.insert.assert_awaited_once()
+        structure_service.insert_many.assert_awaited_once()

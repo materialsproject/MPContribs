@@ -26,7 +26,7 @@ async def get_initiatives(
 ):
     """Return paginated initiatives matching a filter, scoped to the caller."""
     selected = InitiativeOut.parse_fields(fields)
-    return await repo.get_initiatives(pagination=pagination, filter=filter, fields=selected)
+    return await repo.get_many(pagination=pagination, filter=filter, fields=selected)
 
 
 @router.get("/{slug}")
@@ -52,7 +52,7 @@ async def insert_initiative(
     Starts unapproved and private. Rejected with 409 if the caller already owns the maximum number
     of unapproved initiatives, or if the slug is already taken.
     """
-    return await repo.insert_initiative(data=initiative)
+    return await repo.insert_one(data=initiative)
 
 
 @router.patch("/{slug}", response_model=InitiativeOut, dependencies=[Depends(require_user)])

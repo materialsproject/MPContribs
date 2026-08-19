@@ -58,7 +58,7 @@ async def get_contributions(
     fields: FieldSelector = None,
 ):
     selected = ContributionOut.parse_fields(fields)
-    return await repo.get_contributions(pagination=pagination, filter=filter, fields=selected)
+    return await repo.get_many(pagination=pagination, filter=filter, fields=selected)
 
 
 @router.delete("", response_model=DeleteResponse, dependencies=[Depends(require_user)])
@@ -66,10 +66,7 @@ async def delete_contributions(
     repo: ContributionDep,
     filter: ContributionFilter = FilterDepends(ContributionFilter),
 ) -> DeleteResponse:
-    # The repository returns a raw pymongo DeleteResult (or None when the filter matched nothing);
-    # convert it to the typed DeleteResponse so the endpoint has a stable, serializable contract.
-    result = await repo.delete_contributions(filter=filter)
-    return DeleteResponse.from_delete_result(result) if result is not None else DeleteResponse(num_deleted=0)
+    return await repo.delete_many(filter=filter)
 
 
 @router.patch("", dependencies=[Depends(require_user)])
@@ -87,7 +84,7 @@ async def patch_contributions(
     ``data`` deep-merges into each row's stored ``data`` by default
     Pass ``?replace_data=true`` to overwrite the whole ``data`` dict instead.
     """
-    return await service.bulk_update(filter=filter, update=body, replace_data=replace_data)
+    return await service.patch_many(filter=filter, update=body, replace_data=replace_data)
 
 
 # TODO: Might want to take contributions in from request body and run model_validate_json on it (much faster)
@@ -97,7 +94,7 @@ async def insert_contributions(
     contributions: list[ContributionIn],
 ):
     _enforce_bulk_limit(contributions)
-    return await service.insert_contributions(contributions=contributions)
+    return await service.insert_many(contributions=contributions)
 
 
 @router.put("", response_model=BulkWriteSummary[Contribution], dependencies=[Depends(require_user)])
@@ -106,7 +103,7 @@ async def upsert_contributions(
     contributions: list[ContributionIn],
 ):
     _enforce_bulk_limit(contributions)
-    return await service.upsert_contributions(contributions=contributions)
+    return await service.upsert_many(contributions=contributions)
 
 
 @router.get("/download/{short_mime}")
@@ -158,13 +155,13 @@ async def get_one(
 @router.put("/{id}", dependencies=[Depends(require_user)])
 async def upsert_one(service: ContributionServiceDep, id: str, contribution: ContributionIn):
     # The by-id upsert resolves the server-owned ``unique_value`` and enforces the unapproved quota
-    # (see ``ContributionService.upsert_contribution_by_id``), which the generic identity upsert does not.
-    return await service.upsert_contribution_by_id(id, contribution)
+    # (see ``ContributionService.upsert_one``), which the generic identity upsert does not.
+    return await service.upsert_one({"id": id}, contribution)
 
 
 @router.patch("/{id}", dependencies=[Depends(require_user)])
 async def patch_one(service: ContributionServiceDep, id: str, update: ContributionPatch, replace_data: bool = False):
     # The by-id patch re-resolves ``unique_value`` and validates the identifier hierarchy against the
-    # merged state (see ``ContributionService.patch_contribution_by_id``); ``?replace_data=true``
+    # merged state (see ``ContributionService.patch_one``); ``?replace_data=true``
     # overwrites the whole ``data`` dict instead of deep-merging.
-    return await service.patch_contribution_by_id(id, update=update, replace_data=replace_data)
+    return await service.patch_one({"id": id}, update=update, replace_data=replace_data)

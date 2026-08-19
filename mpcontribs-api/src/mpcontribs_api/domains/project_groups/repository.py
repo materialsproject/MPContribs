@@ -18,7 +18,6 @@ from mpcontribs_api.domains.project_groups.models import (
     ProjectGroupPatch,
 )
 from mpcontribs_api.exceptions import NotFoundError, PermissionError
-from mpcontribs_api.pagination import CursorParams, Page
 
 
 class ProjectGroupRepository(
@@ -45,24 +44,6 @@ class ProjectGroupRepository(
                 ors.append({"_id": {"$in": sorted(granted)}})
         return {"$or": ors}
 
-    async def get_project_groups(
-        self,
-        pagination: CursorParams,
-        filter: ProjectGroupFilter,
-        fields: frozenset[str] | None,
-    ) -> Page[ProjectGroupOut]:
-        """Return paginated project groups matching a filter.
-
-        Args:
-            pagination (CursorParams): arguments for cursor-based pagination
-            filter (ProjectGroupFilter): optional filters to select ProjectGroups
-            fields (frozenset[str] | None): the fields to return to a user
-        """
-        return await self.get_many(pagination=pagination, filter=filter, fields=fields)
-
-    async def insert_project_group(self, project_group: ProjectGroupIn) -> ProjectGroup:
-        return await self.insert_one(in_resource=project_group)
-
     async def delete_one(
         self, identifiers: dict[str, Any], session: AsyncClientSession | None = None
     ) -> DeleteResponse:
@@ -81,15 +62,18 @@ class ProjectGroupRepository(
             raise PermissionError(required_role="owner-or-admin")
         return await super().delete_one(identifiers, session=session)
 
-    async def delete_project_groups(self, filter: ProjectGroupFilter) -> DeleteResponse:
+    async def delete_many(  # pyright: ignore[reportIncompatibleMethodOverride]
+        self, filter: ProjectGroupFilter, session: AsyncClientSession | None = None
+    ) -> DeleteResponse:
         """Bulk-delete project groups matching ``filter``, restricted to the caller's own.
 
         A non-admin's bulk delete is scoped to their own groups (overriding any ``owner`` in the
-        filter) so it can never remove public groups belonging to others. See ``delete``.
+        filter) so it can never remove public groups belonging to others. The write is delegated to
+        the base :meth:`MongoDbRepository.delete_many`.
         """
         if not self._user.is_admin:
             filter.owner = self._user.username
-        return await self.delete(filter)
+        return await super().delete_many(filter, session=session)
 
     async def add_project_refs(
         self,

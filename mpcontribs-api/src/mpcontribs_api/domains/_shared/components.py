@@ -36,7 +36,7 @@ class MongoDbComponentsRepository[
         ).to_list()
         return {doc.md5: doc for doc in existing_docs}
 
-    async def insert_components(
+    async def insert_many(
         self,
         components: list[TIn],
         session: AsyncClientSession | None = None,
@@ -79,21 +79,18 @@ class MongoDbComponentsRepository[
         resolved = existing_by_md5 | new_by_md5
         return [resolved[md5] for md5 in unique_md5s]
 
-    async def insert_component(self, component: TIn, *, session: AsyncClientSession | None = None) -> TDoc:
-        """Insert a single component.
+    async def insert_one(self, component: TIn, *, session: AsyncClientSession | None = None) -> TDoc:  # pyright: ignore[reportIncompatibleMethodOverride]
+        """Insert a single component, deduplicated by content hash.
 
         Args:
-            component (TIn): the table to insert
+            component (TIn): the component to insert
 
         Returns:
             TDoc: the component actually in the database
-
-        Raises:
-            AppError: If insert_one returns None, raises
         """
-        return (await self.insert_components(components=[component], session=session))[0]
+        return (await self.insert_many(components=[component], session=session))[0]
 
-    async def delete_components(
+    async def delete_many(
         self,
         filter: TFilter,
         session: AsyncClientSession | None = None,

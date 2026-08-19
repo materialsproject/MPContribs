@@ -38,7 +38,7 @@ def _collaborator(slug: str, username: str = BOB_EMAIL) -> User:
 
 
 async def _insert_project(pid: str, owner: str = ALICE_EMAIL) -> Project:
-    return await MongoDbProjectRepository(ADMIN).insert_project(
+    return await MongoDbProjectRepository(ADMIN).insert_one(
         pid,
         ProjectIn(
             title=pid[:30],
@@ -50,7 +50,7 @@ async def _insert_project(pid: str, owner: str = ALICE_EMAIL) -> Project:
 
 
 async def _insert_initiative(slug: str, owner_user: User = ALICE):
-    return await InitiativeRepository(owner_user).insert_initiative(InitiativeIn(slug=slug, name="Init"))
+    return await InitiativeRepository(owner_user).insert_one(InitiativeIn(slug=slug, name="Init"))
 
 
 def _assigned_id(project: Project):

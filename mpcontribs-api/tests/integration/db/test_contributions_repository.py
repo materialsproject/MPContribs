@@ -103,7 +103,7 @@ def _identity(
 
 
 # ---------------------------------------------------------------------------
-# insert_contribution (single)
+# insert_one (single)
 # ---------------------------------------------------------------------------
 
 
@@ -129,7 +129,7 @@ class TestInsertContribution:
     async def test_insert_via_repo(self, db):
         ci = _contrib_in(identifier="mp-4001")
         doc = Contribution.from_input_model(ci)
-        result = await _repo().insert_contribution(doc)
+        result = await _repo().insert_one(doc)
         found = await Contribution.find_one(Contribution.id == result.id)
         assert found is not None
         assert found.material_id == "mp-4001"
@@ -145,7 +145,7 @@ class TestNullableIdentifierHierarchy:
     async def test_chemical_system_only_persists_with_null_identifiers(self, db):
         ci = _contrib_in(project="chem-only", material_id=None, formula=None)
         doc = Contribution.from_input_model(ci)
-        result = await _repo().insert_contribution(doc)
+        result = await _repo().insert_one(doc)
         found = await Contribution.find_one(Contribution.id == result.id)
         assert found is not None
         assert found.chemical_system_id == "Fe-O"
@@ -155,7 +155,7 @@ class TestNullableIdentifierHierarchy:
 
     async def test_existing_identities_matches_null_identity(self, db):
         ci = _contrib_in(project="chem-only", material_id=None, formula=None)
-        await _repo().insert_contribution(Contribution.from_input_model(ci))
+        await _repo().insert_one(Contribution.from_input_model(ci))
         key = ci.identity()
         found = await _repo().existing_identities([key])
         assert key in found
@@ -164,12 +164,12 @@ class TestNullableIdentifierHierarchy:
         from pymongo.errors import DuplicateKeyError
 
         ci = _contrib_in(project="chem-only", material_id=None, formula=None)
-        await _repo().insert_contribution(Contribution.from_input_model(ci))
+        await _repo().insert_one(Contribution.from_input_model(ci))
         dup = _contrib_in(project="chem-only", material_id=None, formula=None)
         # Same (project, chemical_system_id) with null material_id/formula/unique_value is one
         # unique key — the second insert must be rejected.
         with pytest.raises(DuplicateKeyError):
-            await _repo().insert_contribution(Contribution.from_input_model(dup))
+            await _repo().insert_one(Contribution.from_input_model(dup))
 
 
 # ---------------------------------------------------------------------------
@@ -198,7 +198,7 @@ class TestInsertManyContributions:
 
 
 # ---------------------------------------------------------------------------
-# get_contributions (scoped list + pagination + projection)
+# get_many (scoped list + pagination + projection)
 # ---------------------------------------------------------------------------
 
 
@@ -206,7 +206,7 @@ class TestGetContributions:
     async def test_admin_sees_private_and_public(self, db):
         p = await _insert(identifier="ga-pub", is_public=True)
         pr = await _insert(identifier="ga-priv", is_public=False)
-        page = await _repo(ADMIN).get_contributions(
+        page = await _repo(ADMIN).get_many(
             pagination=CursorParams(), filter=_noop_filter(), fields=None
         )
         ids = {str(c.id) for c in page.items}
@@ -216,7 +216,7 @@ class TestGetContributions:
     async def test_anonymous_sees_only_public(self, db):
         pub = await _insert(identifier="anon-pub", is_public=True)
         priv = await _insert(identifier="anon-priv", is_public=False)
-        page = await _repo(ANON).get_contributions(
+        page = await _repo(ANON).get_many(
             pagination=CursorParams(), filter=_noop_filter(), fields=None
         )
         ids = {str(c.id) for c in page.items}
@@ -226,7 +226,7 @@ class TestGetContributions:
     async def test_authenticated_non_admin_sees_public(self, db):
         pub = await _insert(identifier="alice-pub", is_public=True)
         priv = await _insert(identifier="alice-priv", is_public=False)
-        page = await _repo(ALICE).get_contributions(
+        page = await _repo(ALICE).get_many(
             pagination=CursorParams(), filter=_noop_filter(), fields=None
         )
         ids = {str(c.id) for c in page.items}
@@ -235,7 +235,7 @@ class TestGetContributions:
 
     async def test_response_is_page_shape(self, db):
         await _insert(identifier="pg-shape")
-        page = await _repo(ADMIN).get_contributions(
+        page = await _repo(ADMIN).get_many(
             pagination=CursorParams(), filter=_noop_filter(), fields=None
         )
         assert hasattr(page, "items")
@@ -244,7 +244,7 @@ class TestGetContributions:
     async def test_limit_respected(self, db):
         for i in range(5):
             await _insert(identifier=f"lim-{i:02d}", is_public=True)
-        page = await _repo(ADMIN).get_contributions(
+        page = await _repo(ADMIN).get_many(
             pagination=CursorParams(limit=3), filter=_noop_filter(), fields=None
         )
         assert len(page.items) <= 3
@@ -252,11 +252,11 @@ class TestGetContributions:
     async def test_cursor_paginates_forward(self, db):
         for i in range(4):
             await _insert(identifier=f"cur-{i:02d}", is_public=True)
-        p1 = await _repo(ADMIN).get_contributions(
+        p1 = await _repo(ADMIN).get_many(
             pagination=CursorParams(limit=2), filter=_noop_filter(), fields=None
         )
         assert p1.next_cursor is not None
-        p2 = await _repo(ADMIN).get_contributions(
+        p2 = await _repo(ADMIN).get_many(
             pagination=CursorParams(limit=2, cursor=p1.next_cursor), filter=_noop_filter(), fields=None
         )
         ids1 = {str(c.id) for c in p1.items}
@@ -269,7 +269,7 @@ class TestGetContributions:
         identifiers: set[str] = set()
         cursor = None
         while True:
-            page = await _repo(ADMIN).get_contributions(
+            page = await _repo(ADMIN).get_many(
                 pagination=CursorParams(limit=2, cursor=cursor), filter=_noop_filter(), fields=None
             )
             identifiers.update(c.material_id for c in page.items if c.material_id)
@@ -281,7 +281,7 @@ class TestGetContributions:
     async def test_next_cursor_none_on_last_page(self, db):
         for i in range(2):
             await _insert(identifier=f"last-pg-{i:02d}", is_public=True)
-        page = await _repo(ADMIN).get_contributions(
+        page = await _repo(ADMIN).get_many(
             pagination=CursorParams(limit=100), filter=_noop_filter(), fields=None
         )
         assert page.next_cursor is None
@@ -289,7 +289,7 @@ class TestGetContributions:
     async def test_projection_returns_only_requested_fields(self, db):
         await _insert(identifier="proj-fields", is_public=True)
         fields = ContributionOut.parse_fields(["formula"])
-        page = await _repo(ADMIN).get_contributions(
+        page = await _repo(ADMIN).get_many(
             pagination=CursorParams(), filter=_noop_filter(), fields=fields
         )
         assert len(page.items) >= 1
@@ -301,7 +301,7 @@ class TestGetContributions:
         await _insert(identifier="flt-fe", formula="Fe2O3", is_public=True)
         await _insert(identifier="flt-li", formula="Li2O", is_public=True)
         f = ContributionFilter(formula="Fe2O3")
-        page = await _repo(ADMIN).get_contributions(
+        page = await _repo(ADMIN).get_many(
             pagination=CursorParams(), filter=f, fields=None
         )
         formulas = {c.formula for c in page.items}
@@ -311,7 +311,7 @@ class TestGetContributions:
         await _insert(identifier="ilike-abc", is_public=True)
         await _insert(identifier="ilike-xyz", is_public=True)
         f = ContributionFilter(material_id__ilike="ilike-a")
-        page = await _repo(ADMIN).get_contributions(
+        page = await _repo(ADMIN).get_many(
             pagination=CursorParams(), filter=f, fields=None
         )
         identifiers = {c.material_id for c in page.items}
@@ -322,7 +322,7 @@ class TestGetContributions:
         await _insert(identifier="pub-only-pub", is_public=True)
         await _insert(identifier="pub-only-priv", is_public=False)
         f = ContributionFilter(is_public=True)
-        page = await _repo(ADMIN).get_contributions(
+        page = await _repo(ADMIN).get_many(
             pagination=CursorParams(), filter=f, fields=None
         )
         assert all(c.is_public is True for c in page.items)
@@ -497,7 +497,7 @@ class TestDeleteContributionById:
 
 
 # ---------------------------------------------------------------------------
-# delete_contributions (bulk with filter)
+# delete_many (bulk with filter)
 # ---------------------------------------------------------------------------
 
 
@@ -505,7 +505,7 @@ class TestDeleteContributions:
     async def test_bulk_delete_all(self, db):
         for i in range(3):
             await _insert(identifier=f"bdel-{i:02d}")
-        await _repo(ADMIN).delete_contributions(_noop_filter())
+        await _repo(ADMIN).delete_many(_noop_filter())
         remaining = await Contribution.find().to_list()
         assert len(remaining) == 0
 
@@ -513,18 +513,18 @@ class TestDeleteContributions:
         await _insert(identifier="bdel-keep", formula="Li2O")
         await _insert(identifier="bdel-drop", formula="Fe2O3")
         f = ContributionFilter(formula="Fe2O3")
-        await _repo(ADMIN).delete_contributions(f)
+        await _repo(ADMIN).delete_many(f)
         remaining = await Contribution.find().to_list()
         assert len(remaining) == 1
         assert remaining[0].material_id == "bdel-keep"
 
     async def test_bulk_delete_empty_collection_is_silent(self, db):
-        await _repo(ADMIN).delete_contributions(_noop_filter())
+        await _repo(ADMIN).delete_many(_noop_filter())
 
     async def test_scope_limits_what_anon_can_delete(self, db):
         await _insert(identifier="bdel-scope-pub", is_public=True)
         await _insert(identifier="bdel-scope-priv", is_public=False)
-        await _repo(ANON).delete_contributions(_noop_filter())
+        await _repo(ANON).delete_many(_noop_filter())
         # Anonymous scope: only public visible, so only the public doc is deleted.
         remaining = await Contribution.find().to_list()
         identifiers = {d.material_id for d in remaining}

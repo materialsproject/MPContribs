@@ -54,17 +54,17 @@ class TestInsertProjectGroupResponse:
         return SimpleNamespace(**attrs)
 
     def test_returns_201(self, client, group_service):
-        group_service.insert.return_value = self._inserted()
+        group_service.insert_one.return_value = self._inserted()
         r = client.post("/api/v1/project_groups", json=self._body(), headers=AUTHED_HEADERS)
         assert r.status_code == 201
 
     def test_response_includes_generated_id(self, client, group_service):
-        group_service.insert.return_value = self._inserted()
+        group_service.insert_one.return_value = self._inserted()
         body = client.post("/api/v1/project_groups", json=self._body(), headers=AUTHED_HEADERS).json()
         assert body["id"] == SAMPLE_OID
 
     def test_response_echoes_full_document(self, client, group_service):
-        group_service.insert.return_value = self._inserted(name="echo-group", is_public=True)
+        group_service.insert_one.return_value = self._inserted(name="echo-group", is_public=True)
         body = client.post(
             "/api/v1/project_groups",
             json=self._body(name="echo-group", is_public=True),
