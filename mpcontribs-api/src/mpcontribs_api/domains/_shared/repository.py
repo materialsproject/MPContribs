@@ -251,14 +251,21 @@ class MongoDbRepository[
         update: TPatch,
         not_found: NotFoundError,
         session: AsyncClientSession | None = None,
+        extra_set: dict[str, Any] | None = None,
     ) -> TDoc:
         """Apply a partial update to the single scoped document matching ``match``.
 
         ``match`` is any beanie filter that keys at most one in-scope document. An empty patch
         is a no-op that still returns the existing document; a missing target raises ``not_found``.
+
+        ``extra_set`` carries server-resolved fields that the patch model cannot express — e.g. a
+        slug that a service has already resolved to a ``DBRef`` link. Its keys are merged into the
+        ``$set`` after the patch dump, so a non-empty ``extra_set`` also makes the update non-empty.
         """
         # Only retain set fields (patch)
         update_data = self._patch_update_fields(update)
+        if extra_set:
+            update_data |= extra_set
         existing = await self.document_model.find_one(self._scope, match, session=session)
         # If update is empty, return the model anyways (consistent behavior)
         if not update_data:
@@ -292,6 +299,7 @@ class MongoDbRepository[
         identifiers: dict[str, Any],
         update: TPatch,
         session: AsyncClientSession | None = None,
+        extra_set: dict[str, Any] | None = None,
     ) -> TDoc:
         """Partially update the single scoped document matching ``identifiers``.
 
@@ -299,10 +307,12 @@ class MongoDbRepository[
             identifiers (dict[str, Any]): identifier field values keyed by ``identifier_fields``
             update (TPatch): the partial update to apply; unset fields are dropped
             session (AsyncClientSession | None): optional client session for transactions
+            extra_set (dict[str, Any] | None): server-resolved fields to merge into the ``$set``
+                alongside the patch — for values the patch model cannot carry (e.g. a resolved link)
         """
         query = self._identifier_query(identifiers)
         not_found = NotFoundError(f"{self.document_model.__name__} not found", identifiers=identifiers)
-        return await self._patch_matching(query, update, not_found, session=session)
+        return await self._patch_matching(query, update, not_found, session=session, extra_set=extra_set)
 
     def _hash_payload(self, payload: dict[str, Any], *, separators: tuple[str, str] = (",", ":")) -> str:
         canonical = json.dumps(
