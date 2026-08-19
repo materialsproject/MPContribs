@@ -5,9 +5,10 @@ from bson import DBRef
 from mpcontribs_api.config import get_settings
 from mpcontribs_api.domains._shared.models import DeleteResponse
 from mpcontribs_api.domains.initiatives.repository import InitiativeRepository
-from mpcontribs_api.domains.projects.models import Project, ProjectIn, ProjectOut, ProjectPatch
+from mpcontribs_api.domains.projects.models import Project, ProjectFilter, ProjectIn, ProjectOut, ProjectPatch
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
 from mpcontribs_api.exceptions import ConflictError, NotFoundError, PermissionError
+from mpcontribs_api.pagination import CursorParams, Page
 
 
 class ProjectService:
@@ -43,6 +44,12 @@ class ProjectService:
 
         # `initiative` is server derived, so ProjectPatch can't handle it (expects str), so hand it in extra_set
         return await self._projects.patch_one(identifiers, ProjectPatch(**data), extra_set={"initiative": ref})
+
+    async def get_many(
+        self, filter: ProjectFilter, pagination: CursorParams, fields: frozenset[str] | None
+    ) -> Page[ProjectOut]:
+        """Return a page of scoped projects matching ``filter``."""
+        return await self._projects.get_many(filter=filter, pagination=pagination, fields=fields)
 
     async def get_one(self, identifiers: dict[str, Any], fields: frozenset[str] | None) -> Project | ProjectOut | None:
         """Return the single scoped project matching ``identifiers`` (``{"id": ...}``)."""
