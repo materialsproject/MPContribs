@@ -266,14 +266,11 @@ PolarsFrame = Annotated[
 def _nfkc_casefold(value: str) -> str:
     """NFKC + casefold: the case-insensitive, compatibility-folded form used for search/matching.
 
-    This is Unicode's ``NFKC_Casefold`` transform: ``casefold(NFKC(casefold(NFKC(x))))`` with
-    surrounding whitespace stripped by :func:`nfkc_normalize` first. The extra NFKC+casefold round is
-    what makes the result *idempotent* — a value re-normalizes to itself on read. A single
-    NFKC-then-casefold is not stable: casefold can expand a character (``ß`` -> ``ss``) sitting before
-    a combining mark, leaving an NFKC-unstable sequence that re-composes (``s`` + circumflex -> ``ŝ``)
-    on a second fold; and NFKC can compose a decomposed form (``t`` + diaeresis -> ``ẗ``) that then
-    casefolds back to the decomposed form. Folding twice reaches the fixed point either way, so the
-    output is both NFKC-stable and casefold-stable.
+    An idempotent nfkc + casefold operation. A single NFKC-then-casefold is not stable: casefold can
+    expand a character (``ß`` -> ``ss``) sitting before a combining mark, leaving an NFKC-unstable
+    sequence that re-composes (``s`` + circumflex -> ``ŝ``) on a second fold; and NFKC can compose a
+    decomposed form (``t`` + diaeresis -> ``ẗ``) that then casefolds back to the decomposed form.
+    Folding twice reaches the fixed point either way, so the output is both NFKC-stable and casefold-stable.
     """
     return unicodedata.normalize("NFKC", nfkc_normalize(value).casefold()).casefold()
 
