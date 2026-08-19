@@ -51,11 +51,6 @@ class Stats(BaseModel):
     attachments: int = 0
     size: float = 0
 
-    @classmethod
-    def empty(cls) -> Stats:
-        """A zeroed rollup for a project with no contributions yet."""
-        return cls(columns=0, contributions=0, tables=0, structures=0, attachments=0, size=0.0)
-
 
 class Reference(BaseModel):
     # TODO: Labels have some restrictions, not sure exactly what yet
@@ -103,7 +98,7 @@ class Project(ProjectBase, BaseDocumentWithInput[ShortStr]):
     """Document model of what is actually stored."""
 
     # Server-owned: derived from the project's contributions
-    stats: Stats = Field(default_factory=Stats.empty)
+    stats: Stats = Field(default_factory=Stats)
     columns: list[Column] = Field(default_factory=list)
 
     @classmethod

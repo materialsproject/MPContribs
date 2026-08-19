@@ -584,7 +584,7 @@ class TestServerOwnedFields:
     async def test_upsert_new_starts_with_empty_stats(self, db):
         await _repo(ALICE).upsert_one({"id": "srv-new-empty"}, _project_in("srv-new-empty"))
         found = await Project.find_one(Project.id == "srv-new-empty")
-        assert found.stats == Stats.empty()
+        assert found.stats == Stats()
         assert found.columns == []
 
     async def test_non_admin_cannot_approve_new_project_via_upsert(self, db):

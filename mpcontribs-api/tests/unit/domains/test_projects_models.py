@@ -288,7 +288,7 @@ class TestProjectFromInputModel:
     def test_from_input_model_starts_with_empty_server_owned_fields(self):
         # stats/columns aren't on the input model and default empty on the document.
         project = Project.from_input_model(self._make_input(), id="test-proj")
-        assert project.stats == Stats.empty()
+        assert project.stats == Stats()
         assert project.columns == []
 
 
