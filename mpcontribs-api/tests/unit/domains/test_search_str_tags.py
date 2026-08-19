@@ -108,19 +108,15 @@ def test_searchstr_normalized_across_models(extract):
     assert extract(_MESSY_TAG) == ["file"]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="_nfkc_casefold is not idempotent when casefold expands a char sitting before a combining mark",
-)
-def test_searchstr_casefold_expansion_breaks_idempotency():
-    """Documents a real edge: a casefold-expanding char (ß -> ss) followed by a combining mark.
+def test_searchstr_casefold_expansion_is_idempotent():
+    """Covers the tricky edge: a casefold-expanding char (ß -> ss) followed by a combining mark.
 
     NFKC runs before casefold, so ``ß`` + combining circumflex stays decomposed through the first
-    fold (-> ``ss`` + circumflex). Re-folding then NFKC-composes ``s`` + circumflex into ``ŝ``, so
-    the value is not stable under a second pass. Because ``ProjectOut.tags`` is also
-    ``list[SearchStr]``, a stored tag re-normalizes on read and can round-trip to a different
-    string. xfail(strict) so this flips to a failure the moment the normalizer is made idempotent
-    (e.g. a trailing NFKC pass after casefold).
+    fold (-> ``ss`` + circumflex). A naive fold would stop there and leave an NFKC-unstable value:
+    re-folding NFKC-composes ``s`` + circumflex into ``ŝ``, so it would round-trip to a different
+    string. ``_nfkc_casefold`` runs a trailing NFKC pass after casefold to collapse this now, so the
+    value is stable under a second pass. This matters because ``ProjectOut.tags`` is also
+    ``list[SearchStr]`` and a stored tag re-normalizes on read.
     """
     once = _search.validate_python("ß̂")  # eszett + COMBINING CIRCUMFLEX ACCENT
     assert _search.validate_python(once) == once
