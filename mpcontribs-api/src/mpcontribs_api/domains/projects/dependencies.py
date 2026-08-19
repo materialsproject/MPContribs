@@ -3,8 +3,8 @@ from typing import Annotated
 from fastapi import Depends
 
 from mpcontribs_api.dependencies import UserDep
-from mpcontribs_api.domains.initiatives.repository import InitiativeRepository
 from mpcontribs_api.domains.consumers.dependencies import ConsumerLimitsDep
+from mpcontribs_api.domains.initiatives.repository import InitiativeRepository
 from mpcontribs_api.domains.projects.repository import (
     MongoDbProjectRepository,
 )

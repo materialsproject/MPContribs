@@ -117,9 +117,7 @@ class ContributionService:
 
     async def upsert_one(self, identifiers: dict[str, Any], contribution: ContributionIn) -> Contribution:
         """Upsert the single scoped contribution matching ``identifiers``. See repository ``upsert_one``."""
-        return await self._contributions.upsert_one(
-            self._contributions.coerce_identifiers(identifiers), contribution
-        )
+        return await self._contributions.upsert_one(self._contributions.coerce_identifiers(identifiers), contribution)
 
     async def delete_one(self, identifiers: dict[str, Any]) -> BulkDeleteSummary:
         """Delete a single contribution and its child components, matching ``identifiers``.

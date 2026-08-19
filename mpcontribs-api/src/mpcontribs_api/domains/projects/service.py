@@ -41,7 +41,8 @@ class ProjectService:
         # Resolve the target link (and run the both-rights + limit checks) before touching anything.
         ref = await self._resolve_initiative_assignment(project_id=id, slug=slug)
 
-        return await self._projects.patch_project_with_initiative(id=id, update=ProjectPatch(**data), ref=ref)
+        # `initiative` is server derived, so ProjectPatch can't handle it (expects str), so hand it in extra_set
+        return await self._projects.patch_one(identifiers, ProjectPatch(**data), extra_set={"initiative": ref})
 
     async def get_one(self, identifiers: dict[str, Any], fields: frozenset[str] | None) -> Project | ProjectOut | None:
         """Return the single scoped project matching ``identifiers`` (``{"id": ...}``)."""

@@ -1,8 +1,6 @@
 from typing import Any
 
-from beanie import PydanticObjectId, UpdateResponse
-from beanie.operators import Set
-from bson import DBRef
+from beanie import PydanticObjectId
 from pymongo import UpdateOne
 from pymongo.asynchronous.client_session import AsyncClientSession
 
@@ -146,7 +144,11 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
         return document
 
     async def patch_one(  # pyright: ignore[reportIncompatibleMethodOverride]
-        self, identifiers: dict[str, Any], update: ProjectPatch, session: AsyncClientSession | None = None
+        self,
+        identifiers: dict[str, Any],
+        update: ProjectPatch,
+        session: AsyncClientSession | None = None,
+        extra_set: dict[str, Any] | None = None,
     ) -> Project:
         """Partially update a scoped project by id, enforcing approval rules.
 
@@ -154,32 +156,12 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
         - Resulting state must satisfy is_public <-> is_approved condition
 
         The ``initiative`` field is split out upstream in ``ProjectService.patch_one``, so it never
-        reaches this method; an assignment that also edits plain fields goes through
-        :meth:`patch_project_with_initiative` instead.
+        reaches this method as a bare slug; an assignment that also edits plain fields arrives with
+        the resolved link passed through ``extra_set`` (``{"initiative": <DBRef | None>}``) and is
+        written together with the plain fields in the single ``$set``.
         """
         await self._enforce_patch_rules(identifiers["id"], update)
-        return await super().patch_one(identifiers, update, session=session)
-
-    async def patch_project_with_initiative(self, id: str, update: ProjectPatch, ref: DBRef | None) -> Project:
-        """Atomically apply a partial project update together with its canonical initiative link.
-
-        Args:
-            id (str): the id of the project to update
-            update (ProjectPatch): the partial update to apply; unset fields are dropped. The
-                ``initiative`` slug must already be stripped — the resolved ``ref`` carries the link.
-            ref (DBRef | None): the initiative reference to assign, or None to unassign
-        """
-        await self._enforce_patch_rules(id, update)
-        data = update.model_dump(exclude_unset=True)
-        data["initiative"] = ref
-        query = self.document_model.find_one(self._scope, self._identifier_query({"id": id})).update(
-            Set(data),
-            response_type=UpdateResponse.NEW_DOCUMENT,
-        )
-        updated = await query  # pyright: ignore[reportGeneralTypeIssues] # beanie UpdateQuery is awaitable
-        if updated is None:
-            raise NotFoundError(f"{self.document_model.__name__} not found", id=id)
-        return updated
+        return await super().patch_one(identifiers, update, session=session, extra_set=extra_set)
 
     async def _enforce_patch_rules(self, id: str, update: ProjectPatch) -> None:
         """Enforce project patch invariants against the scoped target.
