@@ -28,7 +28,7 @@ def _make_service(group: ProjectGroupOut | None, *, visible_projects: set[str] |
     visible = visible_projects or set()
     groups = AsyncMock()
     projects = AsyncMock()
-    # insert() forces owner to the caller for non-admins; give the stub an admin user so these
+    #.insert_one() forces owner to the caller for non-admins; give the stub an admin user so these
     # payload-identity assertions exercise the pass-through path (owner-forcing is covered end-to-end
     # in the db service test).
     groups._user = User(username="google:admin@example.com", groups=frozenset({"admin"}))
@@ -66,35 +66,35 @@ def _group(project_ids: list[str] | None = None) -> ProjectGroupOut:
 
 
 # ---------------------------------------------------------------------------
-# insert
+#.insert_one
 # ---------------------------------------------------------------------------
 
 
-class TestInsert:
+class TestInsert_one:
     def _payload(self, projects: list[str]) -> ProjectGroupIn:
         return ProjectGroupIn(name="g", owner="google:a@b.com", description="d", projects=projects)
 
-    async def test_all_projects_valid_inserts(self):
+    async def test_all_projects_valid_insert_ones(self):
         service, groups, _ = _make_service(None, visible_projects={"mp-1", "mp-2"})
-        groups.insert_project_group.return_value = "stored"
+        groups.insert_one.return_value = "stored"
         payload = self._payload(["mp-1", "mp-2"])
-        result = await service.insert(payload)
+        result = await service.insert_one(payload)
         assert result == "stored"
-        groups.insert_project_group.assert_awaited_once_with(payload)
+        groups.insert_one.assert_awaited_once_with(in_resource=payload)
 
-    async def test_missing_project_raises_not_found_and_skips_insert(self):
+    async def test_missing_project_raises_not_found_and_skips_insert_one(self):
         service, groups, _ = _make_service(None, visible_projects={"mp-1"})
         with pytest.raises(NotFoundError) as exc:
-            await service.insert(self._payload(["mp-1", "ghost"]))
+            await service.insert_one(self._payload(["mp-1", "ghost"]))
         assert exc.value.context["ids"] == ["ghost"]
-        groups.insert_project_group.assert_not_awaited()
+        groups.insert_one.assert_not_awaited()
 
-    async def test_empty_projects_inserts_without_validation(self):
+    async def test_empty_projects_insert_ones_without_validation(self):
         service, groups, projects = _make_service(None)
         payload = self._payload([])
-        await service.insert(payload)
+        await service.insert_one(payload)
         projects.get_one.assert_not_awaited()
-        groups.insert_project_group.assert_awaited_once_with(payload)
+        groups.insert_one.assert_awaited_once_with(in_resource=payload)
 
 
 # ---------------------------------------------------------------------------

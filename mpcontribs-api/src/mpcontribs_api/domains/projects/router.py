@@ -37,7 +37,7 @@ async def get_projects(
         list[ProjectSummary]: a list of smaller project payloads
     """
     selected = ProjectOut.parse_fields(fields)
-    return await repo.get_projects(filter=filter, pagination=pagination, fields=selected)
+    return await repo.get_many(filter=filter, pagination=pagination, fields=selected)
 
 
 @router.get("/{id}")

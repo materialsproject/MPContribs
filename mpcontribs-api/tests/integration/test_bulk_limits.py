@@ -45,20 +45,20 @@ class TestBulkWriteLimit:
         r = client.post("/api/v1/contributions", json=body)
         assert r.status_code == 422
         assert r.json()["error"]["code"] == "validation_error"
-        contribution_service.insert_contributions.assert_not_called()
+        contribution_service.insert_many.assert_not_called()
 
     def test_at_limit_post_passes(self, client, contribution_service):
-        contribution_service.insert_contributions.return_value = BulkWriteSummary(total=2, succeeded=[], failed=[])
+        contribution_service.insert_many.return_value = BulkWriteSummary(total=2, succeeded=[], failed=[])
         body = [_valid_contribution_body() for _ in range(2)]
         r = client.post("/api/v1/contributions", json=body)
         assert r.status_code == 200
-        contribution_service.insert_contributions.assert_called_once()
+        contribution_service.insert_many.assert_called_once()
 
     def test_over_limit_put_returns_422(self, client, contribution_service):
         body = [_valid_contribution_body() for _ in range(3)]
         r = client.put("/api/v1/contributions", json=body)
         assert r.status_code == 422
-        contribution_service.upsert_contributions.assert_not_called()
+        contribution_service.upsert_many.assert_not_called()
 
 
 class TestLimitsEndpoint:

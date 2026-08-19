@@ -55,18 +55,18 @@ def project_service(test_app):
 
 class TestListProjects:
     def test_empty_page_returns_200(self, client, project_repo):
-        project_repo.get_projects.return_value = Page(items=[], next_cursor=None)
+        project_repo.get_many.return_value = Page(items=[], next_cursor=None)
         r = client.get("/api/v1/projects", headers=AUTHED_HEADERS)
         assert r.status_code == 200
 
     def test_response_has_items_and_cursor(self, client, project_repo):
-        project_repo.get_projects.return_value = Page(items=[], next_cursor=None)
+        project_repo.get_many.return_value = Page(items=[], next_cursor=None)
         body = client.get("/api/v1/projects", headers=AUTHED_HEADERS).json()
         assert "items" in body
         assert "next_cursor" in body
 
     def test_items_returned_in_response(self, client, project_repo):
-        project_repo.get_projects.return_value = Page(items=[SAMPLE_PROJECT], next_cursor=None)
+        project_repo.get_many.return_value = Page(items=[SAMPLE_PROJECT], next_cursor=None)
         body = client.get("/api/v1/projects", headers=AUTHED_HEADERS).json()
         assert len(body["items"]) == 1
 
@@ -74,29 +74,29 @@ class TestListProjects:
         from mpcontribs_api.pagination import encode_cursor
 
         cursor = encode_cursor("mp-sample")
-        project_repo.get_projects.return_value = Page(items=[SAMPLE_PROJECT], next_cursor=cursor)
+        project_repo.get_many.return_value = Page(items=[SAMPLE_PROJECT], next_cursor=cursor)
         body = client.get("/api/v1/projects", headers=AUTHED_HEADERS).json()
         assert body["next_cursor"] == cursor
 
     def test_repo_get_project_called(self, client, project_repo):
-        project_repo.get_projects.return_value = Page(items=[], next_cursor=None)
+        project_repo.get_many.return_value = Page(items=[], next_cursor=None)
         client.get("/api/v1/projects", headers=AUTHED_HEADERS)
-        project_repo.get_projects.assert_called_once()
+        project_repo.get_many.assert_called_once()
 
     def test_anonymous_user_reaches_route(self, client, project_repo):
-        project_repo.get_projects.return_value = Page(items=[], next_cursor=None)
+        project_repo.get_many.return_value = Page(items=[], next_cursor=None)
         r = client.get("/api/v1/projects", headers=ANON_HEADERS)
         assert r.status_code == 200
 
     def test_invalid_fields_param_returns_422(self, client, project_repo):
-        project_repo.get_projects.return_value = Page(items=[], next_cursor=None)
+        project_repo.get_many.return_value = Page(items=[], next_cursor=None)
         r = client.get("/api/v1/projects", params={"_fields": "nonexistent_field"}, headers=AUTHED_HEADERS)
         assert r.status_code == 422
 
     def test_limit_param_forwarded(self, client, project_repo):
-        project_repo.get_projects.return_value = Page(items=[], next_cursor=None)
+        project_repo.get_many.return_value = Page(items=[], next_cursor=None)
         client.get("/api/v1/projects", params={"limit": 5}, headers=AUTHED_HEADERS)
-        _, kwargs = project_repo.get_projects.call_args
+        _, kwargs = project_repo.get_many.call_args
         assert kwargs["pagination"].limit == 5
 
     def test_limit_above_max_returns_422(self, client, project_repo):
@@ -104,9 +104,9 @@ class TestListProjects:
         assert r.status_code == 422
 
     def test_valid_fields_param_forwarded(self, client, project_repo):
-        project_repo.get_projects.return_value = Page(items=[], next_cursor=None)
+        project_repo.get_many.return_value = Page(items=[], next_cursor=None)
         client.get("/api/v1/projects", params=[("_fields", "title"), ("_fields", "authors")], headers=AUTHED_HEADERS)
-        _, kwargs = project_repo.get_projects.call_args
+        _, kwargs = project_repo.get_many.call_args
         assert kwargs["fields"] is not None
         assert "title" in kwargs["fields"]
 
@@ -119,23 +119,23 @@ class TestListProjects:
 class TestFieldSelectionSemantics:
     def test_omitted_fields_forwards_route_defaults(self, client, project_repo):
         # No _fields query param -> the route's default_fields() (identity + summary columns).
-        project_repo.get_projects.return_value = Page(items=[], next_cursor=None)
+        project_repo.get_many.return_value = Page(items=[], next_cursor=None)
         client.get("/api/v1/projects", headers=AUTHED_HEADERS)
-        _, kwargs = project_repo.get_projects.call_args
+        _, kwargs = project_repo.get_many.call_args
         assert kwargs["fields"] == frozenset(ProjectOut.default_fields())
 
     def test_empty_fields_forwards_identity_only(self, client, project_repo):
         # `?_fields=` (present but empty) -> only the identity field, the cheap "just ids" call.
-        project_repo.get_projects.return_value = Page(items=[], next_cursor=None)
+        project_repo.get_many.return_value = Page(items=[], next_cursor=None)
         client.get("/api/v1/projects", params={"_fields": ""}, headers=AUTHED_HEADERS)
-        _, kwargs = project_repo.get_projects.call_args
+        _, kwargs = project_repo.get_many.call_args
         assert kwargs["fields"] == frozenset({"id"})
 
     def test_all_sentinel_forwards_none(self, client, project_repo):
         # `?_fields=_all` -> None, i.e. project every field.
-        project_repo.get_projects.return_value = Page(items=[], next_cursor=None)
+        project_repo.get_many.return_value = Page(items=[], next_cursor=None)
         client.get("/api/v1/projects", params={"_fields": "_all"}, headers=AUTHED_HEADERS)
-        _, kwargs = project_repo.get_projects.call_args
+        _, kwargs = project_repo.get_many.call_args
         assert kwargs["fields"] is None
 
     def test_empty_fields_detail_forwards_identity_only(self, client, project_service):

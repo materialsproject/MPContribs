@@ -185,7 +185,7 @@ class MongoDbRepository[
             ) from exc
         return document
 
-    async def delete(self, filter: TFilter, session: AsyncClientSession | None = None) -> DeleteResponse:
+    async def delete_many(self, filter: TFilter, session: AsyncClientSession | None = None) -> DeleteResponse:
         """Delete every scoped document matching an arbitrary ``filter``.
 
         This is the bulk path (e.g. "delete every ProjectGroup with owner == X"). It does not raise
@@ -216,25 +216,6 @@ class MongoDbRepository[
         if result is None or result.deleted_count == 0:
             raise NotFoundError(f"{self.document_model.__name__} not found", identifiers=identifiers)
         return DeleteResponse.from_delete_result(result)
-
-    async def delete_by_ids(self, ids: list[Any], session: AsyncClientSession | None = None) -> DeleteResponse:
-        """Delete multiple scoped documents by id.
-
-        The user scope is injected so callers cannot delete documents they are not permitted to
-        see; out-of-scope ids simply match nothing and are reported as zero deletions.
-
-        Args:
-            ids (list[Any]): list of ids to delete
-            session: the session to perform the deletes within
-
-        Returns:
-            DeleteResponse: the result of the deletion
-        """
-        docs = self.document_model.find(self._scope, In(self.document_model.id, ids), session=session)
-        delete_result = await docs.delete_many(session=session)
-        if not delete_result:
-            raise ValidationError("DeleteResult not returned internally")
-        return DeleteResponse.from_delete_result(delete_result)
 
     def _patch_update_fields(self, update: TPatch) -> dict[str, Any]:
         """Map a patch model to the MongoDB ``$set`` field dict.

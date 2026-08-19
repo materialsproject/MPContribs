@@ -70,7 +70,7 @@ async def download_attachment(
 
 @router.delete("", response_model=ComponentDeleteResponse, dependencies=[Depends(require_user)])
 async def delete_attachments(service: AttachmentServiceDep, filter: AttachmentFilter = FilterDepends(AttachmentFilter)):
-    return await service.delete(filter=filter)
+    return await service.delete_many(filter=filter)
 
 
 @router.delete("/{id}", response_model=ComponentDeleteResponse, dependencies=[Depends(require_user)])

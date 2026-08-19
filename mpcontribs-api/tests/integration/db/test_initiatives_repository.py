@@ -39,7 +39,7 @@ def _collaborator(slug: str, username: str = BOB_EMAIL) -> User:
 
 
 async def _insert(slug: str, owner_user: User = ALICE, name: str = "An Initiative") -> Initiative:
-    return await _repo(owner_user).insert_initiative(InitiativeIn(slug=slug, name=name))
+    return await _repo(owner_user).insert_one(InitiativeIn(slug=slug, name=name))
 
 
 async def _approve(slug: str) -> Initiative:

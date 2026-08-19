@@ -36,7 +36,7 @@ async def get_project_groups(
         fields (FieldSelector): the fields to return to a user
     """
     selected = ProjectGroupOut.parse_fields(fields)
-    return await repo.get_project_groups(pagination=pagination, filter=filter, fields=selected)
+    return await repo.get_many(pagination=pagination, filter=filter, fields=selected)
 
 
 @router.get("/item")
@@ -74,7 +74,7 @@ async def insert_project_group(
         service (ProjectGroupServiceDep): the project group service we depend on
         project_group (ProjectGroupIn): the project group to insert
     """
-    return await service.insert(project_group=project_group)
+    return await service.insert_one(project_group=project_group)
 
 
 @router.patch("/item", response_model=ProjectGroupOut, dependencies=[Depends(require_user)])
@@ -125,7 +125,7 @@ async def delete_project_groups(
         repo (ProjectGroupDep): the project group repo we depend on
         filter (ProjectGroupFilter): the query selecting which project groups to delete
     """
-    return await repo.delete_project_groups(filter=filter)
+    return await repo.delete_many(filter=filter)
 
 
 @router.post("/item/projects", response_model=BulkWriteSummary[str], dependencies=[Depends(require_user)])

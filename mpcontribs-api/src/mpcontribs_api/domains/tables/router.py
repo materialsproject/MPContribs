@@ -74,12 +74,12 @@ async def insert_tables(
     service: TableServiceDep,
     tables: list[TableIn],
 ):
-    return await service.insert(components=tables)
+    return await service.insert_many(components=tables)
 
 
 @router.delete("", response_model=ComponentDeleteResponse, dependencies=[Depends(require_user)])
 async def delete_tables(service: TableServiceDep, filter: TableFilter = FilterDepends(TableFilter)):
-    return await service.delete(filter=filter)
+    return await service.delete_many(filter=filter)
 
 
 @router.delete("/{id}", response_model=ComponentDeleteResponse, dependencies=[Depends(require_user)])

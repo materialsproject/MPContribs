@@ -91,13 +91,13 @@ class ComponentService[
             return None
         return await self._components.get_one(identifiers, fields)
 
-    async def insert(
+    async def insert_many(
         self,
         components: list[TIn],
         session: AsyncClientSession | None = None,
     ) -> list[TDoc]:
-        """Bulk-insert components, deduplicated by content hash. See ``insert_components``."""
-        return await self._components.insert_components(components=components, session=session)
+        """Bulk-insert components, deduplicated by content hash. See repository ``insert_many``."""
+        return await self._components.insert_many(components=components, session=session)
 
     async def patch_one(self, identifiers: dict[str, Any], update: TPatch) -> TDoc:
         """Partially update a component matching ``identifiers``, gated by contribution reachability.
@@ -136,7 +136,7 @@ class ComponentService[
             restrict_ids=allowed,
         )
 
-    async def delete(self, filter: TFilter) -> ComponentDeleteResponse:
+    async def delete_many(self, filter: TFilter) -> ComponentDeleteResponse:
         """Delete components matching ``filter`` that are reachable and globally unreferenced.
 
         Args:
@@ -152,7 +152,11 @@ class ComponentService[
             return ComponentDeleteResponse(num_deleted=0)
         referenced = await self._contributions.referenced_component_ids(self._ref_field, list(reachable), scoped=False)
         deletable = [cid for cid in reachable if cid not in referenced]
-        num_deleted = (await self._components.delete_by_ids(deletable)).num_deleted if deletable else 0
+        num_deleted = (
+            (await self._components.delete_many(type(filter)(id__in=deletable))).num_deleted  # pyright: ignore[reportCallIssue]
+            if deletable
+            else 0
+        )
         return ComponentDeleteResponse(
             num_deleted=num_deleted,
             num_skipped=len(referenced),

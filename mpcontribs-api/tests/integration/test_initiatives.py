@@ -40,7 +40,7 @@ def _stored(**overrides):
 
 class TestInsert:
     def test_returns_201_and_echoes_id(self, client, initiative_repo):
-        initiative_repo.insert_initiative.return_value = _stored()
+        initiative_repo.insert_one.return_value = _stored()
         r = client.post(
             "/api/v1/initiatives",
             json={"slug": "battery-genome", "name": "Battery Genome"},
@@ -73,7 +73,7 @@ class TestInsert:
 
 class TestGet:
     def test_list_returns_200(self, client, initiative_repo):
-        initiative_repo.get_initiatives.return_value = Page(items=[], next_cursor=None)
+        initiative_repo.get_many.return_value = Page(items=[], next_cursor=None)
         r = client.get("/api/v1/initiatives", headers=AUTHED_HEADERS)
         assert r.status_code == 200
 

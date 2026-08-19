@@ -15,7 +15,6 @@ from mpcontribs_api.domains.initiatives.models import (
     InitiativePatch,
 )
 from mpcontribs_api.exceptions import ConflictError, NotFoundError, PermissionError, ValidationError
-from mpcontribs_api.pagination import CursorParams, Page
 
 
 class InitiativeRepository(
@@ -41,16 +40,7 @@ class InitiativeRepository(
                 ors.append({"slug": {"$in": sorted(slugs)}})
         return {"$or": ors}
 
-    async def get_initiatives(
-        self,
-        pagination: CursorParams,
-        filter: InitiativeFilter,
-        fields: frozenset[str] | None,
-    ) -> Page[InitiativeOut]:
-        """Return a scoped, filtered, paginated page of initiatives. See ``get_many``."""
-        return await self.get_many(pagination=pagination, filter=filter, fields=fields)
-
-    async def insert_initiative(self, data: InitiativeIn) -> Initiative:
+    async def insert_one(self, data: InitiativeIn) -> Initiative:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Create an initiative owned by the caller, enforcing the per-owner unapproved quota.
 
         ``owner`` is forced to the caller and the initiative starts unapproved and private. A

@@ -18,7 +18,6 @@ from mpcontribs_api.domains.projects.models import (
     Stats,
 )
 from mpcontribs_api.exceptions import ConflictError, NotFoundError, PermissionError, ValidationError
-from mpcontribs_api.pagination import CursorParams
 
 
 class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut, ProjectFilter, ProjectPatch]):
@@ -66,15 +65,6 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
                 owner=owner,
                 num_projects=result,
             )
-
-    async def get_projects(
-        self,
-        filter: ProjectFilter,
-        pagination: CursorParams,
-        fields: frozenset[str] | None,
-    ):
-        """Query the Project collection, scoped to the current user. See ``get_many``."""
-        return await self.get_many(pagination=pagination, filter=filter, fields=fields)
 
     async def unique_columns_by_id(self, ids: list[str]) -> dict[str, str | None]:
         """Return ``{project_id: unique_column}`` for the given project ids, scoped to the user.
@@ -129,11 +119,11 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
         ]
         await self.document_model.get_pymongo_collection().bulk_write(ops, ordered=False)
 
-    async def insert_project(self, id: str, project: ProjectIn) -> Project:
+    async def insert_one(self, id: str, project: ProjectIn) -> Project:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Insert a new project under ``id`` (supplied by the caller), rejecting a duplicate id.
 
         Projects carry a meaningful ``ShortStr`` id that is not part of the input body, so — unlike
-        the generic ``insert_one`` — the id is passed explicitly and stamped onto the document here.
+        the generic base ``insert_one`` — the id is passed explicitly and stamped onto the document here.
         """
         await self._check_num_projects(project.owner)
         document = Project.from_input_model(project, id=id)

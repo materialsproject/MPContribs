@@ -35,7 +35,7 @@ def _make_service(
     """
     components = AsyncMock(name="components")
     components.list_ids = AsyncMock(return_value=candidate_ids)
-    components.delete_by_ids = AsyncMock(side_effect=lambda ids: DeleteResponse(num_deleted=len(ids)))
+    components.delete_many = AsyncMock(side_effect=lambda filter: DeleteResponse(num_deleted=len(filter.id__in)))
     components.delete_one = AsyncMock(return_value=DeleteResponse(num_deleted=1))
     components.coerce_identifiers = MagicMock(side_effect=_coerce_identifiers)
 
@@ -62,33 +62,33 @@ async def test_delete_reachable_and_unreferenced_deletes_all():
         candidate_ids=[a, b], reachable={a, b}, referenced=set()
     )
 
-    result = await svc.delete(AttachmentFilter())
+    result = await svc.delete_many(AttachmentFilter())
 
     assert isinstance(result, ComponentDeleteResponse)
     assert result.num_deleted == 2
     assert result.num_skipped == 0
     assert result.referenced_ids == []
-    components.delete_by_ids.assert_awaited_once()
-    assert set(components.delete_by_ids.await_args.args[0]) == {a, b}
+    components.delete_many.assert_awaited_once()
+    assert set(components.delete_many.await_args.args[0].id__in) == {a, b}
 
 
 async def test_delete_skips_globally_referenced():
     a, b = _oid(), _oid()
     svc, components, _ = _make_service(candidate_ids=[a, b], reachable={a, b}, referenced={b})
 
-    result = await svc.delete(AttachmentFilter())
+    result = await svc.delete_many(AttachmentFilter())
 
     assert result.num_deleted == 1
     assert result.num_skipped == 1
     assert result.referenced_ids == [b]
-    assert components.delete_by_ids.await_args.args[0] == [a]
+    assert components.delete_many.await_args.args[0].id__in == [a]
 
 
 async def test_delete_not_reachable_deletes_nothing():
     a = _oid()
     svc, components, contributions = _make_service(candidate_ids=[a], reachable=set(), referenced={a})
 
-    result = await svc.delete(AttachmentFilter())
+    result = await svc.delete_many(AttachmentFilter())
 
     assert result.num_deleted == 0
     assert result.num_skipped == 0
@@ -101,7 +101,7 @@ async def test_delete_not_reachable_deletes_nothing():
 async def test_delete_empty_candidate_set():
     svc, components, _ = _make_service(candidate_ids=[], reachable=set(), referenced=set())
 
-    result = await svc.delete(AttachmentFilter())
+    result = await svc.delete_many(AttachmentFilter())
 
     assert result.num_deleted == 0
     components.delete_by_ids.assert_not_awaited()
@@ -111,7 +111,7 @@ async def test_delete_checks_scoped_before_global():
     a = _oid()
     svc, _, contributions = _make_service(candidate_ids=[a], reachable={a}, referenced=set())
 
-    await svc.delete(AttachmentFilter())
+    await svc.delete_many(AttachmentFilter())
 
     scoped_flags = [c.kwargs["scoped"] for c in contributions.referenced_component_ids.await_args_list]
     assert scoped_flags == [True, False]
