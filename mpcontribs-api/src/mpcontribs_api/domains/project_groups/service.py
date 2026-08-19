@@ -7,6 +7,7 @@ from mpcontribs_api.domains._shared.models import DeleteResponse
 from mpcontribs_api.domains._shared.types import ShortStr
 from mpcontribs_api.domains.project_groups.models import (
     ProjectGroup,
+    ProjectGroupFilter,
     ProjectGroupIn,
     ProjectGroupOut,
     ProjectGroupPatch,
@@ -14,6 +15,7 @@ from mpcontribs_api.domains.project_groups.models import (
 from mpcontribs_api.domains.project_groups.repository import ProjectGroupRepository
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
 from mpcontribs_api.exceptions import NotFoundError
+from mpcontribs_api.pagination import CursorParams, Page
 
 # Fields the membership operations need off a resolved group: its id (target of the update) and its
 # current members (so deletion can tell members from non-members).
@@ -48,9 +50,19 @@ class ProjectGroupService:
             raise NotFoundError("One or more projects not found or not visible", ids=missing)
         return await self._groups.insert_one(in_resource=project_group)
 
+    async def get_many(
+        self, filter: ProjectGroupFilter, pagination: CursorParams, fields: frozenset[str] | None
+    ) -> Page[ProjectGroupOut]:
+        """Return a page of scoped project groups matching ``filter``."""
+        return await self._groups.get_many(pagination=pagination, filter=filter, fields=fields)
+
     async def get_one(self, identifiers: dict[str, Any], fields: frozenset[str] | None) -> ProjectGroupOut | None:
         """Return the single group matching ``identifiers`` (``{"name", "owner"}`` or ``{"id"}``)."""
         return await self._groups.get_one(identifiers, fields)
+
+    async def delete_many(self, filter: ProjectGroupFilter) -> DeleteResponse:
+        """Bulk-delete every scoped project group matching ``filter``."""
+        return await self._groups.delete_many(filter=filter)
 
     async def patch_one(self, identifiers: dict[str, Any], update: ProjectGroupPatch) -> ProjectGroup:
         """Patch the single group matching ``identifiers`` (``{"name", "owner"}`` or ``{"id"}``)."""
