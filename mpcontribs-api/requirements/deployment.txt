@@ -38,9 +38,9 @@ blinker==1.9.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
 boltons==26.1.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
-boto3==1.43.73
+boto3==1.43.74
     # via flask-mongorest-mpcontribs
-botocore==1.43.73
+botocore==1.43.74
     # via
     #   boto3
     #   s3transfer
@@ -138,7 +138,7 @@ greenlet==3.5.5
     # via gevent
 gunicorn[gevent]==24.1.1
     # via mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
-idna==3.18
+idna==3.19
     # via
     #   anyio
     #   jsonschema
@@ -547,3 +547,6 @@ zope-interface==8.5
     # via gevent
 zstandard==0.25.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
+
+# The following packages are considered to be unsafe in a requirements file:
+# setuptools

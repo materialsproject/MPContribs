@@ -24,9 +24,9 @@ boltons==26.1.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (MPContribs/mpcontribs-portal/pyproject.toml)
-boto3==1.43.73
+boto3==1.43.74
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/pyproject.toml)
-botocore==1.43.73
+botocore==1.43.74
     # via
     #   boto3
     #   s3transfer
@@ -95,7 +95,7 @@ greenlet==3.5.5
     # via gevent
 gunicorn[gevent]==24.1.1
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/pyproject.toml)
-idna==3.18
+idna==3.19
     # via
     #   jsonschema
     #   requests

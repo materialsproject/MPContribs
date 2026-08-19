@@ -48,7 +48,7 @@ fonttools==4.63.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
-idna==3.18
+idna==3.19
     # via
     #   jsonschema
     #   requests
