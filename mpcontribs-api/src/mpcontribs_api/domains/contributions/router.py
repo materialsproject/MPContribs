@@ -138,38 +138,33 @@ async def download_contributions(
 
 
 @router.delete("/{id}", dependencies=[Depends(require_user)])
-async def delete_contribution_by_id(
+async def delete_one(
     service: ContributionServiceDep,
     id: str,
 ):
-    return await service.delete_contributions(ContributionFilter.model_validate({"id": id}))
+    return await service.delete_one({"id": id})
 
 
 @router.get("/{id}")
-async def get_contribution_by_id(
-    repo: ContributionDep,
+async def get_one(
+    service: ContributionServiceDep,
     id: str,
     fields: FieldSelector = None,
 ):
     selected = ContributionOut.parse_fields(fields)
-    return await repo.get_contribution_by_id(id=id, fields=selected)
+    return await service.get_one({"id": id}, fields=selected)
 
 
 @router.put("/{id}", dependencies=[Depends(require_user)])
-async def upsert_contribution_by_id(service: ContributionServiceDep, id: str, contribution: ContributionIn):
-    return await service.upsert_contribution_by_id(id=id, contribution=contribution)
+async def upsert_one(service: ContributionServiceDep, id: str, contribution: ContributionIn):
+    # The by-id upsert resolves the server-owned ``unique_value`` and enforces the unapproved quota
+    # (see ``ContributionService.upsert_contribution_by_id``), which the generic identity upsert does not.
+    return await service.upsert_contribution_by_id(id, contribution)
 
 
 @router.patch("/{id}", dependencies=[Depends(require_user)])
-async def patch_contribution_by_id(
-    service: ContributionServiceDep,
-    id: str,
-    update: ContributionPatch,
-    replace_data: bool = False,
-):
-    """Patch one contribution by id.
-
-    ``data`` deep-merges into the stored ``data`` by default (unmentioned leaves survive); pass
-    ``?replace_data=true`` to overwrite the whole ``data`` dict instead.
-    """
-    return await service.patch_contribution_by_id(id=id, update=update, replace_data=replace_data)
+async def patch_one(service: ContributionServiceDep, id: str, update: ContributionPatch, replace_data: bool = False):
+    # The by-id patch re-resolves ``unique_value`` and validates the identifier hierarchy against the
+    # merged state (see ``ContributionService.patch_contribution_by_id``); ``?replace_data=true``
+    # overwrites the whole ``data`` dict instead of deep-merging.
+    return await service.patch_contribution_by_id(id, update=update, replace_data=replace_data)

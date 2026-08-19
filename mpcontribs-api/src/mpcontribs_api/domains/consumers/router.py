@@ -31,7 +31,7 @@ async def get_consumers(
     if fields is None:
         fields = list(ConsumerOut.default_fields())
     selected = ConsumerOut.parse_fields(fields)
-    return await repo.get_consumers(filter=filter, pagination=pagination, fields=selected)
+    return await repo.get_many(filter=filter, pagination=pagination, fields=selected)
 
 
 @router.get("/{id}")
@@ -44,7 +44,7 @@ async def get_consumer_by_id(
     if fields is None:
         fields = list(ConsumerOut.default_fields())
     selected = ConsumerOut.parse_fields(fields)
-    return await repo.get_consumer_by_id(id=id, fields=selected)
+    return await repo.get_one(repo.coerce_identifiers({"id": id}), selected)
 
 
 @router.post("", response_model=ConsumerOut, status_code=status.HTTP_201_CREATED)
@@ -53,7 +53,7 @@ async def create_consumer(
     consumer: ConsumerIn,
 ):
     """Create a new consumer override, rejecting a duplicate ``consumer_id`` with 409 (admin only)."""
-    return await repo.insert_consumer(consumer)
+    return await repo.insert_one(consumer)
 
 
 @router.patch("/{id}", response_model=ConsumerOut)
@@ -63,7 +63,7 @@ async def patch_consumer_by_id(
     update: ConsumerPatch,
 ):
     """Partially update a consumer override by document id (admin only)."""
-    return await repo.patch_consumer_by_id(id=id, update=update)
+    return await repo.patch_one(repo.coerce_identifiers({"id": id}), update)
 
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -72,5 +72,5 @@ async def delete_consumer_by_id(
     id: str,
 ):
     """Delete a consumer override by document id (admin only)."""
-    await repo.delete_consumer_by_id(id=id)
+    await repo.delete_one(repo.coerce_identifiers({"id": id}))
     return Response(status_code=status.HTTP_204_NO_CONTENT)

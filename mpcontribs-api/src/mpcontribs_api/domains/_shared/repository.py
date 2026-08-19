@@ -14,6 +14,7 @@ from bson.errors import InvalidId
 from fastapi_filter.contrib.beanie import Filter
 from pydantic import BaseModel
 from pymongo.asynchronous.client_session import AsyncClientSession
+from pymongo.errors import DuplicateKeyError
 from types_aiobotocore_s3 import S3Client
 
 from mpcontribs_api.authz import User
@@ -55,6 +56,7 @@ class MongoDbRepository[
         Args:
             user (User): the current user requesting resources
         """
+        self._user = user
         self._scope = self._build_scope(user)
 
     @staticmethod
@@ -70,9 +72,17 @@ class MongoDbRepository[
         except InvalidId:
             raise ValidationError("Incorrect Id format. Must be MongoDB ObjectId format.", id=id) from None
 
-    def _not_found(self, id: str) -> str:
-        """Build a not-found message naming this repository's resource."""
-        return f"{self.document_model.__name__} with id {id} not found"
+    def coerce_identifiers(self, identifiers: dict[str, Any]) -> dict[str, Any]:
+        """Return ``identifiers`` with a string ``id`` coerced to the model's primary-key type.
+
+        Raises:
+            ValidationError: if ``id`` is a string that is not a valid ObjectId, for an
+                ObjectId-keyed model
+        """
+        id = identifiers.get("id")
+        if isinstance(id, str) and self.document_model.model_fields["id"].annotation is PydanticObjectId:
+            return {**identifiers, "id": self._convert_object_id(id)}
+        return identifiers
 
     async def get_many(
         self,
@@ -105,18 +115,42 @@ class MongoDbRepository[
         next_cursor = encode_cursor(str(items[-1].id)) if has_more and items else None
         return Page(items=items, next_cursor=next_cursor)
 
-    async def get_by_id(self, id: Any, fields: frozenset[str] | None = None) -> TDoc | TOut | None:
-        """Return a single scoped document by id, projected to the requested fields.
+    def _identifier_query(self, identifiers: dict[str, Any]) -> dict[str, Any]:
+        """Turn a ``{field: value}`` identifier dict into a scoped Mongo query fragment.
+
+        The keys must be either the model's :meth:`identifier_fields` exactly, or the bare
+        primary-key form ``{"id": ...}`` (which addresses any document by its ``_id`` regardless of
+        its semantic identifier). ``id`` is remapped to Mongo's ``_id`` (mirroring
+        ``BaseFilter._get_filter_conditions``) since a raw dict query does not go through Beanie's
+        alias resolution.
 
         Args:
-            id (str): the id of the document to find
+            identifiers (dict[str, Any]): identifier field values keyed by ``identifier_fields``,
+                or ``{"id": <primary key>}``
+        """
+        expected = self.document_model.identifier_fields()
+        if identifiers.keys() != expected and identifiers.keys() != {"id"}:
+            raise ValidationError(
+                "identifiers must match the model's identifier fields, or be a bare {'id': ...}",
+                expected=sorted(expected),
+                received=sorted(identifiers.keys()),
+            )
+        return {("_id" if key == "id" else key): value for key, value in identifiers.items()}
+
+    async def get_one(
+        self,
+        identifiers: dict[str, Any],
+        fields: frozenset[str] | None = None,
+    ) -> TOut | None:
+        """Return the single scoped document matching ``identifiers``, projected to ``fields``.
+
+        Args:
+            identifiers (dict[str, Any]): identifier field values keyed by ``identifier_fields``
             fields (frozenset[str] | None): fields to project; if None the full document is returned
         """
-        return await self.document_model.find_one(
-            self._scope,
-            self.document_model.id == id,
-            projection_model=self.out_model.projection(fields),
-        )
+        query = self._identifier_query(identifiers)
+        projection = self.out_model.projection(fields)
+        return await self.document_model.find_one(self._scope, query, projection_model=projection)  # pyright: ignore[reportArgumentType]
 
     async def list_ids(self, filter: TFilter, session: AsyncClientSession | None = None) -> list[Any]:
         """Return just the ids of scoped documents matching ``filter``.
@@ -134,31 +168,54 @@ class MongoDbRepository[
         return [doc.id for doc in docs]
 
     async def insert_one(self, in_resource: TIn) -> TDoc:
-        """Insert a new document built from its input model, rejecting duplicate ids.
+        """Insert a new document built from its input model, rejecting an existing duplicate.
+
+        Duplicates are determined by model-declared identifiers that uniquely identify a document.
 
         Args:
             in_resource (TIn): the validated input payload to translate and store
         """
         document = self.document_model.from_input_model(in_resource)
-        existing = await self.document_model.find_one(self.document_model.id == document.id)
-        if existing:
-            raise ConflictError(f"Cannot insert document.\n Document with ID {document.id} exists")
-        await document.insert()
+        try:
+            await document.insert()
+        except DuplicateKeyError as exc:
+            raise ConflictError(
+                f"Cannot insert {self.document_model.__name__}: a conflicting document already exists",
+                identifiers=document.identifiers(),
+            ) from exc
         return document
 
-    async def delete_by_id(self, id: Any, session: AsyncClientSession | None = None) -> DeleteResponse:
-        """Delete a single scoped document by id.
+    async def delete(self, filter: TFilter, session: AsyncClientSession | None = None) -> DeleteResponse:
+        """Delete every scoped document matching an arbitrary ``filter``.
 
-        Scoping ensures callers cannot delete documents they are not permitted to see.
+        This is the bulk path (e.g. "delete every ProjectGroup with owner == X"). It does not raise
+        on an empty match — a zero count is a valid, unambiguous outcome for a filter delete. Scoping
+        ensures callers cannot delete documents they are not permitted to see.
 
         Args:
-            id (str): the id of the document to delete
+            filter (TFilter): the fastapi-filter query to apply on top of the user scope
+            session (AsyncClientSession | None): optional client session for transactions
         """
-        doc = await self.document_model.find_one(self._scope, self.document_model.id == id, session=session)
-        if not doc:
-            raise NotFoundError("Document with id not found", id=id)
-        await doc.delete(session=session)
-        return DeleteResponse(num_deleted=1)
+        query = filter.filter(self.document_model.find(self._scope, session=session))
+        result = await query.delete_many(session=session)
+        if result is None:
+            raise ValidationError("DeleteResult not returned internally")
+        return DeleteResponse.from_delete_result(result)
+
+    async def delete_one(
+        self, identifiers: dict[str, Any], session: AsyncClientSession | None = None
+    ) -> DeleteResponse:
+        """Delete the single scoped document matching ``identifiers``.
+
+        Args:
+            identifiers (dict[str, Any]): identifier field values keyed by ``identifier_fields``
+            session (AsyncClientSession | None): optional client session for transactions
+        """
+        query = self._identifier_query(identifiers)
+        result = await self.document_model.find_one(self._scope, query, session=session).delete(session=session)  # pyright: ignore[reportArgumentType]
+        if result is None or result.deleted_count == 0:
+            raise NotFoundError(f"{self.document_model.__name__} not found", identifiers=identifiers)
+        return DeleteResponse.from_delete_result(result)
 
     async def delete_by_ids(self, ids: list[Any], session: AsyncClientSession | None = None) -> DeleteResponse:
         """Delete multiple scoped documents by id.
@@ -179,37 +236,83 @@ class MongoDbRepository[
             raise ValidationError("DeleteResult not returned internally")
         return DeleteResponse.from_delete_result(delete_result)
 
-    async def patch(self, id: Any, update: TPatch) -> TDoc:
-        """Partially update a single scoped document by id.
+    def _patch_update_fields(self, update: TPatch) -> dict[str, Any]:
+        """Map a patch model to the MongoDB ``$set`` field dict.
 
-        Only fields explicitly set on ``update`` are applied. An empty patch is a no-op that still
-        returns the existing document for consistent behavior. Scoping ensures callers cannot patch
-        documents they are not permitted to see.
+        Defaults to the patch's set fields (``exclude_unset``), which replaces each named field
+        wholesale. Subclasses whose patch targets a nested sub-document override this to emit dotted
+        ``parent.child`` keys so only the named leaves change and their siblings are left intact.
+        """
+        return update.model_dump(exclude_unset=True)
 
-        Args:
-            id (str): the id of the document to update
-            update (TPatch): the partial update to apply; unset fields are dropped
+    async def _patch_matching(
+        self,
+        match: Any,
+        update: TPatch,
+        not_found: NotFoundError,
+        session: AsyncClientSession | None = None,
+        extra_set: dict[str, Any] | None = None,
+    ) -> TDoc:
+        """Apply a partial update to the single scoped document matching ``match``.
+
+        ``match`` is any beanie filter that keys at most one in-scope document. An empty patch
+        is a no-op that still returns the existing document; a missing target raises ``not_found``.
+
+        ``extra_set`` carries server-resolved fields that the patch model cannot express — e.g. a
+        slug that a service has already resolved to a ``DBRef`` link. Its keys are merged into the
+        ``$set`` after the patch dump, so a non-empty ``extra_set`` also makes the update non-empty.
         """
         # Only retain set fields (patch)
-        update_data = update.model_dump(exclude_unset=True)
+        update_data = self._patch_update_fields(update)
+        if extra_set:
+            update_data |= extra_set
+        existing = await self.document_model.find_one(self._scope, match, session=session)
         # If update is empty, return the model anyways (consistent behavior)
         if not update_data:
-            existing = await self.document_model.find_one(self._scope, self.document_model.id == id)
             if existing is None:
-                raise NotFoundError(self._not_found(id))
+                raise not_found
             return existing
+
+        # Server-derived fields depend on the resulting document, which a bare $set never revalidates.
+        # Load, apply the patch in memory, and fold the recomputed values in.
+        if self.document_model.HAS_DERIVED_FIELDS:
+            if existing is None:
+                raise not_found
+            for field, value in update_data.items():
+                setattr(existing, field, value)
+            update_data |= existing.derived_field_updates()
 
         # Otherwise, update the fields fully (set)
         # Brendan TODO: Set will replace an entire field
         # - if we want to append to a list (ie. add a reference) we ned Push/AddToSet
-        query = self.document_model.find_one(self._scope, self.document_model.id == id).update(
+        query = self.document_model.find_one(self._scope, match, session=session).update(
             Set(update_data),
             response_type=UpdateResponse.NEW_DOCUMENT,
         )
         updated = await query  # pyright: ignore[reportGeneralTypeIssues] # beanie UpdateQuery is awaitable, but pyright doesn't see it
         if updated is None:
-            raise NotFoundError(self._not_found(id))
+            raise not_found
         return updated
+
+    async def patch_one(
+        self,
+        identifiers: dict[str, Any],
+        update: TPatch,
+        session: AsyncClientSession | None = None,
+        extra_set: dict[str, Any] | None = None,
+    ) -> TDoc:
+        """Partially update the single scoped document matching ``identifiers``.
+
+        Args:
+            identifiers (dict[str, Any]): identifier field values keyed by ``identifier_fields``
+            update (TPatch): the partial update to apply; unset fields are dropped
+            session (AsyncClientSession | None): optional client session for transactions
+            extra_set (dict[str, Any] | None): server-resolved fields to merge into the ``$set``
+                alongside the patch — for values the patch model cannot carry (e.g. a resolved link)
+        """
+        query = self._identifier_query(identifiers)
+        not_found = NotFoundError(f"{self.document_model.__name__} not found", identifiers=identifiers)
+        return await self._patch_matching(query, update, not_found, session=session, extra_set=extra_set)
 
     def _hash_payload(self, payload: dict[str, Any], *, separators: tuple[str, str] = (",", ":")) -> str:
         canonical = json.dumps(

@@ -2,7 +2,7 @@ import asyncio
 from collections import defaultdict
 from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import cast
+from typing import Any, cast
 
 import structlog
 from beanie import Link, PydanticObjectId
@@ -29,6 +29,7 @@ from mpcontribs_api.domains.contributions.models import (
     ContributionFilter,
     ContributionIdentity,
     ContributionIn,
+    ContributionOut,
     ContributionPatch,
     Scalar,
     extract_unique_value,
@@ -100,6 +101,42 @@ class ContributionService:
             "tables": self._tables,
         }
 
+    async def get_one(
+        self, identifiers: dict[str, Any], fields: frozenset[str] | None
+    ) -> Contribution | ContributionOut | None:
+        """Return the single scoped contribution matching ``identifiers``.
+
+        Accepts either the bare ``{"id": ...}`` form or the semantic
+        ``{"project", "identifier", "version"}`` set, resolved by the base ``_identifier_query``.
+        """
+        return await self._contributions.get_one(self._contributions.coerce_identifiers(identifiers), fields)
+
+    async def patch_one(self, identifiers: dict[str, Any], update: ContributionPatch) -> Contribution:
+        """Partially update the single scoped contribution matching ``identifiers``."""
+        return await self._contributions.patch_one(self._contributions.coerce_identifiers(identifiers), update)
+
+    async def upsert_one(self, identifiers: dict[str, Any], contribution: ContributionIn) -> Contribution:
+        """Upsert the single scoped contribution matching ``identifiers``. See repository ``upsert_one``."""
+        return await self._contributions.upsert_one(self._contributions.coerce_identifiers(identifiers), contribution)
+
+    async def delete_one(self, identifiers: dict[str, Any]) -> BulkDeleteSummary:
+        """Delete a single contribution and its child components, matching ``identifiers``.
+
+        Accepts either the bare ``{"id": ...}`` form or the semantic
+        ``{"project", "identifier", "version"}`` set. Cascades component deletion via
+        :meth:`delete_contributions` so children are never orphaned; a missing target is a zero-count
+        result (mirroring the bulk delete path, which does not 404).
+        """
+        identifiers = self._contributions.coerce_identifiers(identifiers)
+        if set(identifiers) == {"id"}:
+            filter = ContributionFilter(id=identifiers["id"])
+        else:
+            existing = await self._contributions.get_one(identifiers, frozenset({"id"}))
+            if existing is None:
+                return BulkDeleteSummary(num_deleted=0, num_children_deleted=0)
+            filter = ContributionFilter(id=existing.id)
+        return await self.delete_contributions(filter)
+
     async def _unapproved_stored_count(self, project_id: str) -> int | None:
         """Contributions already stored for an unapproved ``project_id``, else ``None``.
 
@@ -107,7 +144,7 @@ class ContributionService:
         be read in the current scope (existence/permission is enforced on insert, not here). The
         caller turns the count into a remaining allowance against the cap.
         """
-        project = await self._projects.get_by_id(project_id, fields=frozenset({"is_approved"}))
+        project = await self._projects.get_one({"id": project_id}, frozenset({"is_approved"}))
         if not project or project.is_approved:
             return None
         # Soft limit: this count feeds a non-atomic check-then-write, so concurrent writes to the
@@ -639,7 +676,7 @@ class ContributionService:
             identifiers = contrib.identity_dict(item.unique_value, item.condition_key)
             async with sem:
                 try:
-                    return await self._contributions.upsert_contribution_by_identifiers(identifiers, contrib)
+                    return await self._contributions.upsert_one(identifiers, contrib)
                 except Exception as exc:
                     logger.error("upsert_contribution_failed", index=item.index, identifier=identifiers, exc_info=True)
                     return bulk_failure_from_exception(item.index, identifiers, exc)
@@ -748,7 +785,7 @@ class ContributionService:
         """Upsert a single contribution by Mongo id, resolving its server-owned ``unique_value``."""
         if not self._user.can_write(contribution.project):
             raise PermissionError(f"not authorized to write to project '{contribution.project}'")
-        existing = await self._contributions.get_contribution_by_id(id, fields=None)
+        existing = await self._contributions.get_one(self._contributions.coerce_identifiers({"id": id}), None)
         if existing is None:
             stored = await self._unapproved_stored_count(contribution.project)
             cap = self._limits.max_unapproved_contributions_per_project
@@ -782,13 +819,13 @@ class ContributionService:
         touches_unique = "data" in set_fields or "project" in set_fields
         touches_identity = bool(ContributionIdentity.HIERARCHY_FIELDS & set_fields.keys())
         if not touches_unique and not touches_identity:
-            return await self._contributions.patch_contribution_by_id(id, update)
+            return await self._contributions.patch_one(self._contributions.coerce_identifiers({"id": id}), update)
 
         if replace_data and set_fields.get("data") is not None:
             # A whole-dict overwrite must satisfy the strict insert-path rules (no leaf fragments).
             validate_contribution_data(set_fields["data"])
 
-        existing = await self._contributions.get_contribution_by_id(id, fields=None)
+        existing = await self._contributions.get_one(self._contributions.coerce_identifiers({"id": id}), None)
         if existing is None or existing.project is None:
             raise NotFoundError(f"contribution '{id}' not found")
 
@@ -800,7 +837,7 @@ class ContributionService:
                 existing_formula=existing.formula,
             )
         if not touches_unique:
-            return await self._contributions.patch_contribution_by_id(id, update)
+            return await self._contributions.patch_one(self._contributions.coerce_identifiers({"id": id}), update)
 
         project = set_fields.get("project") or existing.project
         # Resolve unique_value against the data the write will actually leave behind: the merged view
@@ -812,8 +849,12 @@ class ContributionService:
         else:
             data = QuantityLeaf.merge_data(existing.data, set_fields["data"])
         unique_value = await self._resolve_unique_value(project, data)
-        return await self._contributions.patch_contribution_by_id(
-            id, update, unique_value=unique_value, replace_data=replace_data, existing_data=existing.data
+        return await self._contributions.patch_one(
+            self._contributions.coerce_identifiers({"id": id}),
+            update,
+            unique_value=unique_value,
+            replace_data=replace_data,
+            existing_data=existing.data,
         )
 
     @staticmethod

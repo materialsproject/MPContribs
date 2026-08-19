@@ -6,7 +6,7 @@ from starlette.status import HTTP_204_NO_CONTENT
 
 from mpcontribs_api.dependencies import require_user
 from mpcontribs_api.domains._shared.types import FieldSelector
-from mpcontribs_api.domains.projects.dependencies import ProjectDep
+from mpcontribs_api.domains.projects.dependencies import ProjectDep, ProjectServiceDep
 from mpcontribs_api.domains.projects.models import (
     ProjectFilter,
     ProjectIn,
@@ -41,16 +41,16 @@ async def get_projects(
 
 
 @router.get("/{id}")
-async def get_project_by_id(
+async def get_one(
     id: str,
-    repo: ProjectDep,
+    service: ProjectServiceDep,
     fields: FieldSelector = None,
 ):
     """Gets a single project by its ID.
 
     Args:
         id (str): the id of the project to retrieve
-        repo (ProjectDep): the project repo we depend on
+        service (ProjectServiceDep): the project service we depend on
         fields (list[str] | None): optional ``_fields`` selection. Omitted -> server defaults;
             empty (``?_fields=``) -> identity fields only; ``_all`` -> the full document
 
@@ -58,12 +58,12 @@ async def get_project_by_id(
         ProjectOut: the requested project, actual data returned is determined by the view the user requested
     """
     selected = ProjectOut.parse_fields(fields)
-    return await repo.get_project_by_id(id=id, fields=selected)
+    return await service.get_one({"id": id}, fields=selected)
 
 
 @router.put("/{id}", response_model=ProjectOut, dependencies=[Depends(require_user)])
-async def upsert_project_by_id(
-    repo: ProjectDep,
+async def upsert_one(
+    service: ProjectServiceDep,
     id: str,
     project: ProjectIn,
 ):
@@ -73,19 +73,19 @@ async def upsert_project_by_id(
     Note: Relies on the path param 'id' for finding, rather than the body's id.
 
     Args:
-        repo (ProjectDep): the project repo we depend on
+        service (ProjectServiceDep): the project service we depend on
         id (str): the id of the project to retrieve
         project (ProjectIn): the data of the project to upsert
 
     Returns:
         ProjectOut: the full document that either replaced an old one or was inserted
     """
-    return await repo.upsert_project_by_id(id=id, data=project)
+    return await service.upsert_one({"id": id}, data=project)
 
 
 @router.patch("/{id}", response_model=ProjectOut, dependencies=[Depends(require_user)])
-async def patch_project_by_id(
-    repo: ProjectDep,
+async def patch_one(
+    service: ProjectServiceDep,
     id: str,
     update: ProjectPatch,
 ):
@@ -93,8 +93,13 @@ async def patch_project_by_id(
 
     Note: overwrites fields with given values - arrays are not appended to.
 
+    The ``initiative`` field carries an initiative ``slug`` (or ``null`` to unassign). Setting it
+    is gated by the assignment service: the caller must be able to manage the target initiative
+    (owner/collaborator/admin) and an unapproved initiative may not exceed its member cap. Plain
+    field patches take the fast path straight to the repository.
+
     Args:
-        repo (ProjectDep): the project repo we depend on
+        service (ProjectServiceDep): the project assignment service we depend on
         id (str): the id of the project to update
         update (ProjectPatch): the partial update to apply - unset fields are dropped
             - Note: If fields are intentionally set to None, None is applied to the field.
@@ -102,21 +107,21 @@ async def patch_project_by_id(
     Returns:
         ProjectOut: the full Project with updates applied
     """
-    return await repo.patch_project_by_id(id=id, update=update)
+    return await service.patch_one({"id": id}, update=update)
 
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_user)])
-async def delete_project_by_id(
-    repo: ProjectDep,
+async def delete_one(
+    service: ProjectServiceDep,
     id: str,
 ):
     """Deletes a project matching id.
 
     Args:
-        repo (ProjectDep): the project repo we depend on
+        service (ProjectServiceDep): the project service we depend on
         id (str): the id of the project to be deleted
     Returns:
         Response: a response with the 204 response code (rather than FastAPIs default 200)
     """
-    await repo.delete_project_by_id(id=id)
+    await service.delete_one({"id": id})
     return Response(status_code=HTTP_204_NO_CONTENT)

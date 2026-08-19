@@ -25,68 +25,69 @@ def _repo() -> MongoDbConsumerRepository:
 
 
 # ---------------------------------------------------------------------------
-# insert_consumer / get_by_consumer_id
+# insert_one / get_one (by consumer_id)
 # ---------------------------------------------------------------------------
 
 
 class TestInsertAndLookup:
     async def test_insert_then_lookup_by_consumer_id(self, db):
-        await _repo().insert_consumer(ConsumerIn(consumer_id="kong-1"))
-        found = await _repo().get_by_consumer_id("kong-1")
+        await _repo().insert_one(ConsumerIn(consumer_id="kong-1"))
+        found = await _repo().get_one({"consumer_id": "kong-1"})
         assert found is not None
         assert found.consumer_id == "kong-1"
 
     async def test_duplicate_consumer_id_raises_conflict(self, db):
-        await _repo().insert_consumer(ConsumerIn(consumer_id="kong-dup"))
+        await _repo().insert_one(ConsumerIn(consumer_id="kong-dup"))
         with pytest.raises(ConflictError):
-            await _repo().insert_consumer(ConsumerIn(consumer_id="kong-dup"))
+            await _repo().insert_one(ConsumerIn(consumer_id="kong-dup"))
 
     async def test_lookup_missing_returns_none(self, db):
-        assert await _repo().get_by_consumer_id("kong-absent") is None
+        assert await _repo().get_one({"consumer_id": "kong-absent"}) is None
 
     async def test_partial_override_snapshots_defaults_for_siblings(self, db):
         # Admin overrides only max_projects; the stored document must carry a fully-resolved
         # settings block, with untouched limits snapshotted from the global defaults.
-        await _repo().insert_consumer(
+        await _repo().insert_one(
             ConsumerIn(consumer_id="kong-partial", settings=ConsumerSettings(max_projects=1))
         )
-        stored = await _repo().get_by_consumer_id("kong-partial")
+        stored = await _repo().get_one({"consumer_id": "kong-partial"})
         assert stored is not None
+        assert stored.settings is not None
         assert stored.settings.max_projects == 1
         assert stored.settings.max_columns == get_settings().consumer.max_columns
 
 
 # ---------------------------------------------------------------------------
-# get_consumer_by_id (document id)
+# get_one (document id)
 # ---------------------------------------------------------------------------
 
 
 class TestGetByDocumentId:
     async def test_returns_out_model(self, db):
-        created = await _repo().insert_consumer(ConsumerIn(consumer_id="kong-doc"))
-        result = await _repo().get_consumer_by_id(id=str(created.id), fields=None)
+        created = await _repo().insert_one(ConsumerIn(consumer_id="kong-doc"))
+        result = await _repo().get_one({"id": created.id}, None)
         assert result is not None
         assert result.consumer_id == "kong-doc"
 
     async def test_missing_returns_none(self, db):
         from beanie import PydanticObjectId
 
-        result = await _repo().get_consumer_by_id(id=str(PydanticObjectId()), fields=None)
+        result = await _repo().get_one({"id": PydanticObjectId()}, None)
         assert result is None
 
 
 # ---------------------------------------------------------------------------
-# patch_consumer_by_id — partial, sibling-preserving
+# patch_one — partial, sibling-preserving
 # ---------------------------------------------------------------------------
 
 
 class TestPatchConsumer:
     async def test_patch_changes_only_named_limit(self, db):
-        created = await _repo().insert_consumer(ConsumerIn(consumer_id="kong-patch"))
+        created = await _repo().insert_one(ConsumerIn(consumer_id="kong-patch"))
         original_columns = created.settings.max_columns
 
-        updated = await _repo().patch_consumer_by_id(
-            id=str(created.id),
+        updated = await _repo().patch_one(
+            {"id": created.id},
             update=ConsumerPatch(settings=ConsumerSettings(max_projects=1)),
         )
         assert updated.settings.max_projects == 1
@@ -94,8 +95,8 @@ class TestPatchConsumer:
         assert updated.settings.max_columns == original_columns
 
     async def test_empty_patch_returns_existing_unchanged(self, db):
-        created = await _repo().insert_consumer(ConsumerIn(consumer_id="kong-noop"))
-        result = await _repo().patch_consumer_by_id(id=str(created.id), update=ConsumerPatch())
+        created = await _repo().insert_one(ConsumerIn(consumer_id="kong-noop"))
+        result = await _repo().patch_one({"id": created.id}, update=ConsumerPatch())
         assert result.consumer_id == "kong-noop"
         assert result.settings.max_projects == created.settings.max_projects
 
@@ -103,28 +104,28 @@ class TestPatchConsumer:
         from beanie import PydanticObjectId
 
         with pytest.raises(NotFoundError):
-            await _repo().patch_consumer_by_id(
-                id=str(PydanticObjectId()),
+            await _repo().patch_one(
+                {"id": PydanticObjectId()},
                 update=ConsumerPatch(settings=ConsumerSettings(max_projects=1)),
             )
 
 
 # ---------------------------------------------------------------------------
-# delete_consumer_by_id
+# delete_one
 # ---------------------------------------------------------------------------
 
 
 class TestDeleteConsumer:
     async def test_delete_removes_override(self, db):
-        created = await _repo().insert_consumer(ConsumerIn(consumer_id="kong-del"))
-        await _repo().delete_consumer_by_id(id=str(created.id))
-        assert await _repo().get_by_consumer_id("kong-del") is None
+        created = await _repo().insert_one(ConsumerIn(consumer_id="kong-del"))
+        await _repo().delete_one({"id": created.id})
+        assert await _repo().get_one({"consumer_id": "kong-del"}) is None
 
     async def test_delete_missing_raises_not_found(self, db):
         from beanie import PydanticObjectId
 
         with pytest.raises(NotFoundError):
-            await _repo().delete_consumer_by_id(id=str(PydanticObjectId()))
+            await _repo().delete_one({"id": PydanticObjectId()})
 
 
 # ---------------------------------------------------------------------------
@@ -140,7 +141,7 @@ class TestEffectiveLimits:
         assert limits.max_projects == get_settings().consumer.max_projects
 
     async def test_stored_override_is_returned(self, db):
-        await _repo().insert_consumer(
+        await _repo().insert_one(
             ConsumerIn(consumer_id="kong-eff", settings=ConsumerSettings(max_projects=42))
         )
         user = User(consumer_id="kong-eff", username="google:alice@example.com", groups=frozenset())

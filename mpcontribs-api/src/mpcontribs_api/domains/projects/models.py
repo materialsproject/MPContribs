@@ -1,11 +1,13 @@
 from typing import Any, Literal
 
+from beanie import Link
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
 
 from mpcontribs_api import pagination
 from mpcontribs_api.domains._shared.filters import BaseFilter
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
-from mpcontribs_api.domains._shared.types import PrefixedEmail, ShortStr
+from mpcontribs_api.domains._shared.types import PrefixedEmail, SearchStr, ShortStr
+from mpcontribs_api.domains.initiatives.models import Initiative
 from mpcontribs_api.exceptions import ValidationError
 
 
@@ -42,17 +44,12 @@ class Column(BaseModel):
 
 
 class Stats(BaseModel):
-    columns: int
-    contributions: int
-    tables: int
-    structures: int
-    attachments: int
-    size: float
-
-    @classmethod
-    def empty(cls) -> Stats:
-        """A zeroed rollup for a project with no contributions yet."""
-        return cls(columns=0, contributions=0, tables=0, structures=0, attachments=0, size=0.0)
+    columns: int = 0
+    contributions: int = 0
+    tables: int = 0
+    structures: int = 0
+    attachments: int = 0
+    size: float = 0
 
 
 class Reference(BaseModel):
@@ -73,6 +70,9 @@ class ProjectBase(BaseModel):
     unique_column: str | None = None
 
     # Optional
+    stats: Stats = Field(default_factory=Stats)
+    tags: list[SearchStr] | None = None
+    mp_category: str | None = None
     references: list[Reference] = Field(default_factory=list)
     long_title: str | None = None
     other: dict[str, Any] = Field(default_factory=dict)
@@ -80,6 +80,9 @@ class ProjectBase(BaseModel):
     is_approved: bool = False
     license: Literal["CCA4", "CCPD"] | None = None
 
+    initiative: Link[Initiative] | None = None
+
+    # Empty method for now. Keeping for business logic later
     # Validated on every representation (input and stored) so a bad unique_column is rejected immediately
     @field_validator("unique_column")
     @classmethod
@@ -95,7 +98,7 @@ class Project(ProjectBase, BaseDocumentWithInput[ShortStr]):
     """Document model of what is actually stored."""
 
     # Server-owned: derived from the project's contributions
-    stats: Stats = Field(default_factory=Stats.empty)
+    stats: Stats = Field(default_factory=Stats)
     columns: list[Column] = Field(default_factory=list)
 
     @classmethod
@@ -111,6 +114,10 @@ class Project(ProjectBase, BaseDocumentWithInput[ShortStr]):
         """
         return pagination.decode_cursor(cursor)
 
+    @classmethod
+    def server_managed_fields(cls) -> tuple:
+        return ("is_public", "is_approved", "stats", "mp_category")
+
 
 class ProjectOut(DocumentOut[ShortStr]):
     """Full response of all public-facing fields."""
@@ -119,6 +126,8 @@ class ProjectOut(DocumentOut[ShortStr]):
     authors: str | None = None
     description: str | None = None
     title: ShortStr | None = None
+    tags: list[SearchStr] | None = None
+    mp_category: str | None = None
     owner: PrefixedEmail | None = None
     other: dict[str, Any] | None = None
     is_public: bool | None = None
@@ -129,6 +138,7 @@ class ProjectOut(DocumentOut[ShortStr]):
     stats: Stats | None = None
     columns: list[Column] | None = None
     license: Literal["CCA4", "CCPD"] | None = None
+    initiative: Link[Initiative] | None = None
 
     @staticmethod
     def default_fields() -> tuple[str, ...]:
@@ -151,6 +161,15 @@ class ProjectFilter(BaseFilter):
     owner__in: list[PrefixedEmail] | None = None
     owner__neq: PrefixedEmail | None = None
     owner__ilike: str | None = None
+
+    tags: list[SearchStr] | None = None  # exact match of list
+    tags__in: list[SearchStr] | None = None  # if at least one tag is present
+    tags__contains: list[SearchStr] | None = None  # Project.tags must be a superset of these
+
+    mp_category: str | None = None
+    mp_category__in: list[str] | None = None
+    mp_category__neq: str | None = None
+    mp_category__ilike: str | None = None
 
     # fuzzy only
     long_title__ilike: str | None = None
@@ -190,6 +209,7 @@ class ProjectPatch(BaseModel):
     title: ShortStr | None = None
     authors: str | None = None
     description: str | None = None
+    tags: list[SearchStr] | None = None
     owner: PrefixedEmail | None = None
     unique_column: str | None = None
     references: list[Reference] = Field(default_factory=list)
@@ -199,6 +219,9 @@ class ProjectPatch(BaseModel):
     # None => unset (left unchanged); admin-only when set
     is_approved: bool | None = None
     license: Literal["CCA4", "CCPD"] | None = None
+
+    # str here, but ProjectService coerces to a Link
+    initiative: str | None = None
 
     @field_validator("unique_column")
     @classmethod

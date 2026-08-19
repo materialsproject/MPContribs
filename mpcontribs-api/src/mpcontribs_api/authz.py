@@ -33,6 +33,16 @@ authenticated_groups_scheme = APIKeyHeader(
 
 ADMIN_GROUP = settings.mongo.admin_group
 
+# prefix to user roles to disambiguate from project roles, which are bare ids
+INITIATIVE_ROLE_PREFIX = "initiative:"
+
+# prefix for project-group roles: a group's _id (an ObjectId hex string) is granted as ``project-group:<oid>``
+PROJECT_GROUP_ROLE_PREFIX = "project-group:"
+
+# A role carrying one of these prefixes is scoped to a non-project resource; a role with none of
+# them is a bare project id.
+_RESOURCE_ROLE_PREFIXES = (INITIATIVE_ROLE_PREFIX, PROJECT_GROUP_ROLE_PREFIX)
+
 
 class User(BaseModel):
     """User definition derived from request headers.
@@ -64,7 +74,42 @@ class User(BaseModel):
     def is_admin(self) -> bool:
         return (not self.is_anonymous) and (ADMIN_GROUP in self.groups)
 
-    def has_role(self, role: str) -> bool:
+    @property
+    def project_roles(self) -> list[str]:
+        """The project ids this user carries, from their bare (unprefixed) roles.
+
+        Resource-scoped roles (``initiative:``, ``project-group:``) and the admin sentinel are
+        excluded, leaving only bare project ids.
+        """
+        return [role for role in self.groups if role != ADMIN_GROUP and not role.startswith(_RESOURCE_ROLE_PREFIXES)]
+
+    @property
+    def initiative_roles(self) -> list[str]:
+        """The initiative slugs this user collaborates on, decoded from their ``initiative:<slug>`` roles."""
+        return [role[len(INITIATIVE_ROLE_PREFIX) :] for role in self.groups if role.startswith(INITIATIVE_ROLE_PREFIX)]
+
+    @property
+    def project_group_roles(self) -> list[str]:
+        """The project-group ids this user may access, decoded from their ``project-group:<oid>`` roles.
+
+        Values are the raw hex strings; callers that query by ``_id`` must convert them
+        """
+        return [
+            role[len(PROJECT_GROUP_ROLE_PREFIX) :] for role in self.groups if role.startswith(PROJECT_GROUP_ROLE_PREFIX)
+        ]
+
+    def has_role(self, role: str, *, resource: str | None = None) -> bool:
+        """Determine whether a user has a role assigned to them.
+
+        Specifying resource as:
+        - ``INITIATIVE_ROLE_PREFIX`` looks for roles scoped to initiatives
+        - "project" looks for bare (unprefixed) project roles
+        - None looks for roles by matching the entire string
+        """
+        if resource == INITIATIVE_ROLE_PREFIX[:-1]:
+            return role in self.initiative_roles
+        if resource == "project":
+            return role in self.project_roles
         return role in self.groups
 
     @property
@@ -72,8 +117,16 @@ class User(BaseModel):
         """Projects this user may write to. Admins are unbounded (handled by can_write)"""
         if self.is_anonymous:
             return frozenset()
-        # exclude the admin sentinel so it never leaks into a $in / membership test
-        return frozenset(g for g in self.groups if g != ADMIN_GROUP)
+        # only bare project roles are writable projects; the admin sentinel and resource-scoped
+        # roles (initiative:/project-group:) must never leak into a $in / membership test
+        return frozenset(self.project_roles)
+
+    def can_manage(self, id: str, resource: str) -> bool:
+        """Determines whether a user can manage a resource.
+
+        If the user is known and either an admin or has a valid role assigned, they can manage
+        """
+        return (not self.is_anonymous) and (self.is_admin or self.has_role(role=id, resource=resource))
 
     def can_write(self, project: str) -> bool:
         """Single source of truth for write authorization."""

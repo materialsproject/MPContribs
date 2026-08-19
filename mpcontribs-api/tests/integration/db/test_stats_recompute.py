@@ -60,13 +60,12 @@ def _service(client) -> ContributionService:
     )
 
 
-async def _make_project(unique_identifiers: bool = True) -> Project:
+async def _make_project() -> Project:
     project_in = ProjectIn(
         title="Stats Project",
         authors="Test Author",
         description="Recompute lifecycle fixture",
         owner="google:admin@example.com",
-        unique_identifiers=unique_identifiers,
     )
     return await MongoDbProjectRepository(ADMIN).insert_project(PID, project_in)
 

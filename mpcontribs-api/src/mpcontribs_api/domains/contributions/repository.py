@@ -101,54 +101,49 @@ class MongoDbContributionRepository(
         """Query the Contribution collection, scoped to the current user. See ``get_many``."""
         return await self.get_many(pagination=pagination, filter=filter, fields=fields)
 
-    async def get_contribution_by_id(self, id: str, fields: frozenset[str] | None):
-        """Find a single contribution by id, scoped to the current user. See ``get_by_id``."""
-        return await self.get_by_id(self._convert_object_id(id), fields)
-
-    async def patch_contribution_by_id(
+    async def patch_one(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
-        id: str,
+        identifiers: dict[str, Any],
         update: ContributionPatch,
         unique_value: Scalar | None = _UNSET,
         *,
         replace_data: bool = False,
         existing_data: Any = None,
-    ):
-        """Partially update a contribution by id, scoped to the current user.
+        session: AsyncClientSession | None = None,
+    ) -> Contribution:
+        """Partially update the single scoped contribution matching ``identifiers``.
 
         ``unique_value`` is server-recomputed by the service when the patch changes ``data`` or
-        ``project`` (the inputs to identity); left as ``_UNSET`` it is not touched. When set, it is
-        folded into the ``$set`` so the identity index stays consistent with the patched ``data``.
+        ``project`` (the inputs to identity); left as ``_UNSET`` it delegates to the base partial
+        update. When set, it is folded into the ``$set`` so the identity index stays consistent with
+        the patched ``data``.
 
         ``data`` additively merges into the stored dict by default (unmentioned leaves survive, and a
         bare scalar routes onto a stored quantity leaf's ``value``); the merge is resolved against the
         caller-supplied ``existing_data``. Pass ``replace_data`` to overwrite the whole ``data`` dict
         instead. See ``_build_update_set``.
         """
+        match = self._identifier_query(identifiers)
+        not_found = NotFoundError(f"{self.document_model.__name__} not found", identifiers=identifiers)
         try:
             if unique_value is _UNSET:
-                return await self.patch(self._convert_object_id(id), update)
+                return await self._patch_matching(match, update, not_found, session=session)
             update_data = _build_update_set(
                 update.model_dump(exclude_unset=True), existing_data, replace_data=replace_data
             )
             update_data["unique_value"] = unique_value
-            query = self.document_model.find_one(
-                self._scope,
-                self.document_model.id == self._convert_object_id(id),
-            ).update(Set(update_data), response_type=UpdateResponse.NEW_DOCUMENT)
+            query = self.document_model.find_one(self._scope, match, session=session).update(
+                Set(update_data), response_type=UpdateResponse.NEW_DOCUMENT
+            )
             updated = await query  # pyright: ignore[reportGeneralTypeIssues] # beanie UpdateQuery is awaitable
             if updated is None:
-                raise NotFoundError(self._not_found(id))
+                raise not_found
             return updated
         except DuplicateKeyError as err:
             raise ConflictError(
-                f"contribution '{id}' cannot be patched: the resulting identity already exists",
-                id=id,
+                "contribution cannot be patched: the resulting identity already exists",
+                identifiers=identifiers,
             ) from err
-
-    async def delete_contribution_by_id(self, id: str) -> None:
-        """Delete a contribution by id, scoped to the current user. See ``delete_by_id``."""
-        await self.delete_by_id(self._convert_object_id(id))
 
     async def delete_contributions(
         self,
@@ -333,10 +328,11 @@ class MongoDbContributionRepository(
         agg.columns = finalize_columns(acc)
         return agg
 
-    async def upsert_contribution_by_identifiers(
+    async def upsert_one(
         self,
         identifiers: dict[str, Any],
         contribution: ContributionIn,
+        session: AsyncClientSession | None = None,
     ) -> Contribution:
         """Atomically upsert a Contribution by its full identity.
 

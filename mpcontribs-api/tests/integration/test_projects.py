@@ -1,6 +1,8 @@
+from unittest.mock import AsyncMock
+
 import pytest
 
-from mpcontribs_api.domains.projects.dependencies import get_scoped_projects
+from mpcontribs_api.domains.projects.dependencies import get_project_service, get_scoped_projects
 from mpcontribs_api.domains.projects.models import ProjectOut, Stats
 from mpcontribs_api.exceptions import ConflictError, NotFoundError
 from mpcontribs_api.pagination import Page
@@ -35,6 +37,15 @@ def project_repo(test_app, mock_project_repo):
     test_app.dependency_overrides[get_scoped_projects] = lambda: mock_project_repo
     yield mock_project_repo
     test_app.dependency_overrides.pop(get_scoped_projects, None)
+
+
+@pytest.fixture
+def project_service(test_app):
+    """Override the assignment service the PATCH route depends on with an async mock."""
+    service = AsyncMock()
+    test_app.dependency_overrides[get_project_service] = lambda: service
+    yield service
+    test_app.dependency_overrides.pop(get_project_service, None)
 
 
 # ---------------------------------------------------------------------------
@@ -127,11 +138,11 @@ class TestFieldSelectionSemantics:
         _, kwargs = project_repo.get_projects.call_args
         assert kwargs["fields"] is None
 
-    def test_empty_fields_detail_forwards_identity_only(self, client, project_repo):
-        # Same three-way rule on the detail route.
-        project_repo.get_project_by_id.return_value = SAMPLE_PROJECT
+    def test_empty_fields_detail_forwards_identity_only(self, client, project_service):
+        # Same three-way rule on the detail route (now served through ProjectService).
+        project_service.get_one.return_value = SAMPLE_PROJECT
         client.get("/api/v1/projects/mp-sample", params={"_fields": ""}, headers=AUTHED_HEADERS)
-        _, kwargs = project_repo.get_project_by_id.call_args
+        _, kwargs = project_service.get_one.call_args
         assert kwargs["fields"] == frozenset({"id"})
 
 
@@ -141,44 +152,43 @@ class TestFieldSelectionSemantics:
 
 
 class TestGetProjectById:
-    def test_found_returns_200(self, client, project_repo):
-        project_repo.get_project_by_id.return_value = SAMPLE_PROJECT
+    def test_found_returns_200(self, client, project_service):
+        project_service.get_one.return_value = SAMPLE_PROJECT
         r = client.get("/api/v1/projects/mp-sample", headers=AUTHED_HEADERS)
         assert r.status_code == 200
 
-    def test_response_contains_project_data(self, client, project_repo):
-        project_repo.get_project_by_id.return_value = SAMPLE_PROJECT
+    def test_response_contains_project_data(self, client, project_service):
+        project_service.get_one.return_value = SAMPLE_PROJECT
         body = client.get("/api/v1/projects/mp-sample", headers=AUTHED_HEADERS).json()
         assert body["id"] == "mp-sample"
         assert body["title"] == "Sample Project"
 
-    def test_not_found_returns_404(self, client, project_repo):
-        project_repo.get_project_by_id.side_effect = NotFoundError("project not found")
+    def test_not_found_returns_404(self, client, project_service):
+        project_service.get_one.side_effect = NotFoundError("project not found")
         r = client.get("/api/v1/projects/nonexistent", headers=AUTHED_HEADERS)
         assert r.status_code == 404
 
-    def test_not_found_error_code(self, client, project_repo):
-        project_repo.get_project_by_id.side_effect = NotFoundError("project not found")
+    def test_not_found_error_code(self, client, project_service):
+        project_service.get_one.side_effect = NotFoundError("project not found")
         body = client.get("/api/v1/projects/nonexistent", headers=AUTHED_HEADERS).json()
         assert body["error"]["code"] == "not_found"
 
-    def test_id_forwarded_to_repo(self, client, project_repo):
-        project_repo.get_project_by_id.return_value = SAMPLE_PROJECT
+    def test_id_forwarded_to_service(self, client, project_service):
+        project_service.get_one.return_value = SAMPLE_PROJECT
         client.get("/api/v1/projects/my-specific-id", headers=AUTHED_HEADERS)
-        _, kwargs = project_repo.get_project_by_id.call_args
-        assert kwargs["id"] == "my-specific-id"
+        assert project_service.get_one.call_args.args[0] == {"id": "my-specific-id"}
 
-    def test_fields_param_forwarded(self, client, project_repo):
-        project_repo.get_project_by_id.return_value = SAMPLE_PROJECT
+    def test_fields_param_forwarded(self, client, project_service):
+        project_service.get_one.return_value = SAMPLE_PROJECT
         client.get("/api/v1/projects/mp-sample", params={"_fields": "title"}, headers=AUTHED_HEADERS)
-        _, kwargs = project_repo.get_project_by_id.call_args
+        _, kwargs = project_service.get_one.call_args
         assert kwargs["fields"] is not None
         assert "title" in kwargs["fields"]
 
-    def test_no_fields_param_uses_default_fields(self, client, project_repo):
-        project_repo.get_project_by_id.return_value = SAMPLE_PROJECT
+    def test_no_fields_param_uses_default_fields(self, client, project_service):
+        project_service.get_one.return_value = SAMPLE_PROJECT
         client.get("/api/v1/projects/mp-sample", headers=AUTHED_HEADERS)
-        _, kwargs = project_repo.get_project_by_id.call_args
+        _, kwargs = project_service.get_one.call_args
         assert kwargs["fields"] is not None
         assert "title" in kwargs["fields"]
 
@@ -189,8 +199,8 @@ class TestGetProjectById:
 
 
 class TestPatchProject:
-    def test_valid_patch_returns_200(self, client, project_repo):
-        project_repo.patch_project_by_id.return_value = SAMPLE_PROJECT
+    def test_valid_patch_returns_200(self, client, project_service):
+        project_service.patch_one.return_value = SAMPLE_PROJECT
         r = client.patch(
             "/api/v1/projects/mp-sample",
             json={"title": "Updated Title"},
@@ -198,9 +208,9 @@ class TestPatchProject:
         )
         assert r.status_code == 200
 
-    def test_patch_response_is_project_out(self, client, project_repo):
+    def test_patch_response_is_project_out(self, client, project_service):
         updated = ProjectOut(id="mp-sample", title="Updated Title")
-        project_repo.patch_project_by_id.return_value = updated
+        project_service.patch_one.return_value = updated
         body = client.patch(
             "/api/v1/projects/mp-sample",
             json={"title": "Updated Title"},
@@ -208,8 +218,8 @@ class TestPatchProject:
         ).json()
         assert body["title"] == "Updated Title"
 
-    def test_not_found_returns_404(self, client, project_repo):
-        project_repo.patch_project_by_id.side_effect = NotFoundError("not found")
+    def test_not_found_returns_404(self, client, project_service):
+        project_service.patch_one.side_effect = NotFoundError("not found")
         r = client.patch(
             "/api/v1/projects/missing",
             json={"title": "x" * 5},
@@ -217,7 +227,7 @@ class TestPatchProject:
         )
         assert r.status_code == 404
 
-    def test_invalid_title_too_short_returns_422(self, client, project_repo):
+    def test_invalid_title_too_short_returns_422(self, client, project_service):
         r = client.patch(
             "/api/v1/projects/mp-sample",
             json={"title": "ab"},
@@ -225,16 +235,16 @@ class TestPatchProject:
         )
         assert r.status_code == 422
 
-    def test_id_and_update_forwarded_to_repo(self, client, project_repo):
-        project_repo.patch_project_by_id.return_value = SAMPLE_PROJECT
+    def test_id_and_update_forwarded_to_service(self, client, project_service):
+        project_service.patch_one.return_value = SAMPLE_PROJECT
         client.patch(
             "/api/v1/projects/mp-sample",
             json={"title": "New Name"},
             headers=AUTHED_HEADERS,
         )
-        _, kwargs = project_repo.patch_project_by_id.call_args
-        assert kwargs["id"] == "mp-sample"
-        assert kwargs["update"].title == "New Name"
+        call = project_service.patch_one.call_args
+        assert call.args[0] == {"id": "mp-sample"}
+        assert call.kwargs["update"].title == "New Name"
 
 
 # ---------------------------------------------------------------------------
@@ -243,21 +253,20 @@ class TestPatchProject:
 
 
 class TestDeleteProject:
-    def test_delete_returns_204(self, client, project_repo):
-        project_repo.delete_project_by_id.return_value = None
+    def test_delete_returns_204(self, client, project_service):
+        project_service.delete_one.return_value = None
         r = client.delete("/api/v1/projects/mp-sample", headers=AUTHED_HEADERS)
         assert r.status_code == 204
 
-    def test_delete_response_has_no_body(self, client, project_repo):
-        project_repo.delete_project_by_id.return_value = None
+    def test_delete_response_has_no_body(self, client, project_service):
+        project_service.delete_one.return_value = None
         r = client.delete("/api/v1/projects/mp-sample", headers=AUTHED_HEADERS)
         assert r.content == b""
 
-    def test_id_forwarded_to_repo(self, client, project_repo):
-        project_repo.delete_project_by_id.return_value = None
+    def test_id_forwarded_to_service(self, client, project_service):
+        project_service.delete_one.return_value = None
         client.delete("/api/v1/projects/mp-sample", headers=AUTHED_HEADERS)
-        _, kwargs = project_repo.delete_project_by_id.call_args
-        assert kwargs["id"] == "mp-sample"
+        assert project_service.delete_one.call_args.args[0] == {"id": "mp-sample"}
 
 
 # ---------------------------------------------------------------------------
@@ -268,7 +277,7 @@ class TestDeleteProject:
 class TestUpsertProject:
     def _valid_body(self, **overrides):
         body = {
-            "_id": "mp-sample",
+            "id": "mp-sample",
             "title": "Test Project",
             "authors": "Alice",
             "description": "A project",
@@ -278,17 +287,17 @@ class TestUpsertProject:
         body.update(overrides)
         return body
 
-    def test_valid_upsert_returns_200(self, client, project_repo):
-        project_repo.upsert_project_by_id.return_value = SAMPLE_PROJECT
+    def test_valid_upsert_returns_200(self, client, project_service):
+        project_service.upsert_one.return_value = SAMPLE_PROJECT
         r = client.put("/api/v1/projects/mp-sample", json=self._valid_body(), headers=AUTHED_HEADERS)
         assert r.status_code == 200
 
-    def test_conflict_returns_409(self, client, project_repo):
-        project_repo.upsert_project_by_id.side_effect = ConflictError("already exists")
+    def test_conflict_returns_409(self, client, project_service):
+        project_service.upsert_one.side_effect = ConflictError("already exists")
         r = client.put("/api/v1/projects/mp-sample", json=self._valid_body(), headers=AUTHED_HEADERS)
         assert r.status_code == 409
 
-    def test_missing_required_field_returns_422(self, client, project_repo):
+    def test_missing_required_field_returns_422(self, client, project_service):
         body = self._valid_body()
         del body["title"]
         r = client.put("/api/v1/projects/mp-sample", json=body, headers=AUTHED_HEADERS)
@@ -303,7 +312,7 @@ class TestUpsertProject:
 class TestProjectMutationsRequireAuth:
     def _body(self):
         return {
-            "_id": "mp-sample",
+            "id": "mp-sample",
             "title": "Test Project",
             "authors": "Alice",
             "description": "A project",
@@ -311,19 +320,19 @@ class TestProjectMutationsRequireAuth:
             "stats": {"columns": 0, "contributions": 0, "tables": 0, "structures": 0, "attachments": 0, "size": 0.0},
         }
 
-    def test_anonymous_put_returns_401(self, client, project_repo):
-        project_repo.upsert_project_by_id.return_value = SAMPLE_PROJECT
+    def test_anonymous_put_returns_401(self, client, project_service):
+        project_service.upsert_one.return_value = SAMPLE_PROJECT
         r = client.put("/api/v1/projects/mp-sample", json=self._body(), headers=ANON_HEADERS)
         assert r.status_code == 401
         assert r.json()["error"]["code"] == "authentication_error"
-        project_repo.upsert_project_by_id.assert_not_called()
+        project_service.upsert_one.assert_not_called()
 
-    def test_anonymous_patch_returns_401(self, client, project_repo):
+    def test_anonymous_patch_returns_401(self, client, project_service):
         r = client.patch("/api/v1/projects/mp-sample", json={"title": "Updated Title"}, headers=ANON_HEADERS)
         assert r.status_code == 401
-        project_repo.patch_project_by_id.assert_not_called()
+        project_service.patch_one.assert_not_called()
 
-    def test_anonymous_delete_returns_401(self, client, project_repo):
+    def test_anonymous_delete_returns_401(self, client, project_service):
         r = client.delete("/api/v1/projects/mp-sample", headers=ANON_HEADERS)
         assert r.status_code == 401
-        project_repo.delete_project_by_id.assert_not_called()
+        project_service.delete_one.assert_not_called()

@@ -31,7 +31,7 @@ class TestConsumerSettingsDefaults:
         assert settings.max_columns == get_settings().consumer.max_columns
 
     def test_only_explicit_field_is_marked_set(self):
-        # patch_consumer_by_id relies on exclude_unset to touch only the named limit, so a partial
+        # patch_one relies on exclude_unset to touch only the named limit, so a partial
         # override must report exactly the fields the admin supplied.
         settings = ConsumerSettings(max_columns=5)
         assert settings.model_dump(exclude_unset=True) == {"max_columns": 5}

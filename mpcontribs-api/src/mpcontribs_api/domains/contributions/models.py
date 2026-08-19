@@ -137,6 +137,11 @@ class ContributionBase(BaseModel):
             IndexModel(keys=[("attachments.$id", ASCENDING)], name="ref_attachments"),
         ]
 
+    @classmethod
+    def identifier_fields(cls) -> frozenset[str]:
+        """A contribution's natural key is its full :class:`ContributionIdentity` composite."""
+        return frozenset({"project", "material_id", "chemical_system_id", "formula", "unique_value", "condition_key"})
+
 
 class Contribution(ContributionBase, BaseDocumentWithInput[PydanticObjectId]):
     """Models what is actually stored in the database."""

@@ -24,8 +24,8 @@ async def get_effective_limits(user: UserDep) -> ConsumerSettings:
     if user.consumer_id is None:
         return ConsumerSettings()
 
-    override = await MongoDbConsumerRepository(user).get_by_consumer_id(user.consumer_id)
-    return override.settings if override is not None else ConsumerSettings()
+    override = await MongoDbConsumerRepository(user).get_one({"consumer_id": user.consumer_id})
+    return override.settings if override and override.settings else ConsumerSettings()
 
 
 ConsumerLimitsDep = Annotated[ConsumerSettings, Depends(get_effective_limits)]

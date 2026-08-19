@@ -1,8 +1,11 @@
 from typing import Any
 
+from beanie import PydanticObjectId
 from pymongo import UpdateOne
+from pymongo.asynchronous.client_session import AsyncClientSession
 
 from mpcontribs_api.authz import User
+from mpcontribs_api.domains._shared.models import DeleteResponse
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
 from mpcontribs_api.domains.consumers.models import ConsumerSettings
 from mpcontribs_api.domains.projects.models import (
@@ -14,7 +17,7 @@ from mpcontribs_api.domains.projects.models import (
     ProjectPatch,
     Stats,
 )
-from mpcontribs_api.exceptions import ConflictError, PermissionError
+from mpcontribs_api.exceptions import ConflictError, NotFoundError, PermissionError, ValidationError
 from mpcontribs_api.pagination import CursorParams
 
 
@@ -72,10 +75,6 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
     ):
         """Query the Project collection, scoped to the current user. See ``get_many``."""
         return await self.get_many(pagination=pagination, filter=filter, fields=fields)
-
-    async def get_project_by_id(self, id: str, fields: frozenset[str] | None):
-        """Find a single project by id, scoped to the current user. See ``get_by_id``."""
-        return await self.get_by_id(id, fields)
 
     async def unique_columns_by_id(self, ids: list[str]) -> dict[str, str | None]:
         """Return ``{project_id: unique_column}`` for the given project ids, scoped to the user.
@@ -144,40 +143,82 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
         await document.insert()
         return document
 
-    async def patch_project_by_id(self, id: str, update: ProjectPatch) -> Project:
-        """Partially update a project by id, scoped to the current user. See ``patch``.
+    async def patch_one(  # pyright: ignore[reportIncompatibleMethodOverride]
+        self,
+        identifiers: dict[str, Any],
+        update: ProjectPatch,
+        session: AsyncClientSession | None = None,
+        extra_set: dict[str, Any] | None = None,
+    ) -> Project:
+        """Partially update a scoped project by id, enforcing approval rules.
 
-        ``is_approved`` is an admin-only curation flag: a non-admin that sets it (to any value) is
-        rejected. ``stats``/``columns`` are not on the patch model at all, so they cannot be
-        client-patched. Both remain server-owned.
+        - Only an admin may change ``is_approved``.
+        - Resulting state must satisfy is_public <-> is_approved condition
 
-        Raises:
-            PermissionError: if a non-admin caller sets ``is_approved``
+        The ``initiative`` field is split out upstream in ``ProjectService.patch_one``, so it never
+        reaches this method as a bare slug; an assignment that also edits plain fields arrives with
+        the resolved link passed through ``extra_set`` (``{"initiative": <DBRef | None>}``) and is
+        written together with the plain fields in the single ``$set``.
         """
-        if update.is_approved is not None and not self._user.is_admin:
+        await self._enforce_patch_rules(identifiers["id"], update)
+        return await super().patch_one(identifiers, update, session=session, extra_set=extra_set)
+
+    async def _enforce_patch_rules(self, id: str, update: ProjectPatch) -> None:
+        """Enforce project patch invariants against the scoped target.
+
+        - Only an admin may change ``is_approved``.
+        - The resulting state must satisfy the is_public -> is_approved condition.
+
+        Raises ``NotFoundError`` when the project is invisible to the caller or absent, so both the
+        plain and initiative-bearing patch paths reject unseen documents identically.
+        """
+        data = update.model_dump(exclude_unset=True)
+        if "is_approved" in data and not self._user.is_admin:
             raise PermissionError(required_role="admin")
-        # ``columns`` are server-owned and absent from ProjectPatch, so there is nothing to cap here.
-        return await self.patch(id, update)
 
-    async def delete_project_by_id(self, id: str) -> None:
-        """Delete a project by id, scoped to the current user. See ``delete_by_id``."""
-        await self.delete_by_id(id)
+        existing = await self.document_model.find_one(self._scope, self.document_model.id == id)
+        if existing is None:
+            raise NotFoundError(f"{self.document_model.__name__} not found", id=id)
 
-    async def upsert_project_by_id(self, id: str, data: ProjectIn) -> Project:
+        resulting_approved = data.get("is_approved", existing.is_approved)
+        resulting_public = data.get("is_public", existing.is_public)
+        if resulting_public and not resulting_approved:
+            raise ValidationError("a project cannot be public until it is approved", id=id)
+
+    async def delete_one(
+        self, identifiers: dict[str, Any], session: AsyncClientSession | None = None
+    ) -> DeleteResponse:
+        """Delete a scoped project by id. Restricted to the owner or an admin.
+
+        Visibility (public/approved or group membership) is not enough to delete: a project can
+        only be dissolved by its owner (or an admin). A caller who cannot see the project gets a
+        404; a caller who can see it but does not own it gets a 403. The auth check runs against the
+        resolved document; the write is delegated to the base :meth:`MongoDbRepository.delete_one`.
+        """
+        id = identifiers["id"]
+        existing = await self.document_model.find_one(self._scope, self._identifier_query({"id": id}))
+        if existing is None:
+            raise NotFoundError(f"{self.document_model.__name__} not found", id=id)
+        if not (self._user.is_admin or existing.owner == self._user.username):
+            raise PermissionError(required_role="owner-or-admin")
+        return await super().delete_one(identifiers, session=session)
+
+    async def upsert_one(self, identifiers: dict[str, Any], data: ProjectIn) -> Project:
         """Upsert a project by provided id, authorized to the current user.
 
         Update the document if the id exists, otherwise insert a new one under that id.
-        Authorization (the read scope is for visibility, not write access, so it is not
-        reused here):
 
         - **Existing project:** only its ``owner`` or an admin may overwrite it. The stored
-          ``owner`` is preserved — ownership cannot be reassigned through the request body.
-        - **New project:** ``owner`` is forced to the caller, ignoring any body value.
+          ``owner`` and all server-managed fields (see ``Project.server_managed_fields``) are
+          preserved - ``ProjectIn`` cannot carry them, so a PUT never resets approval, publication,
+          or stats.
+        - **New project:** ``owner`` is forced to the caller; server-managed fields keep their
+          defaults
 
-        Note: relies on the path param ``id`` for identity, not the body's id.
+        Note: relies on the identifier ``id`` for identity, not the body's id.
 
         Args:
-            id (str): the id of the project to upsert
+            identifiers (dict[str, Any]): the identifier of the project to upsert (``{"id": ...}``)
             data (ProjectIn): the data of the project to upsert
 
         Returns:
@@ -190,6 +231,7 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
         if self._user.username is None:
             raise PermissionError(required_role="authenticated")
 
+        id = identifiers["id"]
         # ``columns`` are server-owned (derived from contributions) and absent from ProjectIn, so
         # there is no client-supplied column set to cap on the write path.
         existing = await self.document_model.find_one(self.document_model.id == id)
@@ -200,6 +242,9 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
             # Ownership is immutable via upsert; keep the original owner. Updating an existing
             # project does not create a new one, so the per-user project cap does not apply.
             project.owner = existing.owner
+            # make sure a full replacement doesn't overwrite server-defined fields
+            for field in self.document_model.server_managed_fields():
+                setattr(project, field, getattr(existing, field))
             # Server-owned rollups are never taken from the request body; keep the stored values
             # (they self-heal on the next contribution write via ``ContributionService``).
             project.stats = existing.stats
@@ -212,8 +257,30 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
             # New project: the caller owns it, regardless of the submitted owner. Enforce the
             # per-user cap against the caller before creating another project under their name.
             project.owner = self._user.username
-            # A new project starts unapproved; only an admin may create it pre-approved.
+            # Approval is admin-only; a non-admin's new project always starts unapproved.
             if not self._user.is_admin:
                 project.is_approved = False
             await self._check_num_projects(self._user.username)
+
+        if project.is_public and not project.is_approved:
+            raise ValidationError("a project cannot be public until it is approved", id=id)
         return await project.save()
+
+    async def count_initiative_members(self, initiative_id: PydanticObjectId, exclude_project_id: str | None) -> int:
+        """Count projects assigned to an initiative, ignoring user scope.
+
+        The unapproved-initiative member limit is an integrity constraint on the initiative's true
+        size, so it must count every member regardless of who can see them — a scoped count could
+        let a collaborator overshoot the cap with projects they cannot see. ``exclude_project_id``
+        drops the project being (re)assigned so re-assigning an existing member is idempotent and
+        never trips the limit.
+
+        Args:
+            initiative_id (PydanticObjectId): the initiative whose members to count
+            exclude_project_id (str | None): a project id to exclude from the count, if any
+        """
+        collection = self.document_model.get_pymongo_collection()
+        query: dict[str, Any] = {"initiative.$id": initiative_id}
+        if exclude_project_id is not None:
+            query["_id"] = {"$ne": exclude_project_id}
+        return await collection.count_documents(query)

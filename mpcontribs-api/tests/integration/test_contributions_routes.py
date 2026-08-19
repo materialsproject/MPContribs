@@ -137,8 +137,8 @@ class TestUpsertContributions:
 class TestContributionByIdRouting:
     """RED: routes mount as /contributions{id} not /contributions/{id}."""
 
-    def test_get_by_id_conventional_path(self, client, contribution_repo):
-        contribution_repo.get_contribution_by_id.return_value = SAMPLE_OUT
+    def test_get_by_id_conventional_path(self, client, contribution_service):
+        contribution_service.get_one.return_value = SAMPLE_OUT
         assert client.get(f"/api/v1/contributions/{PydanticObjectId()}").status_code == 200
 
     def test_patch_by_id_conventional_path(self, client, contribution_service):
@@ -152,9 +152,7 @@ class TestContributionByIdRouting:
         assert r.status_code == 200
 
     def test_delete_by_id_conventional_path(self, client, contribution_service):
-        contribution_service.delete_contributions.return_value = BulkDeleteSummary(
-            num_deleted=1, num_children_deleted=0
-        )
+        contribution_service.delete_one.return_value = BulkDeleteSummary(num_deleted=1, num_children_deleted=0)
         assert client.delete(f"/api/v1/contributions/{PydanticObjectId()}").status_code == 200
 
     def test_download_route_conventional_path(self, client, contribution_repo):
@@ -169,23 +167,17 @@ class TestContributionByIdRouting:
 
 class TestDeleteContributionByIdWiring:
     def test_delete_delegates_to_service(self, client, contribution_service):
-        contribution_service.delete_contributions.return_value = BulkDeleteSummary(
-            num_deleted=1, num_children_deleted=2
-        )
+        contribution_service.delete_one.return_value = BulkDeleteSummary(num_deleted=1, num_children_deleted=2)
         oid = PydanticObjectId()
-        # NOTE: glued path is intentional here — see module docstring.
         r = client.delete(f"/api/v1/contributions/{oid}")
         assert r.status_code == 200
-        contribution_service.delete_contributions.assert_awaited_once()
+        contribution_service.delete_one.assert_awaited_once()
 
-    def test_delete_builds_filter_from_path_id(self, client, contribution_service):
-        contribution_service.delete_contributions.return_value = BulkDeleteSummary(
-            num_deleted=1, num_children_deleted=0
-        )
+    def test_delete_passes_id_identifiers_to_service(self, client, contribution_service):
+        contribution_service.delete_one.return_value = BulkDeleteSummary(num_deleted=1, num_children_deleted=0)
         oid = PydanticObjectId()
         client.delete(f"/api/v1/contributions/{oid}")
-        passed_filter = contribution_service.delete_contributions.call_args.args[0]
-        assert passed_filter.id == oid
+        assert contribution_service.delete_one.call_args.args[0] == {"id": str(oid)}
 
 
 # ===========================================================================

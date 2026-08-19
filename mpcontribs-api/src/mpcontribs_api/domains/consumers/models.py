@@ -53,6 +53,11 @@ class Consumer(BaseDocumentWithInput[PydanticObjectId]):
     settings: ConsumerSettings = Field(default_factory=ConsumerSettings)
 
     @classmethod
+    def identifier_fields(cls) -> frozenset[str]:
+        """A consumer override is keyed by Kong's ``consumer_id`` (its unique natural key)."""
+        return frozenset({"consumer_id"})
+
+    @classmethod
     def with_defaults(cls, consumer_id: str = "") -> Consumer:
         """In-memory Consumer whose ``settings`` carry the env-backed default limits.
 
