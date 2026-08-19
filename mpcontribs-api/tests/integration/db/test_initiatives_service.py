@@ -171,7 +171,7 @@ class TestMemberCap:
             await _insert_project(f"appr-proj-{i}", owner=ALICE_EMAIL)
             await _service(ALICE).patch_one({"id": f"appr-proj-{i}"}, ProjectPatch(initiative="init-approved"))
         count = await MongoDbProjectRepository(ADMIN).count_initiative_members(
-            initiative_id=(await InitiativeRepository(ADMIN).resolve_visible("init-approved")).id,  # type: ignore[union-attr]
+            initiative_id=(await InitiativeRepository(ADMIN).get_one({"slug": "init-approved"})).id,  # type: ignore[union-attr]
             exclude_project_id=None,
         )
         assert count == cap + 2

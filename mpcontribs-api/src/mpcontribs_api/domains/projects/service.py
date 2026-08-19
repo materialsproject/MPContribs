@@ -66,16 +66,16 @@ class ProjectService:
         if slug is None:
             return None
 
-        initiative = await self._initiatives.resolve_visible(slug)
-        if initiative is None:
+        initiative = await self._initiatives.get_one({"slug": slug})
+        if initiative is None or initiative.id is None:
             raise NotFoundError("Initiative not found or not visible", slug=slug)
 
         user = self._initiatives._user
-        if not (user.can_manage(id=initiative.slug, resource="initiative") or initiative.owner == user.username):
+        if not (user.can_manage(id=slug, resource="initiative") or initiative.owner == user.username):
             raise PermissionError(
                 message="user does not have adequate acceess to this resource",
                 required_role="initiative-owner-collaborator-or-admin",
-                resource_id=initiative.slug,
+                resource_id=slug,
             )
 
         if not initiative.is_approved:

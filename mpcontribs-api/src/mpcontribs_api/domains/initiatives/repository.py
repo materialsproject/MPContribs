@@ -1,6 +1,5 @@
 from typing import Any
 
-from beanie import PydanticObjectId
 from pymongo.asynchronous.client_session import AsyncClientSession
 from pymongo.errors import DuplicateKeyError
 
@@ -51,10 +50,6 @@ class InitiativeRepository(
         """Return a scoped, filtered, paginated page of initiatives. See ``get_many``."""
         return await self.get_many(pagination=pagination, filter=filter, fields=fields)
 
-    async def resolve_visible(self, slug: str) -> Initiative | None:
-        """Return the full scoped initiative document for ``slug`` (or None), for write-path checks."""
-        return await self.document_model.find_one(self._scope, self.document_model.slug == slug)
-
     async def insert_initiative(self, data: InitiativeIn) -> Initiative:
         """Create an initiative owned by the caller, enforcing the per-owner unapproved quota.
 
@@ -76,15 +71,7 @@ class InitiativeRepository(
                     limit=self._limits.max_unapproved_per_owner,
                 )
 
-        # ``BaseDocumentWithInput`` makes ``id`` required (no auto-default), so mint the ObjectId here
-        initiative = self.document_model.model_validate(
-            {
-                "_id": PydanticObjectId(),
-                "slug": data.slug,
-                "name": data.name,
-                "owner": self._user.username,
-            }
-        )
+        initiative = self.document_model.from_input_model(data=data, owner=self._user.username)
         try:
             await initiative.insert()
         except DuplicateKeyError as exc:  # unique slug index
@@ -105,7 +92,7 @@ class InitiativeRepository(
         document, and the write itself is delegated to the base :meth:`MongoDbRepository.patch_one`.
         """
         slug = identifiers["slug"]
-        existing = await self.resolve_visible(slug)
+        existing = await self.document_model.find_one(self._scope, self.document_model.slug == slug)
         if existing is None:
             raise NotFoundError("Initiative not found", slug=slug)
         if not (
@@ -137,7 +124,7 @@ class InitiativeRepository(
         :meth:`MongoDbRepository.delete_one`.
         """
         slug = identifiers["slug"]
-        existing = await self.resolve_visible(slug)
+        existing = await self.document_model.find_one(self._scope, self.document_model.slug == slug)
         if existing is None:
             raise NotFoundError("Initiative not found", slug=slug)
         if not (self._user.is_admin or existing.owner == self._user.username):
