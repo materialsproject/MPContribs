@@ -40,7 +40,8 @@ async def _contribution(identifier: str, *, is_public: bool, attachments: list[A
     doc = Contribution(
         _id=PydanticObjectId(),
         project="reach-proj",
-        identifier=identifier,
+        material_id=identifier,
+        chemical_system_id="Fe-O",
         formula="Fe2O3",
         data={"x": 1},
         is_public=is_public,

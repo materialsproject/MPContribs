@@ -103,6 +103,15 @@ class TestBulkFailureFromException:
         failure = bulk_failure_from_exception(0, None, ConflictError())
         assert failure.message == "ConflictError"
 
+    def test_duplicate_key_error_maps_to_conflict(self):
+        # A raw pymongo unique-index violation is a conflict (409), not an internal error, matching
+        # the ordered=False bulk-insert path's handling of duplicate-key (11000) writeErrors.
+        from pymongo.errors import DuplicateKeyError
+
+        failure = bulk_failure_from_exception(1, None, DuplicateKeyError("E11000 duplicate key"))
+        assert failure.error_code == "conflict"
+        assert "already exists" in failure.message
+
     def test_generic_exception_collapses_to_internal_error(self):
         failure = bulk_failure_from_exception(1, None, RuntimeError("secret traceback details"))
         assert failure.error_code == "internal_error"

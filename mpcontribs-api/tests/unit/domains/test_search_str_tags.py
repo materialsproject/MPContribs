@@ -85,12 +85,10 @@ _TAG_FIELD_EXTRACTORS = [
     (
         "project_in_tags",
         lambda t: ProjectIn(
-            id="proj-x",
             title="title-x",
             authors="a",
             description="d",
             owner="google:a@b.com",
-            unique_identifiers=True,
             tags=[t],
         ).tags,
     ),

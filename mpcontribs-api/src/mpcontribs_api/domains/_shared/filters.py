@@ -8,18 +8,26 @@ from pydantic import ValidationInfo, field_validator
 # Register a custom __contains filter suffix to search where lists are a superset of a provided list
 _odm_operator_transformer.setdefault("contains", lambda value: {"$all": value})
 
+from mpcontribs_api.domains._shared.types import nfc_normalize
+
+
+def _normalize_query_values(value: Any) -> Any:
+    """Recursively NFC-normalize every string in a built query condition value.
+
+    fastapi-filter does custom wrapping of queries to translate into MongoDB.
+    This handles normalization of values within the query.
+    """
+    if isinstance(value, str):
+        return nfc_normalize(value)
+    if isinstance(value, Mapping):
+        return {key: _normalize_query_values(sub) for key, sub in value.items()}
+    if isinstance(value, list):
+        return [_normalize_query_values(item) for item in value]
+    return value
+
 
 class BaseFilter(Filter):
-    """Base filter that bridges Beanie's ``_id`` alias and fastapi-filter's raw field names.
-
-    Beanie stores a document's primary key under Mongo's ``_id`` (``id`` is just a Pydantic alias),
-    but fastapi-filter builds query keys from the raw field name read off ``model_dump`` — without
-    aliases. An ``id`` filter would therefore query a non-existent ``{"id": ...}`` key and match
-    nothing, while a direct ``Document.id == x`` lookup (which Beanie resolves to ``_id``) succeeds.
-    Remapping the ``id`` key to ``_id`` here keeps the two read paths consistent.
-
-    Domain filters should subclass this instead of fastapi-filter's ``Filter`` directly.
-    """
+    """Base filter that bridges Beanie's ``_id`` alias and fastapi-filter's raw field names."""
 
     @field_validator("*", mode="before")
     @classmethod
@@ -36,7 +44,14 @@ class BaseFilter(Filter):
         return value
 
     def _get_filter_conditions(self, nesting_depth: int = 1) -> list[tuple[Mapping[str, Any], Mapping[str, Any]]]:
+        """Overrides Filter._get_filter_conditions to allow us to specify 'id' instead of '_id' in our models.
+
+        Underscored fields are special in Pydantic.
+        """
         return [
-            ({"_id" if key == "id" else key: value for key, value in condition.items()}, options)
+            (
+                {("_id" if key == "id" else key): _normalize_query_values(value) for key, value in condition.items()},
+                options,
+            )
             for condition, options in super()._get_filter_conditions(nesting_depth)
         ]

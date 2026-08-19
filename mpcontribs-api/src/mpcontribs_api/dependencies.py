@@ -83,4 +83,17 @@ def require_writer(user: UserDep) -> User:
         raise AuthenticationError("authentication required")
     if not (user.is_admin or user.writable_projects):
         raise PermissionError("write access to at least one project is required")
+
+
+def require_admin(user: UserDep) -> User:
+    """Require an authenticated admin caller.
+
+    Distinguishes the two failure modes: an anonymous caller gets 401 (authenticate first), while an
+    authenticated non-admin gets 403 (authenticated, but not permitted). Gates the admin-only
+    consumer-override routes.
+    """
+    if user.is_anonymous:
+        raise AuthenticationError("authentication required")
+    if not user.is_admin:
+        raise PermissionError(required_role="admin")
     return user

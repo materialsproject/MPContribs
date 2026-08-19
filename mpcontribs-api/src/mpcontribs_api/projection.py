@@ -5,8 +5,6 @@ Ie. data.band_gap.something will be properly retrieved and populated into the re
     SparseFieldsModel
 """
 
-from __future__ import annotations
-
 from collections.abc import Iterator
 from functools import lru_cache
 from typing import (
@@ -27,6 +25,9 @@ from pydantic.fields import FieldInfo
 from mpcontribs_api.exceptions import ValidationError
 
 ModelT = TypeVar("ModelT", bound=BaseModel)
+
+# Sentinel value in ``_fields`` that requests the entire document (``?_fields=_all``).
+ALL_FIELDS = "_all"
 
 # How a model field's annotation is categorised for projection.
 FieldKind = Literal["model", "dict", "list", "scalar"]
@@ -205,26 +206,47 @@ class SparseFieldsModel(BaseModel):
         """Return the top-level field names that may appear in ``_fields``."""
         return frozenset(cls.model_fields)
 
+    @staticmethod
+    def default_fields() -> tuple[str, ...]:
+        """Field paths returned when ``_fields`` is omitted.
+
+        The base is empty (identity fields only); each resource output model overrides this with
+        the columns a bare list/detail request should carry.
+        """
+        return ()
+
     @classmethod
     def parse_fields(cls, raw: list | None) -> frozenset[str] | None:
         """Validate and normalise a raw ``_fields`` value into a set of paths.
+
+        Distinguishes the three legacy selection modes, since FastAPI collapses an omitted query
+        parameter and an empty one only if a non-``None`` default hides it (so routes must default
+        the parameter to ``None``):
+
+        - **omitted** (``raw is None``): the model's :meth:`default_fields`.
+        - **present but empty** (``?_fields=`` -> ``['']``, or ``[]``): only the identity fields and
+          ``sparse_always`` — the cheap "just totals / ids" selection.
+        - **``_all`` anywhere in the list**: every field (returns ``None``).
 
         Args:
             raw (list): The list of field paths from the ``_fields`` query parameter,
                 or None when the query parameter was omitted.
 
         Returns:
-            None when every field should be returned (parameter omitted),
-            otherwise the validated, collapsed set of dotted paths, always
-            including this model's ``sparse_always`` fields.
+            None when every field should be returned (``_all`` requested), otherwise the
+            validated, collapsed set of dotted paths, always including this model's
+            ``sparse_always`` and identity fields.
 
         Raises:
             ValidationError: If a requested path names an unknown field or
                 selects subfields of a scalar or list field.
         """
-        if not raw:
-            return None  # None == all fields
+        if raw is None:
+            # Parameter omitted: fall back to this model's server-chosen defaults.
+            raw = list(cls.default_fields())
         requested = frozenset(name.strip() for name in raw if name.strip())
+        if ALL_FIELDS in requested:
+            return None  # explicit _all == every field
         for path in requested:
             _validate_path(cls, path)
         return _collapse(requested | cls.sparse_always | cls._identity_fields())

@@ -25,7 +25,7 @@ async def get_structures(
     service: StructureServiceDep,
     pagination: Annotated[CursorParams, Depends()],
     filter: StructureFilter = FilterDepends(StructureFilter),
-    fields: FieldSelector = StructureOut.default_fields(),
+    fields: FieldSelector = None,
 ):
     selected = StructureOut.parse_fields(fields)
     return await service.get_many(filter=filter, fields=selected, pagination=pagination)
@@ -35,7 +35,7 @@ async def get_structures(
 async def get_one(
     service: StructureServiceDep,
     id: str,
-    fields: FieldSelector = StructureOut.default_fields(),
+    fields: FieldSelector = None,
 ):
     """Return a single structure addressed by its ``_id`` or its content ``md5``."""
     selected = StructureOut.parse_fields(fields)
@@ -50,7 +50,7 @@ async def download_structure(
     short_mime: ShortMimeFormat = ShortMimeFormat.GZ,
     ignore_cache: bool = False,
     filter: StructureFilter = FilterDepends(StructureFilter),
-    fields: FieldSelector = StructureOut.default_fields(),
+    fields: FieldSelector = None,
 ) -> StreamingResponse:
     selected = StructureOut.parse_fields(fields)
     body = await service.download(

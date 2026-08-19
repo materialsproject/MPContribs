@@ -67,7 +67,7 @@ class ComponentService[
         reachability: results are restricted to ids referenced by a contribution the caller is
         allowed to see
         """
-        allowed = await self._contributions.list_referenced_component_ids(self._ref_field, scoped=True)
+        allowed = await self._contributions.referenced_component_ids(self._ref_field, scoped=True)
         return await self._components.get_many(
             pagination=pagination, filter=filter, fields=fields, restrict_ids=allowed
         )
@@ -123,7 +123,7 @@ class ComponentService[
         s3: AbstractAsyncContextManager[S3Client],
     ) -> AsyncIterable[bytes]:
         """Stream a gzip-compressed export of matching components. See ``download``."""
-        allowed = await self._contributions.list_referenced_component_ids(self._ref_field, scoped=True)
+        allowed = await self._contributions.referenced_component_ids(self._ref_field, scoped=True)
         return self._components.download(
             format=format,
             short_mime=short_mime,

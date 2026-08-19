@@ -1,9 +1,11 @@
 import pytest
 
 from mpcontribs_api.authz import User
-from mpcontribs_api.domains.projects.models import Project, ProjectIn, ProjectOut, ProjectPatch, Stats
+from mpcontribs_api.domains.projects.models import Column, Project, ProjectIn, ProjectOut, ProjectPatch, Stats
+from mpcontribs_api.domains.consumers.models import ConsumerSettings
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
 from mpcontribs_api.exceptions import ConflictError, NotFoundError, PermissionError, ValidationError
+from mpcontribs_api.exceptions import PermissionError as AppPermissionError
 from mpcontribs_api.pagination import CursorParams
 
 # All tests in this module share the session event loop so they can reuse the
@@ -21,41 +23,35 @@ ALICE = User(username="google:alice@example.com", groups=frozenset({"mp-team"}))
 ANON = User()
 
 
-def _repo(user: User) -> MongoDbProjectRepository:
-    return MongoDbProjectRepository(user)
+def _repo(user: User, limits: ConsumerSettings | None = None) -> MongoDbProjectRepository:
+    return MongoDbProjectRepository(user, limits)
+
+
+def _cols(n: int) -> list[dict[str, str]]:
+    """n column definitions (coerced into Column by ProjectIn/ProjectPatch)."""
+    return [{"path": f"data.col_{i}"} for i in range(n)]
 
 
 def _project_in(id: str, **overrides) -> ProjectIn:
-    """Build a user-supplied ``ProjectIn`` (content fields only — no server-managed fields)."""
+    """Build a user-supplied ``ProjectIn`` (content fields only — no server-managed id/stats)."""
     defaults = {
-        "id": id,
         "title": id[:30],
         "authors": "Test Author",
         "description": "Test description",
         "owner": "google:alice@example.com",
-        "unique_identifiers": True,
     }
     defaults.update(overrides)
     return ProjectIn(**defaults)
 
 
 async def _insert(id: str, **overrides) -> Project:
-    """Seed a Project document directly.
+    """Seed a project via the repository's insert path.
 
-    ``ProjectIn`` no longer carries server-managed fields, so seeding a specific ``is_public`` /
-    ``is_approved`` / ``stats`` state (as the scope tests need) is done by building the stored
-    ``Project`` and inserting it, bypassing the input contract.
+    ``ProjectIn`` carries ``is_public`` / ``is_approved`` (the scope tests seed specific states
+    through overrides); the id comes from the path, and stats/columns keep their server defaults.
     """
-    defaults = {
-        "_id": id,
-        "title": id[:30],
-        "authors": "Test Author",
-        "description": "Test description",
-        "owner": "google:alice@example.com",
-        "unique_identifiers": True,
-    }
-    defaults.update(overrides)
-    return await Project(**defaults).insert()
+    project_in = _project_in(id, **overrides)
+    return await _repo(ADMIN).insert_project(id, project_in)
 
 
 # ---------------------------------------------------------------------------
@@ -65,19 +61,19 @@ async def _insert(id: str, **overrides) -> Project:
 
 class TestInsertProject:
     async def test_inserted_project_is_retrievable(self, db):
-        await _repo(ADMIN).insert_project(_project_in("ins-basic"))
+        await _insert("ins-basic")
         found = await Project.find_one(Project.id == "ins-basic")
         assert found is not None
         assert found.id == "ins-basic"
 
     async def test_duplicate_id_raises_conflict(self, db):
-        await _repo(ADMIN).insert_project(_project_in("ins-dup"))
+        await _insert("ins-dup")
         with pytest.raises(ConflictError):
-            await _repo(ADMIN).insert_project(_project_in("ins-dup"))
+            await _insert("ins-dup")
 
     async def test_insert_defaults_private_and_unapproved(self, db):
         # ProjectIn carries no is_public/is_approved, so an inserted project is private and unapproved.
-        await _repo(ADMIN).insert_project(_project_in("ins-priv"))
+        await _insert("ins-priv")
         found = await Project.find_one(Project.id == "ins-priv")
         assert found.is_public is False
         assert found.is_approved is False
@@ -279,26 +275,28 @@ class TestFieldProjection:
 
 class TestPagination:
     async def test_limit_is_respected(self, db):
+        # Distinct owners: pagination is orthogonal to the per-owner project cap, so keep every
+        # project under its own owner rather than tripping max_projects.
         for i in range(5):
-            await _insert(f"pag-limit-{i:02d}", is_public=True, is_approved=True)
+            await _insert(f"pag-limit-{i:02d}", owner=f"google:pager{i}@example.com", is_public=True, is_approved=True)
         page = await _repo(ADMIN).get_projects(filter=_noop_filter(), pagination=CursorParams(limit=3), fields=None)
         assert len(page.items) == 3
 
     async def test_next_cursor_set_when_more_items(self, db):
         for i in range(4):
-            await _insert(f"pag-cursor-{i:02d}", is_public=True, is_approved=True)
+            await _insert(f"pag-cursor-{i:02d}", owner=f"google:pager{i}@example.com", is_public=True, is_approved=True)
         page = await _repo(ADMIN).get_projects(filter=_noop_filter(), pagination=CursorParams(limit=2), fields=None)
         assert page.next_cursor is not None
 
     async def test_next_cursor_none_on_last_page(self, db):
         for i in range(3):
-            await _insert(f"pag-last-{i:02d}", is_public=True, is_approved=True)
+            await _insert(f"pag-last-{i:02d}", owner=f"google:pager{i}@example.com", is_public=True, is_approved=True)
         page = await _repo(ADMIN).get_projects(filter=_noop_filter(), pagination=CursorParams(limit=10), fields=None)
         assert page.next_cursor is None
 
     async def test_cursor_fetches_next_page(self, db):
         for i in range(4):
-            await _insert(f"pag-next-{i:02d}", is_public=True, is_approved=True)
+            await _insert(f"pag-next-{i:02d}", owner=f"google:pager{i}@example.com", is_public=True, is_approved=True)
         page1 = await _repo(ADMIN).get_projects(filter=_noop_filter(), pagination=CursorParams(limit=2), fields=None)
         assert page1.next_cursor is not None
         page2 = await _repo(ADMIN).get_projects(
@@ -310,7 +308,7 @@ class TestPagination:
 
     async def test_all_items_covered_across_pages(self, db):
         for i in range(5):
-            await _insert(f"pag-all-{i:02d}", is_public=True, is_approved=True)
+            await _insert(f"pag-all-{i:02d}", owner=f"google:pager{i}@example.com", is_public=True, is_approved=True)
         all_ids: set[str] = set()
         cursor = None
         while True:
@@ -466,7 +464,7 @@ class TestUpsertProjectAuthorization:
         assert found.title == "Original"
 
     async def test_new_project_sets_owner_to_caller(self, db):
-        # Body owner is someone else; the caller's identity must win.
+        # Body carries a foreign owner; the authenticated caller's identity must win on insert.
         data = _project_in("auth-newowner", owner="google:alice@example.com")
         await _repo(BOB).upsert_one({"id": "auth-newowner"}, data=data)
         found = await Project.find_one(Project.id == "auth-newowner")
@@ -564,3 +562,126 @@ class TestUpsertServerManagedFields:
         await _repo(ALICE).upsert_one({"id": "srv-stats"}, data=_project_in("srv-stats"))
         found = await Project.find_one(Project.id == "srv-stats")
         assert found.stats.contributions == 7
+# Server-owned fields: stats / columns are derived, is_approved is admin-only
+# ---------------------------------------------------------------------------
+
+
+class TestServerOwnedFields:
+    async def test_upsert_update_preserves_stats_and_columns(self, db):
+        await _insert("srv-preserve")
+        # A server-computed rollup already lives on the stored document.
+        stored = await Project.find_one(Project.id == "srv-preserve")
+        stored.stats = Stats(columns=2, contributions=5, tables=1, structures=0, attachments=0, size=42.0)
+        stored.columns = [Column(path="data.band_gap", min=0.0, max=1.0, unit="eV")]
+        await stored.save()
+        # A full overwrite must not clobber them.
+        await _repo(ADMIN).upsert_one({"id": "srv-preserve"}, _project_in("srv-preserve", title="Edited"))
+        found = await Project.find_one(Project.id == "srv-preserve")
+        assert found.title == "Edited"
+        assert found.stats.contributions == 5
+        assert [c.path for c in found.columns] == ["data.band_gap"]
+
+    async def test_upsert_new_starts_with_empty_stats(self, db):
+        await _repo(ALICE).upsert_one({"id": "srv-new-empty"}, _project_in("srv-new-empty"))
+        found = await Project.find_one(Project.id == "srv-new-empty")
+        assert found.stats == Stats.empty()
+        assert found.columns == []
+
+    async def test_non_admin_cannot_approve_new_project_via_upsert(self, db):
+        data = _project_in("srv-approve-new", is_approved=True)
+        await _repo(ALICE).upsert_one({"id": "srv-approve-new"}, data)
+        found = await Project.find_one(Project.id == "srv-approve-new")
+        assert found.is_approved is False
+
+    async def test_admin_can_approve_new_project_via_upsert(self, db):
+        data = _project_in("srv-approve-admin", is_approved=True)
+        await _repo(ADMIN).upsert_one({"id": "srv-approve-admin"}, data)
+        found = await Project.find_one(Project.id == "srv-approve-admin")
+        assert found.is_approved is True
+
+    async def test_non_admin_cannot_change_approval_via_upsert(self, db):
+        await _insert("srv-approve-existing", owner="google:alice@example.com", is_approved=True)
+        # The owner (non-admin) overwrites and tries to un-approve; approval must stick.
+        data = _project_in("srv-approve-existing", owner="google:alice@example.com", is_approved=False)
+        await _repo(ALICE).upsert_one({"id": "srv-approve-existing"}, data)
+        found = await Project.find_one(Project.id == "srv-approve-existing")
+        assert found.is_approved is True
+
+    async def test_non_admin_cannot_approve_via_patch(self, db):
+        await _insert("srv-patch-approve", owner="google:alice@example.com")
+        with pytest.raises(AppPermissionError):
+            await _repo(ALICE).patch_one({"id": "srv-patch-approve"}, update=ProjectPatch(is_approved=True))
+        found = await Project.find_one(Project.id == "srv-patch-approve")
+        assert found.is_approved is False
+
+    async def test_admin_can_approve_via_patch(self, db):
+        await _insert("srv-patch-admin", owner="google:alice@example.com")
+        await _repo(ADMIN).patch_one({"id": "srv-patch-admin"}, update=ProjectPatch(is_approved=True))
+        found = await Project.find_one(Project.id == "srv-patch-admin")
+        assert found.is_approved is True
+
+    async def test_non_admin_plain_patch_is_allowed(self, db):
+        await _insert("srv-patch-plain", owner="google:alice@example.com")
+        await _repo(ALICE).patch_one({"id": "srv-patch-plain"}, update=ProjectPatch(title="New Title"))
+        found = await Project.find_one(Project.id == "srv-patch-plain")
+        assert found.title == "New Title"
+# Per-user project-count quota (max_projects)
+# ---------------------------------------------------------------------------
+
+
+ALICE_EMAIL = "google:alice@example.com"
+
+
+class TestProjectCountQuota:
+    async def test_insert_can_reach_exactly_cap(self, db, monkeypatch):
+        # The cap is inclusive: a user may own up to (not fewer than) max_projects.
+        from mpcontribs_api.config import get_settings
+
+        monkeypatch.setattr(get_settings().consumer, "max_projects", 2)
+        await _insert("cap-1", owner=ALICE_EMAIL)
+        await _insert("cap-2", owner=ALICE_EMAIL)
+        assert await Project.find(Project.owner == ALICE_EMAIL).count() == 2
+
+    async def test_insert_over_cap_rejected(self, db, monkeypatch):
+        from mpcontribs_api.config import get_settings
+        from mpcontribs_api.exceptions import PermissionError as AppPermissionError
+
+        monkeypatch.setattr(get_settings().consumer, "max_projects", 2)
+        await _insert("cap-a", owner=ALICE_EMAIL)
+        await _insert("cap-b", owner=ALICE_EMAIL)
+        with pytest.raises(AppPermissionError):
+            await _insert("cap-c", owner=ALICE_EMAIL)
+
+    async def test_upsert_new_project_over_cap_rejected(self, db, monkeypatch):
+        # A brand-new project via upsert is counted against the caller's cap.
+        from mpcontribs_api.config import get_settings
+        from mpcontribs_api.exceptions import PermissionError as AppPermissionError
+
+        monkeypatch.setattr(get_settings().consumer, "max_projects", 1)
+        await _insert("owned-1", owner=ALICE_EMAIL)
+        data = _project_in("new-proj", owner=ALICE_EMAIL)
+        with pytest.raises(AppPermissionError):
+            await _repo(ALICE).upsert_one({"id": "new-proj"}, data)
+
+    async def test_upsert_existing_project_allowed_at_cap(self, db, monkeypatch):
+        # Regression: updating a project you already own must never be blocked by the cap, even
+        # when you are exactly at it. Only *new* projects count against the quota.
+        from mpcontribs_api.config import get_settings
+
+        monkeypatch.setattr(get_settings().consumer, "max_projects", 1)
+        await _insert("owned-only", owner=ALICE_EMAIL)
+        data = _project_in("owned-only", owner=ALICE_EMAIL, title="Updated Title")
+        result = await _repo(ALICE).upsert_one({"id": "owned-only"}, data)
+        assert result.title == "Updated Title"
+
+    async def test_injected_consumer_override_lowers_cap(self, db):
+        # A per-consumer override resolves to a ConsumerSettings injected into the repo; the cap it
+        # carries is enforced without touching global config. Here the override tightens the cap to 1.
+        repo = _repo(ALICE, ConsumerSettings(max_projects=1))
+        await repo.insert_project("override-1", _project_in("override-1", owner=ALICE_EMAIL))
+        from mpcontribs_api.exceptions import PermissionError as AppPermissionError
+
+        with pytest.raises(AppPermissionError):
+            await repo.insert_project("override-2", _project_in("override-2", owner=ALICE_EMAIL))
+
+

@@ -13,7 +13,8 @@ def _valid_contribution_body(**overrides) -> dict:
     body = {
         "_id": str(PydanticObjectId()),
         "project": "test-project",
-        "identifier": "mp-1234",
+        "material_id": "mp-1234",
+        "chemical_system_id": "Fe-O",
         "formula": "Fe2O3",
         "data": {"band_gap": 2.1},
     }

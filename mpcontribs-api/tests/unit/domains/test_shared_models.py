@@ -8,9 +8,6 @@ from mpcontribs_api.domains._shared.models import (
     DocumentOut,
 )
 from mpcontribs_api.domains.attachments.models import Attachment, AttachmentIn
-from mpcontribs_api.domains.contributions.models import Contribution, ContributionIn
-from mpcontribs_api.domains.project_groups.models import ProjectGroup
-from mpcontribs_api.domains.projects.models import Project
 from mpcontribs_api.pagination import encode_cursor
 
 # ---------------------------------------------------------------------------
@@ -99,47 +96,6 @@ class TestDocumentOut:
 # ---------------------------------------------------------------------------
 # DeleteResponse.from_delete_result
 # ---------------------------------------------------------------------------
-
-
-# ---------------------------------------------------------------------------
-# identifier_fields() / identifiers() contract
-# ---------------------------------------------------------------------------
-
-
-class TestIdentifierContract:
-    def test_component_uses_md5(self):
-        # Content-addressed components identify by their content hash.
-        assert Attachment.identifier_fields() == frozenset({"md5"})
-
-    def test_project_uses_id(self):
-        # Project inherits the base default (primary key) unchanged.
-        assert Project.identifier_fields() == frozenset({"id"})
-
-    def test_project_group_uses_name_and_owner(self):
-        assert ProjectGroup.identifier_fields() == frozenset({"name", "owner"})
-
-    def test_contribution_uses_project_identifier_version(self):
-        assert Contribution.identifier_fields() == frozenset({"project", "identifier", "version"})
-        assert ContributionIn.identifier_fields() == frozenset({"project", "identifier", "version"})
-
-    def test_default_identifiers_reads_values_off_instance(self):
-        oid = PydanticObjectId()
-        doc = Attachment.from_input(_attachment_in())
-        doc.id = oid
-        # identifiers() reads the declared identifier fields off the instance — md5 for components.
-        assert doc.identifiers() == {"md5": doc.md5}
-
-    def test_contribution_identifiers_returns_natural_key_values(self):
-        contrib = ContributionIn(
-            **{
-                "_id": PydanticObjectId(),
-                "project": "test-project",
-                "identifier": "mp-1234",
-                "formula": "Fe2O3",
-                "data": {},
-            }
-        )
-        assert contrib.identifiers() == {"project": "test-project", "identifier": "mp-1234"}
 
 
 class TestDeleteResponse:

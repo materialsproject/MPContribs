@@ -3,19 +3,23 @@ from typing import Any
 from beanie import PydanticObjectId, UpdateResponse
 from beanie.operators import Set
 from bson import DBRef
+from pymongo import UpdateOne
 from pymongo.asynchronous.client_session import AsyncClientSession
 
 from mpcontribs_api.authz import User
 from mpcontribs_api.domains._shared.models import DeleteResponse
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
+from mpcontribs_api.domains.consumers.models import ConsumerSettings
 from mpcontribs_api.domains.projects.models import (
+    Column,
     Project,
     ProjectFilter,
     ProjectIn,
     ProjectOut,
     ProjectPatch,
+    Stats,
 )
-from mpcontribs_api.exceptions import NotFoundError, PermissionError, ValidationError
+from mpcontribs_api.exceptions import ConflictError, NotFoundError, PermissionError, ValidationError
 from mpcontribs_api.pagination import CursorParams
 
 
@@ -35,6 +39,11 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
     document_model = Project
     out_model = ProjectOut
 
+    def __init__(self, user: User, limits: ConsumerSettings | None = None) -> None:
+        super().__init__(user)
+        self._user = user
+        self._limits = limits or ConsumerSettings()
+
     @staticmethod
     def _build_scope(user: User) -> dict[str, Any]:
         """Provides scope based on current user's permitted groups and publicly released data."""
@@ -47,6 +56,19 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
                 ors.append({"_id": {"$in": sorted(user.groups)}})
         return {"$or": ors}
 
+    async def _check_num_projects(self, owner: str):
+        """Reject a *new* project that would push ``owner`` past the per-user cap."""
+        max_projects = self._limits.max_projects
+        # Soft limit: this count-then-insert is not atomic, so concurrent creates by the same owner
+        # can overshoot the cap by a bounded amount. Acceptable for an anti-abuse quota.
+        result = await Project.find(Project.owner == owner).count()
+        if result >= max_projects:
+            raise PermissionError(
+                f"Cannot be owner of more than {max_projects} projects",
+                owner=owner,
+                num_projects=result,
+            )
+
     async def get_projects(
         self,
         filter: ProjectFilter,
@@ -56,18 +78,20 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
         """Query the Project collection, scoped to the current user. See ``get_many``."""
         return await self.get_many(pagination=pagination, filter=filter, fields=fields)
 
-    async def unique_identifiers_by_id(self, ids: list[str]) -> dict[str, bool]:
-        """Return ``{project_id: unique_identifiers}`` for the given project ids, scoped to the user.
+    async def unique_columns_by_id(self, ids: list[str]) -> dict[str, str | None]:
+        """Return ``{project_id: unique_column}`` for the given project ids, scoped to the user.
 
-        Used by the contribution write path to apply per-project version rules in one round-trip
-        instead of fetching each project separately. Projects the user cannot see (or that do not
-        exist) are simply absent from the result, so the caller can treat them as inaccessible.
+        Used by the contribution write path to resolve each project's identity discriminator in one
+        round-trip instead of fetching each project separately. ``unique_column`` is ``None`` when the
+        project sets none (identity is then the fixed-field triple). Projects the user cannot see (or
+        that do not exist) are simply absent from the result, so the caller can treat them as
+        inaccessible.
 
         Args:
             ids: project ids to look up
 
         Returns:
-            dict[str, bool]: mapping of project id to its ``unique_identifiers`` flag
+            dict[str, str | None]: mapping of project id to its ``unique_column`` (or ``None``)
         """
         if not ids:
             return {}
@@ -75,14 +99,51 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
         if self._scope:
             query = {"$and": [self._scope, query]}
         collection = self.document_model.get_pymongo_collection()
-        result: dict[str, bool] = {}
-        async for doc in collection.find(query, {"unique_identifiers": 1}):
-            result[doc["_id"]] = bool(doc.get("unique_identifiers"))
+        result: dict[str, str | None] = {}
+        async for doc in collection.find(query, {"unique_column": 1}):
+            result[doc["_id"]] = doc.get("unique_column")
         return result
 
-    async def insert_project(self, project: ProjectIn) -> Project:
-        """Insert a new project, rejecting a duplicate id. See ``insert_one``."""
-        return await self.insert_one(project)
+    async def set_stats_and_columns(self, updates: dict[str, tuple[Stats, list[Column]]]) -> None:
+        """Overwrite the derived ``stats``/``columns`` of the given projects in one bulk write.
+
+        A **system-computed write**: identity is the project ``_id`` alone and the user scope is
+        deliberately not applied. Stats are recomputed from a project's contributions after a write
+        (see ``ContributionService.update_project``) and must land even when the caller is a group
+        contributor who does not own the project. Missing ids match nothing and are silently skipped.
+
+        Args:
+            updates: ``{project_id: (stats, columns)}`` to persist
+        """
+        if not updates:
+            return
+        ops = [
+            UpdateOne(
+                {"_id": pid},
+                {
+                    "$set": {
+                        "stats": stats.model_dump(mode="json"),
+                        "columns": [c.model_dump(mode="json") for c in cols],
+                    }
+                },
+            )
+            for pid, (stats, cols) in updates.items()
+        ]
+        await self.document_model.get_pymongo_collection().bulk_write(ops, ordered=False)
+
+    async def insert_project(self, id: str, project: ProjectIn) -> Project:
+        """Insert a new project under ``id`` (supplied by the caller), rejecting a duplicate id.
+
+        Projects carry a meaningful ``ShortStr`` id that is not part of the input body, so — unlike
+        the generic ``insert_one`` — the id is passed explicitly and stamped onto the document here.
+        """
+        await self._check_num_projects(project.owner)
+        document = Project.from_input_model(project, id=id)
+        existing = await self.document_model.find_one(self.document_model.id == id)
+        if existing:
+            raise ConflictError(f"Cannot insert document.\n Document with ID {id} exists")
+        await document.insert()
+        return document
 
     async def patch_one(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, identifiers: dict[str, Any], update: ProjectPatch, session: AsyncClientSession | None = None
@@ -189,23 +250,35 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
             raise PermissionError(required_role="authenticated")
 
         id = identifiers["id"]
+        # ``columns`` are server-owned (derived from contributions) and absent from ProjectIn, so
+        # there is no client-supplied column set to cap on the write path.
         existing = await self.document_model.find_one(self.document_model.id == id)
-        project = self.document_model.from_input_model(data)
-        project.id = id
+        project = self.document_model.from_input_model(data, id=id)
         if existing is not None:
             if not (self._user.is_admin or existing.owner == self._user.username):
                 raise PermissionError(required_role="owner-or-admin")
-            # Ownership is immutable via upsert; keep the original owner.
+            # Ownership is immutable via upsert; keep the original owner. Updating an existing
+            # project does not create a new one, so the per-user project cap does not apply.
             project.owner = existing.owner
             # make sure a full replacement doesn't overwrite server-defined fields
             for field in self.document_model.server_managed_fields():
                 setattr(project, field, getattr(existing, field))
+            # Server-owned rollups are never taken from the request body; keep the stored values
+            # (they self-heal on the next contribution write via ``ContributionService``).
+            project.stats = existing.stats
+            project.columns = existing.columns
+            # Approval is an admin-only curation flag: a non-admin cannot toggle it via a full
+            # overwrite, so preserve whatever is already stored.
+            if not self._user.is_admin:
+                project.is_approved = existing.is_approved
         else:
-            # New project: the caller owns it, regardless of the submitted owner.
+            # New project: the caller owns it, regardless of the submitted owner. Enforce the
+            # per-user cap against the caller before creating another project under their name.
             project.owner = self._user.username
             # Approval is admin-only; a non-admin's new project always starts unapproved.
             if not self._user.is_admin:
                 project.is_approved = False
+            await self._check_num_projects(self._user.username)
 
         if project.is_public and not project.is_approved:
             raise ValidationError("a project cannot be public until it is approved", id=id)

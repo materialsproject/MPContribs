@@ -30,15 +30,13 @@ def _service(user: User = ADMIN) -> ProjectGroupService:
 
 async def _insert_project(pid: str, owner: str = ALICE_EMAIL, **overrides):
     payload = {
-        "id": pid,
         "title": pid[:30],
         "authors": "Author",
         "description": "desc",
         "owner": owner,
-        "unique_identifiers": True,
     }
     payload.update(overrides)
-    return await MongoDbProjectRepository(ADMIN).insert_project(ProjectIn(**payload))
+    return await MongoDbProjectRepository(ADMIN).insert_project(pid, ProjectIn(**payload))
 
 
 async def _insert_group(name: str, owner: str = ALICE_EMAIL) -> ProjectGroup:

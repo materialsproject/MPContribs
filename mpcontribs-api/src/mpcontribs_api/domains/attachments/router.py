@@ -24,7 +24,7 @@ async def get_attachments(
     service: AttachmentServiceDep,
     pagination: Annotated[CursorParams, Depends()],
     filter: AttachmentFilter = FilterDepends(AttachmentFilter),
-    fields: FieldSelector = AttachmentOut.default_fields(),
+    fields: FieldSelector = None,
 ):
     selected = AttachmentOut.parse_fields(fields)
     return await service.get_many(filter=filter, fields=selected, pagination=pagination)
@@ -34,7 +34,7 @@ async def get_attachments(
 async def get_one(
     service: AttachmentServiceDep,
     id: str,
-    fields: FieldSelector = AttachmentOut.default_fields(),
+    fields: FieldSelector = None,
 ):
     """Return a single attachment addressed by its ``_id``."""
     selected = AttachmentOut.parse_fields(fields)
@@ -49,7 +49,7 @@ async def download_attachment(
     short_mime: ShortMimeFormat = ShortMimeFormat.GZ,
     ignore_cache: bool = False,
     filter: AttachmentFilter = FilterDepends(AttachmentFilter),
-    fields: FieldSelector = AttachmentOut.default_fields(),
+    fields: FieldSelector = None,
 ) -> StreamingResponse:
     selected = AttachmentOut.parse_fields(fields)
     body = await service.download(

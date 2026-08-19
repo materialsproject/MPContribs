@@ -39,14 +39,13 @@ def _collaborator(slug: str, username: str = BOB_EMAIL) -> User:
 
 async def _insert_project(pid: str, owner: str = ALICE_EMAIL) -> Project:
     return await MongoDbProjectRepository(ADMIN).insert_project(
+        pid,
         ProjectIn(
-            id=pid,
             title=pid[:30],
             authors="Author",
             description="desc",
             owner=owner,
-            unique_identifiers=True,
-        )
+        ),
     )
 
 
@@ -161,8 +160,11 @@ class TestMemberCap:
         again = await _service(ALICE).patch_one({"id": "idem-proj-0"}, ProjectPatch(initiative="init-idem"))
         assert again.initiative is not None
 
-    async def test_approved_initiative_has_no_member_cap(self, db):
+    async def test_approved_initiative_has_no_member_cap(self, db, monkeypatch):
         cap = get_settings().domain.initiatives.max_projects_per_unapproved
+        # Lift the orthogonal per-user project quota so seeding cap+2 owned projects doesn't trip it;
+        # this test isolates the *initiative member* cap, not the project-count cap.
+        monkeypatch.setattr(get_settings().consumer, "max_projects", cap + 5)
         await _insert_initiative("init-approved", ALICE)
         await InitiativeRepository(ADMIN).patch_one({"slug": "init-approved"}, InitiativePatch(is_approved=True))
         for i in range(cap + 2):  # comfortably past the unapproved cap

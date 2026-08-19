@@ -1,0 +1,86 @@
+# Reusable CI runner.
+#
+# The `test` job always runs the suite named by `test-suite`
+# The `lint` and `typecheck` jobs only run when `run-quality` is true — the caller
+# sets that for pushes/PRs to dev or master, and leaves it false for feature-branch
+# pushes (which only get the fast unit suite).
+name: _python-ci
+
+on:
+  workflow_call:
+    inputs:
+      package:
+        description: "Package directory, e.g. mpcontribs-api"
+        required: true
+        type: string
+      python-version:
+        description: "Override Python version; empty = use the package's .python-version pin"
+        required: false
+        type: string
+        default: ""
+      test-suite:
+        description: "Suite passed to `just test <suite>` (e.g. u = unit, all = everything)"
+        required: false
+        type: string
+        default: "u"
+      run-quality:
+        description: "Run the lint/format/lock and typecheck gates (dev/master only)"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    if: ${{ inputs.run-quality }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.package }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: "${{ inputs.package }}/uv.lock"
+      - uses: extractions/setup-just@v4
+      - run: uv python install ${{ inputs.python-version }}
+      - run: just install
+      - run: just lint
+      - run: just format-check
+      - run: just lock-check
+
+  typecheck:
+    if: ${{ inputs.run-quality }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.package }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: "${{ inputs.package }}/uv.lock"
+      - uses: extractions/setup-just@v4
+      - run: uv python install ${{ inputs.python-version }}
+      - run: just install
+      - run: just typecheck
+
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.package }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: "${{ inputs.package }}/uv.lock"
+      - uses: extractions/setup-just@v4
+      - run: uv python install ${{ inputs.python-version }}
+      - run: just install
+      - run: just test ${{ inputs.test-suite }}

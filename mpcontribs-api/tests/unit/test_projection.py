@@ -222,12 +222,42 @@ class TestFieldNames:
 # ---------------------------------------------------------------------------
 
 
-class TestParseFields:
-    def test_none_returns_none(self):
-        assert Simple.parse_fields(None) is None
+class WithDefaults(SparseFieldsModel):
+    """Model exercising the three-way `_fields` semantics: has identity + server defaults."""
 
-    def test_empty_list_returns_none(self):
-        assert Simple.parse_fields([]) is None
+    id: str | None = Field(default=None, alias="_id", serialization_alias="id")
+    name: str | None = None
+    age: int | None = None
+
+    @staticmethod
+    def default_fields() -> tuple[str, ...]:
+        return ("id", "name")
+
+
+class TestParseFields:
+    def test_omitted_returns_default_fields(self):
+        # Parameter omitted (None) -> the model's server-chosen defaults (plus identity).
+        assert WithDefaults.parse_fields(None) == frozenset({"id", "name"})
+
+    def test_empty_list_returns_identity_only(self):
+        # Explicitly empty selection -> only identity fields (the cheap "just ids/totals" call).
+        assert WithDefaults.parse_fields([]) == frozenset({"id"})
+
+    def test_empty_string_selection_returns_identity_only(self):
+        # FastAPI renders `?_fields=` as [""]; stripped to empty -> identity only, not "all".
+        assert WithDefaults.parse_fields([""]) == frozenset({"id"})
+
+    def test_all_sentinel_returns_none(self):
+        # `_all` anywhere -> every field (None sentinel).
+        assert WithDefaults.parse_fields(["_all"]) is None
+        assert WithDefaults.parse_fields(["name", "_all"]) is None
+
+    def test_normal_selection_includes_identity(self):
+        assert WithDefaults.parse_fields(["age"]) == frozenset({"age", "id"})
+
+    def test_base_model_omitted_is_identity_only(self):
+        # A model without a default_fields override falls back to the empty base default.
+        assert Simple.parse_fields(None) == frozenset()
 
     def test_single_valid_field(self):
         result = Simple.parse_fields(["name"])

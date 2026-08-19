@@ -1,15 +1,174 @@
 import re
 import unicodedata
+from abc import ABC
+from collections.abc import Callable, Mapping
+from dataclasses import MISSING, dataclass, fields
 from enum import StrEnum
-from typing import Annotated
+from functools import cache
+from typing import Annotated, Any, Self, get_args, get_type_hints
 
 import polars as pl
 from fastapi import Query
 from pydantic import BeforeValidator, Field, PlainSerializer, WithJsonSchema
+from pymatgen.core import Element
+from pymongo import ASCENDING, IndexModel
 
-from mpcontribs_api.exceptions import ValidationError
+from mpcontribs_api.exceptions import DataKeyError, ValidationError
 
 ShortStr = Annotated[str, Field(min_length=3, max_length=30)]
+
+Scalar = str | int | float | bool
+
+# A material id is ``mp-`` followed by either a numeric id (MpId) or an alphabetic id (AlphaId).
+# The whole value is lowercased first, so ``"MP-abc"`` and ``"mp-ABC"`` both normalize identically.
+_MATERIAL_ID_DIGITS_RE = re.compile(r"^mp-([0-9]+)$")
+_MAX_MATERIAL_ID_DIGITS = 7
+
+_MATERIAL_ID_ALPHA_RE = re.compile(r"^mp-([a-z]+)$")
+_ALPHA_ID_LENGTH = 8
+
+
+def _validate_material_id(v: str | None) -> str | None:
+    """Normalize a Materials Project id, accepting either the numeric (MpId) or alphabetic (AlphaId) form.
+
+    The value is lowercased first (``"MP-abc"`` / ``"mp-ABC"`` -> ``"mp-aaaaaabc"``).
+
+    MpId: ``mp-`` + up to 7 digits, leading zeros trimmed (``"mp-001"`` -> ``"mp-1"``).
+    AlphaId: ``mp-`` + up to 8 letters, left-padded with 'a's to 8 (``"mp-bcd"`` -> ``"mp-aaaaabcd"``).
+    Rejects anything not shaped ``mp-<digits>`` or ``mp-<letters>``, numeric ids with more than 7
+    significant digits, and alpha ids with more than 8 letters.
+    """
+    if v is None:
+        return None
+    s = v.strip().lower()
+
+    digits_match = _MATERIAL_ID_DIGITS_RE.match(s)
+    if digits_match is not None:
+        trimmed = digits_match.group(1).lstrip("0") or "0"
+        if len(trimmed) > _MAX_MATERIAL_ID_DIGITS:
+            raise ValidationError(
+                f"material_id '{v}' invalid. Numeric part must be at most {_MAX_MATERIAL_ID_DIGITS} digits",
+                material_id=v,
+            )
+        return f"mp-{trimmed}"
+
+    alpha_match = _MATERIAL_ID_ALPHA_RE.match(s)
+    if alpha_match is not None:
+        # Left-pad with 'a's to a fixed width of 8; every provided letter is significant, so a caller
+        # who drops leading 'a's (``"mp-bcd"``) and one who spells them out (``"mp-aaaaabcd"``) agree.
+        letters = alpha_match.group(1)
+        if len(letters) > _ALPHA_ID_LENGTH:
+            raise ValidationError(
+                f"material_id '{v}' invalid. Alphabetic part must be at most {_ALPHA_ID_LENGTH} letters",
+                material_id=v,
+            )
+        return f"mp-{letters.rjust(_ALPHA_ID_LENGTH, 'a')}"
+
+    raise ValidationError(
+        f"material_id '{v}' invalid. Must be 'mp-' followed by digits (e.g. 'mp-149') "
+        "or up to 8 letters (e.g. 'mp-abcd')",
+        material_id=v,
+    )
+
+
+MaterialId = Annotated[str, BeforeValidator(_validate_material_id)]
+
+
+def _validate_chemical_system_id(v: str | None) -> str | None:
+    """Validate a hyphen-delimited chemical system of element symbols, e.g. ``"Fe-O"``."""
+    if v is None:
+        return None
+    s = v.strip()
+    if not s:
+        raise ValidationError("chemical_system_id must not be empty", chemical_system_id=v)
+    normalized_tokens: list[str] = []
+    for token in s.split("-"):
+        # Normalize casing (e.g. "fe", "FE", "fE" -> "Fe") before validating.
+        normalized = token.capitalize()
+        if not Element.is_valid_symbol(normalized):
+            raise ValidationError(
+                f"chemical_system_id '{v}' invalid. '{token}' is not a valid element symbol",
+                chemical_system_id=v,
+                invalid_token=token,
+            )
+        normalized_tokens.append(normalized)
+    return "-".join(normalized_tokens)
+
+
+ChemicalSystemId = Annotated[str, BeforeValidator(_validate_chemical_system_id)]
+
+
+# Each token is an element symbol (upper, optional lower) followed by an optional count. The count
+# may be an integer or a decimal (e.g. ``"Si0.2C0.64"``), so fractional stoichiometries are allowed.
+_FORMULA_TOKEN_RE = re.compile(r"([A-Z][a-z]?)([0-9]*\.?[0-9]*)")
+
+
+def _normalize_count(count: str) -> str | None:
+    """Normalize an integer or decimal count, returning ``None`` if it is not positive.
+
+    Trims leading zeros (``"02"`` -> ``"2"``) and trailing fractional zeros (``"0.20"`` -> ``"0.2"``,
+    ``"2.0"`` -> ``"2"``), and infers an omitted leading zero (``".1"`` -> ``"0.1"``). A count that
+    collapses to zero (``"0"``, ``"0.0"``) or has no digits (``"."``) returns ``None``.
+    """
+    if "." in count:
+        int_part, frac_part = count.split(".", 1)
+        int_part = int_part.lstrip("0")
+        frac_part = frac_part.rstrip("0")
+        if frac_part:
+            return f"{int_part or '0'}.{frac_part}"
+        # Fractional part collapsed to zero -> treat as a whole number (``None`` if that is zero too).
+        return int_part or None
+    return count.lstrip("0") or None
+
+
+def _validate_formula(v: str | None) -> str | None:
+    """Validate/normalize a formula: element symbols each optionally followed by a count.
+
+    The value is NFKC-normalized first, so unicode subscripts/superscripts and full-width forms
+    fold to their ASCII equivalents (``"Fe₂O₃"`` -> ``"Fe2O3"``). Counts may be integers or decimals
+    (``"Si0.2C0.64"``); leading zeros and trailing fractional zeros are then trimmed
+    (``"Fe02O3"`` -> ``"Fe2O3"``, ``"Fe2.0O3"`` -> ``"Fe2O3"``). Rejects unknown element symbols,
+    stray characters, and non-positive counts (``"Fe0"``).
+    """
+    if v is None:
+        return None
+    s = unicodedata.normalize("NFKC", v).strip()
+    if not s:
+        raise ValidationError("formula must not be empty", formula=v)
+    parts: list[str] = []
+    pos = 0
+    for match in _FORMULA_TOKEN_RE.finditer(s):
+        # A gap between the previous match end and this match start means a stray/invalid character.
+        if match.start() != pos:
+            break
+        symbol, count = match.group(1), match.group(2)
+        if not Element.is_valid_symbol(symbol):
+            raise ValidationError(
+                f"formula '{v}' invalid. '{symbol}' is not a valid element symbol",
+                formula=v,
+                invalid_symbol=symbol,
+            )
+        if count:
+            normalized = _normalize_count(count)
+            if normalized is None:
+                raise ValidationError(
+                    f"formula '{v}' invalid. Count for '{symbol}' must be a positive number",
+                    formula=v,
+                    invalid_count=count,
+                )
+            count = normalized
+        parts.append(f"{symbol}{count}")
+        pos = match.end()
+    if pos != len(s):
+        raise ValidationError(
+            f"formula '{v}' invalid. Must be valid element symbols each optionally followed by a "
+            "positive integer or decimal count (e.g. 'Fe2O3', 'Si0.2C0.64')",
+            formula=v,
+        )
+    return "".join(parts)
+
+
+Formula = Annotated[str, BeforeValidator(_validate_formula)]
 
 FieldSelector = Annotated[list[str] | None, Query(alias="_fields")]
 
@@ -19,7 +178,7 @@ _EMAIL_RE = re.compile(r"^[^:@\s]+:[^:@\s]+@[^@\s]+\.[^@\s]+$")
 def _validate_prefixed_email(v: str) -> str:
     v = v.strip()
     if not _EMAIL_RE.match(v):
-        raise ValidationError("must match '<provider>:<name>@<domain>', e.g. 'google:name@gmail.com'")
+        raise ValidationError("email must match '<provider>:<name>@<domain>', e.g. 'google:name@gmail.com'", email=v)
     return v
 
 
@@ -90,13 +249,6 @@ def _coerce_frame(v: object) -> pl.DataFrame:
 
 def _serialize_frame(data: pl.DataFrame) -> dict:
     return data.to_dict(as_series=False)
-
-
-# Beanie/pymongo would otherwise BSON-encode a pl.DataFrame by iterating it into bare column
-# lists, dropping the column names and the dict shape the Pydantic serializer produces — which
-# `_coerce_frame` cannot read back. Registering this on a Document's Settings.bson_encoders makes
-# the stored form match the serialized form, so frames round-trip losslessly.
-FRAME_BSON_ENCODERS = {pl.DataFrame: _serialize_frame}
 
 
 PolarsFrame = Annotated[
@@ -214,3 +366,116 @@ def _validate_slug(v: str) -> str:
 
 
 Slug = Annotated[str, Field(min_length=3, max_length=50), BeforeValidator(_validate_slug)]
+
+
+def coerce_key(key: Any, *, require_ascii: bool = False, reserved: frozenset[str] | None = None) -> str:
+    """Coerce one dict key to canonical ``snake_case``, enforcing the shared write-path key guards.
+
+    Always rejects a key that reduces to an empty string after coercion. The extra guards are opt-in
+    per call site, since not every caller wants them (e.g. the post-validation write path skips the
+    ASCII check because keys were already validated):
+
+    - ``require_ascii``: reject a non-``str`` or non-ASCII key before coercion.
+    - ``reserved``: reject a coerced key that lands in the reserved-leaf-key set.
+
+    Raises:
+        DataKeyError: on a non-ASCII (when required), empty-after-coercion, or reserved key. It is a
+            :class:`ValidationError` subclass, so callers catching either still see it.
+    """
+    if require_ascii and (not isinstance(key, str) or not key.isascii()):
+        raise DataKeyError("Non-ASCII key found in Contribution.data. All dict keys must be only ASCII")
+    coerced = to_snake_case(key)
+    if not coerced:
+        raise DataKeyError(f"data key '{key}' reduces to an empty string after snake_case coercion")
+    if reserved is not None and coerced in reserved:
+        raise DataKeyError(
+            f"data key '{key}' is reserved for annotated-value leaves and may not be used",
+            key=key,
+            reserved=sorted(reserved),
+        )
+    return coerced
+
+
+def map_keys(value: Any, *, coerce: Callable[[Any], str], on_scalar: Callable[[Any], Any] = lambda x: x) -> Any:
+    """Recursively rebuild ``value`` with every dict key coerced via ``coerce``.
+
+     Dicts have each key coerced (sibling collisions on the coerced name rejected) and their values
+     recursed; lists recurse element-wise; every scalar is passed through ``on_scalar`` (identity by
+    default). This is the shared walk behind the write-path key coercion.
+
+     Raises:
+         DataKeyError: if two sibling keys collide on the same coerced name (``coerce`` may raise its
+             own errors per key).
+    """
+    if isinstance(value, dict):
+        out: dict[str, Any] = {}
+        for key, sub in value.items():
+            coerced = coerce(key)
+            if coerced in out:
+                raise DataKeyError("data keys collide after coercion", value=coerced)
+            out[coerced] = map_keys(sub, coerce=coerce, on_scalar=on_scalar)
+        return out
+    if isinstance(value, list):
+        return [map_keys(item, coerce=coerce, on_scalar=on_scalar) for item in value]
+    return on_scalar(value)
+
+
+@cache
+def _optional_field_names(cls: type) -> frozenset[str]:
+    """Names of ``cls``'s dataclass fields whose type admits ``None`` (resolved through string annotations)."""
+    hints = get_type_hints(cls)
+    return frozenset(f.name for f in fields(cls) if type(None) in get_args(hints.get(f.name)))
+
+
+# dataclass construction is cheaper than Pydantic.BaseModel
+@dataclass(frozen=True, slots=True)
+class Identity(ABC):  # noqa: B024  # base kept abstract as a marker; from_document is a shared concrete helper
+    """The full identity of a document model.
+
+    Field declaration order IS the identity/index column order: ``index_model`` and ``projection``
+    iterate ``dataclasses.fields`` in that order, so the order is declared exactly once (below).
+    """
+
+    # WARNING: the order the fields are specified in reflects their ordering for indices. Changing the order
+    # creates index migration. Only change intentionally
+
+    def as_dict(self) -> dict[str, Any]:
+        """Identity as a flat dict keyed by field name (for Mongo match clauses and upsert)."""
+        return {f.name: getattr(self, f.name) for f in fields(self)}
+
+    @classmethod
+    def model_fields(cls) -> frozenset[str]:
+        """Returns the field names as a frozenset"""
+        return frozenset(f.name for f in fields(cls))
+
+    @classmethod
+    def from_document(cls, doc: Mapping[str, Any]) -> Self:
+        """Build from a raw Mongo document/projection, tolerating null-stripped fields.
+
+        Generic over any ``@dataclass`` subclass: iterates the concrete class's own fields,
+        falling back to each field's default (or ``None`` for a defaultless Optional field) when the
+        document omits it, since Mongo strips nulls (``keep_nulls=False``). Required non-null fields
+        that are absent surface as a ``TypeError`` from the constructor.
+        """
+        optional = _optional_field_names(cls)
+        kwargs: dict[str, Any] = {}
+        for f in fields(cls):
+            if doc.get(f.name) is not None:
+                kwargs[f.name] = doc[f.name]
+            elif f.default is not MISSING:
+                kwargs[f.name] = f.default
+            elif f.default_factory is not MISSING:
+                kwargs[f.name] = f.default_factory()
+            elif f.name in optional:
+                kwargs[f.name] = None
+        return cls(**kwargs)
+
+    @classmethod
+    def index_model(cls, name: str = "project_identity", *, unique: bool = True) -> IndexModel:
+        """The unique index enforcing identity — keys follow the field order so they can't drift."""
+        return IndexModel(keys=[(f.name, ASCENDING) for f in fields(cls)], name=name, unique=unique)
+
+    @classmethod
+    def projection(cls) -> dict[str, int]:
+        """A Mongo projection selecting exactly the identity fields."""
+        return {f.name: 1 for f in fields(cls)}

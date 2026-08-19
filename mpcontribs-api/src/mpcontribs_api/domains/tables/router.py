@@ -25,7 +25,7 @@ async def get_tables(
     service: TableServiceDep,
     pagination: Annotated[CursorParams, Depends()],
     filter: TableFilter = FilterDepends(TableFilter),
-    fields: FieldSelector = TableOut.default_fields(),
+    fields: FieldSelector = None,
 ):
     selected = TableOut.parse_fields(fields)
     return await service.get_many(filter=filter, fields=selected, pagination=pagination)
@@ -35,7 +35,7 @@ async def get_tables(
 async def get_one(
     service: TableServiceDep,
     id: str,
-    fields: FieldSelector = TableOut.default_fields(),
+    fields: FieldSelector = None,
 ):
     """Return a single table addressed by its ``_id`` or its content ``md5``."""
     selected = TableOut.parse_fields(fields)
@@ -50,7 +50,7 @@ async def download_table(
     short_mime: ShortMimeFormat = ShortMimeFormat.GZ,
     ignore_cache: bool = False,
     filter: TableFilter = FilterDepends(TableFilter),
-    fields: FieldSelector = TableOut.default_fields(),
+    fields: FieldSelector = None,
 ) -> StreamingResponse:
     selected = TableOut.parse_fields(fields)
     body = await service.download(

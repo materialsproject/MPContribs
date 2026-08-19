@@ -13,6 +13,13 @@ include-package-data = true
 where = ["src"]
 include = ["mpcontribs_api*"]
 
+[tool.commitizen]
+name = "cz_conventional_commits"
+tag_format = "v$version"
+version_scheme = "pep440"
+version_provider = "uv"
+update_changelog_on_bump = true
+
 [project]
 name = "mpcontribs-api"
 dynamic = ["version"]
@@ -50,6 +57,8 @@ dependencies = [
     "structlog>=25.5.0",
     "supervisor>=4.3.0",
     "types-aiobotocore[s3]>=3.7.0",
+    "pint>=0.25.3",
+    "uncertainties>=3.2.3",
 ]
 
 [project.urls]
@@ -62,9 +71,11 @@ dev = [
     "basedpyright>=1.29.0",
     "pydocstringformatter>=0.7.0",
     "pytest>=9.0.3",
+    "pytest-cov>=7.1.0",
     "pytest-xdist>=3.8.0",
     "httpx2>=0.28.0",
     "pytest-asyncio>=1.4.0",
+    "hypothesis>=6.100.0",
 ]
 
 [tool.pytest.ini_options]
@@ -92,4 +103,6 @@ max-line-length = 120
 pythonVersion = "3.14"
 typeCheckingMode = "standard"
 extraPaths = ["src"]
-ignore=["tests/"]
+# "build/" is a setuptools build artifact (gitignored); type-checking its stale copies produces
+# phantom errors against superseded source.
+ignore=["tests/", "build/"]

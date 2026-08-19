@@ -6,7 +6,8 @@ from fastapi_filter import FilterDepends
 
 from mpcontribs_api.config import get_settings
 from mpcontribs_api.dependencies import S3Dep, require_user
-from mpcontribs_api.domains._shared.bulk import BulkWriteSummary
+from mpcontribs_api.domains._shared.bulk import BulkUpdateSummary, BulkWriteSummary
+from mpcontribs_api.domains._shared.models import DeleteResponse
 from mpcontribs_api.domains._shared.types import (
     DownloadFormat,
     FieldSelector,
@@ -34,6 +35,9 @@ def _enforce_bulk_limit(contributions: list[ContributionIn]) -> None:
     list. Callers over the limit should chunk (the limit is advertised at ``GET /api/v1/limits``)
     or use the async bulk ingestion endpoint. Complements the body-size middleware, which bounds
     bytes rather than item count.
+
+    This bounds the *submitted* item count; the service re-applies the same limit to the *expanded*
+    row count after annotated-key pivoting (one submission can expand into many contributions).
     """
     limit = get_settings().mongo.bulk_write_limit
     count = len(contributions)
@@ -51,18 +55,39 @@ async def get_contributions(
     repo: ContributionDep,
     pagination: Annotated[CursorParams, Depends()],
     filter: ContributionFilter = FilterDepends(ContributionFilter),
-    fields: FieldSelector = ContributionOut.default_fields(),
+    fields: FieldSelector = None,
 ):
     selected = ContributionOut.parse_fields(fields)
     return await repo.get_contributions(pagination=pagination, filter=filter, fields=selected)
 
 
-@router.delete("", dependencies=[Depends(require_user)])
+@router.delete("", response_model=DeleteResponse, dependencies=[Depends(require_user)])
 async def delete_contributions(
     repo: ContributionDep,
     filter: ContributionFilter = FilterDepends(ContributionFilter),
-):
-    return await repo.delete_contributions(filter=filter)
+) -> DeleteResponse:
+    # The repository returns a raw pymongo DeleteResult (or None when the filter matched nothing);
+    # convert it to the typed DeleteResponse so the endpoint has a stable, serializable contract.
+    result = await repo.delete_contributions(filter=filter)
+    return DeleteResponse.from_delete_result(result) if result is not None else DeleteResponse(num_deleted=0)
+
+
+@router.patch("", dependencies=[Depends(require_user)])
+async def patch_contributions(
+    service: ContributionServiceDep,
+    body: ContributionPatch,
+    filter: ContributionFilter = FilterDepends(ContributionFilter),
+    replace_data: bool = False,
+) -> BulkUpdateSummary:
+    """Update every contribution matching ``filter`` that the caller may write.
+
+    Allows updates within the user's scope. If Identity fields are modified, updates occur per-row,
+    and may result in failures reported in BulkUpdateSummary.failed
+
+    ``data`` deep-merges into each row's stored ``data`` by default
+    Pass ``?replace_data=true`` to overwrite the whole ``data`` dict instead.
+    """
+    return await service.bulk_update(filter=filter, update=body, replace_data=replace_data)
 
 
 # TODO: Might want to take contributions in from request body and run model_validate_json on it (much faster)
@@ -92,7 +117,7 @@ async def download_contributions(
     format: DownloadFormat = DownloadFormat.JSONL,
     ignore_cache: bool = False,
     filter: ContributionFilter = FilterDepends(ContributionFilter),
-    fields: FieldSelector = ContributionOut.default_fields(),
+    fields: FieldSelector = None,
 ):
     selected = ContributionOut.parse_fields(fields)
     body = await repo.download_contributions(
@@ -124,7 +149,7 @@ async def delete_one(
 async def get_one(
     service: ContributionServiceDep,
     id: str,
-    fields: FieldSelector = ContributionOut.default_fields(),
+    fields: FieldSelector = None,
 ):
     selected = ContributionOut.parse_fields(fields)
     return await service.get_one({"id": id}, fields=selected)
@@ -132,9 +157,14 @@ async def get_one(
 
 @router.put("/{id}", dependencies=[Depends(require_user)])
 async def upsert_one(service: ContributionServiceDep, id: str, contribution: ContributionIn):
-    return await service.upsert_one({"id": id}, contribution=contribution)
+    # The by-id upsert resolves the server-owned ``unique_value`` and enforces the unapproved quota
+    # (see ``ContributionService.upsert_contribution_by_id``), which the generic identity upsert does not.
+    return await service.upsert_contribution_by_id(id, contribution)
 
 
 @router.patch("/{id}", dependencies=[Depends(require_user)])
-async def patch_one(service: ContributionServiceDep, id: str, update: ContributionPatch):
-    return await service.patch_one({"id": id}, update=update)
+async def patch_one(service: ContributionServiceDep, id: str, update: ContributionPatch, replace_data: bool = False):
+    # The by-id patch re-resolves ``unique_value`` and validates the identifier hierarchy against the
+    # merged state (see ``ContributionService.patch_contribution_by_id``); ``?replace_data=true``
+    # overwrites the whole ``data`` dict instead of deep-merging.
+    return await service.patch_contribution_by_id(id, update=update, replace_data=replace_data)

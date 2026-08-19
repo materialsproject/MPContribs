@@ -48,7 +48,7 @@ class User(BaseModel):
     """User definition derived from request headers.
 
     Attributes:
-        consumer_id (str | None): Kong id, for logging only
+        consumer_id (str | None): Kong id
         username (str | None): the username of the active user - if None, the user is anonymous
         groups (frozenset[str]): the groups the user is part of - used for access control
     """
