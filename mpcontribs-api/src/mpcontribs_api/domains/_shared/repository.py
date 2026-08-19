@@ -75,14 +75,6 @@ class MongoDbRepository[
     def coerce_identifiers(self, identifiers: dict[str, Any]) -> dict[str, Any]:
         """Return ``identifiers`` with a string ``id`` coerced to the model's primary-key type.
 
-        Externally supplied ids arrive as strings (path/query params). ObjectId-keyed models need
-        that string parsed into a ``PydanticObjectId`` before it can match ``_id``; string-keyed
-        models (e.g. ``Project``, whose id is its name) and every non-``id`` identifier key pass
-        through untouched. Idempotent: an already-parsed id is returned unchanged.
-
-        This is the single home for identifier coercion so services that resolve documents by id
-        (and reuse the parsed id for cross-repository lookups) do not each reimplement it.
-
         Raises:
             ValidationError: if ``id`` is a string that is not a valid ObjectId, for an
                 ObjectId-keyed model
@@ -244,6 +236,15 @@ class MongoDbRepository[
             raise ValidationError("DeleteResult not returned internally")
         return DeleteResponse.from_delete_result(delete_result)
 
+    def _patch_update_fields(self, update: TPatch) -> dict[str, Any]:
+        """Map a patch model to the MongoDB ``$set`` field dict.
+
+        Defaults to the patch's set fields (``exclude_unset``), which replaces each named field
+        wholesale. Subclasses whose patch targets a nested sub-document override this to emit dotted
+        ``parent.child`` keys so only the named leaves change and their siblings are left intact.
+        """
+        return update.model_dump(exclude_unset=True)
+
     async def _patch_matching(
         self,
         match: Any,
@@ -257,7 +258,7 @@ class MongoDbRepository[
         is a no-op that still returns the existing document; a missing target raises ``not_found``.
         """
         # Only retain set fields (patch)
-        update_data = update.model_dump(exclude_unset=True)
+        update_data = self._patch_update_fields(update)
         existing = await self.document_model.find_one(self._scope, match, session=session)
         # If update is empty, return the model anyways (consistent behavior)
         if not update_data:
