@@ -25,14 +25,14 @@ def _repo() -> MongoDbConsumerRepository:
 
 
 # ---------------------------------------------------------------------------
-# insert_one / get_by_consumer_id
+# insert_one / get_one (by consumer_id)
 # ---------------------------------------------------------------------------
 
 
 class TestInsertAndLookup:
     async def test_insert_then_lookup_by_consumer_id(self, db):
         await _repo().insert_one(ConsumerIn(consumer_id="kong-1"))
-        found = await _repo().get_by_consumer_id("kong-1")
+        found = await _repo().get_one({"consumer_id": "kong-1"})
         assert found is not None
         assert found.consumer_id == "kong-1"
 
@@ -42,7 +42,7 @@ class TestInsertAndLookup:
             await _repo().insert_one(ConsumerIn(consumer_id="kong-dup"))
 
     async def test_lookup_missing_returns_none(self, db):
-        assert await _repo().get_by_consumer_id("kong-absent") is None
+        assert await _repo().get_one({"consumer_id": "kong-absent"}) is None
 
     async def test_partial_override_snapshots_defaults_for_siblings(self, db):
         # Admin overrides only max_projects; the stored document must carry a fully-resolved
@@ -50,8 +50,9 @@ class TestInsertAndLookup:
         await _repo().insert_one(
             ConsumerIn(consumer_id="kong-partial", settings=ConsumerSettings(max_projects=1))
         )
-        stored = await _repo().get_by_consumer_id("kong-partial")
+        stored = await _repo().get_one({"consumer_id": "kong-partial"})
         assert stored is not None
+        assert stored.settings is not None
         assert stored.settings.max_projects == 1
         assert stored.settings.max_columns == get_settings().consumer.max_columns
 
@@ -118,7 +119,7 @@ class TestDeleteConsumer:
     async def test_delete_removes_override(self, db):
         created = await _repo().insert_one(ConsumerIn(consumer_id="kong-del"))
         await _repo().delete_one({"id": created.id})
-        assert await _repo().get_by_consumer_id("kong-del") is None
+        assert await _repo().get_one({"consumer_id": "kong-del"}) is None
 
     async def test_delete_missing_raises_not_found(self, db):
         from beanie import PydanticObjectId

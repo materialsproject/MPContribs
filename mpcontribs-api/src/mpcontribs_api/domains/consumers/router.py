@@ -31,7 +31,7 @@ async def get_consumers(
     if fields is None:
         fields = list(ConsumerOut.default_fields())
     selected = ConsumerOut.parse_fields(fields)
-    return await repo.get_consumers(filter=filter, pagination=pagination, fields=selected)
+    return await repo.get_many(filter=filter, pagination=pagination, fields=selected)
 
 
 @router.get("/{id}")
