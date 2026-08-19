@@ -2,16 +2,10 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from mpcontribs_api.dependencies import UserDep
+from mpcontribs_api.dependencies import MongoClientDep, UserDep
 from mpcontribs_api.domains.consumers.models import ConsumerSettings
 from mpcontribs_api.domains.consumers.repository import MongoDbConsumerRepository
-
-
-def get_scoped_consumers(user: UserDep) -> MongoDbConsumerRepository:
-    return MongoDbConsumerRepository(user)
-
-
-ConsumerDep = Annotated[MongoDbConsumerRepository, Depends(get_scoped_consumers)]
+from mpcontribs_api.domains.consumers.service import ConsumerService
 
 
 async def get_effective_limits(user: UserDep) -> ConsumerSettings:
@@ -29,3 +23,13 @@ async def get_effective_limits(user: UserDep) -> ConsumerSettings:
 
 
 ConsumerLimitsDep = Annotated[ConsumerSettings, Depends(get_effective_limits)]
+
+
+def get_consumer_service(
+    user: UserDep,
+    client: MongoClientDep,
+) -> ConsumerService:
+    return ConsumerService(client=client, user=user, consumer=MongoDbConsumerRepository(user))
+
+
+ConsumerServiceDep = Annotated[ConsumerService, Depends(get_consumer_service)]
