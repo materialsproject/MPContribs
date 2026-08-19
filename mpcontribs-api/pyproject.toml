@@ -32,13 +32,7 @@ authors = [
     {name="The Materials Project", email="feedback@materialsproject.org"},
 ]
 dependencies = [
-    # "pint>=0.24",
-    # "psycopg2-binary",
     # "rq<=2.3.2",  # see https://github.com/rq/Flask-RQ2/issues/620
-    # "setproctitle",
-    # "uncertainties",
-    # "websocket_client",
-    # "zstandard",
     "aioboto3>=15.5.0",
     "beanie>=2.1.0",
     "fastapi[standard]>=0.136.3",
