@@ -17,7 +17,6 @@ from mpcontribs_api.authz import (
     consumer_username_scheme,
 )
 from mpcontribs_api.config import Settings, get_settings
-from mpcontribs_api.domains._redirects.router import router as redirects_router
 from mpcontribs_api.domains.attachments.models import Attachment
 from mpcontribs_api.domains.consumers.models import Consumer
 from mpcontribs_api.domains.contributions.models import Contribution
@@ -147,9 +146,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     register_exception_handlers(app)
     app.include_router(healthcheck_router, prefix="/healthcheck")
     app.include_router(v1_router, prefix="/api/v1")
-    # Legacy (root-path) endpoints: 308-redirect to /api/v1 where a counterpart
-    # exists, else 410 Gone. Registered last so it never shadows live routes.
-    app.include_router(redirects_router)
 
     return app
 
