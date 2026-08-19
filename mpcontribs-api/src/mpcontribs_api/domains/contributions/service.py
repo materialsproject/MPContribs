@@ -1,6 +1,7 @@
 import asyncio
 from collections import defaultdict
-from collections.abc import Iterable
+from collections.abc import AsyncIterable, Iterable
+from contextlib import AbstractAsyncContextManager
 from dataclasses import dataclass
 from typing import Any, cast
 
@@ -9,6 +10,7 @@ from beanie import Link, PydanticObjectId
 from pymongo import AsyncMongoClient
 from pymongo.asynchronous.client_session import AsyncClientSession
 from pymongo.errors import BulkWriteError
+from types_aiobotocore_s3 import S3Client
 
 from mpcontribs_api.authz import User
 from mpcontribs_api.config import MongoSettings, get_settings
@@ -20,6 +22,7 @@ from mpcontribs_api.domains._shared.bulk import (
     bulk_failure_from_exception,
 )
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
+from mpcontribs_api.domains._shared.types import DownloadFormat, ShortMimeFormat
 from mpcontribs_api.domains._shared.units import QuantityLeaf
 from mpcontribs_api.domains.attachments.models import AttachmentFilter
 from mpcontribs_api.domains.attachments.repository import MongoDbAttachmentRepository
@@ -44,7 +47,7 @@ from mpcontribs_api.domains.structures.repository import MongoDbStructureReposit
 from mpcontribs_api.domains.tables.models import Table, TableFilter
 from mpcontribs_api.domains.tables.repository import MongoDbTableRepository
 from mpcontribs_api.exceptions import AppError, ConflictError, NotFoundError, PermissionError, ValidationError
-from mpcontribs_api.pagination import CursorParams
+from mpcontribs_api.pagination import CursorParams, Page
 
 logger = structlog.get_logger(__name__)
 
@@ -111,6 +114,31 @@ class ContributionService:
         ``{"project", "identifier", "version"}`` set, resolved by the base ``_identifier_query``.
         """
         return await self._contributions.get_one(self._contributions.coerce_identifiers(identifiers), fields)
+
+    async def get_many(
+        self, pagination: CursorParams, filter: ContributionFilter, fields: frozenset[str] | None
+    ) -> Page[ContributionOut]:
+        return await self._contributions.get_many(pagination=pagination, filter=filter, fields=fields)
+
+    async def download(
+        self,
+        format: DownloadFormat,
+        short_mime: ShortMimeFormat,
+        ignore_cache: bool,
+        filter: ContributionFilter,
+        fields: frozenset[str] | None,
+        s3: AbstractAsyncContextManager[S3Client],
+    ) -> AsyncIterable[bytes]:
+        """Stream a gzip-compressed export of matching contributions. See repository ``download``."""
+        return await self._contributions.download_contributions(
+            format=format,
+            short_mime=short_mime,
+            ignore_cache=ignore_cache,
+            filter=filter,
+            fields=fields,
+            s3=s3,
+            key_name="",  # TODO: Temp
+        )
 
     async def delete_one(self, identifiers: dict[str, Any]) -> BulkDeleteSummary:
         """Delete a single contribution and its child components, matching ``identifiers``.
