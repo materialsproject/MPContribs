@@ -495,7 +495,7 @@ class TestContributionOutDefaultFields:
 
 
 # ---------------------------------------------------------------------------
-# MongoDbContributionRepository._build_scope (pure logic, no DB needed)
+# MongoDbContributionRepository.read_scope (pure logic, no DB needed)
 # ---------------------------------------------------------------------------
 
 _ADMIN = User(username="google:admin@example.com", groups=frozenset({"admin"}))
@@ -505,34 +505,34 @@ _ANON = User()
 
 class TestContributionRepoScope:
     def test_admin_scope_is_empty(self):
-        assert MongoDbContributionRepository._build_scope(_ADMIN) == {}
+        assert MongoDbContributionRepository.read_scope.query(_ADMIN) == {}
 
     def test_anon_scope_has_or_clause(self):
-        scope = MongoDbContributionRepository._build_scope(_ANON)
+        scope = MongoDbContributionRepository.read_scope.query(_ANON)
         assert "$or" in scope
 
     def test_anon_scope_includes_is_public_true(self):
-        ors = MongoDbContributionRepository._build_scope(_ANON)["$or"]
+        ors = MongoDbContributionRepository.read_scope.query(_ANON)["$or"]
         assert any(c == {"is_public": True} for c in ors)
 
     def test_anon_scope_has_no_group_id_clause(self):
-        ors = MongoDbContributionRepository._build_scope(_ANON)["$or"]
+        ors = MongoDbContributionRepository.read_scope.query(_ANON)["$or"]
         assert not any("_id" in c for c in ors)
 
     def test_authed_user_scope_includes_is_public(self):
-        ors = MongoDbContributionRepository._build_scope(_ALICE)["$or"]
+        ors = MongoDbContributionRepository.read_scope.query(_ALICE)["$or"]
         assert any(c == {"is_public": True} for c in ors)
 
     def test_authed_user_with_groups_has_group_id_clause(self):
         user = User(username="u@example.com", groups=frozenset({"g1", "g2"}))
-        ors = MongoDbContributionRepository._build_scope(user)["$or"]
+        ors = MongoDbContributionRepository.read_scope.query(user)["$or"]
         group_clause = next((c for c in ors if "project" in c), None)
         assert group_clause is not None
         assert set(group_clause["project"]["$in"]) == {"g1", "g2"}
 
     def test_authed_user_no_groups_has_no_group_id_clause(self):
         user = User(username="u@example.com", groups=frozenset())
-        ors = MongoDbContributionRepository._build_scope(user)["$or"]
+        ors = MongoDbContributionRepository.read_scope.query(user)["$or"]
         assert not any("_id" in c for c in ors)
 
 

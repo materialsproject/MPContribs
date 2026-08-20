@@ -28,6 +28,7 @@ CAROL_EMAIL = "google:carol@example.com"
 
 def _service(user: User) -> ProjectService:
     return ProjectService(
+        user=user,
         projects=MongoDbProjectRepository(user),
         initiatives=InitiativeRepository(user),
     )
