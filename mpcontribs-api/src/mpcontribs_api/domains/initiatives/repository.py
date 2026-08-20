@@ -9,7 +9,7 @@ from mpcontribs_api.domains.initiatives.models import (
 from mpcontribs_api.scope import Owned, Public, RoleIn, Scope
 
 
-class InitiativeRepository(
+class MongoDbInitiativeRepository(
     MongoDbRepository[Initiative, InitiativeIn, InitiativeOut, InitiativeFilter, InitiativePatch]
 ):
     """Query/persistence toolbox for initiatives."""

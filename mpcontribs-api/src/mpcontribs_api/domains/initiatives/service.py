@@ -10,7 +10,7 @@ from mpcontribs_api.domains.initiatives.models import (
     InitiativeOut,
     InitiativePatch,
 )
-from mpcontribs_api.domains.initiatives.repository import InitiativeRepository
+from mpcontribs_api.domains.initiatives.repository import MongoDbInitiativeRepository
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
 from mpcontribs_api.exceptions import ConflictError, NotFoundError, PermissionError, ValidationError
 from mpcontribs_api.pagination import CursorParams, Page
@@ -32,7 +32,9 @@ class InitiativeService:
       the document validator.
     """
 
-    def __init__(self, user: User, initiatives: InitiativeRepository, projects: MongoDbProjectRepository) -> None:
+    def __init__(
+        self, user: User, initiatives: MongoDbInitiativeRepository, projects: MongoDbProjectRepository
+    ) -> None:
         self._user = user
         self._initiatives = initiatives
         self._projects = projects

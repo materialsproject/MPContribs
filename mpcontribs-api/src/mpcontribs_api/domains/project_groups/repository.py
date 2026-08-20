@@ -15,7 +15,7 @@ from mpcontribs_api.domains.project_groups.models import (
 from mpcontribs_api.scope import Owned, Public, RoleIn, Scope
 
 
-class ProjectGroupRepository(
+class MongoDbProjectGroupRepository(
     MongoDbRepository[ProjectGroup, ProjectGroupIn, ProjectGroupOut, ProjectGroupFilter, ProjectGroupPatch]
 ):
     """Query/persistence toolbox for project groups."""

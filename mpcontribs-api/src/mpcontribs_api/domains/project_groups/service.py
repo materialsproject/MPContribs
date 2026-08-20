@@ -13,7 +13,7 @@ from mpcontribs_api.domains.project_groups.models import (
     ProjectGroupOut,
     ProjectGroupPatch,
 )
-from mpcontribs_api.domains.project_groups.repository import ProjectGroupRepository
+from mpcontribs_api.domains.project_groups.repository import MongoDbProjectGroupRepository
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
 from mpcontribs_api.exceptions import NotFoundError, PermissionError
 from mpcontribs_api.pagination import CursorParams, Page
@@ -41,7 +41,7 @@ class ProjectGroupService:
     def __init__(
         self,
         user: User,
-        groups: ProjectGroupRepository,
+        groups: MongoDbProjectGroupRepository,
         projects: MongoDbProjectRepository,
     ) -> None:
         self._user = user
