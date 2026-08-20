@@ -2,7 +2,6 @@ from typing import Any
 
 from beanie import PydanticObjectId
 from pymongo import UpdateOne
-from pymongo.asynchronous.client_session import AsyncClientSession
 
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
 from mpcontribs_api.domains.projects.models import (
@@ -19,11 +18,6 @@ from mpcontribs_api.scope import Owned, Public, RoleIn, Scope
 
 class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut, ProjectFilter, ProjectPatch]):
     """A repository layer for access to MongoDB.
-
-    This is the layer that directly interacts with database operations. Shared CRUD logic lives on
-    :class:`MongoDbRepository`; the methods here are domain-named forwarders that give routers a
-    consistent vocabulary and concrete types, plus the operations whose shape is genuinely
-    project-specific (id-keyed upsert).
 
     Attributes:
         _scope (dict[str, Any]): additional terms to inject into mongo queries to enforce user
@@ -48,14 +42,6 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
         without the scope filter. The service authorizes the write against the returned document.
         """
         return await self.document_model.find_one(self.document_model.id == id)
-
-    async def save(self, document: Project, session: AsyncClientSession | None = None) -> Project:
-        """Persist a fully-built project document (insert or full replace), keyed on its ``id``.
-
-        Mechanical write: the service has already applied every policy decision (ownership, approval,
-        server-field preservation, quota) to ``document``; this just writes it.
-        """
-        return await document.save(session=session)
 
     async def unique_columns_by_id(self, ids: list[str]) -> dict[str, str | None]:
         """Return ``{project_id: unique_column}`` for the given project ids, scoped to the user.

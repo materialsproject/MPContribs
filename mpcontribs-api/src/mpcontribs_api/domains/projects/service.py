@@ -6,7 +6,7 @@ from mpcontribs_api.authz import User
 from mpcontribs_api.config import get_settings
 from mpcontribs_api.domains._shared.models import DeleteResponse
 from mpcontribs_api.domains.consumers.models import ConsumerSettings
-from mpcontribs_api.domains.initiatives.repository import InitiativeRepository
+from mpcontribs_api.domains.initiatives.repository import MongoDbInitiativeRepository
 from mpcontribs_api.domains.projects.models import Project, ProjectFilter, ProjectIn, ProjectOut, ProjectPatch
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
 from mpcontribs_api.exceptions import ConflictError, NotFoundError, PermissionError, ValidationError
@@ -20,7 +20,7 @@ class ProjectService:
         self,
         user: User,
         projects: MongoDbProjectRepository,
-        initiatives: InitiativeRepository,
+        initiatives: MongoDbInitiativeRepository,
         limits: ConsumerSettings | None = None,
     ) -> None:
         self._user = user
@@ -87,7 +87,7 @@ class ProjectService:
 
         if project.is_public and not project.is_approved:
             raise ValidationError("a project cannot be public until it is approved", id=id)
-        return await self._projects.save(project)
+        return await self._projects.upsert_one(project)
 
     async def patch_one(self, identifiers: dict[str, Any], update: ProjectPatch) -> Project:
         """Apply a project patch, enforcing approval rules and routing ``initiative`` changes.
