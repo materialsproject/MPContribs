@@ -69,7 +69,10 @@ class InitiativeService:
                     limit=self._limits.max_unapproved_per_owner,
                 )
 
-        return await self._initiatives.insert_one(data=data, owner=self._user.username)
+        # The repository translates the unique-slug DuplicateKeyError into a ConflictError whose
+        # context carries the slug (Initiative.identifier_fields() == {"slug"}).
+        initiative = self._initiatives.document_model.from_input_model(data, owner=self._user.username)
+        return await self._initiatives.insert_one(initiative)
 
     async def patch_one(self, identifiers: dict[str, Any], update: InitiativePatch) -> Initiative:
         """Patch a scoped initiative by ``slug``, enforcing manage rights and approval rules.

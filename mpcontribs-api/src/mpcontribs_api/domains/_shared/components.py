@@ -33,12 +33,16 @@ class MongoDbComponentsRepository[
         ).to_list()
         return {doc.md5: doc for doc in existing_docs}
 
-    async def insert_many(
+    async def insert_many(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         components: list[TIn],
         session: AsyncClientSession | None = None,
     ) -> list[TDoc]:
         """Bulk-insert components, deduplicated by server-computed content hash.
+
+        Components are content-addressed: unlike the base document-in ``insert_many``, this override
+        stays input-in because the repository must build each document to compute and dedup its
+        server-owned ``md5`` (the client never supplies it). See ``Component.from_input``.
 
         Each input is built into a full document via ``Component.from_input``, which assigns a fresh
         id and computes ``md5`` from the content (the client never supplies it). Inputs are

@@ -57,13 +57,7 @@ def _build_update_set(update_data: dict[str, Any], existing_data: Any, *, replac
 class MongoDbContributionRepository(
     MongoDbRepository[Contribution, ContributionIn, ContributionOut, ContributionFilter, ContributionPatch]
 ):
-    """A repository layer for access to MongoDB.
-
-    Shared CRUD logic lives on :class:`MongoDbRepository`; the methods here are domain-named
-    forwarders that give routers a consistent vocabulary and concrete types, plus the operations
-    whose shape is contribution-specific (filtered delete, id-keyed upsert, download).
-    Multi-collection orchestration (component inserts) lives in ``ContributionService``.
-    """
+    """A repository layer for access to MongoDB."""
 
     document_model = Contribution
     out_model = ContributionOut
@@ -154,7 +148,7 @@ class MongoDbContributionRepository(
             matched=result.matched_count, modified=result.modified_count, projects=sorted(projects)
         )
 
-    async def list_ids(  # pyright: ignore[reportIncompatibleMethodOverride]
+    async def list_ids(
         self,
         filter: ContributionFilter,
         session: AsyncClientSession | None = None,
@@ -175,28 +169,6 @@ class MongoDbContributionRepository(
         query = filter.filter(self.document_model.find(*criteria)).get_filter_query()
         collection = self.document_model.get_pymongo_collection()
         return [doc["_id"] async for doc in collection.find(query, {"_id": 1})]
-
-    async def insert_many(  # pyright: ignore[reportIncompatibleMethodOverride]
-        self,
-        docs: list[Contribution],
-        session: AsyncClientSession | None = None,
-    ):
-        """Bulk-insert pre-built Contribution documents.
-
-        Used by the ``ContributionService`` no-component fast path. On partial failure pymongo
-        raises ``BulkWriteError`` whose ``details["writeErrors"]`` carries per-index error info
-        that the service maps back into a ``BulkWriteSummary``.
-        """
-        return await self.document_model.insert_many(docs, ordered=False, session=session)
-
-    async def insert_one(  # pyright: ignore[reportIncompatibleMethodOverride]
-        self,
-        doc: Contribution,
-        session: AsyncClientSession | None = None,
-    ) -> Contribution:
-        """Insert a single pre-built Contribution document, optionally in a transaction."""
-        await doc.insert(session=session)
-        return doc
 
     async def existing_identities(self, identities: list[ContributionIdentity]) -> set[ContributionIdentity]:
         """Return the subset of identities that already exist, scoped to the user.
@@ -297,7 +269,7 @@ class MongoDbContributionRepository(
         agg.columns = finalize_columns(acc)
         return agg
 
-    async def upsert_one(  # pyright: ignore[reportIncompatibleMethodOverride]
+    async def upsert_one(
         self,
         identifiers: dict[str, Any],
         contribution: ContributionIn,

@@ -62,7 +62,8 @@ class ProjectGroupService:
         missing = [pid for pid in project_group.projects if not await self._project_exists(pid)]
         if missing:
             raise NotFoundError("One or more projects not found or not visible", ids=missing)
-        return await self._groups.insert_one(in_resource=project_group)
+        document = self._groups.document_model.from_input_model(project_group)
+        return await self._groups.insert_one(document)
 
     async def get_many(
         self, filter: ProjectGroupFilter, pagination: CursorParams, fields: frozenset[str] | None

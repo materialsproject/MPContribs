@@ -23,7 +23,8 @@ class ConsumerService:
         )
 
     async def insert_one(self, consumer: ConsumerIn) -> Consumer:
-        return await self._consumer.insert_one(in_resource=consumer)
+        document = self._consumer.document_model.from_input_model(consumer)
+        return await self._consumer.insert_one(document)
 
     async def patch_one(self, id: str, update: ConsumerPatch) -> Consumer:
         return await self._consumer.patch_one(

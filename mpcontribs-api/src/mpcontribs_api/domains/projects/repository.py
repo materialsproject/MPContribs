@@ -14,7 +14,6 @@ from mpcontribs_api.domains.projects.models import (
     ProjectPatch,
     Stats,
 )
-from mpcontribs_api.exceptions import ConflictError
 from mpcontribs_api.scope import Owned, Public, RoleIn, Scope
 
 
@@ -36,18 +35,6 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
     # Visible when public+approved, owned by the caller, or granted as a bare project role (its
     # ``_id``). Admins bypass scope (handled by ``Scope``).
     read_scope = Scope(Public(approved=True), Owned(), RoleIn("_id", "project_roles"))
-
-    async def insert_one(self, id: str, project: ProjectIn) -> Project:  # pyright: ignore[reportIncompatibleMethodOverride]
-        """Insert a new project under a caller-supplied ``id``, rejecting a duplicate id.
-
-        Projects carry a meaningful ``ShortStr`` id that is not part of the input body, so it is added here.
-        """
-        document = self.document_model.from_input_model(project, id=id)
-        existing = await self.document_model.find_one(self.document_model.id == id)
-        if existing:
-            raise ConflictError(f"Cannot insert document.\n Document with ID {id} exists")
-        await document.insert()
-        return document
 
     async def count_for_owner(self, owner: str) -> int:
         """Count projects owned by ``owner``, ignoring user scope."""

@@ -1,5 +1,3 @@
-from pymongo.errors import DuplicateKeyError
-
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
 from mpcontribs_api.domains.initiatives.models import (
     Initiative,
@@ -8,7 +6,6 @@ from mpcontribs_api.domains.initiatives.models import (
     InitiativeOut,
     InitiativePatch,
 )
-from mpcontribs_api.exceptions import ConflictError
 from mpcontribs_api.scope import Owned, Public, RoleIn, Scope
 
 
@@ -22,15 +19,6 @@ class InitiativeRepository(
     # Visible when public+approved, owned by the caller, or collaborated on via an
     # ``initiative:<slug>`` role (keyed on ``slug``). Admins bypass scope (handled by ``Scope``).
     read_scope = Scope(Public(approved=True), Owned(), RoleIn("slug", "initiative_roles"))
-
-    async def insert_one(self, data: InitiativeIn, owner: str) -> Initiative:  # pyright: ignore[reportIncompatibleMethodOverride]
-        """Insert a new initiative owned by ``owner``, rejecting a duplicate ``slug``."""
-        initiative = self.document_model.from_input_model(data=data, owner=owner)
-        try:
-            await initiative.insert()
-        except DuplicateKeyError as exc:  # unique slug index
-            raise ConflictError("an initiative with this slug already exists", slug=data.slug) from exc
-        return initiative
 
     async def count_unapproved_for_owner(self, owner: str) -> int:
         """Count ``owner``'s unapproved initiatives, ignoring user scope."""

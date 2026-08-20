@@ -3,7 +3,7 @@ import pytest
 from mpcontribs_api.authz import User
 from mpcontribs_api.domains.projects.models import Project, ProjectIn, ProjectOut, ProjectPatch
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
-from mpcontribs_api.exceptions import ConflictError, NotFoundError
+from mpcontribs_api.exceptions import NotFoundError
 from mpcontribs_api.pagination import CursorParams
 
 # All tests in this module share the session event loop so they can reuse the
@@ -42,8 +42,13 @@ def _project_in(id: str, **overrides) -> ProjectIn:
 
 
 async def _insert(id: str, **overrides) -> Project:
-    """Seed a project via the repository's mechanical insert path (admin, no policy)."""
-    return await _repo(ADMIN).insert_one(id, _project_in(id, **overrides))
+    """Seed a project via the repository's mechanical write path (admin, no policy).
+
+    The repository is document-in: the service builds the stored ``Project`` (here via
+    ``from_input_model``) and hands it to ``save``, which inserts-or-replaces by ``_id``.
+    """
+    document = Project.from_input_model(_project_in(id, **overrides), id=id)
+    return await _repo(ADMIN).save(document)
 
 
 def _noop_filter():
@@ -53,7 +58,7 @@ def _noop_filter():
 
 
 # ---------------------------------------------------------------------------
-# insert_one  (mechanical: id-stamp + dup-reject, no policy)
+# save  (mechanical insert-or-replace by _id, no policy)
 # ---------------------------------------------------------------------------
 
 
@@ -64,10 +69,14 @@ class TestInsertProject:
         assert found is not None
         assert found.id == "ins-basic"
 
-    async def test_duplicate_id_raises_conflict(self, db):
-        await _insert("ins-dup")
-        with pytest.raises(ConflictError):
-            await _insert("ins-dup")
+    async def test_save_replaces_existing_id(self, db):
+        # save is upsert-by-_id, so re-saving the same id replaces rather than conflicts. Duplicate
+        # rejection for the create path is a service concern (ProjectService.upsert_one), not the repo.
+        await _insert("ins-dup", title="first")
+        await _insert("ins-dup", title="second")
+        found = await Project.find_one(Project.id == "ins-dup")
+        assert found is not None
+        assert found.title == "second"
 
     async def test_insert_defaults_private_and_unapproved(self, db):
         # ProjectIn carries no is_public/is_approved, so an inserted project is private and unapproved.

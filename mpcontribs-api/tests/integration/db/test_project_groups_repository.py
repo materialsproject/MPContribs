@@ -45,7 +45,8 @@ def _group_in(name: str, owner: str = ALICE_EMAIL, **overrides) -> ProjectGroupI
 
 
 async def _insert(name: str, owner: str = ALICE_EMAIL, **overrides) -> ProjectGroup:
-    return await _repo(ADMIN).insert_one(_group_in(name, owner, **overrides))
+    # Document-in repo: build the stored document here (the service's job), then hand it over.
+    return await _repo(ADMIN).insert_one(ProjectGroup.from_input_model(_group_in(name, owner, **overrides)))
 
 
 # ---------------------------------------------------------------------------

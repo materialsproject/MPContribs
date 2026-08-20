@@ -89,6 +89,7 @@ class MongoDbRepository[
         fields: frozenset[str] | None = None,
         pagination: CursorParams | None = None,
         restrict_ids: Iterable[Any] | None = None,
+        session: AsyncClientSession | None = None,
     ) -> Page[TOut]:
         """Return a scoped, filtered, cursor-paginated page of projected documents.
 
@@ -99,11 +100,12 @@ class MongoDbRepository[
             restrict_ids (Iterable | None): when provided, results are limited to these ids in
                 addition to the user scope. An empty iterable yields an empty page. Used to gate
                 reads that are authorized indirectly (e.g. components reachable via a contribution).
+            session (AsyncClientSession | None): optional client session for transactions
         """
         pagination = pagination or CursorParams()
 
         projection = self.out_model.projection(fields)
-        query = filter.filter(self.document_model.find(self._scope))
+        query = filter.filter(self.document_model.find(self._scope, session=session))
         if restrict_ids is not None:
             query = query.find(In(self.document_model.id, list(restrict_ids)))
         if pagination.cursor is not None:
@@ -140,16 +142,18 @@ class MongoDbRepository[
         self,
         identifiers: dict[str, Any],
         fields: frozenset[str] | None = None,
+        session: AsyncClientSession | None = None,
     ) -> TOut | None:
         """Return the single scoped document matching ``identifiers``, projected to ``fields``.
 
         Args:
             identifiers (dict[str, Any]): identifier field values keyed by ``identifier_fields``
             fields (frozenset[str] | None): fields to project; if None the full document is returned
+            session (AsyncClientSession | None): optional client session for transactions
         """
         query = self._identifier_query(identifiers)
         projection = self.out_model.projection(fields)
-        return await self.document_model.find_one(self._scope, query, projection_model=projection)  # pyright: ignore[reportArgumentType]
+        return await self.document_model.find_one(self._scope, query, projection_model=projection, session=session)  # pyright: ignore[reportArgumentType]
 
     async def list_ids(self, filter: TFilter, session: AsyncClientSession | None = None) -> list[Any]:
         """Return just the ids of scoped documents matching ``filter``.
@@ -166,23 +170,30 @@ class MongoDbRepository[
         docs = await query.project(projection).to_list()
         return [doc.id for doc in docs]
 
-    async def insert_one(self, in_resource: TIn) -> TDoc:
-        """Insert a new document built from its input model, rejecting an existing duplicate.
-
-        Duplicates are determined by model-declared identifiers that uniquely identify a document.
+    async def insert_one(self, document: TDoc, session: AsyncClientSession | None = None) -> TDoc:
+        """Persist a fully-built document, rejecting an existing duplicate.
 
         Args:
-            in_resource (TIn): the validated input payload to translate and store
+            document (TDoc): the stored document to insert
+            session (AsyncClientSession | None): optional client session for transactions
         """
-        document = self.document_model.from_input_model(in_resource)
         try:
-            await document.insert()
+            await document.insert(session=session)
         except DuplicateKeyError as exc:
             raise ConflictError(
                 f"Cannot insert {self.document_model.__name__}: a conflicting document already exists",
                 identifiers=document.identifiers(),
             ) from exc
         return document
+
+    async def insert_many(self, documents: list[TDoc], session: AsyncClientSession | None = None) -> Any:
+        """Bulk-insert fully-built documents in one round-trip.
+
+        Args:
+            documents (list[TDoc]): the stored documents to insert
+            session (AsyncClientSession | None): optional client session for transactions
+        """
+        return await self.document_model.insert_many(documents, ordered=False, session=session)
 
     async def delete_many(self, filter: TFilter, session: AsyncClientSession | None = None) -> DeleteResponse:
         """Delete every scoped document matching an arbitrary ``filter``.
@@ -361,6 +372,7 @@ class MongoDbRepository[
         bucket_name: str,
         key_name: str,
         restrict_ids: Iterable[Any] | None = None,
+        session: AsyncClientSession | None = None,
     ) -> AsyncIterable[bytes]:
         # Hash parameters to generate key for cache
         payload = {
@@ -375,7 +387,7 @@ class MongoDbRepository[
         # self._s3_object_exists(...)` and stream the cached object on a hit.
 
         # Build from MongoDB (and, in future, save to cache)
-        query = filter.filter(self.document_model.find(self._scope))
+        query = filter.filter(self.document_model.find(self._scope, session=session))
         if restrict_ids is not None:
             query = query.find(In(self.document_model.id, list(restrict_ids)))
         query = filter.sort(query)

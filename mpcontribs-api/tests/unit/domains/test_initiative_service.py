@@ -6,7 +6,7 @@ path calls. Real-DB behaviour is covered in ``tests/integration/db/test_initiati
 """
 
 from types import SimpleNamespace
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from beanie import PydanticObjectId
@@ -43,7 +43,9 @@ def _service(user: User, *, existing=None, unapproved: int = 0):
     initiatives = AsyncMock()
     initiatives.get_one.return_value = existing
     initiatives.count_unapproved_for_owner.return_value = unapproved
-    initiatives.insert_one.side_effect = lambda data, owner: SimpleNamespace(slug=data.slug, owner=owner)
+    # The service builds the stored document (document_model.from_input_model, which stamps owner)
+    # before inserting; keep document_model a sync mock so it returns a document, not a coroutine.
+    initiatives.document_model = MagicMock()
     initiatives.patch_one.return_value = _existing()
     initiatives.delete_one.return_value = DeleteResponse(num_deleted=1)
     projects = AsyncMock()
@@ -83,7 +85,9 @@ class TestInsert:
     async def test_happy_path_forces_owner(self):
         svc, initiatives = _service(ALICE, unapproved=0)
         await svc.insert_one(InitiativeIn(slug="x-init", name="X"))
-        assert initiatives.insert_one.call_args.kwargs["owner"] == ALICE_EMAIL
+        # owner is stamped during document construction, then the built document is inserted.
+        assert initiatives.document_model.from_input_model.call_args.kwargs["owner"] == ALICE_EMAIL
+        initiatives.insert_one.assert_awaited_once_with(initiatives.document_model.from_input_model.return_value)
 
 
 # ---------------------------------------------------------------------------

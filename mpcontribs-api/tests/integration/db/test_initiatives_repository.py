@@ -48,8 +48,13 @@ def _collaborator(slug: str, username: str = BOB_EMAIL) -> User:
 
 
 async def _insert(slug: str, owner_user: User = ALICE, name: str = "An Initiative") -> Initiative:
-    """Seed via the repository's mechanical insert (owner passed explicitly, as the service would)."""
-    return await _repo(owner_user).insert_one(InitiativeIn(slug=slug, name=name), owner=owner_user.username)
+    """Seed the way the service does: build the document (owner-stamped) then hand it to the repo.
+
+    The repository is document-in, so the input→document conversion (``from_input_model``, which
+    stamps ``owner``) lives in the caller, not the repo.
+    """
+    document = Initiative.from_input_model(InitiativeIn(slug=slug, name=name), owner=owner_user.username)
+    return await _repo(owner_user).insert_one(document)
 
 
 async def _publish(slug: str) -> None:

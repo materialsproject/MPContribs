@@ -160,40 +160,39 @@ class TestNullableIdentifierHierarchy:
         assert key in found
 
     async def test_duplicate_chemical_system_only_collides_on_unique_index(self, db):
-        from pymongo.errors import DuplicateKeyError
-
         ci = _contrib_in(project="chem-only", material_id=None, formula=None)
         await _repo().insert_one(Contribution.from_input_model(ci))
         dup = _contrib_in(project="chem-only", material_id=None, formula=None)
         # Same (project, chemical_system_id) with null material_id/formula/unique_value is one
-        # unique key — the second insert must be rejected.
-        with pytest.raises(DuplicateKeyError):
+        # unique key — the second insert must be rejected. The document-in repo translates the
+        # unique-index DuplicateKeyError into a domain ConflictError.
+        with pytest.raises(ConflictError):
             await _repo().insert_one(Contribution.from_input_model(dup))
 
 
 # ---------------------------------------------------------------------------
-# insert_many_contributions (bulk)
+# insert_many (bulk)
 # ---------------------------------------------------------------------------
 
 
 class TestInsertManyContributions:
     async def test_all_docs_persisted(self, db):
         docs = [Contribution.from_input_model(_contrib_in(identifier=f"mp-{4100 + i}")) for i in range(5)]
-        await _repo().insert_many_contributions(docs)
+        await _repo().insert_many(docs)
         for doc in docs:
             found = await Contribution.find_one(Contribution.id == doc.id)
             assert found is not None
 
     async def test_returns_insert_result(self, db):
         docs = [Contribution.from_input_model(_contrib_in(identifier=f"mp-{4200 + i}")) for i in range(3)]
-        result = await _repo().insert_many_contributions(docs)
+        result = await _repo().insert_many(docs)
         assert result is not None
 
     async def test_empty_list_raises_type_error(self, db):
         # Motor's insert_many requires at least one document; callers are
         # responsible for guarding against empty batches.
         with pytest.raises(TypeError, match="non-empty"):
-            await _repo().insert_many_contributions([])
+            await _repo().insert_many([])
 
 
 # ---------------------------------------------------------------------------

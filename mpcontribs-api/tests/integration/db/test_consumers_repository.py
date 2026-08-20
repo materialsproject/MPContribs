@@ -24,6 +24,15 @@ def _repo() -> MongoDbConsumerRepository:
     return MongoDbConsumerRepository(ADMIN)
 
 
+async def _insert(consumer: ConsumerIn) -> Consumer:
+    """Persist a consumer the way the service does: build the document, then hand it to the repo.
+
+    The repository is document-in, so the input→document conversion (``from_input_model``, which
+    resolves the settings snapshot) lives here rather than in the repo.
+    """
+    return await _repo().insert_one(Consumer.from_input_model(consumer))
+
+
 # ---------------------------------------------------------------------------
 # insert_one / get_one (by consumer_id)
 # ---------------------------------------------------------------------------
@@ -31,15 +40,15 @@ def _repo() -> MongoDbConsumerRepository:
 
 class TestInsertAndLookup:
     async def test_insert_then_lookup_by_consumer_id(self, db):
-        await _repo().insert_one(ConsumerIn(consumer_id="kong-1"))
+        await _insert(ConsumerIn(consumer_id="kong-1"))
         found = await _repo().get_one({"consumer_id": "kong-1"})
         assert found is not None
         assert found.consumer_id == "kong-1"
 
     async def test_duplicate_consumer_id_raises_conflict(self, db):
-        await _repo().insert_one(ConsumerIn(consumer_id="kong-dup"))
+        await _insert(ConsumerIn(consumer_id="kong-dup"))
         with pytest.raises(ConflictError):
-            await _repo().insert_one(ConsumerIn(consumer_id="kong-dup"))
+            await _insert(ConsumerIn(consumer_id="kong-dup"))
 
     async def test_lookup_missing_returns_none(self, db):
         assert await _repo().get_one({"consumer_id": "kong-absent"}) is None
@@ -47,7 +56,7 @@ class TestInsertAndLookup:
     async def test_partial_override_snapshots_defaults_for_siblings(self, db):
         # Admin overrides only max_projects; the stored document must carry a fully-resolved
         # settings block, with untouched limits snapshotted from the global defaults.
-        await _repo().insert_one(
+        await _insert(
             ConsumerIn(consumer_id="kong-partial", settings=ConsumerSettings(max_projects=1))
         )
         stored = await _repo().get_one({"consumer_id": "kong-partial"})
@@ -64,7 +73,7 @@ class TestInsertAndLookup:
 
 class TestGetByDocumentId:
     async def test_returns_out_model(self, db):
-        created = await _repo().insert_one(ConsumerIn(consumer_id="kong-doc"))
+        created = await _insert(ConsumerIn(consumer_id="kong-doc"))
         result = await _repo().get_one({"id": created.id}, None)
         assert result is not None
         assert result.consumer_id == "kong-doc"
@@ -83,7 +92,7 @@ class TestGetByDocumentId:
 
 class TestPatchConsumer:
     async def test_patch_changes_only_named_limit(self, db):
-        created = await _repo().insert_one(ConsumerIn(consumer_id="kong-patch"))
+        created = await _insert(ConsumerIn(consumer_id="kong-patch"))
         original_columns = created.settings.max_columns
 
         updated = await _repo().patch_one(
@@ -95,7 +104,7 @@ class TestPatchConsumer:
         assert updated.settings.max_columns == original_columns
 
     async def test_empty_patch_returns_existing_unchanged(self, db):
-        created = await _repo().insert_one(ConsumerIn(consumer_id="kong-noop"))
+        created = await _insert(ConsumerIn(consumer_id="kong-noop"))
         result = await _repo().patch_one({"id": created.id}, update=ConsumerPatch())
         assert result.consumer_id == "kong-noop"
         assert result.settings.max_projects == created.settings.max_projects
@@ -117,7 +126,7 @@ class TestPatchConsumer:
 
 class TestDeleteConsumer:
     async def test_delete_removes_override(self, db):
-        created = await _repo().insert_one(ConsumerIn(consumer_id="kong-del"))
+        created = await _insert(ConsumerIn(consumer_id="kong-del"))
         await _repo().delete_one({"id": created.id})
         assert await _repo().get_one({"consumer_id": "kong-del"}) is None
 
@@ -141,7 +150,7 @@ class TestEffectiveLimits:
         assert limits.max_projects == get_settings().consumer.max_projects
 
     async def test_stored_override_is_returned(self, db):
-        await _repo().insert_one(
+        await _insert(
             ConsumerIn(consumer_id="kong-eff", settings=ConsumerSettings(max_projects=42))
         )
         user = User(consumer_id="kong-eff", username="google:alice@example.com", groups=frozenset())
