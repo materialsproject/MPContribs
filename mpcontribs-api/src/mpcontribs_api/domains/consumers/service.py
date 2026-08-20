@@ -1,15 +1,10 @@
-from pymongo import AsyncMongoClient
-
-from mpcontribs_api.authz import User
 from mpcontribs_api.domains.consumers.models import Consumer, ConsumerFilter, ConsumerIn, ConsumerOut, ConsumerPatch
 from mpcontribs_api.domains.consumers.repository import MongoDbConsumerRepository
 from mpcontribs_api.pagination import CursorParams, Page
 
 
 class ConsumerService:
-    def __init__(self, client: AsyncMongoClient, user: User, consumer: MongoDbConsumerRepository):
-        self._client = client
-        self._user = user
+    def __init__(self, consumer: MongoDbConsumerRepository):
         self._consumer = consumer
 
     async def get_many(
