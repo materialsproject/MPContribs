@@ -53,12 +53,15 @@ class MongoDbRepository[
     read_scope: ClassVar[Scope]
 
     def __init__(self, user: User) -> None:
-        """Initializes an instance based on the current user.
+        """Initialize the repository's user scope.
+
+        The repository holds no reference to the ``User`` itself — it is a query/persistence toolbox
+        that makes no authorization decisions. Only the derived read scope (``_scope``) is retained;
+        all policy lives in the services. See the module docstring.
 
         Args:
-            user (User): the current user requesting resources
+            user (User): the current user, used once to compute the read scope
         """
-        self._user = user
         self._scope = self.read_scope.query(user)
 
     def _convert_object_id(self, id: str) -> PydanticObjectId:
