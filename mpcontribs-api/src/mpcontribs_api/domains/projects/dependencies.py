@@ -12,6 +12,7 @@ from mpcontribs_api.domains.projects.service import ProjectService
 
 def get_project_service(user: UserDep) -> ProjectService:
     return ProjectService(
+        user=user,
         projects=MongoDbProjectRepository(user),
         initiatives=InitiativeRepository(user),
     )
