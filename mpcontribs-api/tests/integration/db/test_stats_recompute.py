@@ -67,7 +67,7 @@ async def _make_project() -> Project:
         description="Recompute lifecycle fixture",
         owner="google:admin@example.com",
     )
-    return await MongoDbProjectRepository(ADMIN).save(Project.from_input_model(project_in, id=PID))
+    return await MongoDbProjectRepository(ADMIN).upsert_one(Project.from_input_model(project_in, id=PID))
 
 
 def _structure(charge: float | None) -> StructureIn:

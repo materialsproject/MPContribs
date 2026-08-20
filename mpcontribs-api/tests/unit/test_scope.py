@@ -16,8 +16,8 @@ from mpcontribs_api.authz import (
     User,
 )
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
-from mpcontribs_api.domains.initiatives.repository import InitiativeRepository
-from mpcontribs_api.domains.project_groups.repository import ProjectGroupRepository
+from mpcontribs_api.domains.initiatives.repository import MongoDbInitiativeRepository
+from mpcontribs_api.domains.project_groups.repository import MongoDbProjectGroupRepository
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
 from mpcontribs_api.scope import Owned, Public, RoleIn, Scope
 
@@ -150,7 +150,7 @@ class TestProjectScope:
 
 
 class TestInitiativeScope:
-    scope = InitiativeRepository.read_scope
+    scope = MongoDbInitiativeRepository.read_scope
 
     def test_admin_unfiltered(self):
         assert self.scope.query(ADMIN) == {}
@@ -164,7 +164,7 @@ class TestInitiativeScope:
 
 
 class TestProjectGroupScope:
-    scope = ProjectGroupRepository.read_scope
+    scope = MongoDbProjectGroupRepository.read_scope
 
     def test_admin_unfiltered(self):
         assert self.scope.query(ADMIN) == {}

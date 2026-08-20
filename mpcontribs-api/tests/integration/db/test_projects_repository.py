@@ -45,10 +45,10 @@ async def _insert(id: str, **overrides) -> Project:
     """Seed a project via the repository's mechanical write path (admin, no policy).
 
     The repository is document-in: the service builds the stored ``Project`` (here via
-    ``from_input_model``) and hands it to ``save``, which inserts-or-replaces by ``_id``.
+    ``from_input_model``) and hands it to ``upsert_one``, which inserts-or-replaces by ``_id``.
     """
     document = Project.from_input_model(_project_in(id, **overrides), id=id)
-    return await _repo(ADMIN).save(document)
+    return await _repo(ADMIN).upsert_one(document)
 
 
 def _noop_filter():
@@ -58,7 +58,7 @@ def _noop_filter():
 
 
 # ---------------------------------------------------------------------------
-# save  (mechanical insert-or-replace by _id, no policy)
+# upsert_one  (mechanical insert-or-replace by _id, no policy)
 # ---------------------------------------------------------------------------
 
 
@@ -406,9 +406,9 @@ class TestToolboxPrimitives:
 
     async def test_save_inserts_then_replaces(self, db):
         doc = Project.from_input_model(_project_in("save-doc", title="First"), id="save-doc")
-        await _repo(ADMIN).save(doc)
+        await _repo(ADMIN).upsert_one(doc)
         assert (await Project.find_one(Project.id == "save-doc")).title == "First"
         # Saving the same id again replaces in place (upsert semantics).
         doc.title = "Second"
-        await _repo(ADMIN).save(doc)
+        await _repo(ADMIN).upsert_one(doc)
         assert (await Project.find_one(Project.id == "save-doc")).title == "Second"

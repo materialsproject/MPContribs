@@ -3,7 +3,7 @@ from beanie import PydanticObjectId
 
 from mpcontribs_api.authz import User
 from mpcontribs_api.domains.project_groups.models import ProjectGroup, ProjectGroupFilter, ProjectGroupIn
-from mpcontribs_api.domains.project_groups.repository import ProjectGroupRepository
+from mpcontribs_api.domains.project_groups.repository import MongoDbProjectGroupRepository
 from mpcontribs_api.domains.project_groups.service import ProjectGroupService
 from mpcontribs_api.domains.projects.models import ProjectIn
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
@@ -26,7 +26,7 @@ BOB_EMAIL = "google:bob@example.com"
 
 
 def _service(user: User = ADMIN) -> ProjectGroupService:
-    return ProjectGroupService(user=user, groups=ProjectGroupRepository(user), projects=MongoDbProjectRepository(user))
+    return ProjectGroupService(user=user, groups=MongoDbProjectGroupRepository(user), projects=MongoDbProjectRepository(user))
 
 
 def _role_user(group_id, username: str = "google:carol@example.com") -> User:
@@ -46,7 +46,7 @@ async def _insert_project(pid: str, owner: str = ALICE_EMAIL, **overrides):
 
 
 async def _insert_group(name: str, owner: str = ALICE_EMAIL) -> ProjectGroup:
-    return await ProjectGroupRepository(ADMIN).insert_one(
+    return await MongoDbProjectGroupRepository(ADMIN).insert_one(
         ProjectGroupIn(name=name, owner=owner, projects=[], description="d")
     )
 
@@ -174,7 +174,7 @@ class TestDeleteAuthorization:
 
     async def test_visible_public_non_owner_forbidden(self, db):
         # Bob can *see* Alice's public group but does not own it → 403, and it is left intact.
-        await ProjectGroupRepository(ADMIN).insert_one(
+        await MongoDbProjectGroupRepository(ADMIN).insert_one(
             ProjectGroupIn(name="del-pub", owner=ALICE_EMAIL, projects=[], description="d", is_public=True)
         )
         with pytest.raises(PermissionError):
@@ -204,10 +204,10 @@ class TestBulkDeleteAuthorization:
     async def test_non_admin_bulk_restricted_to_own(self, db):
         # A broad filter from a non-admin is pinned to their own groups: a public group owned by
         # someone else must survive even though the filter would otherwise match it.
-        await ProjectGroupRepository(ADMIN).insert_one(
+        await MongoDbProjectGroupRepository(ADMIN).insert_one(
             ProjectGroupIn(name="own-bulk", owner=ALICE_EMAIL, projects=[], description="d", is_public=True)
         )
-        await ProjectGroupRepository(ADMIN).insert_one(
+        await MongoDbProjectGroupRepository(ADMIN).insert_one(
             ProjectGroupIn(name="other-bulk", owner=BOB_EMAIL, projects=[], description="d", is_public=True)
         )
         result = await _service(ALICE).delete_many(filter=ProjectGroupFilter(is_public=True))

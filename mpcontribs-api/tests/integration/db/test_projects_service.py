@@ -2,7 +2,7 @@ import pytest
 
 from mpcontribs_api.authz import User
 from mpcontribs_api.domains.consumers.models import ConsumerSettings
-from mpcontribs_api.domains.initiatives.repository import InitiativeRepository
+from mpcontribs_api.domains.initiatives.repository import MongoDbInitiativeRepository
 from mpcontribs_api.domains.projects.models import Column, Project, ProjectIn, ProjectPatch, Stats
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
 from mpcontribs_api.domains.projects.service import ProjectService
@@ -28,7 +28,7 @@ def _service(user: User, limits: ConsumerSettings | None = None) -> ProjectServi
     return ProjectService(
         user=user,
         projects=MongoDbProjectRepository(user),
-        initiatives=InitiativeRepository(user),
+        initiatives=MongoDbInitiativeRepository(user),
         limits=limits,
     )
 

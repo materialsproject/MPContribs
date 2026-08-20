@@ -8,7 +8,7 @@ from mpcontribs_api.domains.project_groups.models import (
     ProjectGroupIn,
     ProjectGroupPatch,
 )
-from mpcontribs_api.domains.project_groups.repository import ProjectGroupRepository
+from mpcontribs_api.domains.project_groups.repository import MongoDbProjectGroupRepository
 from mpcontribs_api.exceptions import ConflictError, NotFoundError, ValidationError
 from mpcontribs_api.pagination import CursorParams
 
@@ -29,8 +29,8 @@ ALICE_EMAIL = "google:alice@example.com"
 BOB_EMAIL = "google:bob@example.com"
 
 
-def _repo(user: User) -> ProjectGroupRepository:
-    return ProjectGroupRepository(user)
+def _repo(user: User) -> MongoDbProjectGroupRepository:
+    return MongoDbProjectGroupRepository(user)
 
 
 def _group_in(name: str, owner: str = ALICE_EMAIL, **overrides) -> ProjectGroupIn:

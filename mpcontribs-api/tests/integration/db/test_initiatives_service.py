@@ -4,7 +4,7 @@ from beanie import Link
 from mpcontribs_api.authz import User
 from mpcontribs_api.config import get_settings
 from mpcontribs_api.domains.initiatives.models import Initiative, InitiativeIn, InitiativePatch
-from mpcontribs_api.domains.initiatives.repository import InitiativeRepository
+from mpcontribs_api.domains.initiatives.repository import MongoDbInitiativeRepository
 from mpcontribs_api.domains.initiatives.service import InitiativeService
 from mpcontribs_api.domains.projects.models import Project, ProjectIn, ProjectPatch
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
@@ -31,7 +31,7 @@ def _service(user: User) -> ProjectService:
     return ProjectService(
         user=user,
         projects=MongoDbProjectRepository(user),
-        initiatives=InitiativeRepository(user),
+        initiatives=MongoDbInitiativeRepository(user),
     )
 
 
@@ -52,7 +52,7 @@ async def _insert_project(pid: str, owner: str = ALICE_EMAIL) -> Project:
 
 
 async def _insert_initiative(slug: str, owner_user: User = ALICE):
-    return await InitiativeRepository(owner_user).insert_one(
+    return await MongoDbInitiativeRepository(owner_user).insert_one(
         InitiativeIn(slug=slug, name="Init"), owner=owner_user.username
     )
 
@@ -112,7 +112,7 @@ class TestBothRights:
         # but she neither owns nor collaborates on it, so she still cannot assign to it.
         await _insert_project("proj-c", owner=CAROL_EMAIL)
         await _insert_initiative("init-c", ALICE)
-        await InitiativeRepository(ADMIN).patch_one(
+        await MongoDbInitiativeRepository(ADMIN).patch_one(
             {"slug": "init-c"}, InitiativePatch(is_approved=True, is_public=True)
         )
         with pytest.raises(PermissionError):
@@ -170,12 +170,12 @@ class TestMemberCap:
         # this test isolates the *initiative member* cap, not the project-count cap.
         monkeypatch.setattr(get_settings().consumer, "max_projects", cap + 5)
         await _insert_initiative("init-approved", ALICE)
-        await InitiativeRepository(ADMIN).patch_one({"slug": "init-approved"}, InitiativePatch(is_approved=True))
+        await MongoDbInitiativeRepository(ADMIN).patch_one({"slug": "init-approved"}, InitiativePatch(is_approved=True))
         for i in range(cap + 2):  # comfortably past the unapproved cap
             await _insert_project(f"appr-proj-{i}", owner=ALICE_EMAIL)
             await _service(ALICE).patch_one({"id": f"appr-proj-{i}"}, ProjectPatch(initiative="init-approved"))
         count = await MongoDbProjectRepository(ADMIN).count_initiative_members(
-            initiative_id=(await InitiativeRepository(ADMIN).get_one({"slug": "init-approved"})).id,  # type: ignore[union-attr]
+            initiative_id=(await MongoDbInitiativeRepository(ADMIN).get_one({"slug": "init-approved"})).id,  # type: ignore[union-attr]
             exclude_project_id=None,
         )
         assert count == cap + 2
@@ -219,7 +219,7 @@ class TestAdminAndUnassign:
 
 def _initiative_service(user: User) -> InitiativeService:
     return InitiativeService(
-        user=user, initiatives=InitiativeRepository(user), projects=MongoDbProjectRepository(user)
+        user=user, initiatives=MongoDbInitiativeRepository(user), projects=MongoDbProjectRepository(user)
     )
 
 

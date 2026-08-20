@@ -1,4 +1,4 @@
-"""Real-DB tests for :class:`InitiativeRepository` as a query/persistence toolbox.
+"""Real-DB tests for :class:`MongoDbInitiativeRepository` as a query/persistence toolbox.
 
 Authorization (authenticated-create, manage-rights, admin-only approval, owner-or-admin delete), the
 ``public ⇒ approved`` invariant, and the per-owner unapproved quota moved to
@@ -17,7 +17,7 @@ from mpcontribs_api.domains.initiatives.models import (
     InitiativeIn,
     InitiativePatch,
 )
-from mpcontribs_api.domains.initiatives.repository import InitiativeRepository
+from mpcontribs_api.domains.initiatives.repository import MongoDbInitiativeRepository
 from mpcontribs_api.exceptions import ConflictError
 from mpcontribs_api.pagination import CursorParams
 
@@ -38,8 +38,8 @@ ALICE_EMAIL = "google:alice@example.com"
 BOB_EMAIL = "google:bob@example.com"
 
 
-def _repo(user: User) -> InitiativeRepository:
-    return InitiativeRepository(user)
+def _repo(user: User) -> MongoDbInitiativeRepository:
+    return MongoDbInitiativeRepository(user)
 
 
 def _collaborator(slug: str, username: str = BOB_EMAIL) -> User:
