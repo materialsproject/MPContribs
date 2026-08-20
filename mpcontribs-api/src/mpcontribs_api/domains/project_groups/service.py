@@ -2,6 +2,7 @@ from typing import Any
 
 from beanie import Link
 
+from mpcontribs_api.authz import User
 from mpcontribs_api.domains._shared.bulk import BulkFailure, BulkWriteSummary
 from mpcontribs_api.domains._shared.models import DeleteResponse
 from mpcontribs_api.domains._shared.types import ShortStr
@@ -14,7 +15,7 @@ from mpcontribs_api.domains.project_groups.models import (
 )
 from mpcontribs_api.domains.project_groups.repository import ProjectGroupRepository
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
-from mpcontribs_api.exceptions import NotFoundError
+from mpcontribs_api.exceptions import NotFoundError, PermissionError
 from mpcontribs_api.pagination import CursorParams, Page
 
 # Fields the membership operations need off a resolved group: its id (target of the update) and its
@@ -23,13 +24,27 @@ _GROUP_FIELDS = frozenset({"id", "projects"})
 
 
 class ProjectGroupService:
-    """Coordinates project-group membership changes across the groups and projects collections"""
+    """Owns project-group write policy.
+
+    Authorization lives here, not in the repository:
+
+    - **Owner forcing** on create — a non-admin's new group is owned by the caller (admins may set an
+      owner explicitly).
+    - **Owner-or-admin delete** — a non-admin may delete only their own group, even one they can see;
+      a caller who cannot see the group gets a 404, one who can see but does not own it gets a 403.
+    - **Owner-scoped bulk delete** — a non-admin's ``delete_many`` is restricted to their own groups,
+      overriding any ``owner`` in the filter, so it can never remove others' public groups.
+
+    Membership changes validate each project against the projects collection before writing.
+    """
 
     def __init__(
         self,
+        user: User,
         groups: ProjectGroupRepository,
         projects: MongoDbProjectRepository,
     ) -> None:
+        self._user = user
         self._groups = groups
         self._projects = projects
 
@@ -42,9 +57,8 @@ class ProjectGroupService:
 
         Non-admins are set as owner automatically, while admins can specify owners.
         """
-        user = self._groups._user
-        if not user.is_admin:
-            project_group = project_group.model_copy(update={"owner": user.username})
+        if not self._user.is_admin:
+            project_group = project_group.model_copy(update={"owner": self._user.username})
         missing = [pid for pid in project_group.projects if not await self._project_exists(pid)]
         if missing:
             raise NotFoundError("One or more projects not found or not visible", ids=missing)
@@ -61,7 +75,13 @@ class ProjectGroupService:
         return await self._groups.get_one(identifiers, fields)
 
     async def delete_many(self, filter: ProjectGroupFilter) -> DeleteResponse:
-        """Bulk-delete every scoped project group matching ``filter``."""
+        """Bulk-delete scoped project groups matching ``filter``, restricted to the caller's own.
+
+        A non-admin's bulk delete is scoped to their own groups (overriding any ``owner`` in the
+        filter) so it can never remove public groups belonging to others.
+        """
+        if not self._user.is_admin:
+            filter.owner = self._user.username
         return await self._groups.delete_many(filter=filter)
 
     async def patch_one(self, identifiers: dict[str, Any], update: ProjectGroupPatch) -> ProjectGroup:
@@ -69,7 +89,17 @@ class ProjectGroupService:
         return await self._groups.patch_one(identifiers, update)
 
     async def delete_one(self, identifiers: dict[str, Any]) -> DeleteResponse:
-        """Delete the single group matching ``identifiers`` (``{"name", "owner"}`` or ``{"id"}``)."""
+        """Delete the single group matching ``identifiers`` (``{"name", "owner"}`` or ``{"id"}``).
+
+        Restricted to the owner or an admin. Absence (in scope) takes precedence over the ownership
+        gate: a caller who cannot see the group gets a 404, one who can see it (e.g. a public group)
+        but does not own it gets a 403 rather than a silent no-op.
+        """
+        group = await self._groups.get_one(identifiers, fields=frozenset({"id", "owner"}))
+        if group is None:
+            raise NotFoundError("ProjectGroup not found", **identifiers)
+        if not (self._user.is_admin or group.owner == self._user.username):
+            raise PermissionError(required_role="owner-or-admin")
         return await self._groups.delete_one(identifiers)
 
     async def _resolve_one(self, identifiers: dict[str, Any]) -> ProjectGroupOut:

@@ -10,6 +10,7 @@ from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
 
 def get_project_group_service(user: UserDep) -> ProjectGroupService:
     return ProjectGroupService(
+        user=user,
         groups=ProjectGroupRepository(user),
         projects=MongoDbProjectRepository(user),
     )
