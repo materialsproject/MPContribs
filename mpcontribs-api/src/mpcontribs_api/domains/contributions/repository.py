@@ -1,16 +1,12 @@
-from collections.abc import AsyncIterable
-from contextlib import AbstractAsyncContextManager
 from typing import Any, cast
 
 from beanie import PydanticObjectId, UpdateResponse
 from beanie.operators import Set
 from pymongo.asynchronous.client_session import AsyncClientSession
 from pymongo.errors import DuplicateKeyError
-from types_aiobotocore_s3 import S3Client
 
 from mpcontribs_api.domains._shared.bulk import BulkUpdateSummary
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
-from mpcontribs_api.domains._shared.types import DownloadFormat, ShortMimeFormat
 from mpcontribs_api.domains._shared.units import QuantityLeaf
 from mpcontribs_api.domains.contributions.models import (
     Contribution,
@@ -328,25 +324,3 @@ class MongoDbContributionRepository(
                 f"contribution '{id}' cannot be upserted: the resulting identity already exists",
                 id=id,
             ) from err
-
-    async def download_contributions(
-        self,
-        format: DownloadFormat,
-        short_mime: ShortMimeFormat,
-        ignore_cache: bool,
-        filter: ContributionFilter,
-        fields: frozenset[str] | None,
-        key_name: str,
-        s3: AbstractAsyncContextManager[S3Client],
-        bucket_name: str = "contributions",
-    ) -> AsyncIterable[bytes]:
-        return self.download(
-            format=format,
-            short_mime=short_mime,
-            ignore_cache=ignore_cache,
-            filter=filter,
-            fields=fields,
-            bucket_name=bucket_name,
-            key_name=key_name,
-            s3=s3,
-        )

@@ -130,7 +130,7 @@ class ContributionService:
         s3: AbstractAsyncContextManager[S3Client],
     ) -> AsyncIterable[bytes]:
         """Stream a gzip-compressed export of matching contributions. See repository ``download``."""
-        return await self._contributions.download_contributions(
+        return self._contributions.download(
             format=format,
             short_mime=short_mime,
             ignore_cache=ignore_cache,
@@ -138,6 +138,7 @@ class ContributionService:
             fields=fields,
             s3=s3,
             key_name="",  # TODO: Temp
+            bucket_name="contributions",
         )
 
     async def delete_one(self, identifiers: dict[str, Any]) -> BulkDeleteSummary:
