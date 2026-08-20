@@ -36,8 +36,7 @@ class MongoDbRepository[
 
     Subclasses bind the document, input, output, filter, and patch types as type parameters, set
     the matching ``document_model`` / ``out_model`` class attributes, and declare a ``read_scope``
-    that defines per-user visibility. Shared CRUD logic lives here. Subclasses implement domain-specific
-    logic for access when required.
+    that defines per-user visibility. Subclasses implement domain-specific logic for access when required.
 
     Attributes:
         document_model: the ``BaseDocumentWithInput`` subclass this repository operates on
@@ -227,10 +226,6 @@ class MongoDbRepository[
     async def delete_many(self, filter: TFilter, session: AsyncClientSession | None = None) -> DeleteResponse:
         """Delete every scoped document matching an arbitrary ``filter``.
 
-        This is the bulk path (e.g. "delete every ProjectGroup with owner == X"). It does not raise
-        on an empty match — a zero count is a valid, unambiguous outcome for a filter delete. Scoping
-        ensures callers cannot delete documents they are not permitted to see.
-
         Args:
             filter (TFilter): the fastapi-filter query to apply on top of the user scope
             session (AsyncClientSession | None): optional client session for transactions
@@ -305,11 +300,10 @@ class MongoDbRepository[
         # Otherwise, update the fields fully (set)
         # Brendan TODO: Set will replace an entire field
         # - if we want to append to a list (ie. add a reference) we ned Push/AddToSet
-        query = self.document_model.find_one(self._scope, match, session=session).update(
+        updated = await self.document_model.find_one(self._scope, match, session=session).update(  # pyright: ignore[reportGeneralTypeIssues] # beanie UpdateQuery is awaitable, but pyright doesn't see it
             Set(update_data),
             response_type=UpdateResponse.NEW_DOCUMENT,
         )
-        updated = await query  # pyright: ignore[reportGeneralTypeIssues] # beanie UpdateQuery is awaitable, but pyright doesn't see it
         if updated is None:
             raise not_found
         return updated
