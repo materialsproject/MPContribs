@@ -64,7 +64,11 @@ class InitiativeService:
             raise PermissionError(required_role="authenticated")
 
         if not self._user.is_admin:
-            unapproved = await self._initiatives.count_unapproved_for_owner(self._user.username)
+            # Unscoped: the per-owner unapproved cap counts every one of the owner's unapproved
+            # initiatives, regardless of what the current caller can see.
+            unapproved = await self._initiatives.count_matching(
+                {"owner": self._user.username, "is_approved": False}, scoped=False
+            )
             if unapproved >= self._limits.max_unapproved_per_owner:
                 raise ConflictError(
                     "owner already has the maximum number of unapproved initiatives",

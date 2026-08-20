@@ -380,19 +380,27 @@ class TestDeleteProject:
 
 
 class TestToolboxPrimitives:
-    async def test_count_for_owner_counts_only_that_owner(self, db):
+    async def test_count_matching_counts_only_that_owner(self, db):
         await _insert("cbo-a", owner=ALICE_EMAIL)
         await _insert("cbo-b", owner=ALICE_EMAIL)
         await _insert("cbo-c", owner=BOB_EMAIL)
-        assert await _repo(ADMIN).count_for_owner(ALICE_EMAIL) == 2
-        assert await _repo(ADMIN).count_for_owner(BOB_EMAIL) == 1
+        assert await _repo(ADMIN).count_matching({"owner": ALICE_EMAIL}, scoped=False) == 2
+        assert await _repo(ADMIN).count_matching({"owner": BOB_EMAIL}, scoped=False) == 1
 
-    async def test_count_for_owner_is_unscoped(self, db):
-        # The count is a property of the owner, independent of who asks — even a caller who cannot
-        # see the private projects sees the true total.
+    async def test_count_matching_unscoped_sees_the_true_total(self, db):
+        # scoped=False makes the count a property of the owner, independent of who asks — even a
+        # caller who cannot see the private projects sees the true total.
         await _insert("cbo-priv-1", owner=ALICE_EMAIL, is_public=False)
         await _insert("cbo-priv-2", owner=ALICE_EMAIL, is_public=False)
-        assert await _repo(BOB).count_for_owner(ALICE_EMAIL) == 2
+        assert await _repo(BOB).count_matching({"owner": ALICE_EMAIL}, scoped=False) == 2
+
+    async def test_count_matching_scoped_hides_invisible_docs(self, db):
+        # scoped=True merges the caller's read scope: Bob cannot see Alice's private projects, so a
+        # scoped count of them is zero even though the unscoped total is two.
+        await _insert("cbo-sc-1", owner=ALICE_EMAIL, is_public=False)
+        await _insert("cbo-sc-2", owner=ALICE_EMAIL, is_public=False)
+        assert await _repo(BOB).count_matching({"owner": ALICE_EMAIL}, scoped=True) == 0
+        assert await _repo(ALICE).count_matching({"owner": ALICE_EMAIL}, scoped=True) == 2
 
     async def test_find_by_id_unscoped_ignores_visibility(self, db):
         await _insert("fbi-hidden", owner=ALICE_EMAIL, is_public=False)

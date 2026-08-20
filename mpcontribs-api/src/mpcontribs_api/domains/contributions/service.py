@@ -170,7 +170,8 @@ class ContributionService:
             return None
         # Soft limit: this count feeds a non-atomic check-then-write, so concurrent writes to the
         # same project can overshoot the cap by a bounded amount. Acceptable for an anti-abuse quota.
-        return await self._contributions.count_contributions_for_project(project_id)
+        # Unscoped: the quota is a property of the project as a whole, not of what the caller can see.
+        return await self._contributions.count_matching({"project": project_id}, scoped=False)
 
     async def insert_many(
         self,

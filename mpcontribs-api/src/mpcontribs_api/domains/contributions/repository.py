@@ -65,14 +65,6 @@ class MongoDbContributionRepository(
     # caller may write to (keyed on ``project``). Admins bypass scope (handled by ``Scope``).
     read_scope = Scope(Public(), RoleIn("project", "writable_projects"))
 
-    async def count_contributions_for_project(self, project_name: str) -> int:
-        """Count contributions already stored for a project.
-
-        Unscoped on purpose: the unapproved-contribution quota is a property of the project as a
-        whole, not of what the current user can see. The cap comparison lives in the service.
-        """
-        return await self.document_model.find(self.document_model.project == project_name).count()
-
     async def patch_one(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         identifiers: dict[str, Any],

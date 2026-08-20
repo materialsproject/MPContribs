@@ -4,7 +4,7 @@ import io
 import json
 import zlib
 from abc import ABC
-from collections.abc import AsyncIterable, AsyncIterator, Callable, Iterable
+from collections.abc import AsyncIterable, AsyncIterator, Callable, Iterable, Mapping
 from contextlib import AbstractAsyncContextManager
 from typing import Any, ClassVar
 
@@ -168,6 +168,22 @@ class MongoDbRepository[
         query = filter.filter(self.document_model.find(self._scope, session=session))
         docs = await query.project(projection).to_list()
         return [doc.id for doc in docs]
+
+    async def count_matching(self, query: Mapping[str, Any], *, scoped: bool) -> int:
+        """Count documents matching a raw Mongo ``query``.
+
+        Raw pymongo ``count_documents`` is used (rather than Beanie's ``find(...).count()``) so any
+        query shape is expressible — dotted keys (``initiative.$id``), operators (``$ne``, ``$and``).
+
+        Args:
+            query (Mapping[str, Any]): the Mongo filter to count against
+            scoped (bool): when ``True`` the user read scope is merged in; when ``False`` the count
+                spans every document (system/integrity count)
+        """
+        match: dict[str, Any] = dict(query)
+        if scoped and self._scope:
+            match = {"$and": [self._scope, match]}
+        return await self.document_model.get_pymongo_collection().count_documents(match)
 
     async def insert_one(self, document: TDoc, session: AsyncClientSession | None = None) -> TDoc:
         """Persist a fully-built document, rejecting an existing duplicate.

@@ -174,9 +174,9 @@ class TestMemberCap:
         for i in range(cap + 2):  # comfortably past the unapproved cap
             await _insert_project(f"appr-proj-{i}", owner=ALICE_EMAIL)
             await _service(ALICE).patch_one({"id": f"appr-proj-{i}"}, ProjectPatch(initiative="init-approved"))
-        count = await MongoDbProjectRepository(ADMIN).count_initiative_members(
-            initiative_id=(await MongoDbInitiativeRepository(ADMIN).get_one({"slug": "init-approved"})).id,  # type: ignore[union-attr]
-            exclude_project_id=None,
+        initiative_id = (await MongoDbInitiativeRepository(ADMIN).get_one({"slug": "init-approved"})).id  # type: ignore[union-attr]
+        count = await MongoDbProjectRepository(ADMIN).count_matching(
+            {"initiative.$id": initiative_id}, scoped=False
         )
         assert count == cap + 2
 

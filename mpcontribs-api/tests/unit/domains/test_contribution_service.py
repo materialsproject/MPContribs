@@ -342,7 +342,7 @@ class TestInsertContributionsUnapprovedQuota:
         monkeypatch.setattr(get_settings().consumer, "max_unapproved_contributions_per_project", 2)
         contrib_repo = AsyncMock()
         contrib_repo.insert_many.return_value = None
-        contrib_repo.count_contributions_for_project.return_value = 5  # already over cap
+        contrib_repo.count_matching.return_value = 5  # already over cap
         svc, *_ = _make_service(contributions=contrib_repo, projects=_unapproved_projects_repo())
 
         summary = await svc.insert_many([_contrib_in(identifier=f"mp-{i}") for i in range(3)])
@@ -358,7 +358,7 @@ class TestInsertContributionsUnapprovedQuota:
         monkeypatch.setattr(get_settings().consumer, "max_unapproved_contributions_per_project", 5)
         contrib_repo = AsyncMock()
         contrib_repo.insert_many.return_value = None
-        contrib_repo.count_contributions_for_project.return_value = 3
+        contrib_repo.count_matching.return_value = 3
         svc, *_ = _make_service(contributions=contrib_repo, projects=_unapproved_projects_repo())
 
         summary = await svc.insert_many([_contrib_in(identifier=f"mp-{i}") for i in range(4)])
@@ -375,7 +375,7 @@ class TestInsertContributionsUnapprovedQuota:
         monkeypatch.setattr(get_settings().consumer, "max_unapproved_contributions_per_project", 3)
         contrib_repo = AsyncMock()
         contrib_repo.insert_many.return_value = None
-        contrib_repo.count_contributions_for_project.return_value = 2
+        contrib_repo.count_matching.return_value = 2
         svc, *_ = _make_service(contributions=contrib_repo, projects=_unapproved_projects_repo())
 
         summary = await svc.insert_many([_contrib_in(identifier=f"mp-{i}") for i in range(2)])
@@ -389,7 +389,7 @@ class TestInsertContributionsUnapprovedQuota:
         monkeypatch.setattr(get_settings().consumer, "max_unapproved_contributions_per_project", 3)
         contrib_repo = AsyncMock()
         contrib_repo.insert_many.return_value = None
-        contrib_repo.count_contributions_for_project.return_value = 3
+        contrib_repo.count_matching.return_value = 3
         svc, *_ = _make_service(contributions=contrib_repo, projects=_unapproved_projects_repo())
 
         summary = await svc.insert_many([_contrib_in(identifier=f"mp-{i}") for i in range(2)])
@@ -409,13 +409,13 @@ class TestInsertContributionsUnapprovedQuota:
         assert len(summary.succeeded) == 3
         assert summary.failed == []
         # Approved short-circuits before counting stored contributions
-        contrib_repo.count_contributions_for_project.assert_not_called()
+        contrib_repo.count_matching.assert_not_called()
 
     async def test_quota_evaluated_per_project(self, monkeypatch):
         monkeypatch.setattr(get_settings().consumer, "max_unapproved_contributions_per_project", 2)
         contrib_repo = AsyncMock()
         contrib_repo.insert_many.return_value = None
-        contrib_repo.count_contributions_for_project.return_value = 99  # only consulted for the unapproved one
+        contrib_repo.count_matching.return_value = 99  # only consulted for the unapproved one
         projects = _projects_repo_by_approval({"ok": True, "bad": False})
         svc, *_ = _make_service(contributions=contrib_repo, projects=projects)
 
@@ -435,7 +435,7 @@ class TestInsertContributionsUnapprovedQuota:
         monkeypatch.setattr(get_settings().consumer, "max_unapproved_contributions_per_project", 2)
         contrib_repo = AsyncMock()
         contrib_repo.insert_many.return_value = None
-        contrib_repo.count_contributions_for_project.return_value = 5
+        contrib_repo.count_matching.return_value = 5
         svc, *_ = _make_service(contributions=contrib_repo, projects=_unapproved_projects_repo())
 
         with patch.object(service_module.logger, "warning") as warn:
@@ -476,7 +476,7 @@ class TestUpsertContributionsUnapprovedQuota:
         monkeypatch.setattr(get_settings().consumer, "max_unapproved_contributions_per_project", 3)
         contrib_repo = AsyncMock()
         contrib_repo.upsert_one.return_value = MagicMock(spec=Contribution, project="proj")
-        contrib_repo.count_contributions_for_project.return_value = 2
+        contrib_repo.count_matching.return_value = 2
         svc, *_ = _make_service(contributions=contrib_repo, projects=_unapproved_projects_repo())
         # Set after _make_service, which stubs existing_identities to an empty set. 'a' already exists.
         contrib_repo.existing_identities.return_value = {
@@ -502,7 +502,7 @@ class TestUpsertContributionsUnapprovedQuota:
         monkeypatch.setattr(get_settings().consumer, "max_unapproved_contributions_per_project", 1)
         contrib_repo = AsyncMock()
         contrib_repo.upsert_one.return_value = MagicMock(spec=Contribution, project="proj")
-        contrib_repo.count_contributions_for_project.return_value = 99  # far over cap
+        contrib_repo.count_matching.return_value = 99  # far over cap
         svc, *_ = _make_service(contributions=contrib_repo, projects=_unapproved_projects_repo())
         # Every contribution in the batch is an existing document -> all are free updates.
         contrib_repo.existing_identities.return_value = {
@@ -528,7 +528,7 @@ class TestUpsertContributionsUnapprovedQuota:
 
         assert len(summary.succeeded) == 3
         assert summary.failed == []
-        contrib_repo.count_contributions_for_project.assert_not_called()
+        contrib_repo.count_matching.assert_not_called()
         contrib_repo.existing_identities.assert_not_called()
 
 
@@ -542,20 +542,20 @@ class TestUpsertContributionByIdQuota:
         monkeypatch.setattr(get_settings().consumer, "max_unapproved_contributions_per_project", 1)
         contrib_repo = AsyncMock()
         contrib_repo.get_one.return_value = MagicMock(spec=Contribution)  # id exists -> update
-        contrib_repo.count_contributions_for_project.return_value = 99
+        contrib_repo.count_matching.return_value = 99
         contrib_repo.upsert_one.return_value = MagicMock(spec=Contribution)
         svc, *_ = _make_service(contributions=contrib_repo, projects=_unapproved_projects_repo())
 
         await svc.upsert_one("someid", _contrib_in())
 
         contrib_repo.upsert_one.assert_called_once()
-        contrib_repo.count_contributions_for_project.assert_not_called()
+        contrib_repo.count_matching.assert_not_called()
 
     async def test_new_insert_over_cap_rejected(self, monkeypatch):
         monkeypatch.setattr(get_settings().consumer, "max_unapproved_contributions_per_project", 2)
         contrib_repo = AsyncMock()
         contrib_repo.get_one.return_value = None  # id absent -> would insert
-        contrib_repo.count_contributions_for_project.return_value = 5  # over cap
+        contrib_repo.count_matching.return_value = 5  # over cap
         svc, *_ = _make_service(contributions=contrib_repo, projects=_unapproved_projects_repo())
 
         with pytest.raises(PermissionError):
@@ -567,7 +567,7 @@ class TestUpsertContributionByIdQuota:
         monkeypatch.setattr(get_settings().consumer, "max_unapproved_contributions_per_project", 5)
         contrib_repo = AsyncMock()
         contrib_repo.get_one.return_value = None
-        contrib_repo.count_contributions_for_project.return_value = 1
+        contrib_repo.count_matching.return_value = 1
         contrib_repo.upsert_one.return_value = MagicMock(spec=Contribution)
         svc, *_ = _make_service(contributions=contrib_repo, projects=_unapproved_projects_repo())
 
@@ -580,7 +580,7 @@ class TestUpsertContributionByIdQuota:
         monkeypatch.setattr(get_settings().consumer, "max_unapproved_contributions_per_project", 2)
         contrib_repo = AsyncMock()
         contrib_repo.get_one.return_value = None
-        contrib_repo.count_contributions_for_project.return_value = 2
+        contrib_repo.count_matching.return_value = 2
         svc, *_ = _make_service(contributions=contrib_repo, projects=_unapproved_projects_repo())
 
         with pytest.raises(PermissionError):
@@ -598,7 +598,7 @@ class TestUpsertContributionByIdQuota:
         await svc.upsert_one("someid", _contrib_in())
 
         contrib_repo.upsert_one.assert_called_once()
-        contrib_repo.count_contributions_for_project.assert_not_called()
+        contrib_repo.count_matching.assert_not_called()
 
 
 # ---------------------------------------------------------------------------

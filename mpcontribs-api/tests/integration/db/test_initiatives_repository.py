@@ -4,8 +4,8 @@ Authorization (authenticated-create, manage-rights, admin-only approval, owner-o
 ``public ⇒ approved`` invariant, and the per-owner unapproved quota moved to
 :class:`InitiativeService` (see ``test_initiatives_service.py``). What remains here is the toolbox:
 scoped reads (visibility, filters), the mechanical ``insert`` (owner-stamp + dup-slug reject), and
-``count_unapproved_for_owner``. State-seeding uses the base ``patch_one`` (a mechanical ``$set`` with
-no auth), which the repo no longer overrides.
+the shared ``count_matching`` primitive. State-seeding uses the base ``patch_one`` (a mechanical
+``$set`` with no auth), which the repo no longer overrides.
 """
 
 import pytest
@@ -81,7 +81,7 @@ class TestInsert:
 
 
 # ---------------------------------------------------------------------------
-# count_unapproved_for_owner  (toolbox primitive; the cap decision lives in the service)
+# count_matching for the unapproved-owner quota  (toolbox primitive; the cap decision lives in the service)
 # ---------------------------------------------------------------------------
 
 
@@ -91,14 +91,17 @@ class TestCountUnapprovedForOwner:
         await _insert("cnt-b", ALICE)
         await _insert("cnt-bob", BOB)
         await _publish("cnt-a")  # approved no longer counts
-        assert await _repo(ADMIN).count_unapproved_for_owner(ALICE_EMAIL) == 1
-        assert await _repo(ADMIN).count_unapproved_for_owner(BOB_EMAIL) == 1
+        query_alice = {"owner": ALICE_EMAIL, "is_approved": False}
+        query_bob = {"owner": BOB_EMAIL, "is_approved": False}
+        assert await _repo(ADMIN).count_matching(query_alice, scoped=False) == 1
+        assert await _repo(ADMIN).count_matching(query_bob, scoped=False) == 1
 
     async def test_is_unscoped(self, db):
-        # The count is the owner's true total, independent of who asks (Bob cannot see Alice's).
+        # scoped=False yields the owner's true total, independent of who asks (Bob cannot see Alice's).
         await _insert("cnt-priv-1", ALICE)
         await _insert("cnt-priv-2", ALICE)
-        assert await _repo(BOB).count_unapproved_for_owner(ALICE_EMAIL) == 2
+        query = {"owner": ALICE_EMAIL, "is_approved": False}
+        assert await _repo(BOB).count_matching(query, scoped=False) == 2
 
 
 # ---------------------------------------------------------------------------

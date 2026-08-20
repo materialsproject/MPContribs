@@ -42,7 +42,7 @@ def _existing(owner: str = ALICE_EMAIL, *, is_public: bool = False, is_approved:
 def _service(user: User, *, existing=None, unapproved: int = 0):
     initiatives = AsyncMock()
     initiatives.get_one.return_value = existing
-    initiatives.count_unapproved_for_owner.return_value = unapproved
+    initiatives.count_matching.return_value = unapproved
     # The service builds the stored document (document_model.from_input_model, which stamps owner)
     # before inserting; keep document_model a sync mock so it returns a document, not a coroutine.
     initiatives.document_model = MagicMock()
@@ -80,7 +80,7 @@ class TestInsert:
         await svc.insert_one(InitiativeIn(slug="x-init", name="X"))
         initiatives.insert_one.assert_awaited_once()
         # count is never consulted for an admin
-        initiatives.count_unapproved_for_owner.assert_not_called()
+        initiatives.count_matching.assert_not_called()
 
     async def test_happy_path_forces_owner(self):
         svc, initiatives = _service(ALICE, unapproved=0)

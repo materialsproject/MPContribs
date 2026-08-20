@@ -63,7 +63,7 @@ def _service(user: User, *, existing=None, scoped=None, count: int = 0, limits: 
     projects.document_model = Project
     projects.find_by_id_unscoped.return_value = existing
     projects.get_one.return_value = scoped
-    projects.count_for_owner.return_value = count
+    projects.count_matching.return_value = count
     projects.upsert_one.side_effect = lambda doc, **kw: doc
     projects.patch_one.return_value = _project()
     projects.delete_one.return_value = DeleteResponse(num_deleted=1)

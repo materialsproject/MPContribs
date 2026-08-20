@@ -30,10 +30,6 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
     # ``_id``). Admins bypass scope (handled by ``Scope``).
     read_scope = Scope(Public(approved=True), Owned(), RoleIn("_id", "project_roles"))
 
-    async def count_for_owner(self, owner: str) -> int:
-        """Count projects owned by ``owner``, ignoring user scope."""
-        return await self.document_model.find(self.document_model.owner == owner).count()
-
     async def find_by_id_unscoped(self, id: str) -> Project | None:
         """Return the project with ``id`` regardless of user scope, or ``None`` if absent.
 
@@ -95,25 +91,6 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
             for pid, (stats, cols) in updates.items()
         ]
         await self.document_model.get_pymongo_collection().bulk_write(ops, ordered=False)
-
-    async def count_initiative_members(self, initiative_id: PydanticObjectId, exclude_project_id: str | None) -> int:
-        """Count projects assigned to an initiative, ignoring user scope.
-
-        The unapproved-initiative member limit is an integrity constraint on the initiative's true
-        size, so it must count every member regardless of who can see them — a scoped count could
-        let a collaborator overshoot the cap with projects they cannot see. ``exclude_project_id``
-        drops the project being (re)assigned so re-assigning an existing member is idempotent and
-        never trips the limit.
-
-        Args:
-            initiative_id (PydanticObjectId): the initiative whose members to count
-            exclude_project_id (str | None): a project id to exclude from the count, if any
-        """
-        collection = self.document_model.get_pymongo_collection()
-        query: dict[str, Any] = {"initiative.$id": initiative_id}
-        if exclude_project_id is not None:
-            query["_id"] = {"$ne": exclude_project_id}
-        return await collection.count_documents(query)
 
     async def clear_initiative_refs(self, initiative_id: PydanticObjectId) -> int:
         """Unset the ``initiative`` link on every project pointing at ``initiative_id``.

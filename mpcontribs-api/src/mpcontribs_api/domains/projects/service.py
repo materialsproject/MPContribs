@@ -130,7 +130,8 @@ class ProjectService:
         overshoot the cap slightly.
         """
         max_projects = self._consumer_limits.max_projects
-        count = await self._projects.count_for_owner(owner)
+        # Unscoped: the per-owner cap is a property of the owner, independent of who is asking.
+        count = await self._projects.count_matching({"owner": owner}, scoped=False)
         if count >= max_projects:
             raise PermissionError(
                 f"Cannot be owner of more than {max_projects} projects",
@@ -182,10 +183,13 @@ class ProjectService:
             )
 
         if not initiative.is_approved:
-            members = await self._projects.count_initiative_members(
-                initiative_id=initiative.id,
-                exclude_project_id=project_id,
-            )
+            # Unscoped integrity count: the member cap must see every project assigned to the
+            # initiative, even ones the caller cannot. Excluding ``project_id`` keeps re-assigning an
+            # already-assigned project idempotent so it never trips the limit.
+            members_query: dict[str, Any] = {"initiative.$id": initiative.id}
+            if project_id is not None:
+                members_query["_id"] = {"$ne": project_id}
+            members = await self._projects.count_matching(members_query, scoped=False)
             if members >= self._initiative_limits.max_projects_per_unapproved:
                 raise ConflictError(
                     message="unapproved initiative already has the maximum number of assigned projects",
