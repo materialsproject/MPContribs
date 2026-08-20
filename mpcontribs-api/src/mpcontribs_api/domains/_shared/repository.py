@@ -195,6 +195,35 @@ class MongoDbRepository[
         """
         return await self.document_model.insert_many(documents, ordered=False, session=session)
 
+    async def upsert_one(self, document: TDoc, session: AsyncClientSession | None = None) -> TDoc:
+        """Insert ``document`` or replace the existing one with the same ``_id`` (PUT semantics).
+
+        Domains whose upsert key is a compound identity rather than ``_id`` (e.g. contributions) override this.
+
+        Args:
+            document (TDoc): the fully-built document to persist
+            session (AsyncClientSession | None): optional client session for transactions
+        """
+        try:
+            return await document.save(session=session)
+        except DuplicateKeyError as exc:
+            raise ConflictError(
+                f"Cannot upsert {self.document_model.__name__}: a conflicting document already exists",
+                identifiers=document.identifiers(),
+            ) from exc
+
+    async def upsert_many(self, documents: list[TDoc], session: AsyncClientSession | None = None) -> list[TDoc]:
+        """Upsert each document by its ``_id`` (see :meth:`upsert_one`).
+
+        Sequential by default. Domains needing per-item failure reporting or bounded concurrency
+        (e.g. contributions) orchestrate that in their service rather than overriding here.
+
+        Args:
+            documents (list[TDoc]): the fully-built documents to persist
+            session (AsyncClientSession | None): optional client session for transactions
+        """
+        return [await self.upsert_one(document, session=session) for document in documents]
+
     async def delete_many(self, filter: TFilter, session: AsyncClientSession | None = None) -> DeleteResponse:
         """Delete every scoped document matching an arbitrary ``filter``.
 
