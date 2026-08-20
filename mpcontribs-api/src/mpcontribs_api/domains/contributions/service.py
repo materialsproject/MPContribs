@@ -550,7 +550,7 @@ class ContributionService:
             return [], []
         docs = []
         for item in items:
-            doc = Contribution.from_input_model(item.contribution)
+            doc = self._contributions.document_model.from_input_model(item.contribution)
             doc.unique_value = item.unique_value
             doc.condition_key = item.condition_key
             docs.append(doc)
@@ -646,7 +646,7 @@ class ContributionService:
         table_links = cast(list[Link[Table]] | None, tables or None)
         inserted: list[Contribution] = []
         for item in group:
-            doc = Contribution.from_input_model(item.contribution)
+            doc = self._contributions.document_model.from_input_model(item.contribution)
             doc.unique_value = item.unique_value
             doc.condition_key = item.condition_key
             doc.structures = struct_links

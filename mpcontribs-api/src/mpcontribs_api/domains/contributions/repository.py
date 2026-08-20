@@ -8,7 +8,6 @@ from pymongo.asynchronous.client_session import AsyncClientSession
 from pymongo.errors import DuplicateKeyError
 from types_aiobotocore_s3 import S3Client
 
-from mpcontribs_api.authz import User
 from mpcontribs_api.domains._shared.bulk import BulkUpdateSummary
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
 from mpcontribs_api.domains._shared.types import DownloadFormat, ShortMimeFormat
@@ -28,7 +27,7 @@ from mpcontribs_api.domains.contributions.stats import (
     finalize_columns,
     merge_contribution_columns,
 )
-from mpcontribs_api.exceptions import ConflictError, NotFoundError, PermissionError
+from mpcontribs_api.exceptions import ConflictError, NotFoundError
 from mpcontribs_api.scope import Public, RoleIn, Scope
 
 # Sentinel for "leave unique_value untouched" on patch (distinct from a real None value).
@@ -71,10 +70,6 @@ class MongoDbContributionRepository(
     # Contributions have no owner of their own; visible when public or belonging to a project the
     # caller may write to (keyed on ``project``). Admins bypass scope (handled by ``Scope``).
     read_scope = Scope(Public(), RoleIn("project", "writable_projects"))
-
-    def __init__(self, user: User) -> None:
-        super().__init__(user)
-        self._user = user
 
     async def count_contributions_for_project(self, project_name: str) -> int:
         """Count contributions already stored for a project.
@@ -319,11 +314,6 @@ class MongoDbContributionRepository(
                 identifiers["id"], contribution, None if unique_value is _UNSET else unique_value
             )
 
-        project = str(identifiers["project"])
-        # Make sure the user is allowed to upsert a contribution under the provided project
-        if not self._user.can_write(project):
-            raise PermissionError(f"not authorized to write to project '{project}'")
-
         doc = self.document_model.from_input_model(contribution)
         doc.unique_value = identifiers["unique_value"]
         doc.condition_key = identifiers["condition_key"]
@@ -351,9 +341,6 @@ class MongoDbContributionRepository(
         unique_value: Scalar | None = None,
     ) -> Contribution:
         """Upsert a single Contribution keyed on its Mongo ``_id`` (see :meth:`upsert_one`)."""
-        if not self._user.can_write(contribution.project):
-            raise PermissionError(f"not authorized to write to project '{contribution.project}'")
-
         oid = self._convert_object_id(id)
         doc = self.document_model.from_input_model(contribution)
         # from_input_model mints a fresh id; upsert-by-id must key on the caller-supplied id so the
