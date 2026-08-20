@@ -78,7 +78,7 @@ class TestInsertProject:
 
 
 # ---------------------------------------------------------------------------
-# Authorization scoping  (read visibility via ReadScope)
+# Authorization scoping  (read visibility via the repo's declared Scope)
 # ---------------------------------------------------------------------------
 
 

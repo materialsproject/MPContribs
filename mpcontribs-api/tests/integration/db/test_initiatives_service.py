@@ -3,12 +3,13 @@ from beanie import Link
 
 from mpcontribs_api.authz import User
 from mpcontribs_api.config import get_settings
-from mpcontribs_api.domains.initiatives.models import InitiativeIn, InitiativePatch
+from mpcontribs_api.domains.initiatives.models import Initiative, InitiativeIn, InitiativePatch
 from mpcontribs_api.domains.initiatives.repository import InitiativeRepository
+from mpcontribs_api.domains.initiatives.service import InitiativeService
 from mpcontribs_api.domains.projects.models import Project, ProjectIn, ProjectPatch
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
 from mpcontribs_api.domains.projects.service import ProjectService
-from mpcontribs_api.exceptions import ConflictError, NotFoundError, PermissionError
+from mpcontribs_api.exceptions import ConflictError, NotFoundError, PermissionError, ValidationError
 
 pytestmark = [pytest.mark.db, pytest.mark.asyncio(loop_scope="session")]
 
@@ -51,7 +52,9 @@ async def _insert_project(pid: str, owner: str = ALICE_EMAIL) -> Project:
 
 
 async def _insert_initiative(slug: str, owner_user: User = ALICE):
-    return await InitiativeRepository(owner_user).insert_one(InitiativeIn(slug=slug, name="Init"))
+    return await InitiativeRepository(owner_user).insert_one(
+        InitiativeIn(slug=slug, name="Init"), owner=owner_user.username
+    )
 
 
 def _assigned_id(project: Project):
@@ -202,3 +205,147 @@ class TestAdminAndUnassign:
         bob_plain = User(username=BOB_EMAIL, groups=frozenset())
         updated = await _service(bob_plain).patch_one({"id": "detach-proj"}, ProjectPatch(initiative=None))
         assert _assigned_id(updated) is None
+
+
+# ===========================================================================
+# InitiativeService — create / patch / delete authorization
+#
+# The initiative write policy (authenticated-create, per-owner unapproved quota, manage rights,
+# admin-only approval, public⇒approved, owner-or-admin delete) lives on InitiativeService; these
+# drive it against the real DB. The ProjectService assignment tests above are a separate concern —
+# assignment is an initiative-facing operation on the *project* service.
+# ===========================================================================
+
+
+def _initiative_service(user: User) -> InitiativeService:
+    return InitiativeService(
+        user=user, initiatives=InitiativeRepository(user), projects=MongoDbProjectRepository(user)
+    )
+
+
+async def _approve(slug: str) -> Initiative:
+    return await _initiative_service(ADMIN).patch_one({"slug": slug}, InitiativePatch(is_approved=True))
+
+
+class TestInitiativeCreate:
+    async def test_forces_owner_and_starts_private_unapproved(self, db):
+        created = await _initiative_service(ALICE).insert_one(InitiativeIn(slug="svc-create", name="X"))
+        assert created.owner == ALICE_EMAIL
+        assert created.is_public is False
+        assert created.is_approved is False
+
+    async def test_anonymous_cannot_create(self, db):
+        with pytest.raises(PermissionError):
+            await _initiative_service(User()).insert_one(InitiativeIn(slug="svc-anon", name="X"))
+
+    async def test_duplicate_slug_is_conflict(self, db):
+        await _initiative_service(ALICE).insert_one(InitiativeIn(slug="svc-dup", name="X"))
+        bob = User(username=BOB_EMAIL, groups=frozenset())
+        with pytest.raises(ConflictError):
+            await _initiative_service(bob).insert_one(InitiativeIn(slug="svc-dup", name="X"))
+
+    async def test_owner_capped_at_configured_unapproved(self, db):
+        limit = get_settings().domain.initiatives.max_unapproved_per_owner
+        for i in range(limit):
+            await _initiative_service(ALICE).insert_one(InitiativeIn(slug=f"svc-cap-{i}", name="X"))
+        with pytest.raises(ConflictError):
+            await _initiative_service(ALICE).insert_one(InitiativeIn(slug="svc-cap-over", name="X"))
+
+    async def test_approved_frees_a_quota_slot(self, db):
+        limit = get_settings().domain.initiatives.max_unapproved_per_owner
+        for i in range(limit):
+            await _initiative_service(ALICE).insert_one(InitiativeIn(slug=f"svc-quota-{i}", name="X"))
+        await _approve("svc-quota-0")
+        assert await _initiative_service(ALICE).insert_one(InitiativeIn(slug="svc-quota-extra", name="X")) is not None
+
+    async def test_admin_is_exempt_from_quota(self, db):
+        limit = get_settings().domain.initiatives.max_unapproved_per_owner
+        for i in range(limit + 2):
+            await _initiative_service(ADMIN).insert_one(InitiativeIn(slug=f"svc-admin-{i}", name="X"))
+
+
+class TestInitiativePatchAuth:
+    async def test_only_admin_may_approve(self, db):
+        await _insert_initiative("svc-approve", ALICE)
+        with pytest.raises(PermissionError):
+            await _initiative_service(ALICE).patch_one({"slug": "svc-approve"}, InitiativePatch(is_approved=True))
+        approved = await _approve("svc-approve")
+        assert approved.is_approved is True
+
+    async def test_cannot_make_public_while_unapproved(self, db):
+        await _insert_initiative("svc-pub-fail", ALICE)
+        with pytest.raises(ValidationError):
+            await _initiative_service(ALICE).patch_one({"slug": "svc-pub-fail"}, InitiativePatch(is_public=True))
+
+    async def test_public_allowed_once_approved(self, db):
+        await _insert_initiative("svc-pub-ok", ALICE)
+        await _approve("svc-pub-ok")
+        patched = await _initiative_service(ALICE).patch_one({"slug": "svc-pub-ok"}, InitiativePatch(is_public=True))
+        assert patched.is_public is True
+
+    async def test_owner_can_rename(self, db):
+        await _insert_initiative("svc-rename", ALICE)
+        patched = await _initiative_service(ALICE).patch_one({"slug": "svc-rename"}, InitiativePatch(name="Renamed"))
+        assert patched.name == "Renamed"
+
+    async def test_collaborator_can_patch(self, db):
+        await _insert_initiative("svc-collab", ALICE)
+        patched = await _initiative_service(_collaborator("svc-collab")).patch_one(
+            {"slug": "svc-collab"}, InitiativePatch(name="By Collaborator")
+        )
+        assert patched.name == "By Collaborator"
+
+    async def test_visible_but_unmanaged_cannot_patch(self, db):
+        await _insert_initiative("svc-visible", ALICE)
+        await _initiative_service(ADMIN).patch_one(
+            {"slug": "svc-visible"}, InitiativePatch(is_approved=True, is_public=True)
+        )
+        stranger = User(username=CAROL_EMAIL, groups=frozenset())
+        with pytest.raises(PermissionError):
+            await _initiative_service(stranger).patch_one({"slug": "svc-visible"}, InitiativePatch(name="hijack"))
+
+    async def test_missing_is_not_found(self, db):
+        with pytest.raises(NotFoundError):
+            await _initiative_service(ADMIN).patch_one({"slug": "svc-patch-ghost"}, InitiativePatch(name="x"))
+
+    async def test_admin_can_patch_non_owned(self, db):
+        await _insert_initiative("svc-admin-patch", ALICE)
+        patched = await _initiative_service(ADMIN).patch_one(
+            {"slug": "svc-admin-patch"}, InitiativePatch(name="Admin Renamed")
+        )
+        assert patched.name == "Admin Renamed"
+
+
+class TestInitiativeDelete:
+    async def test_owner_can_delete(self, db):
+        await _insert_initiative("svc-del-owner", ALICE)
+        result = await _initiative_service(ALICE).delete_one({"slug": "svc-del-owner"})
+        assert result.num_deleted == 1
+
+    async def test_collaborator_cannot_delete(self, db):
+        await _insert_initiative("svc-del-collab", ALICE)
+        with pytest.raises(PermissionError):
+            await _initiative_service(_collaborator("svc-del-collab")).delete_one({"slug": "svc-del-collab"})
+
+    async def test_missing_is_not_found(self, db):
+        with pytest.raises(NotFoundError):
+            await _initiative_service(ADMIN).delete_one({"slug": "svc-del-ghost"})
+
+    async def test_admin_can_delete_non_owned(self, db):
+        await _insert_initiative("svc-admin-del", ALICE)
+        result = await _initiative_service(ADMIN).delete_one({"slug": "svc-admin-del"})
+        assert result.num_deleted == 1
+
+    async def test_delete_clears_member_project_links(self, db):
+        # Deleting an initiative must unset the `initiative` link on its members, leaving no
+        # dangling reference behind (round-trip: assign, delete, re-read from the DB).
+        await _insert_project("del-refs-proj", owner=ALICE_EMAIL)
+        init = await _insert_initiative("svc-del-refs", ALICE)
+        assigned = await _service(ALICE).patch_one({"id": "del-refs-proj"}, ProjectPatch(initiative="svc-del-refs"))
+        assert _assigned_id(assigned) == init.id
+
+        await _initiative_service(ALICE).delete_one({"slug": "svc-del-refs"})
+
+        reloaded = await MongoDbProjectRepository(ADMIN).find_by_id_unscoped("del-refs-proj")
+        assert reloaded is not None
+        assert _assigned_id(reloaded) is None

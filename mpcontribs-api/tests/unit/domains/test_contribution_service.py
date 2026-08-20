@@ -199,6 +199,9 @@ def _make_service(
     struct_repo = structures or AsyncMock()
     table_repo = tables or AsyncMock()
     attach_repo = attachments or AsyncMock()
+    # The service builds documents via ``repo.document_model.from_input_model``; keep it the real
+    # class so the classmethod runs (an AsyncMock child would return a coroutine).
+    contrib_repo.document_model = Contribution
     # ``coerce_identifiers`` is a *sync* repo method (see MongoDbRepository), but a bare AsyncMock
     # would turn it into a coroutine factory: the service passes its result straight into get_one/
     # patch_one without awaiting, leaking un-awaited coroutines. Make it a sync passthrough on every
