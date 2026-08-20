@@ -269,7 +269,7 @@ class MongoDbContributionRepository(
         agg.columns = finalize_columns(acc)
         return agg
 
-    async def upsert_one(
+    async def upsert_one(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         identifiers: dict[str, Any],
         contribution: ContributionIn,

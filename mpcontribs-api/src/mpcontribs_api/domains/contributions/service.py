@@ -473,33 +473,6 @@ class ContributionService:
         identities = [item.contribution.identity(item.unique_value, item.condition_key) for item in items]
         return await self._contributions.existing_identities(identities)
 
-    @staticmethod
-    def _log_quota_exceeded(
-        project_id: str,
-        cap: int,
-        stored: int,
-        accepted: int,
-        rejected: list[PreparedWrite],
-    ) -> None:
-        """Emit a structured audit event for an unapproved-project quota breach.
-
-        Request/user correlation (``consumer_id``, ``request_id``, ``trace_id``) is merged from the
-        per-request contextvars, so only the domain-specific dimensions are added here. The rejected
-        identifier list is capped to keep a pathological batch from bloating a single log line.
-        """
-        rejected_identifiers = [item.contribution.material_id for item in rejected[:_QUOTA_LOG_IDENTIFIER_CAP]]
-        logger.warning(
-            "contribution.unapproved_quota_exceeded",
-            project=project_id,
-            max_allowed=cap,
-            stored=stored,
-            attempted=accepted + len(rejected),
-            accepted=accepted,
-            rejected=len(rejected),
-            rejected_identifiers=rejected_identifiers,
-            rejected_identifiers_truncated=len(rejected) > _QUOTA_LOG_IDENTIFIER_CAP,
-        )
-
     async def _split_contributions(
         self, contributions: list[ContributionIn], *, is_upsert: bool
     ) -> tuple[list[BulkFailure], list[PreparedWrite]]:
