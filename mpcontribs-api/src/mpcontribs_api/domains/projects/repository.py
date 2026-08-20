@@ -42,7 +42,7 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
 
         Projects carry a meaningful ``ShortStr`` id that is not part of the input body, so it is added here.
         """
-        document = Project.from_input_model(project, id=id)
+        document = self.document_model.from_input_model(project, id=id)
         existing = await self.document_model.find_one(self.document_model.id == id)
         if existing:
             raise ConflictError(f"Cannot insert document.\n Document with ID {id} exists")
@@ -141,3 +141,16 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
         if exclude_project_id is not None:
             query["_id"] = {"$ne": exclude_project_id}
         return await collection.count_documents(query)
+
+    async def clear_initiative_refs(self, initiative_id: PydanticObjectId) -> int:
+        """Unset the ``initiative`` link on every project pointing at ``initiative_id``.
+
+        Args:
+            initiative_id (PydanticObjectId): the deleted initiative whose back-references to clear
+        """
+        collection = self.document_model.get_pymongo_collection()
+        result = await collection.update_many(
+            {"initiative.$id": initiative_id},
+            {"$set": {"initiative": None}},
+        )
+        return result.modified_count
