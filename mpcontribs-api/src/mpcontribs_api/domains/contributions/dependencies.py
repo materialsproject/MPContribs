@@ -22,7 +22,7 @@ def get_contribution_service(
     return ContributionService(
         client=client,
         user=user,
-        projects=MongoDbProjectRepository(user, limits),
+        projects=MongoDbProjectRepository(user),
         contributions=MongoDbContributionRepository(user),
         structures=MongoDbStructureRepository(user),
         attachments=MongoDbAttachmentRepository(user),

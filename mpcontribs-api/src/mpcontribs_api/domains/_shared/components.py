@@ -1,15 +1,13 @@
-from typing import Any
-
 from beanie.operators import In
 from fastapi_filter.contrib.beanie import Filter
 from pydantic import BaseModel
 from pymongo.asynchronous.client_session import AsyncClientSession
 
-from mpcontribs_api.authz import User
 from mpcontribs_api.config import get_settings
 from mpcontribs_api.domains._shared.models import Component, ComponentIn, DeleteResponse, DocumentOut
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
 from mpcontribs_api.domains._shared.types import MD5Hash
+from mpcontribs_api.scope import Scope
 
 
 class MongoDbComponentsRepository[
@@ -19,9 +17,8 @@ class MongoDbComponentsRepository[
     TFilter: Filter,
     TPatch: BaseModel,
 ](MongoDbRepository[TDoc, TIn, TOut, TFilter, TPatch]):
-    @staticmethod
-    def _build_scope(user: User) -> dict[str, Any]:
-        return {}
+    # Components' visibility is determined by the visibility of referencing Contributions by user
+    read_scope = Scope()
 
     async def _existing_by_md5(
         self,

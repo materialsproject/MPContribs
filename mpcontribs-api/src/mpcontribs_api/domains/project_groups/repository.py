@@ -3,10 +3,8 @@ from typing import Any
 from beanie import PydanticObjectId, UpdateResponse
 from beanie.operators import AddToSet, Pull
 from bson import DBRef
-from bson.errors import InvalidId
 from pymongo.asynchronous.client_session import AsyncClientSession
 
-from mpcontribs_api.authz import User
 from mpcontribs_api.domains._shared.models import DeleteResponse
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
 from mpcontribs_api.domains._shared.types import ShortStr
@@ -18,6 +16,7 @@ from mpcontribs_api.domains.project_groups.models import (
     ProjectGroupPatch,
 )
 from mpcontribs_api.exceptions import NotFoundError, PermissionError
+from mpcontribs_api.scope import Owned, Public, RoleIn, Scope
 
 
 class ProjectGroupRepository(
@@ -25,30 +24,16 @@ class ProjectGroupRepository(
 ):
     document_model = ProjectGroup
     out_model = ProjectGroupOut
-
-    @staticmethod
-    def _build_scope(user: User) -> dict[str, Any]:
-        """Scope reads to what the caller may see: public groups, ones they own, or ones granted."""
-        if user.is_admin:
-            return {}
-        ors: list[dict[str, Any]] = [{"is_public": True}]
-        if not user.is_anonymous:
-            ors.append({"owner": user.username})
-            granted: list[PydanticObjectId] = []
-            for raw in user.project_group_roles:
-                try:
-                    granted.append(PydanticObjectId(raw))
-                except InvalidId:
-                    continue
-            if granted:
-                ors.append({"_id": {"$in": sorted(granted)}})
-        return {"$or": ors}
+    # Visible when public, owned by the caller, or granted via a ``project-group:<oid>`` role (keyed
+    # on ``_id``). Project groups have no approval flag. Roles arrive as raw hex strings, so the id
+    # clause coerces each to ``PydanticObjectId`` (malformed values are dropped by ``RoleIn``). Admins
+    # bypass scope (handled by ``Scope``).
+    read_scope = Scope(Public(), Owned(), RoleIn("_id", "project_group_roles", coerce=PydanticObjectId))
 
     async def delete_one(
         self, identifiers: dict[str, Any], session: AsyncClientSession | None = None
     ) -> DeleteResponse:
-        """Delete the single project group matching ``identifiers`` (``{name, owner}`` or ``{id}``).
-
+        """Delete the single project group matching ``identifiers`` (``{name, owner}`` or ``{id}``).O
         Absence (in scope) takes precedence over the ownership gate: a non-admin may only delete
         their own group, so deleting another owner's visible (public) group is forbidden rather
         than silently a no-op. The ``name`` + ``owner`` unique index makes the match unambiguous.

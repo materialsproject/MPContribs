@@ -3,10 +3,10 @@ import hashlib
 import io
 import json
 import zlib
-from abc import ABC, abstractmethod
+from abc import ABC
 from collections.abc import AsyncIterable, AsyncIterator, Callable, Iterable
 from contextlib import AbstractAsyncContextManager
-from typing import Any
+from typing import Any, ClassVar
 
 from beanie import PydanticObjectId, UpdateResponse
 from beanie.operators import In, Set
@@ -22,6 +22,7 @@ from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DeleteR
 from mpcontribs_api.domains._shared.types import DownloadFormat, ShortMimeFormat
 from mpcontribs_api.exceptions import ConflictError, DownloadError, NotFoundError, ValidationError
 from mpcontribs_api.pagination import CursorParams, Page, encode_cursor
+from mpcontribs_api.scope import Scope
 
 
 class MongoDbRepository[
@@ -34,21 +35,22 @@ class MongoDbRepository[
     """Base repository encapsulating shared MongoDB access patterns.
 
     Subclasses bind the document, input, output, filter, and patch types as type parameters, set
-    the matching ``document_model`` / ``out_model`` class attributes, and implement ``_build_scope``
-    to enforce per-user authorization. Shared CRUD logic (scoping, projection, cursor pagination,
-    insertion, single-document read/patch/delete) lives here so it exists in exactly one place and
-    cannot drift between resources. Subclasses expose domain-named methods that either forward to a
-    base method (vocabulary + concrete types for routers, no logic) or implement a genuinely
-    different shape (bulk insert, compound-key upsert, download).
+    the matching ``document_model`` / ``out_model`` class attributes, and declare a ``read_scope``
+    that defines per-user visibility. Shared CRUD logic lives here. Subclasses implement domain-specific
+    logic for access when required.
 
     Attributes:
         document_model: the ``BaseDocumentWithInput`` subclass this repository operates on
         out_model: the ``SparseFieldsModel`` subclass used to build projections for reads
-        _scope (dict[str, Any]): terms injected into every query to enforce user authorization
+        read_scope: the :class:`Scope` (composition of visibility clauses) this repository applies to
+            every read; the repo declares it, the base applies it — the repo never authors the rule
+        _scope (dict[str, Any]): terms injected into every query to enforce user authorization,
+            computed once from ``read_scope`` at construction time
     """
 
     document_model: type[TDoc]
     out_model: type[TOut]
+    read_scope: ClassVar[Scope]
 
     def __init__(self, user: User) -> None:
         """Initializes an instance based on the current user.
@@ -57,13 +59,7 @@ class MongoDbRepository[
             user (User): the current user requesting resources
         """
         self._user = user
-        self._scope = self._build_scope(user)
-
-    @staticmethod
-    @abstractmethod
-    def _build_scope(user: User) -> dict[str, Any]:
-        """Provides scope based on current user's permitted groups and publicly released data."""
-        ...
+        self._scope = self.read_scope.query(user)
 
     def _convert_object_id(self, id: str) -> PydanticObjectId:
         """Converts the string representation of an ObjectId to an ObjectId"""

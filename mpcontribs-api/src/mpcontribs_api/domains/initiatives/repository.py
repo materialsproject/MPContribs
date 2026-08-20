@@ -15,6 +15,7 @@ from mpcontribs_api.domains.initiatives.models import (
     InitiativePatch,
 )
 from mpcontribs_api.exceptions import ConflictError, NotFoundError, PermissionError, ValidationError
+from mpcontribs_api.scope import Owned, Public, RoleIn, Scope
 
 
 class InitiativeRepository(
@@ -22,23 +23,13 @@ class InitiativeRepository(
 ):
     document_model = Initiative
     out_model = InitiativeOut
+    # Visible when public+approved, owned by the caller, or collaborated on via an
+    # ``initiative:<slug>`` role (keyed on ``slug``). Admins bypass scope (handled by ``Scope``).
+    read_scope = Scope(Public(approved=True), Owned(), RoleIn("slug", "initiative_roles"))
 
     def __init__(self, user: User) -> None:
         super().__init__(user)
         self._limits = get_settings().domain.initiatives
-
-    @staticmethod
-    def _build_scope(user: User) -> dict[str, Any]:
-        """Scope reads to what the caller may see: public+approved, owned, or collaborated-on."""
-        if user.is_admin:
-            return {}
-        ors: list[dict[str, Any]] = [{"is_public": True, "is_approved": True}]
-        if not user.is_anonymous:
-            ors.append({"owner": user.username})
-            slugs = user.initiative_roles
-            if slugs:
-                ors.append({"slug": {"$in": sorted(slugs)}})
-        return {"$or": ors}
 
     async def insert_one(self, data: InitiativeIn) -> Initiative:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Create an initiative owned by the caller, enforcing the per-owner unapproved quota.

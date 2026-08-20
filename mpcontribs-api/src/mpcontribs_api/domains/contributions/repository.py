@@ -29,6 +29,7 @@ from mpcontribs_api.domains.contributions.stats import (
     merge_contribution_columns,
 )
 from mpcontribs_api.exceptions import ConflictError, NotFoundError, PermissionError
+from mpcontribs_api.scope import Public, RoleIn, Scope
 
 # Sentinel for "leave unique_value untouched" on patch (distinct from a real None value).
 _UNSET: Any = object()
@@ -67,20 +68,13 @@ class MongoDbContributionRepository(
 
     document_model = Contribution
     out_model = ContributionOut
+    # Contributions have no owner of their own; visible when public or belonging to a project the
+    # caller may write to (keyed on ``project``). Admins bypass scope (handled by ``Scope``).
+    read_scope = Scope(Public(), RoleIn("project", "writable_projects"))
 
     def __init__(self, user: User) -> None:
         super().__init__(user)
         self._user = user
-
-    @staticmethod
-    def _build_scope(user: User) -> dict[str, Any]:
-        """Provides scope based on current user's permitted groups and publicly released data."""
-        if user.is_admin:
-            return {}
-        ors: list[dict[str, Any]] = [{"is_public": True}]
-        if user.writable_projects:
-            ors.append({"project": {"$in": sorted(user.writable_projects)}})
-        return {"$or": ors}
 
     async def count_contributions_for_project(self, project_name: str) -> int:
         """Count contributions already stored for a project.
