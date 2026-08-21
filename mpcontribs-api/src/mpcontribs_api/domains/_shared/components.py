@@ -1,12 +1,16 @@
 from beanie.operators import In
 from fastapi_filter.contrib.beanie import Filter
 from pydantic import BaseModel
+from pydantic import ValidationError as PydanticValidationError
 from pymongo.asynchronous.client_session import AsyncClientSession
+from pymongo.errors import BulkWriteError
 
 from mpcontribs_api.config import get_settings
+from mpcontribs_api.domains._shared.bulk import BulkFailure, bulk_failure_from_exception
 from mpcontribs_api.domains._shared.models import Component, ComponentIn, DeleteResponse, DocumentOut
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
 from mpcontribs_api.domains._shared.types import MD5Hash
+from mpcontribs_api.exceptions import ConflictError, ValidationError
 from mpcontribs_api.scope import Scope
 
 
@@ -37,48 +41,75 @@ class MongoDbComponentsRepository[
         self,
         components: list[TIn],
         session: AsyncClientSession | None = None,
-    ) -> list[TDoc]:
-        """Bulk-insert components, deduplicated by server-computed content hash.
+    ) -> tuple[list[tuple[int, TDoc]], list[BulkFailure]]:
+        """Bulk-insert components (deduplicated by content hash), reporting per-item outcomes.
 
-        Components are content-addressed: unlike the base document-in ``insert_many``, this override
-        stays input-in because the repository must build each document to compute and dedup its
-        server-owned ``md5`` (the client never supplies it). See ``Component.from_input``.
+        Accepts TIn instead of TDoc so we can compute MD5.
 
-        Each input is built into a full document via ``Component.from_input``, which assigns a fresh
-        id and computes ``md5`` from the content (the client never supplies it). Inputs are
-        deduplicated by md5 — both against documents already stored and against each other — so the
-        return list has one entry per *unique* content, in first-seen order.
+        Returns a tuple so Contribution transactions can easily make a decision. Conversion to
+        BulkSummary is left to the ComponentService.
 
         Args:
             components (list[TIn]): components to insert
             session (AsyncClientSession): optional client session; pass when inserting inside a transaction
         """
-        # Build full docs up front so md5 is server-computed before any dedup decision.
-        docs = [self.document_model.from_input(comp) for comp in components]
-        existing_by_md5 = await self._existing_by_md5([doc.md5 for doc in docs], session=session)
+        # Build full docs up front so md5 is server-computed before any dedup decision. A build
+        # failure is per-item: record it and drop the item, letting the rest proceed.
+        failures: list[BulkFailure] = []
+        built: list[tuple[int, TDoc]] = []  # (original input index, built document)
+        md5_to_input_indices: dict[str, list[int]] = {}
+        for index, comp in enumerate(components):
+            identifier = {"name": getattr(comp, "name", None)}
+            try:
+                doc = self.document_model.from_input(comp)
+            except PydanticValidationError as exc:
+                failures.append(
+                    BulkFailure(index=index, identifier=identifier, error_code="validation_error", message=str(exc))
+                )
+                continue
+            except Exception as exc:
+                failures.append(bulk_failure_from_exception(index, identifier, exc))
+                continue
+            built.append((index, doc))
+            md5_to_input_indices.setdefault(doc.md5, []).append(index)
 
-        # First-seen unique md5 order, and the new documents that need inserting.
-        unique_md5s: list[str] = []
+        existing_by_md5 = await self._existing_by_md5(list(md5_to_input_indices.keys()), session=session)
+
+        # New documents that need inserting, one per unique md5 in first-seen order.
         new_by_md5: dict[str, TDoc] = {}
-        for doc in docs:
+        for _, doc in built:
             if doc.md5 not in existing_by_md5 and doc.md5 not in new_by_md5:
                 new_by_md5[doc.md5] = doc
-            if doc.md5 not in unique_md5s:
-                unique_md5s.append(doc.md5)
 
-        # Insert by chunks to stay within a transaction's payload budget.
+        # Insert by chunks to stay within a transaction's payload budget. With ordered=False, pymongo
+        # raises BulkWriteError carrying per-index write errors; map each back to the original inputs.
         new_docs = list(new_by_md5.values())
+        new_docs_md5s = [doc.md5 for doc in new_docs]
+        failed_md5s: set[str] = set()
         chunk_size = get_settings().mongo.component_insert_chunk_size
         for start in range(0, len(new_docs), chunk_size):
-            await self.document_model.insert_many(
-                new_docs[start : start + chunk_size],
-                ordered=False,
-                session=session,
-            )
+            chunk = new_docs[start : start + chunk_size]
+            chunk_md5s = new_docs_md5s[start : start + chunk_size]
+            try:
+                await self.document_model.insert_many(chunk, ordered=False, session=session)
+            except BulkWriteError as exc:
+                write_errors = exc.details.get("writeErrors", []) if exc.details else []
+                for err in write_errors:
+                    failed_md5 = chunk_md5s[err["index"]]
+                    failed_md5s.add(failed_md5)
+                    error_code = "conflict" if err.get("code") == 11000 else "write_error"
+                    message = err.get("errmsg", "write failed")
+                    for orig_idx in md5_to_input_indices[failed_md5]:
+                        failures.append(
+                            BulkFailure(
+                                index=orig_idx, identifier={"md5": failed_md5}, error_code=error_code, message=message
+                            )
+                        )
 
-        # One resolved document per unique md5, in first-seen order.
-        resolved = existing_by_md5 | new_by_md5
-        return [resolved[md5] for md5 in unique_md5s]
+        # Resolve each successfully built input to its stored document, dropping any whose insert failed.
+        resolved = existing_by_md5 | {md5: doc for md5, doc in new_by_md5.items() if md5 not in failed_md5s}
+        indexed_successes = [(index, resolved[doc.md5]) for index, doc in built if doc.md5 in resolved]
+        return indexed_successes, failures
 
     async def insert_one(self, component: TIn, *, session: AsyncClientSession | None = None) -> TDoc:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Insert a single component, deduplicated by content hash.
@@ -88,8 +119,18 @@ class MongoDbComponentsRepository[
 
         Returns:
             TDoc: the component actually in the database
+
+        Raises:
+            ValidationError: the component could not be built from its input
+            ConflictError: the component collided on insert
         """
-        return (await self.insert_many(components=[component], session=session))[0]
+        indexed_successes, failures = await self.insert_many(components=[component], session=session)
+        if failures:
+            failure = failures[0]
+            if failure.error_code == ValidationError.error_code:
+                raise ValidationError(failure.message)
+            raise ConflictError(failure.message)
+        return indexed_successes[0][1]
 
     async def delete_many(
         self,

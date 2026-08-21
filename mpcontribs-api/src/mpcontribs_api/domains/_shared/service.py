@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from pymongo.asynchronous.client_session import AsyncClientSession
 from types_aiobotocore_s3 import S3Client
 
+from mpcontribs_api.domains._shared.bulk import BulkWriteSummary
 from mpcontribs_api.domains._shared.components import MongoDbComponentsRepository
 from mpcontribs_api.domains._shared.models import Component, ComponentDeleteResponse, ComponentIn, DocumentOut
 from mpcontribs_api.domains._shared.types import DownloadFormat, ShortMimeFormat
@@ -95,9 +96,12 @@ class ComponentService[
         self,
         components: list[TIn],
         session: AsyncClientSession | None = None,
-    ) -> list[TDoc]:
-        """Bulk-insert components, deduplicated by content hash. See repository ``insert_many``."""
-        return await self._components.insert_many(components=components, session=session)
+    ) -> BulkWriteSummary[TDoc]:
+        """Bulk-insert components (deduplicated by content hash), reporting per-item outcomes."""
+        indexed_successes, failures = await self._components.insert_many(components=components, session=session)
+        succeeded = [doc for _, doc in sorted(indexed_successes, key=lambda pair: pair[0])]
+        failed = sorted(failures, key=lambda failure: failure.index)
+        return BulkWriteSummary[TDoc](total=len(components), succeeded=succeeded, failed=failed)
 
     async def patch_one(self, identifiers: dict[str, Any], update: TPatch) -> TDoc:
         """Partially update a component matching ``identifiers``, gated by contribution reachability.

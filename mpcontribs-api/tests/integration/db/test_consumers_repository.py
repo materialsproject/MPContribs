@@ -138,6 +138,53 @@ class TestDeleteConsumer:
 
 
 # ---------------------------------------------------------------------------
+# upsert_many — the base repository's concurrent, per-item-reporting bulk upsert
+# ---------------------------------------------------------------------------
+
+
+class TestUpsertMany:
+    """The inherited ``MongoDbRepository.upsert_many`` upserts concurrently and reports per item.
+
+    Consumers exercise the base default directly: they use the base repository and carry a unique
+    index (``consumer_id``) so a colliding item produces a real per-item conflict.
+    """
+
+    async def test_all_succeed(self, db):
+        docs = [Consumer.from_input_model(ConsumerIn(consumer_id=f"kong-up-{i}")) for i in range(3)]
+        summary = await _repo().upsert_many(docs)
+        assert summary.total == 3
+        assert summary.failed == []
+        assert {c.consumer_id for c in summary.succeeded} == {"kong-up-0", "kong-up-1", "kong-up-2"}
+        # All three are actually persisted.
+        for i in range(3):
+            assert await _repo().get_one({"consumer_id": f"kong-up-{i}"}) is not None
+
+    async def test_one_conflict_does_not_abort_the_batch(self, db):
+        # Pre-existing consumer occupies the unique consumer_id the middle item will collide with.
+        await _insert(ConsumerIn(consumer_id="kong-taken"))
+        docs = [
+            Consumer.from_input_model(ConsumerIn(consumer_id="kong-fresh-a")),
+            Consumer.from_input_model(ConsumerIn(consumer_id="kong-taken")),  # unique-index conflict
+            Consumer.from_input_model(ConsumerIn(consumer_id="kong-fresh-b")),
+        ]
+        summary = await _repo().upsert_many(docs)
+
+        assert summary.total == 3
+        # The conflict is reported at its input index, not raised; the siblings still commit.
+        assert [f.index for f in summary.failed] == [1]
+        assert summary.failed[0].error_code == "conflict"
+        assert {c.consumer_id for c in summary.succeeded} == {"kong-fresh-a", "kong-fresh-b"}
+        assert await _repo().get_one({"consumer_id": "kong-fresh-a"}) is not None
+        assert await _repo().get_one({"consumer_id": "kong-fresh-b"}) is not None
+
+    async def test_empty_batch_is_a_noop_summary(self, db):
+        summary = await _repo().upsert_many([])
+        assert summary.total == 0
+        assert summary.succeeded == []
+        assert summary.failed == []
+
+
+# ---------------------------------------------------------------------------
 # get_effective_limits — the resolution actually consumed by the write paths
 # ---------------------------------------------------------------------------
 

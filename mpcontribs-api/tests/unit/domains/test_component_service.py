@@ -3,9 +3,10 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from beanie import PydanticObjectId
 
+from mpcontribs_api.domains._shared.bulk import BulkFailure
 from mpcontribs_api.domains._shared.models import ComponentDeleteResponse, DeleteResponse
 from mpcontribs_api.domains._shared.service import ComponentService
-from mpcontribs_api.domains.attachments.models import AttachmentFilter
+from mpcontribs_api.domains.attachments.models import Attachment, AttachmentFilter
 from mpcontribs_api.exceptions import NotFoundError
 
 pytestmark = pytest.mark.asyncio
@@ -229,3 +230,35 @@ async def test_patch_by_id_reachable_patches():
 
     assert result == "patched"
     components.patch_one.assert_awaited_once()
+
+
+# ---------------------------------------------------------------------------
+# insert_many — assembles a BulkWriteSummary from the repo's (successes, failures) tuple
+# ---------------------------------------------------------------------------
+
+
+async def test_insert_many_assembles_summary_sorted_by_index():
+    svc, components, _ = _make_service(candidate_ids=[], reachable=set(), referenced=set())
+    # spec=Attachment so the docs satisfy BulkWriteSummary's Component-typed ``succeeded`` field.
+    doc_a, doc_b = MagicMock(spec=Attachment), MagicMock(spec=Attachment)
+    failure = BulkFailure(index=1, error_code="conflict", message="dup")
+    # Repo reports successes out of order and one per-item failure; the service orders by input index.
+    components.insert_many = AsyncMock(return_value=([(2, doc_b), (0, doc_a)], [failure]))
+
+    summary = await svc.insert_many(components=["in0", "in1", "in2"])
+
+    assert summary.total == 3
+    assert summary.succeeded == [doc_a, doc_b]  # index 0 then index 2
+    assert [f.index for f in summary.failed] == [1]
+
+
+async def test_insert_many_all_succeed():
+    svc, components, _ = _make_service(candidate_ids=[], reachable=set(), referenced=set())
+    doc = MagicMock(spec=Attachment)
+    components.insert_many = AsyncMock(return_value=([(0, doc)], []))
+
+    summary = await svc.insert_many(components=["only"])
+
+    assert summary.total == 1
+    assert summary.succeeded == [doc]
+    assert summary.failed == []

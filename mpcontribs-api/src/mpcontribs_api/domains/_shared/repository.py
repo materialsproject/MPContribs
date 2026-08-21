@@ -1,3 +1,4 @@
+import asyncio
 import csv
 import hashlib
 import io
@@ -8,6 +9,7 @@ from collections.abc import AsyncIterable, AsyncIterator, Callable, Iterable, Ma
 from contextlib import AbstractAsyncContextManager
 from typing import Any, ClassVar
 
+import structlog
 from beanie import PydanticObjectId, UpdateResponse
 from beanie.operators import In, Set
 from bson.errors import InvalidId
@@ -18,11 +20,15 @@ from pymongo.errors import DuplicateKeyError
 from types_aiobotocore_s3 import S3Client
 
 from mpcontribs_api.authz import User
+from mpcontribs_api.config import get_settings
+from mpcontribs_api.domains._shared.bulk import BulkFailure, BulkWriteSummary, bulk_failure_from_exception
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DeleteResponse, DocumentOut
 from mpcontribs_api.domains._shared.types import DownloadFormat, ShortMimeFormat
 from mpcontribs_api.exceptions import ConflictError, DownloadError, NotFoundError, ValidationError
 from mpcontribs_api.pagination import CursorParams, Page, encode_cursor
 from mpcontribs_api.scope import Scope
+
+logger = structlog.get_logger(__name__)
 
 
 class MongoDbRepository[
@@ -227,17 +233,43 @@ class MongoDbRepository[
                 identifiers=document.identifiers(),
             ) from exc
 
-    async def upsert_many(self, documents: list[TDoc], session: AsyncClientSession | None = None) -> list[TDoc]:
-        """Upsert each document by its ``_id`` (see :meth:`upsert_one`).
+    async def upsert_many(self, documents: list[TDoc]) -> BulkWriteSummary[TDoc]:
+        """Upsert each document by its ``_id`` concurrently, reporting per-item outcomes.
 
-        Sequential by default. Domains needing per-item failure reporting or bounded concurrency
-        (e.g. contributions) orchestrate that in their service rather than overriding here.
+        Each upsert is atomic. Failures are reported in 'failed', while the rest are committed.
+
+        There is no ``session`` parameter: a MongoDB session/transaction cannot be shared across
+        concurrent operations (pymongo sessions are not concurrency-safe). Callers that need an
+        all-or-nothing transactional upsert must orchestrate it themselves.
 
         Args:
             documents (list[TDoc]): the fully-built documents to persist
-            session (AsyncClientSession | None): optional client session for transactions
+
+        Returns:
+            BulkWriteSummary[TDoc]: per-item outcome, sized to ``len(documents)``
         """
-        return [await self.upsert_one(document, session=session) for document in documents]
+        if not documents:
+            return BulkWriteSummary[TDoc](total=0, succeeded=[], failed=[])
+
+        sem = asyncio.Semaphore(get_settings().mongo.max_concurrent_transactions)
+
+        async def _bounded_upsert(index: int, document: TDoc) -> TDoc | BulkFailure:
+            async with sem:
+                try:
+                    return await self.upsert_one(document)
+                except Exception as exc:
+                    logger.error(
+                        "upsert_document_failed",
+                        index=index,
+                        identifier=document.identifiers(),
+                        exc_info=True,
+                    )
+                    return bulk_failure_from_exception(index, document.identifiers(), exc)
+
+        results = await asyncio.gather(*[_bounded_upsert(i, doc) for i, doc in enumerate(documents)])
+        succeeded = [r for r in results if not isinstance(r, BulkFailure)]
+        failed = [r for r in results if isinstance(r, BulkFailure)]
+        return BulkWriteSummary[TDoc](total=len(documents), succeeded=succeeded, failed=failed)
 
     async def delete_many(self, filter: TFilter, session: AsyncClientSession | None = None) -> DeleteResponse:
         """Delete every scoped document matching an arbitrary ``filter``.

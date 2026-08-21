@@ -264,6 +264,15 @@ def _fake_attachment() -> Attachment:
     return a
 
 
+def _components_result(*docs):
+    """Build a component repo ``insert_many`` result: ``(indexed_successes, failures)``, no failures.
+
+    The repository reports one ``(input_index, resolved_doc)`` pair per input; the transactional
+    caller keeps only the docs. Failures are exercised separately.
+    """
+    return [(index, doc) for index, doc in enumerate(docs)], []
+
+
 # ---------------------------------------------------------------------------
 # insert_many — pre-checks (cheap, no DB)
 # ---------------------------------------------------------------------------
@@ -662,8 +671,8 @@ class TestInsertContributionsTransactionPath:
     async def test_with_components_opens_session_per_contribution(self):
         svc, contrib_repo, struct_repo, table_repo, attach_repo, client = _make_service()
 
-        struct_repo.insert_many.return_value = [_fake_structure()]
-        table_repo.insert_many.return_value = []
+        struct_repo.insert_many.return_value = _components_result(_fake_structure())
+        table_repo.insert_many.return_value = _components_result()
         attach_repo.insert_many.return_value = []
 
         async def _insert(doc, session=None):
@@ -683,8 +692,8 @@ class TestInsertContributionsTransactionPath:
         client, session = _make_fake_client()
         svc, contrib_repo, struct_repo, table_repo, _, _ = _make_service(client=client)
 
-        struct_repo.insert_many.return_value = [_fake_structure()]
-        table_repo.insert_many.return_value = [_fake_table()]
+        struct_repo.insert_many.return_value = _components_result(_fake_structure())
+        table_repo.insert_many.return_value = _components_result(_fake_table())
 
         async def _insert(doc, session=None):
             return doc
@@ -704,8 +713,8 @@ class TestInsertContributionsTransactionPath:
     async def test_failure_on_second_of_three_yields_summary(self):
         svc, contrib_repo, struct_repo, table_repo, attach_repo, _ = _make_service()
 
-        struct_repo.insert_many.return_value = [_fake_structure()]
-        table_repo.insert_many.return_value = []
+        struct_repo.insert_many.return_value = _components_result(_fake_structure())
+        table_repo.insert_many.return_value = _components_result()
         attach_repo.insert_many.return_value = []
 
         async def _insert(doc, session=None):
@@ -733,9 +742,9 @@ class TestInsertContributionsTransactionPath:
         svc, contrib_repo, struct_repo, table_repo, attach_repo, _ = _make_service()
 
         struct_a, struct_b = _fake_structure(), _fake_structure()
-        struct_calls = iter([[struct_a], [struct_b]])
+        struct_calls = iter([_components_result(struct_a), _components_result(struct_b)])
         struct_repo.insert_many.side_effect = lambda *_args, **_kwargs: next(struct_calls)
-        table_repo.insert_many.return_value = []
+        table_repo.insert_many.return_value = _components_result()
         attach_repo.insert_many.return_value = []
 
         captured: list[Contribution] = []
@@ -760,8 +769,8 @@ class TestInsertContributionsTransactionPath:
         svc, contrib_repo, struct_repo, table_repo, attach_repo, client = _make_service()
 
         shared = _fake_structure()
-        struct_repo.insert_many.return_value = [shared]
-        table_repo.insert_many.return_value = []
+        struct_repo.insert_many.return_value = _components_result(shared)
+        table_repo.insert_many.return_value = _components_result()
         attach_repo.insert_many.return_value = []
 
         captured: list[Contribution] = []
@@ -803,8 +812,8 @@ class TestInsertContributionsMixedBatch:
     async def test_mixed_batch_routes_correctly(self):
         svc, contrib_repo, struct_repo, table_repo, attach_repo, client = _make_service()
 
-        struct_repo.insert_many.return_value = [_fake_structure()]
-        table_repo.insert_many.return_value = []
+        struct_repo.insert_many.return_value = _components_result(_fake_structure())
+        table_repo.insert_many.return_value = _components_result()
         attach_repo.insert_many.return_value = []
         contrib_repo.insert_many.return_value = None
 

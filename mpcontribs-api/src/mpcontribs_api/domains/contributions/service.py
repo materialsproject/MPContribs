@@ -615,8 +615,20 @@ class ContributionService:
     async def _do_insert_group(self, group: list[PreparedWrite], session: AsyncClientSession) -> list[Contribution]:
         """Perform the insert of Contributions and their components within a single session."""
         template = group[0].contribution
-        structures = await self._structures.insert_many(template.structures or [], session=session)
-        tables = await self._tables.insert_many(template.tables or [], session=session)
+        structure_successes, structure_failures = await self._structures.insert_many(
+            template.structures or [], session=session
+        )
+        table_successes, table_failures = await self._tables.insert_many(template.tables or [], session=session)
+        # A contribution and its components commit or roll back together, so any per-component failure
+        # aborts the whole transaction. Re-raise it here; ``_insert_with_components`` maps the raised
+        # error onto this contribution's ``BulkFailure``.
+        component_failures = structure_failures + table_failures
+        if component_failures:
+            first = component_failures[0]
+            message = f"Component insert failed: {first.message}"
+            raise ConflictError(message) if first.error_code == ConflictError.error_code else ValidationError(message)
+        structures = [doc for _, doc in structure_successes]
+        tables = [doc for _, doc in table_successes]
         struct_links = cast(list[Link[Structure]] | None, structures or None)
         table_links = cast(list[Link[Table]] | None, tables or None)
         inserted: list[Contribution] = []
