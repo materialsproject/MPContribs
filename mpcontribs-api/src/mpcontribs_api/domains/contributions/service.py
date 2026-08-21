@@ -1,6 +1,7 @@
 import asyncio
 from collections import defaultdict
-from collections.abc import Iterable
+from collections.abc import AsyncIterable, Iterable
+from contextlib import AbstractAsyncContextManager
 from dataclasses import dataclass
 from typing import Any, cast
 
@@ -9,6 +10,7 @@ from beanie import Link, PydanticObjectId
 from pymongo import AsyncMongoClient
 from pymongo.asynchronous.client_session import AsyncClientSession
 from pymongo.errors import BulkWriteError
+from types_aiobotocore_s3 import S3Client
 
 from mpcontribs_api.authz import User
 from mpcontribs_api.config import MongoSettings, get_settings
@@ -20,6 +22,7 @@ from mpcontribs_api.domains._shared.bulk import (
     bulk_failure_from_exception,
 )
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
+from mpcontribs_api.domains._shared.types import DownloadFormat, ShortMimeFormat
 from mpcontribs_api.domains._shared.units import QuantityLeaf
 from mpcontribs_api.domains.attachments.models import AttachmentFilter
 from mpcontribs_api.domains.attachments.repository import MongoDbAttachmentRepository
@@ -44,7 +47,7 @@ from mpcontribs_api.domains.structures.repository import MongoDbStructureReposit
 from mpcontribs_api.domains.tables.models import Table, TableFilter
 from mpcontribs_api.domains.tables.repository import MongoDbTableRepository
 from mpcontribs_api.exceptions import AppError, ConflictError, NotFoundError, PermissionError, ValidationError
-from mpcontribs_api.pagination import CursorParams
+from mpcontribs_api.pagination import CursorParams, Page
 
 logger = structlog.get_logger(__name__)
 
@@ -112,6 +115,32 @@ class ContributionService:
         """
         return await self._contributions.get_one(self._contributions.coerce_identifiers(identifiers), fields)
 
+    async def get_many(
+        self, pagination: CursorParams, filter: ContributionFilter, fields: frozenset[str] | None
+    ) -> Page[ContributionOut]:
+        return await self._contributions.get_many(pagination=pagination, filter=filter, fields=fields)
+
+    async def download(
+        self,
+        format: DownloadFormat,
+        short_mime: ShortMimeFormat,
+        ignore_cache: bool,
+        filter: ContributionFilter,
+        fields: frozenset[str] | None,
+        s3: AbstractAsyncContextManager[S3Client],
+    ) -> AsyncIterable[bytes]:
+        """Stream a gzip-compressed export of matching contributions. See repository ``download``."""
+        return self._contributions.download(
+            format=format,
+            short_mime=short_mime,
+            ignore_cache=ignore_cache,
+            filter=filter,
+            fields=fields,
+            s3=s3,
+            key_name="",  # TODO: Temp
+            bucket_name="contributions",
+        )
+
     async def delete_one(self, identifiers: dict[str, Any]) -> BulkDeleteSummary:
         """Delete a single contribution and its child components, matching ``identifiers``.
 
@@ -142,7 +171,8 @@ class ContributionService:
             return None
         # Soft limit: this count feeds a non-atomic check-then-write, so concurrent writes to the
         # same project can overshoot the cap by a bounded amount. Acceptable for an anti-abuse quota.
-        return await self._contributions.count_contributions_for_project(project_id)
+        # Unscoped: the quota is a property of the project as a whole, not of what the caller can see.
+        return await self._contributions.count_matching({"project": project_id}, scoped=False)
 
     async def insert_many(
         self,
@@ -445,33 +475,6 @@ class ContributionService:
         identities = [item.contribution.identity(item.unique_value, item.condition_key) for item in items]
         return await self._contributions.existing_identities(identities)
 
-    @staticmethod
-    def _log_quota_exceeded(
-        project_id: str,
-        cap: int,
-        stored: int,
-        accepted: int,
-        rejected: list[PreparedWrite],
-    ) -> None:
-        """Emit a structured audit event for an unapproved-project quota breach.
-
-        Request/user correlation (``consumer_id``, ``request_id``, ``trace_id``) is merged from the
-        per-request contextvars, so only the domain-specific dimensions are added here. The rejected
-        identifier list is capped to keep a pathological batch from bloating a single log line.
-        """
-        rejected_identifiers = [item.contribution.material_id for item in rejected[:_QUOTA_LOG_IDENTIFIER_CAP]]
-        logger.warning(
-            "contribution.unapproved_quota_exceeded",
-            project=project_id,
-            max_allowed=cap,
-            stored=stored,
-            attempted=accepted + len(rejected),
-            accepted=accepted,
-            rejected=len(rejected),
-            rejected_identifiers=rejected_identifiers,
-            rejected_identifiers_truncated=len(rejected) > _QUOTA_LOG_IDENTIFIER_CAP,
-        )
-
     async def _split_contributions(
         self, contributions: list[ContributionIn], *, is_upsert: bool
     ) -> tuple[list[BulkFailure], list[PreparedWrite]]:
@@ -522,7 +525,7 @@ class ContributionService:
             return [], []
         docs = []
         for item in items:
-            doc = Contribution.from_input_model(item.contribution)
+            doc = self._contributions.document_model.from_input_model(item.contribution)
             doc.unique_value = item.unique_value
             doc.condition_key = item.condition_key
             docs.append(doc)
@@ -612,13 +615,25 @@ class ContributionService:
     async def _do_insert_group(self, group: list[PreparedWrite], session: AsyncClientSession) -> list[Contribution]:
         """Perform the insert of Contributions and their components within a single session."""
         template = group[0].contribution
-        structures = await self._structures.insert_many(template.structures or [], session=session)
-        tables = await self._tables.insert_many(template.tables or [], session=session)
+        structure_successes, structure_failures = await self._structures.insert_many(
+            template.structures or [], session=session
+        )
+        table_successes, table_failures = await self._tables.insert_many(template.tables or [], session=session)
+        # A contribution and its components commit or roll back together, so any per-component failure
+        # aborts the whole transaction. Re-raise it here; ``_insert_with_components`` maps the raised
+        # error onto this contribution's ``BulkFailure``.
+        component_failures = structure_failures + table_failures
+        if component_failures:
+            first = component_failures[0]
+            message = f"Component insert failed: {first.message}"
+            raise ConflictError(message) if first.error_code == ConflictError.error_code else ValidationError(message)
+        structures = [doc for _, doc in structure_successes]
+        tables = [doc for _, doc in table_successes]
         struct_links = cast(list[Link[Structure]] | None, structures or None)
         table_links = cast(list[Link[Table]] | None, tables or None)
         inserted: list[Contribution] = []
         for item in group:
-            doc = Contribution.from_input_model(item.contribution)
+            doc = self._contributions.document_model.from_input_model(item.contribution)
             doc.unique_value = item.unique_value
             doc.condition_key = item.condition_key
             doc.structures = struct_links

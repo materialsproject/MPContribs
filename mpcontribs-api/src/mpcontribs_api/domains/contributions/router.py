@@ -6,7 +6,7 @@ from fastapi_filter import FilterDepends
 
 from mpcontribs_api.config import get_settings
 from mpcontribs_api.dependencies import S3Dep, require_user
-from mpcontribs_api.domains._shared.bulk import BulkUpdateSummary, BulkWriteSummary
+from mpcontribs_api.domains._shared.bulk import BulkDeleteSummary, BulkUpdateSummary, BulkWriteSummary
 from mpcontribs_api.domains._shared.models import DeleteResponse
 from mpcontribs_api.domains._shared.types import (
     DownloadFormat,
@@ -14,7 +14,7 @@ from mpcontribs_api.domains._shared.types import (
     ShortMimeFormat,
     download_filename,
 )
-from mpcontribs_api.domains.contributions.dependencies import ContributionDep, ContributionServiceDep
+from mpcontribs_api.domains.contributions.dependencies import ContributionServiceDep
 from mpcontribs_api.domains.contributions.models import (
     Contribution,
     ContributionFilter,
@@ -51,22 +51,22 @@ def _enforce_bulk_limit(contributions: list[ContributionIn]) -> None:
 
 
 @router.get("")
-async def get_contributions(
-    repo: ContributionDep,
+async def get_many(
+    service: ContributionServiceDep,
     pagination: Annotated[CursorParams, Depends()],
     filter: ContributionFilter = FilterDepends(ContributionFilter),
     fields: FieldSelector = None,
 ):
     selected = ContributionOut.parse_fields(fields)
-    return await repo.get_many(pagination=pagination, filter=filter, fields=selected)
+    return await service.get_many(pagination=pagination, filter=filter, fields=selected)
 
 
 @router.delete("", response_model=DeleteResponse, dependencies=[Depends(require_user)])
 async def delete_contributions(
-    repo: ContributionDep,
+    service: ContributionServiceDep,
     filter: ContributionFilter = FilterDepends(ContributionFilter),
-) -> DeleteResponse:
-    return await repo.delete_many(filter=filter)
+) -> BulkDeleteSummary:
+    return await service.delete_many(filter=filter)
 
 
 @router.patch("", dependencies=[Depends(require_user)])
@@ -108,7 +108,7 @@ async def upsert_contributions(
 
 @router.get("/download/{short_mime}")
 async def download_contributions(
-    repo: ContributionDep,
+    service: ContributionServiceDep,
     s3: S3Dep,
     short_mime: ShortMimeFormat = ShortMimeFormat.GZ,
     format: DownloadFormat = DownloadFormat.JSONL,
@@ -117,14 +117,13 @@ async def download_contributions(
     fields: FieldSelector = None,
 ):
     selected = ContributionOut.parse_fields(fields)
-    body = await repo.download_contributions(
+    body = await service.download(
         format=format,
         short_mime=short_mime,
         ignore_cache=ignore_cache,
         filter=filter,
         fields=selected,
         s3=s3,
-        key_name="",  # TODO: Temp
     )
     filename = download_filename("contributions", format, short_mime)
     return StreamingResponse(

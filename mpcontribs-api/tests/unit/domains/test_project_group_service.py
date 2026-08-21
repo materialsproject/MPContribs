@@ -28,10 +28,10 @@ def _make_service(group: ProjectGroupOut | None, *, visible_projects: set[str] |
     visible = visible_projects or set()
     groups = AsyncMock()
     projects = AsyncMock()
-    #.insert_one() forces owner to the caller for non-admins; give the stub an admin user so these
+    # insert_one forces owner to the caller for non-admins; construct the service as an admin so these
     # payload-identity assertions exercise the pass-through path (owner-forcing is covered end-to-end
     # in the db service test).
-    groups._user = User(username="google:admin@example.com", groups=frozenset({"admin"}))
+    admin = User(username="google:admin@example.com", groups=frozenset({"admin"}))
 
     if ambiguous:
         groups.get_one.side_effect = ConflictError("ambiguous")
@@ -44,6 +44,9 @@ def _make_service(group: ProjectGroupOut | None, *, visible_projects: set[str] |
         return identifiers
 
     groups.coerce_identifiers = MagicMock(side_effect=_coerce_identifiers)
+    # The service builds the stored document (document_model.from_input_model) before inserting;
+    # keep document_model a sync mock so from_input_model returns a document, not a coroutine.
+    groups.document_model = MagicMock()
     groups.add_project_refs.return_value = group
     groups.delete_project_refs.return_value = group
 
@@ -53,7 +56,7 @@ def _make_service(group: ProjectGroupOut | None, *, visible_projects: set[str] |
 
     projects.get_one.side_effect = _get_project
 
-    return ProjectGroupService(groups=groups, projects=projects), groups, projects
+    return ProjectGroupService(user=admin, groups=groups, projects=projects), groups, projects
 
 
 def _group(project_ids: list[str] | None = None) -> ProjectGroupOut:
@@ -80,7 +83,9 @@ class TestInsert_one:
         payload = self._payload(["mp-1", "mp-2"])
         result = await service.insert_one(payload)
         assert result == "stored"
-        groups.insert_one.assert_awaited_once_with(in_resource=payload)
+        # The service converts the payload to a document, then inserts that document.
+        groups.document_model.from_input_model.assert_called_once_with(payload)
+        groups.insert_one.assert_awaited_once_with(groups.document_model.from_input_model.return_value)
 
     async def test_missing_project_raises_not_found_and_skips_insert_one(self):
         service, groups, _ = _make_service(None, visible_projects={"mp-1"})
@@ -94,7 +99,8 @@ class TestInsert_one:
         payload = self._payload([])
         await service.insert_one(payload)
         projects.get_one.assert_not_awaited()
-        groups.insert_one.assert_awaited_once_with(in_resource=payload)
+        groups.document_model.from_input_model.assert_called_once_with(payload)
+        groups.insert_one.assert_awaited_once_with(groups.document_model.from_input_model.return_value)
 
 
 # ---------------------------------------------------------------------------

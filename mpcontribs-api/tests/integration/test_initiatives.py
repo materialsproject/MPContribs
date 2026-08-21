@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from mpcontribs_api.domains.initiatives.dependencies import get_initiative_repository
+from mpcontribs_api.domains.initiatives.dependencies import get_initiative_service
 from mpcontribs_api.exceptions import NotFoundError
 from mpcontribs_api.pagination import Page
 from tests.integration.conftest import AUTHED_HEADERS, FORCE_ANON_HEADERS
@@ -12,11 +12,11 @@ SAMPLE_OID = "6eb7cf5a86d9755df3a6c593"
 
 
 @pytest.fixture
-def initiative_repo(test_app):
-    repo = AsyncMock()
-    test_app.dependency_overrides[get_initiative_repository] = lambda: repo
-    yield repo
-    test_app.dependency_overrides.pop(get_initiative_repository, None)
+def initiative_service(test_app):
+    service = AsyncMock()
+    test_app.dependency_overrides[get_initiative_service] = lambda: service
+    yield service
+    test_app.dependency_overrides.pop(get_initiative_service, None)
 
 
 def _stored(**overrides):
@@ -39,8 +39,8 @@ def _stored(**overrides):
 
 
 class TestInsert:
-    def test_returns_201_and_echoes_id(self, client, initiative_repo):
-        initiative_repo.insert_one.return_value = _stored()
+    def test_returns_201_and_echoes_id(self, client, initiative_service):
+        initiative_service.insert_one.return_value = _stored()
         r = client.post(
             "/api/v1/initiatives",
             json={"slug": "battery-genome", "name": "Battery Genome"},
@@ -49,7 +49,7 @@ class TestInsert:
         assert r.status_code == 201
         assert r.json()["id"] == SAMPLE_OID
 
-    def test_anonymous_rejected_401(self, client, initiative_repo):
+    def test_anonymous_rejected_401(self, client, initiative_service):
         r = client.post(
             "/api/v1/initiatives",
             json={"slug": "battery-genome", "name": "Battery Genome"},
@@ -57,7 +57,7 @@ class TestInsert:
         )
         assert r.status_code == 401
 
-    def test_invalid_slug_returns_422(self, client, initiative_repo):
+    def test_invalid_slug_returns_422(self, client, initiative_service):
         r = client.post(
             "/api/v1/initiatives",
             json={"slug": "Not A Slug!", "name": "x"},
@@ -72,13 +72,13 @@ class TestInsert:
 
 
 class TestGet:
-    def test_list_returns_200(self, client, initiative_repo):
-        initiative_repo.get_many.return_value = Page(items=[], next_cursor=None)
+    def test_list_returns_200(self, client, initiative_service):
+        initiative_service.get_many.return_value = Page(items=[], next_cursor=None)
         r = client.get("/api/v1/initiatives", headers=AUTHED_HEADERS)
         assert r.status_code == 200
 
-    def test_get_by_slug_returns_200(self, client, initiative_repo):
-        initiative_repo.get_one.return_value = _stored()
+    def test_get_by_slug_returns_200(self, client, initiative_service):
+        initiative_service.get_one.return_value = _stored()
         r = client.get("/api/v1/initiatives/battery-genome", headers=AUTHED_HEADERS)
         assert r.status_code == 200
         assert r.json()["slug"] == "battery-genome"
@@ -90,8 +90,8 @@ class TestGet:
 
 
 class TestPatch:
-    def test_patch_returns_200(self, client, initiative_repo):
-        initiative_repo.patch_one.return_value = _stored(name="Renamed")
+    def test_patch_returns_200(self, client, initiative_service):
+        initiative_service.patch_one.return_value = _stored(name="Renamed")
         r = client.patch(
             "/api/v1/initiatives/battery-genome",
             json={"name": "Renamed"},
@@ -100,7 +100,7 @@ class TestPatch:
         assert r.status_code == 200
         assert r.json()["name"] == "Renamed"
 
-    def test_anonymous_rejected_401(self, client, initiative_repo):
+    def test_anonymous_rejected_401(self, client, initiative_service):
         r = client.patch(
             "/api/v1/initiatives/battery-genome",
             json={"name": "Renamed"},
@@ -108,8 +108,8 @@ class TestPatch:
         )
         assert r.status_code == 401
 
-    def test_not_found_propagates_404(self, client, initiative_repo):
-        initiative_repo.patch_one.side_effect = NotFoundError("nope")
+    def test_not_found_propagates_404(self, client, initiative_service):
+        initiative_service.patch_one.side_effect = NotFoundError("nope")
         r = client.patch(
             "/api/v1/initiatives/missing",
             json={"name": "Renamed"},
@@ -124,12 +124,12 @@ class TestPatch:
 
 
 class TestDelete:
-    def test_delete_returns_204(self, client, initiative_repo):
-        initiative_repo.delete_one.return_value = None
+    def test_delete_returns_204(self, client, initiative_service):
+        initiative_service.delete_one.return_value = None
         r = client.delete("/api/v1/initiatives/battery-genome", headers=AUTHED_HEADERS)
         assert r.status_code == 204
         assert r.content == b""
 
-    def test_anonymous_rejected_401(self, client, initiative_repo):
+    def test_anonymous_rejected_401(self, client, initiative_service):
         r = client.delete("/api/v1/initiatives/battery-genome", headers=FORCE_ANON_HEADERS)
         assert r.status_code == 401

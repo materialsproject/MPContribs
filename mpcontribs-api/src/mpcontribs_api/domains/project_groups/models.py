@@ -88,12 +88,12 @@ class ProjectGroupOut(DocumentOut[PydanticObjectId]):
     description: str | None = None
 
     @staticmethod
-    def default_fields() -> list[str]:
-        return [
+    def default_fields() -> tuple[str, ...]:
+        return (
             "name",
             "description",
             "projects",
-        ]
+        )
 
 
 class ProjectGroupPatch(SparseFieldsModel):

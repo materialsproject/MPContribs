@@ -10,7 +10,6 @@ from mpcontribs_api.domains.contributions.models import (
     ContributionPatch,
 )
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
-from mpcontribs_api.exceptions import PermissionError as AppPermissionError
 from mpcontribs_api.exceptions import ConflictError, NotFoundError, ValidationError
 from mpcontribs_api.pagination import CursorParams
 
@@ -161,40 +160,39 @@ class TestNullableIdentifierHierarchy:
         assert key in found
 
     async def test_duplicate_chemical_system_only_collides_on_unique_index(self, db):
-        from pymongo.errors import DuplicateKeyError
-
         ci = _contrib_in(project="chem-only", material_id=None, formula=None)
         await _repo().insert_one(Contribution.from_input_model(ci))
         dup = _contrib_in(project="chem-only", material_id=None, formula=None)
         # Same (project, chemical_system_id) with null material_id/formula/unique_value is one
-        # unique key — the second insert must be rejected.
-        with pytest.raises(DuplicateKeyError):
+        # unique key — the second insert must be rejected. The document-in repo translates the
+        # unique-index DuplicateKeyError into a domain ConflictError.
+        with pytest.raises(ConflictError):
             await _repo().insert_one(Contribution.from_input_model(dup))
 
 
 # ---------------------------------------------------------------------------
-# insert_many_contributions (bulk)
+# insert_many (bulk)
 # ---------------------------------------------------------------------------
 
 
 class TestInsertManyContributions:
     async def test_all_docs_persisted(self, db):
         docs = [Contribution.from_input_model(_contrib_in(identifier=f"mp-{4100 + i}")) for i in range(5)]
-        await _repo().insert_many_contributions(docs)
+        await _repo().insert_many(docs)
         for doc in docs:
             found = await Contribution.find_one(Contribution.id == doc.id)
             assert found is not None
 
     async def test_returns_insert_result(self, db):
         docs = [Contribution.from_input_model(_contrib_in(identifier=f"mp-{4200 + i}")) for i in range(3)]
-        result = await _repo().insert_many_contributions(docs)
+        result = await _repo().insert_many(docs)
         assert result is not None
 
     async def test_empty_list_raises_type_error(self, db):
         # Motor's insert_many requires at least one document; callers are
         # responsible for guarding against empty batches.
         with pytest.raises(TypeError, match="non-empty"):
-            await _repo().insert_many_contributions([])
+            await _repo().insert_many([])
 
 
 # ---------------------------------------------------------------------------
@@ -535,7 +533,7 @@ class TestUpsertContributionById:
     async def test_insert_when_id_absent_persists_document(self, db):
         new_id = PydanticObjectId()
         payload = _contrib_in(identifier="mp-4002", _id=new_id)
-        result = await _repo(ADMIN).upsert_contribution_by_id(str(new_id), payload)
+        result = await _repo(ADMIN).upsert_one({"id": str(new_id)}, payload)
         # Must be the resolved document, not an un-awaited query object.
         assert isinstance(result, Contribution)
         stored = await Contribution.find_one(Contribution.id == new_id)
@@ -545,7 +543,7 @@ class TestUpsertContributionById:
     async def test_update_when_id_present_applies_change(self, db):
         existing = await _insert(identifier="mp-4001")
         payload = _contrib_in(identifier="mp-4001", formula="Li2O", _id=existing.id)
-        result = await _repo(ADMIN).upsert_contribution_by_id(str(existing.id), payload)
+        result = await _repo(ADMIN).upsert_one({"id": str(existing.id)}, payload)
         assert isinstance(result, Contribution)
         stored = await Contribution.find_one(Contribution.id == existing.id)
         assert stored is not None
@@ -567,7 +565,7 @@ class TestUpsertContributionById:
         existing = await _insert(identifier="mp-4004", unique_value="batch-A")
         assert existing.unique_value == "batch-A"
         payload = _contrib_in(identifier="mp-4004", _id=existing.id)
-        await _repo(ADMIN).upsert_contribution_by_id(str(existing.id), payload, unique_value=None)
+        await _repo(ADMIN).upsert_one({"id": str(existing.id)}, payload, unique_value=None)
         stored = await Contribution.find_one(Contribution.id == existing.id)
         assert stored is not None
         assert stored.unique_value is None
@@ -579,7 +577,7 @@ class TestUpsertContributionById:
         victim = await _insert(project="uid-dup", identifier="mp-200")
         payload = _contrib_in(project="uid-dup", identifier="mp-100", _id=victim.id)
         with pytest.raises(ConflictError):
-            await _repo(ADMIN).upsert_contribution_by_id(str(victim.id), payload)
+            await _repo(ADMIN).upsert_one({"id": str(victim.id)}, payload)
 
 
 class TestDeleteByIdsScope:
@@ -587,7 +585,7 @@ class TestDeleteByIdsScope:
         pub = await _insert(identifier="dbi-pub", is_public=True)
         priv = await _insert(identifier="dbi-priv", is_public=False)
         # Anonymous scope only sees public docs; deleting both ids must spare the private one.
-        result = await _repo(ANON).delete_by_ids([pub.id, priv.id])
+        result = await _repo(ANON).delete_many(ContributionFilter(id__in=[pub.id, priv.id]))
         assert result.num_deleted == 1
         remaining = {d.material_id for d in await Contribution.find().to_list()}
         assert "dbi-priv" in remaining
@@ -596,5 +594,5 @@ class TestDeleteByIdsScope:
     async def test_admin_deletes_all_ids(self, db):
         a = await _insert(identifier="dbi-a", is_public=False)
         b = await _insert(identifier="dbi-b", is_public=False)
-        result = await _repo(ADMIN).delete_by_ids([a.id, b.id])
+        result = await _repo(ADMIN).delete_many(ContributionFilter(id__in=[a.id, b.id]))
         assert result.num_deleted == 2

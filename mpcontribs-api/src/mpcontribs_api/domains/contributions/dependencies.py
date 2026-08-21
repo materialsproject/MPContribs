@@ -14,13 +14,6 @@ from mpcontribs_api.domains.structures.repository import MongoDbStructureReposit
 from mpcontribs_api.domains.tables.repository import MongoDbTableRepository
 
 
-def get_scoped_contributions(user: UserDep) -> MongoDbContributionRepository:
-    return MongoDbContributionRepository(user)
-
-
-ContributionDep = Annotated[MongoDbContributionRepository, Depends(get_scoped_contributions)]
-
-
 def get_contribution_service(
     user: UserDep,
     client: MongoClientDep,
@@ -29,7 +22,7 @@ def get_contribution_service(
     return ContributionService(
         client=client,
         user=user,
-        projects=MongoDbProjectRepository(user, limits),
+        projects=MongoDbProjectRepository(user),
         contributions=MongoDbContributionRepository(user),
         structures=MongoDbStructureRepository(user),
         attachments=MongoDbAttachmentRepository(user),

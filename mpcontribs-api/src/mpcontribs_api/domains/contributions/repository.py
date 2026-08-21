@@ -1,17 +1,12 @@
-from collections.abc import AsyncIterable
-from contextlib import AbstractAsyncContextManager
 from typing import Any, cast
 
 from beanie import PydanticObjectId, UpdateResponse
 from beanie.operators import Set
 from pymongo.asynchronous.client_session import AsyncClientSession
 from pymongo.errors import DuplicateKeyError
-from types_aiobotocore_s3 import S3Client
 
-from mpcontribs_api.authz import User
 from mpcontribs_api.domains._shared.bulk import BulkUpdateSummary
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
-from mpcontribs_api.domains._shared.types import DownloadFormat, ShortMimeFormat
 from mpcontribs_api.domains._shared.units import QuantityLeaf
 from mpcontribs_api.domains.contributions.models import (
     Contribution,
@@ -28,7 +23,8 @@ from mpcontribs_api.domains.contributions.stats import (
     finalize_columns,
     merge_contribution_columns,
 )
-from mpcontribs_api.exceptions import ConflictError, NotFoundError, PermissionError
+from mpcontribs_api.exceptions import ConflictError, NotFoundError
+from mpcontribs_api.scope import Public, RoleIn, Scope
 
 # Sentinel for "leave unique_value untouched" on patch (distinct from a real None value).
 _UNSET: Any = object()
@@ -57,38 +53,13 @@ def _build_update_set(update_data: dict[str, Any], existing_data: Any, *, replac
 class MongoDbContributionRepository(
     MongoDbRepository[Contribution, ContributionIn, ContributionOut, ContributionFilter, ContributionPatch]
 ):
-    """A repository layer for access to MongoDB.
-
-    Shared CRUD logic lives on :class:`MongoDbRepository`; the methods here are domain-named
-    forwarders that give routers a consistent vocabulary and concrete types, plus the operations
-    whose shape is contribution-specific (filtered delete, id-keyed upsert, download).
-    Multi-collection orchestration (component inserts) lives in ``ContributionService``.
-    """
+    """A repository layer for access to MongoDB."""
 
     document_model = Contribution
     out_model = ContributionOut
-
-    def __init__(self, user: User) -> None:
-        super().__init__(user)
-        self._user = user
-
-    @staticmethod
-    def _build_scope(user: User) -> dict[str, Any]:
-        """Provides scope based on current user's permitted groups and publicly released data."""
-        if user.is_admin:
-            return {}
-        ors: list[dict[str, Any]] = [{"is_public": True}]
-        if user.writable_projects:
-            ors.append({"project": {"$in": sorted(user.writable_projects)}})
-        return {"$or": ors}
-
-    async def count_contributions_for_project(self, project_name: str) -> int:
-        """Count contributions already stored for a project.
-
-        Unscoped on purpose: the unapproved-contribution quota is a property of the project as a
-        whole, not of what the current user can see. The cap comparison lives in the service.
-        """
-        return await self.document_model.find(self.document_model.project == project_name).count()
+    # Contributions have no owner of their own; visible when public or belonging to a project the
+    # caller may write to (keyed on ``project``). Admins bypass scope (handled by ``Scope``).
+    read_scope = Scope(Public(), RoleIn("project", "writable_projects"))
 
     async def patch_one(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
@@ -165,7 +136,7 @@ class MongoDbContributionRepository(
             matched=result.matched_count, modified=result.modified_count, projects=sorted(projects)
         )
 
-    async def list_ids(  # pyright: ignore[reportIncompatibleMethodOverride]
+    async def list_ids(
         self,
         filter: ContributionFilter,
         session: AsyncClientSession | None = None,
@@ -186,28 +157,6 @@ class MongoDbContributionRepository(
         query = filter.filter(self.document_model.find(*criteria)).get_filter_query()
         collection = self.document_model.get_pymongo_collection()
         return [doc["_id"] async for doc in collection.find(query, {"_id": 1})]
-
-    async def insert_many(  # pyright: ignore[reportIncompatibleMethodOverride]
-        self,
-        docs: list[Contribution],
-        session: AsyncClientSession | None = None,
-    ):
-        """Bulk-insert pre-built Contribution documents.
-
-        Used by the ``ContributionService`` no-component fast path. On partial failure pymongo
-        raises ``BulkWriteError`` whose ``details["writeErrors"]`` carries per-index error info
-        that the service maps back into a ``BulkWriteSummary``.
-        """
-        return await self.document_model.insert_many(docs, ordered=False, session=session)
-
-    async def insert_one(  # pyright: ignore[reportIncompatibleMethodOverride]
-        self,
-        doc: Contribution,
-        session: AsyncClientSession | None = None,
-    ) -> Contribution:
-        """Insert a single pre-built Contribution document, optionally in a transaction."""
-        await doc.insert(session=session)
-        return doc
 
     async def existing_identities(self, identities: list[ContributionIdentity]) -> set[ContributionIdentity]:
         """Return the subset of identities that already exist, scoped to the user.
@@ -325,11 +274,6 @@ class MongoDbContributionRepository(
                 identifiers["id"], contribution, None if unique_value is _UNSET else unique_value
             )
 
-        project = str(identifiers["project"])
-        # Make sure the user is allowed to upsert a contribution under the provided project
-        if not self._user.can_write(project):
-            raise PermissionError(f"not authorized to write to project '{project}'")
-
         doc = self.document_model.from_input_model(contribution)
         doc.unique_value = identifiers["unique_value"]
         doc.condition_key = identifiers["condition_key"]
@@ -357,9 +301,6 @@ class MongoDbContributionRepository(
         unique_value: Scalar | None = None,
     ) -> Contribution:
         """Upsert a single Contribution keyed on its Mongo ``_id`` (see :meth:`upsert_one`)."""
-        if not self._user.can_write(contribution.project):
-            raise PermissionError(f"not authorized to write to project '{contribution.project}'")
-
         oid = self._convert_object_id(id)
         doc = self.document_model.from_input_model(contribution)
         # from_input_model mints a fresh id; upsert-by-id must key on the caller-supplied id so the
@@ -383,25 +324,3 @@ class MongoDbContributionRepository(
                 f"contribution '{id}' cannot be upserted: the resulting identity already exists",
                 id=id,
             ) from err
-
-    async def download_contributions(
-        self,
-        format: DownloadFormat,
-        short_mime: ShortMimeFormat,
-        ignore_cache: bool,
-        filter: ContributionFilter,
-        fields: frozenset[str] | None,
-        key_name: str,
-        s3: AbstractAsyncContextManager[S3Client],
-        bucket_name: str = "contributions",
-    ) -> AsyncIterable[bytes]:
-        return self.download(
-            format=format,
-            short_mime=short_mime,
-            ignore_cache=ignore_cache,
-            filter=filter,
-            fields=fields,
-            bucket_name=bucket_name,
-            key_name=key_name,
-            s3=s3,
-        )

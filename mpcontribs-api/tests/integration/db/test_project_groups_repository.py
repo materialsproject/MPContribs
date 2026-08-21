@@ -8,8 +8,8 @@ from mpcontribs_api.domains.project_groups.models import (
     ProjectGroupIn,
     ProjectGroupPatch,
 )
-from mpcontribs_api.domains.project_groups.repository import ProjectGroupRepository
-from mpcontribs_api.exceptions import ConflictError, NotFoundError, PermissionError, ValidationError
+from mpcontribs_api.domains.project_groups.repository import MongoDbProjectGroupRepository
+from mpcontribs_api.exceptions import ConflictError, NotFoundError, ValidationError
 from mpcontribs_api.pagination import CursorParams
 
 # Share the session event loop (see the projects repo test for why).
@@ -29,8 +29,8 @@ ALICE_EMAIL = "google:alice@example.com"
 BOB_EMAIL = "google:bob@example.com"
 
 
-def _repo(user: User) -> ProjectGroupRepository:
-    return ProjectGroupRepository(user)
+def _repo(user: User) -> MongoDbProjectGroupRepository:
+    return MongoDbProjectGroupRepository(user)
 
 
 def _group_in(name: str, owner: str = ALICE_EMAIL, **overrides) -> ProjectGroupIn:
@@ -45,7 +45,8 @@ def _group_in(name: str, owner: str = ALICE_EMAIL, **overrides) -> ProjectGroupI
 
 
 async def _insert(name: str, owner: str = ALICE_EMAIL, **overrides) -> ProjectGroup:
-    return await _repo(ADMIN).insert_one(_group_in(name, owner, **overrides))
+    # Document-in repo: build the stored document here (the service's job), then hand it over.
+    return await _repo(ADMIN).insert_one(ProjectGroup.from_input_model(_group_in(name, owner, **overrides)))
 
 
 # ---------------------------------------------------------------------------
@@ -108,16 +109,9 @@ class TestGroupRoleScope:
         )
         assert group.id in {g.id for g in page.items}
 
-    async def test_role_grants_scope_but_not_delete(self, db):
-        # Scope makes the group visible, but deletion remains owner-or-admin (403 for a role holder).
-        group = await _insert("role-del")
-        with pytest.raises(PermissionError):
-            await _repo(_role_user(group.id)).delete_one({"name": "role-del", "owner": ALICE_EMAIL})
-        assert await ProjectGroup.find_one(ProjectGroup.name == "role-del") is not None
-
 
 # ---------------------------------------------------------------------------
-# delete_one  (identifier-keyed, single-resource, raises)
+# delete_one  (mechanical: scoped delete; the owner-or-admin gate lives in the service)
 # ---------------------------------------------------------------------------
 
 
@@ -139,18 +133,6 @@ class TestDeleteOne:
             await _repo(ANON).delete_one({"name": "del-scoped", "owner": ALICE_EMAIL})
         # ...and it is untouched.
         assert await ProjectGroup.find_one(ProjectGroup.name == "del-scoped") is not None
-
-    async def test_owner_can_delete_own(self, db):
-        await _insert("del-own", owner=ALICE_EMAIL)
-        result = await _repo(ALICE).delete_one({"name": "del-own", "owner": ALICE_EMAIL})
-        assert result.num_deleted == 1
-
-    async def test_visible_public_non_owner_forbidden(self, db):
-        # Bob can *see* Alice's public group but does not own it → 403, and it is left intact.
-        await _insert("del-pub", owner=ALICE_EMAIL, is_public=True)
-        with pytest.raises(PermissionError):
-            await _repo(BOB).delete_one({"name": "del-pub", "owner": ALICE_EMAIL})
-        assert await ProjectGroup.find_one(ProjectGroup.name == "del-pub") is not None
 
     async def test_wrong_identifier_keys_raise_validation(self, db):
         with pytest.raises(ValidationError):
@@ -174,7 +156,7 @@ class TestPatchOne:
 
 
 # ---------------------------------------------------------------------------
-# delete  (arbitrary-filter bulk)
+# delete_many  (mechanical, scoped bulk; the non-admin owner-forcing lives in the service)
 # ---------------------------------------------------------------------------
 
 
@@ -194,16 +176,6 @@ class TestDeleteByFilter:
             filter=ProjectGroupFilter(owner="google:nobody@example.com")
         )
         assert result.num_deleted == 0
-
-    async def test_non_admin_bulk_restricted_to_own(self, db):
-        # A broad filter from a non-admin is pinned to their own groups: a public group owned by
-        # someone else must survive even though the filter would otherwise match it.
-        await _insert("own-bulk", owner=ALICE_EMAIL, is_public=True)
-        await _insert("other-bulk", owner=BOB_EMAIL, is_public=True)
-        result = await _repo(ALICE).delete_many(filter=ProjectGroupFilter(is_public=True))
-        assert result.num_deleted == 1
-        assert await ProjectGroup.find_one(ProjectGroup.name == "own-bulk") is None
-        assert await ProjectGroup.find_one(ProjectGroup.name == "other-bulk") is not None
 
 
 # ---------------------------------------------------------------------------

@@ -6,7 +6,7 @@ from starlette.status import HTTP_204_NO_CONTENT
 
 from mpcontribs_api.dependencies import require_user
 from mpcontribs_api.domains._shared.types import FieldSelector
-from mpcontribs_api.domains.projects.dependencies import ProjectDep, ProjectServiceDep
+from mpcontribs_api.domains.projects.dependencies import ProjectServiceDep
 from mpcontribs_api.domains.projects.models import (
     ProjectFilter,
     ProjectIn,
@@ -20,7 +20,7 @@ router = APIRouter()
 
 @router.get("")
 async def get_projects(
-    repo: ProjectDep,
+    service: ProjectServiceDep,
     pagination: Annotated[CursorParams, Depends()],
     filter: ProjectFilter = FilterDepends(ProjectFilter),
     fields: FieldSelector = None,
@@ -28,7 +28,7 @@ async def get_projects(
     """Return paginated projects matching a filter.
 
     Args:
-        repo (ProjectDep): the project repo we depend on
+        service (ProjectServiceDep): the project service we depend on
         pagination (CursorParams): arguments for cursor-based pagination
         fields (list[str] | None): optional ``_fields`` selection. Omitted -> server defaults;
             empty (``?_fields=``) -> identity fields only; ``_all`` -> the full document
@@ -37,7 +37,7 @@ async def get_projects(
         list[ProjectSummary]: a list of smaller project payloads
     """
     selected = ProjectOut.parse_fields(fields)
-    return await repo.get_many(filter=filter, pagination=pagination, fields=selected)
+    return await service.get_many(filter=filter, pagination=pagination, fields=selected)
 
 
 @router.get("/{id}")
