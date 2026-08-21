@@ -63,7 +63,7 @@ class TestBulkPublishAuthorization:
         a = await _insert(PROJ_A, "c1", is_public=False)
         b = await _insert(PROJ_B, "c1", is_public=False)
 
-        summary = await _service(mongo_client, ALICE).bulk_update(
+        summary = await _service(mongo_client, ALICE).patch_many(
             ContributionFilter(), ContributionPatch(is_public=True)
         )
 
@@ -77,7 +77,7 @@ class TestBulkPublishAuthorization:
         # update constrains to writable projects, so a filter matching it modifies nothing.
         b = await _insert(PROJ_B, "pub", is_public=True)
 
-        summary = await _service(mongo_client, ALICE).bulk_update(
+        summary = await _service(mongo_client, ALICE).patch_many(
             ContributionFilter(is_public=True), ContributionPatch(is_public=False)
         )
 
@@ -89,7 +89,7 @@ class TestBulkPublishAuthorization:
         a = await _insert(PROJ_A, "c1", is_public=False)
         b = await _insert(PROJ_B, "c1", is_public=False)
 
-        summary = await _service(mongo_client, ADMIN).bulk_update(
+        summary = await _service(mongo_client, ADMIN).patch_many(
             ContributionFilter(), ContributionPatch(is_public=True)
         )
 
@@ -103,8 +103,8 @@ class TestSinglePublish:
     async def test_patch_by_id_publishes_single_contribution(self, db, mongo_client):
         a = await _insert(PROJ_A, "c1", is_public=False)
 
-        result = await _service(mongo_client, ALICE).patch_contribution_by_id(
-            str(a.id), ContributionPatch(is_public=True)
+        result = await _service(mongo_client, ALICE).patch_one(
+            {"id": str(a.id)}, ContributionPatch(is_public=True)
         )
 
         assert result.is_public is True
@@ -135,7 +135,7 @@ class TestBulkPatchPerRow:
         a = await _insert_row(PROJ_A, formula="Fe2O3", data={"x": 1.0})
         b = await _insert_row(PROJ_A, formula="Fe3O4", data={"x": 2.0})
 
-        summary = await _service(mongo_client, ALICE).bulk_update(
+        summary = await _service(mongo_client, ALICE).patch_many(
             ContributionFilter(chemical_system_id="Fe-O"), ContributionPatch(data={"y": 9.0})
         )
 
@@ -151,7 +151,7 @@ class TestBulkPatchPerRow:
         a = await _insert_row(PROJ_A, formula="Fe2O3", data={"x": 1.0})
         b = await _insert_row(PROJ_A, formula="Fe3O4", data={"x": 2.0})
 
-        summary = await _service(mongo_client, ALICE).bulk_update(
+        summary = await _service(mongo_client, ALICE).patch_many(
             ContributionFilter(chemical_system_id="Fe-O"),
             ContributionPatch(data={"y": 9.0}),
             replace_data=True,
@@ -168,7 +168,7 @@ class TestBulkPatchPerRow:
         leaf = QuantityLeaf.from_submission(2.0, "m").as_dict()
         c = await _insert_row(PROJ_A, formula="Fe2O3", data={"bandgap": leaf})
 
-        summary = await _service(mongo_client, ALICE).bulk_update(
+        summary = await _service(mongo_client, ALICE).patch_many(
             ContributionFilter(chemical_system_id="Fe-O"), ContributionPatch(data={"bandgap": 5.0})
         )
 
@@ -184,7 +184,7 @@ class TestBulkPatchPerRow:
         leaf = QuantityLeaf.from_submission(2.0, "m").as_dict()
         c = await _insert_row(PROJ_A, formula="Fe2O3", data={"bandgap": leaf})
 
-        summary = await _service(mongo_client, ALICE).bulk_update(
+        summary = await _service(mongo_client, ALICE).patch_many(
             ContributionFilter(chemical_system_id="Fe-O"), ContributionPatch(data={"bandgap": {"unit": "km"}})
         )
 
@@ -201,7 +201,7 @@ class TestBulkPatchPerRow:
         keep = await _insert_row(PROJ_A, formula="Fe2O3", data={"x": 1.0})
         clash = await _insert_row(PROJ_A, formula="Fe3O4", data={"x": 2.0})
 
-        summary = await _service(mongo_client, ALICE).bulk_update(
+        summary = await _service(mongo_client, ALICE).patch_many(
             ContributionFilter(chemical_system_id="Fe-O"), ContributionPatch(formula="Fe2O3")
         )
 
@@ -223,7 +223,7 @@ class TestBulkPatchPerRow:
         foreign.is_public = True
         await foreign.insert()
 
-        summary = await _service(mongo_client, ALICE).bulk_update(
+        summary = await _service(mongo_client, ALICE).patch_many(
             ContributionFilter(chemical_system_id="Fe-O"), ContributionPatch(data={"y": 9.0})
         )
 

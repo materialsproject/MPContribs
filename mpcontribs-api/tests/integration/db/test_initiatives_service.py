@@ -40,21 +40,21 @@ def _collaborator(slug: str, username: str = BOB_EMAIL) -> User:
 
 
 async def _insert_project(pid: str, owner: str = ALICE_EMAIL) -> Project:
-    return await MongoDbProjectRepository(ADMIN).insert_one(
-        pid,
+    document = Project.from_input_model(
         ProjectIn(
             title=pid[:30],
             authors="Author",
             description="desc",
             owner=owner,
         ),
+        id=pid,
     )
+    return await MongoDbProjectRepository(ADMIN).insert_one(document)
 
 
 async def _insert_initiative(slug: str, owner_user: User = ALICE):
-    return await MongoDbInitiativeRepository(owner_user).insert_one(
-        InitiativeIn(slug=slug, name="Init"), owner=owner_user.username
-    )
+    document = Initiative.from_input_model(InitiativeIn(slug=slug, name="Init"), owner=owner_user.username)
+    return await MongoDbInitiativeRepository(owner_user).insert_one(document)
 
 
 def _assigned_id(project: Project):

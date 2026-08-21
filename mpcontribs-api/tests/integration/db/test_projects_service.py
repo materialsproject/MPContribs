@@ -46,7 +46,8 @@ def _project_in(id: str, **overrides) -> ProjectIn:
 
 async def _insert(id: str, **overrides) -> Project:
     """Seed a project directly through the repository's mechanical insert (admin, no policy)."""
-    return await MongoDbProjectRepository(ADMIN).insert_one(id, _project_in(id, **overrides))
+    document = Project.from_input_model(_project_in(id, **overrides), id=id)
+    return await MongoDbProjectRepository(ADMIN).insert_one(document)
 
 
 # ---------------------------------------------------------------------------
@@ -189,7 +190,7 @@ class TestApprovalIsAdminOnly:
 
     async def test_patch_missing_project_raises_not_found(self, db):
         with pytest.raises(NotFoundError):
-            await _service(ADMIN).patch_one({"id": "svc-patch-ghost"}, ProjectPatch(title="x"))
+            await _service(ADMIN).patch_one({"id": "svc-patch-ghost"}, ProjectPatch(title="xyz"))
 
 
 # ---------------------------------------------------------------------------

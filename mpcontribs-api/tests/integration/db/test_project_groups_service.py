@@ -5,7 +5,7 @@ from mpcontribs_api.authz import User
 from mpcontribs_api.domains.project_groups.models import ProjectGroup, ProjectGroupFilter, ProjectGroupIn
 from mpcontribs_api.domains.project_groups.repository import MongoDbProjectGroupRepository
 from mpcontribs_api.domains.project_groups.service import ProjectGroupService
-from mpcontribs_api.domains.projects.models import ProjectIn
+from mpcontribs_api.domains.projects.models import Project, ProjectIn
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
 from mpcontribs_api.exceptions import ConflictError, NotFoundError, PermissionError
 
@@ -42,12 +42,13 @@ async def _insert_project(pid: str, owner: str = ALICE_EMAIL, **overrides):
         "owner": owner,
     }
     payload.update(overrides)
-    return await MongoDbProjectRepository(ADMIN).insert_one(pid, ProjectIn(**payload))
+    document = Project.from_input_model(ProjectIn(**payload), id=pid)
+    return await MongoDbProjectRepository(ADMIN).insert_one(document)
 
 
 async def _insert_group(name: str, owner: str = ALICE_EMAIL) -> ProjectGroup:
     return await MongoDbProjectGroupRepository(ADMIN).insert_one(
-        ProjectGroupIn(name=name, owner=owner, projects=[], description="d")
+        ProjectGroup.from_input_model(ProjectGroupIn(name=name, owner=owner, projects=[], description="d"))
     )
 
 
@@ -116,13 +117,13 @@ class TestAdd:
 class TestInsert:
     async def test_non_admin_owner_forced_to_caller(self, db):
         # Alice submits Bob as owner; the caller's identity must win so she can manage the group.
-        group = await _service(ALICE).insert(
+        group = await _service(ALICE).insert_one(
             ProjectGroupIn(name="ins-forced", owner=BOB_EMAIL, projects=[], description="d")
         )
         assert group.owner == ALICE_EMAIL
 
     async def test_admin_may_set_owner_on_behalf(self, db):
-        group = await _service(ADMIN).insert(
+        group = await _service(ADMIN).insert_one(
             ProjectGroupIn(name="ins-onbehalf", owner=BOB_EMAIL, projects=[], description="d")
         )
         assert group.owner == BOB_EMAIL
@@ -175,7 +176,9 @@ class TestDeleteAuthorization:
     async def test_visible_public_non_owner_forbidden(self, db):
         # Bob can *see* Alice's public group but does not own it → 403, and it is left intact.
         await MongoDbProjectGroupRepository(ADMIN).insert_one(
-            ProjectGroupIn(name="del-pub", owner=ALICE_EMAIL, projects=[], description="d", is_public=True)
+            ProjectGroup.from_input_model(
+                ProjectGroupIn(name="del-pub", owner=ALICE_EMAIL, projects=[], description="d", is_public=True)
+            )
         )
         with pytest.raises(PermissionError):
             await _service(BOB).delete_one({"name": "del-pub", "owner": ALICE_EMAIL})
@@ -205,10 +208,14 @@ class TestBulkDeleteAuthorization:
         # A broad filter from a non-admin is pinned to their own groups: a public group owned by
         # someone else must survive even though the filter would otherwise match it.
         await MongoDbProjectGroupRepository(ADMIN).insert_one(
-            ProjectGroupIn(name="own-bulk", owner=ALICE_EMAIL, projects=[], description="d", is_public=True)
+            ProjectGroup.from_input_model(
+                ProjectGroupIn(name="own-bulk", owner=ALICE_EMAIL, projects=[], description="d", is_public=True)
+            )
         )
         await MongoDbProjectGroupRepository(ADMIN).insert_one(
-            ProjectGroupIn(name="other-bulk", owner=BOB_EMAIL, projects=[], description="d", is_public=True)
+            ProjectGroup.from_input_model(
+                ProjectGroupIn(name="other-bulk", owner=BOB_EMAIL, projects=[], description="d", is_public=True)
+            )
         )
         result = await _service(ALICE).delete_many(filter=ProjectGroupFilter(is_public=True))
         assert result.num_deleted == 1
