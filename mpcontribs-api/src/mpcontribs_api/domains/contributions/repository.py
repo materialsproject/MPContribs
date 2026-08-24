@@ -269,6 +269,7 @@ class MongoDbContributionRepository(
         Relies on the unique index over the identity fields as the concurrency tiebreaker.
         On insert a fresh document is written with ``is_public=False``.
         """
+        identifiers = self.coerce_identifiers(identifiers)
         if identifiers.keys() == {"id"}:
             return await self._upsert_by_id(
                 identifiers["id"], contribution, None if unique_value is _UNSET else unique_value

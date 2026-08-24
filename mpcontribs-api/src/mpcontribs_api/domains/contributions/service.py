@@ -113,7 +113,7 @@ class ContributionService:
         Accepts either the bare ``{"id": ...}`` form or the semantic
         ``{"project", "identifier", "version"}`` set, resolved by the base ``_identifier_query``.
         """
-        return await self._contributions.get_one(self._contributions.coerce_identifiers(identifiers), fields)
+        return await self._contributions.get_one(identifiers, fields)
 
     async def get_many(
         self, pagination: CursorParams, filter: ContributionFilter, fields: frozenset[str] | None
@@ -149,7 +149,6 @@ class ContributionService:
         :meth:`delete_many` so children are never orphaned; a missing target is a zero-count
         result (mirroring the bulk delete path, which does not 404).
         """
-        identifiers = self._contributions.coerce_identifiers(identifiers)
         if set(identifiers) == {"id"}:
             filter = ContributionFilter(id=identifiers["id"])
         else:
@@ -798,7 +797,6 @@ class ContributionService:
         """
         if not self._user.can_write(contribution.project):
             raise PermissionError(f"not authorized to write to project '{contribution.project}'")
-        identifiers = self._contributions.coerce_identifiers(identifiers)
         existing = await self._contributions.get_one(identifiers, None)
         if existing is None:
             stored = await self._unapproved_stored_count(contribution.project)
@@ -829,7 +827,6 @@ class ContributionService:
         re-validated strictly (the permissive patch validator allows leaf fragments a full doc may not).
         ``unique_value`` is resolved against the same post-write view the repository will persist.
         """
-        identifiers = self._contributions.coerce_identifiers(identifiers)
         if not self._user.is_admin:
             target = await self._contributions.get_one(identifiers, frozenset({"id", "project"}))
             if target is None:

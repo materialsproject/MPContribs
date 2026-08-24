@@ -1,3 +1,4 @@
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -16,11 +17,21 @@ def _oid() -> PydanticObjectId:
     return PydanticObjectId()
 
 
-def _coerce_identifiers(identifiers: dict) -> dict:
-    """Stub for the repo's ObjectId-keyed ``coerce_identifiers`` (string id -> ObjectId)."""
-    if isinstance(identifiers.get("id"), str):
-        return {**identifiers, "id": PydanticObjectId(identifiers["id"])}
-    return identifiers
+def _id_resolving_get_one() -> AsyncMock:
+    """A stand-in for the component repo's ``get_one``.
+
+    The service resolves a component's ``_id`` by asking the repo (which coerces a string ``id`` to
+    ``ObjectId`` internally), so the mock echoes a document whose ``id`` is the coerced identifier —
+    letting the reachability check key off the real ``ObjectId``.
+    """
+
+    async def _get_one(identifiers, fields=None, **kwargs):
+        if "id" in identifiers:
+            raw = identifiers["id"]
+            return SimpleNamespace(id=PydanticObjectId(raw) if isinstance(raw, str) else raw)
+        return None
+
+    return AsyncMock(side_effect=_get_one)
 
 
 def _make_service(
@@ -38,7 +49,7 @@ def _make_service(
     components.list_ids = AsyncMock(return_value=candidate_ids)
     components.delete_many = AsyncMock(side_effect=lambda filter: DeleteResponse(num_deleted=len(filter.id__in)))
     components.delete_one = AsyncMock(return_value=DeleteResponse(num_deleted=1))
-    components.coerce_identifiers = MagicMock(side_effect=_coerce_identifiers)
+    components.get_one = _id_resolving_get_one()
 
     contributions = AsyncMock(name="contributions")
 
@@ -162,7 +173,7 @@ async def test_delete_by_id_reachable_and_unreferenced_deletes():
 def _make_read_service(*, reachable: set[PydanticObjectId]) -> tuple[ComponentService, AsyncMock, AsyncMock]:
     """ComponentService whose contribution repo reports `reachable` ids as in-scope."""
     components = AsyncMock(name="components")
-    components.coerce_identifiers = MagicMock(side_effect=_coerce_identifiers)
+    components.get_one = _id_resolving_get_one()
 
     contributions = AsyncMock(name="contributions")
 
@@ -177,25 +188,27 @@ def _make_read_service(*, reachable: set[PydanticObjectId]) -> tuple[ComponentSe
     return service, components, contributions
 
 
-async def test_get_by_id_unreachable_returns_none_without_fetch():
+async def test_get_by_id_unreachable_returns_none():
+    # The id is resolved through the repo, but an unreachable component still yields None (and the
+    # full-fields fetch is skipped once the reachability gate fails).
     oid = _oid()
     svc, components, _ = _make_read_service(reachable=set())
 
     result = await svc.get_one({"id": str(oid)}, fields=None)
 
     assert result is None
-    components.get_one.assert_not_awaited()
+    components.get_one.assert_awaited_once()
 
 
 async def test_get_by_id_reachable_fetches_component():
     oid = _oid()
     svc, components, _ = _make_read_service(reachable={oid})
-    components.get_one = AsyncMock(return_value="the-component")
 
     result = await svc.get_one({"id": str(oid)}, fields=None)
 
-    assert result == "the-component"
-    components.get_one.assert_awaited_once()
+    # Resolved (id lookup) then fetched (full projection): the reachable component is returned.
+    assert result is not None and result.id == oid
+    assert components.get_one.await_count == 2
 
 
 async def test_get_many_restricts_to_reachable_ids():

@@ -134,6 +134,7 @@ class MongoDbRepository[
             identifiers (dict[str, Any]): identifier field values keyed by ``identifier_fields``,
                 or ``{"id": <primary key>}``
         """
+        identifiers = self.coerce_identifiers(identifiers)
         expected = self.document_model.identifier_fields()
         if identifiers.keys() != expected and identifiers.keys() != {"id"}:
             raise ValidationError(

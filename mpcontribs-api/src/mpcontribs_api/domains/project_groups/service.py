@@ -116,8 +116,7 @@ class ProjectGroupService:
         ``{"name": ..., "owner": ...}``. Propagates ``ConflictError`` from the repository if
         ``(name, owner)`` identifiers are ambiguous.
         """
-        query = self._groups.coerce_identifiers(identifiers)
-        group = await self._groups.get_one(query, fields=_GROUP_FIELDS)
+        group = await self._groups.get_one(identifiers, fields=_GROUP_FIELDS)
         if group is None:
             raise NotFoundError("ProjectGroup not found", **identifiers)
         if not (self._user.is_admin or group.owner == self._user.username):

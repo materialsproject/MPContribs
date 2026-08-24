@@ -75,8 +75,6 @@ class ComponentService[
 
     async def _resolve_component_id(self, identifiers: dict[str, Any]) -> PydanticObjectId | None:
         """Return the component ``_id`` after finding it via identifiers, or None if absent."""
-        if "id" in identifiers:
-            return identifiers["id"]
         existing = await self._components.get_one(identifiers, frozenset({"id"}))
         return existing.id if existing is not None else None
 
@@ -86,7 +84,6 @@ class ComponentService[
         Returns ``None``  when no in-scope contribution references the component.
         Accepts either the bare ``{"id": ...}`` form or the content-hash ``{"md5": ...}`` form.
         """
-        identifiers = self._components.coerce_identifiers(identifiers)
         oid = await self._resolve_component_id(identifiers)
         if oid is None or not await self._contributions.referenced_component_ids(self._ref_field, [oid], scoped=True):
             return None
@@ -111,7 +108,6 @@ class ComponentService[
         Raises:
             NotFoundError: when no in-scope contribution references the component
         """
-        identifiers = self._components.coerce_identifiers(identifiers)
         oid = await self._resolve_component_id(identifiers)
         if oid is None or not await self._contributions.referenced_component_ids(self._ref_field, [oid], scoped=True):
             raise NotFoundError(f"{self._components.document_model.__name__} not found", **identifiers)
@@ -181,7 +177,6 @@ class ComponentService[
         Raises:
             NotFoundError: if the component is not reachable via any in-scope contribution
         """
-        identifiers = self._components.coerce_identifiers(identifiers)
         oid = await self._resolve_component_id(identifiers)
         if oid is None or not await self._contributions.referenced_component_ids(self._ref_field, [oid], scoped=True):
             raise NotFoundError(f"{self._components.document_model.__name__} not found", **identifiers)
