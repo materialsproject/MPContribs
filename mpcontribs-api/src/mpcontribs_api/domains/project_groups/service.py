@@ -18,9 +18,10 @@ from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
 from mpcontribs_api.exceptions import NotFoundError, PermissionError
 from mpcontribs_api.pagination import CursorParams, Page
 
-# Fields the membership operations need off a resolved group: its id (target of the update) and its
-# current members (so deletion can tell members from non-members).
-_GROUP_FIELDS = frozenset({"id", "projects"})
+# Fields the membership operations need off a resolved group: its id (target of the update), its
+# owner (to authorize the mutation), and its current members (so deletion can tell members from
+# non-members).
+_GROUP_FIELDS = frozenset({"id", "owner", "projects"})
 
 
 class ProjectGroupService:
@@ -109,7 +110,7 @@ class ProjectGroupService:
         return await self._groups.delete_one(identifiers)
 
     async def _resolve_one(self, identifiers: dict[str, Any]) -> ProjectGroupOut:
-        """Resolve a visible group matching ``identifiers``, or raise ``NotFoundError``.
+        """Resolve a group the caller may *mutate* matching ``identifiers``, or raise.
 
         ``identifiers`` is either the primary-key form ``{"id": <ObjectId str>}`` or the semantic
         ``{"name": ..., "owner": ...}``. Propagates ``ConflictError`` from the repository if
@@ -119,6 +120,8 @@ class ProjectGroupService:
         group = await self._groups.get_one(query, fields=_GROUP_FIELDS)
         if group is None:
             raise NotFoundError("ProjectGroup not found", **identifiers)
+        if not (self._user.is_admin or group.owner == self._user.username):
+            raise PermissionError(required_role="owner-or-admin")
         return group  # pyright: ignore[reportReturnType]  # projected reads return the out model
 
     async def _add(self, group: ProjectGroupOut, project_ids: list[ShortStr]) -> BulkWriteSummary[str]:
