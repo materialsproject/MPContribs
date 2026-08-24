@@ -49,10 +49,6 @@ class ProjectGroupService:
         self._groups = groups
         self._projects = projects
 
-    async def _project_exists(self, project_id: ShortStr) -> bool:
-        """Whether a project with ``project_id`` exists and is visible to the caller."""
-        return await self._projects.get_one({"id": project_id}, fields=frozenset({"id"})) is not None
-
     async def insert_one(self, project_group: ProjectGroupIn) -> ProjectGroup:
         """Insert a new group after verifying every referenced project exists and is visible.
 
@@ -60,7 +56,8 @@ class ProjectGroupService:
         """
         if not self._user.is_admin:
             project_group = project_group.model_copy(update={"owner": self._user.username})
-        missing = [pid for pid in project_group.projects if not await self._project_exists(pid)]
+        existing = await self._projects.existing_ids(list(project_group.projects), scoped=True)
+        missing = [pid for pid in project_group.projects if pid not in existing]
         if missing:
             raise NotFoundError("One or more projects not found or not visible", ids=missing)
         document = self._groups.document_model.from_input_model(project_group)
@@ -129,10 +126,11 @@ class ProjectGroupService:
         A project that does not exist or is not visible to the caller is reported as a failed item;
         the rest are added in a single atomic ``$addToSet`` (idempotent for existing members).
         """
+        existing = await self._projects.existing_ids(project_ids, scoped=True)
         failed: list[BulkFailure] = []
         valid: list[ShortStr] = []
         for index, pid in enumerate(project_ids):
-            if not await self._project_exists(pid):
+            if pid not in existing:
                 failed.append(
                     BulkFailure(
                         index=index,

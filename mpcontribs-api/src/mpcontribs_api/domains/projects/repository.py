@@ -65,6 +65,29 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
             result[doc["_id"]] = doc.get("unique_column")
         return result
 
+    async def existing_ids(self, ids: list[str], *, scoped: bool) -> set[str]:
+        """Return the subset of ``ids`` that exist, in one query.
+
+        Lets callers validate a batch of project references with a single round-trip instead of one
+        lookup per id.
+
+        Args:
+            ids: project ids to check
+            scoped: when ``True`` the user read scope is merged in, so an id the caller cannot see is
+                reported as absent (a visibility/reference check). When ``False`` the check spans every
+                project regardless of scope (a global existence / duplicate-id check).
+
+        Returns:
+            set[str]: the subset of ``ids`` present (and, when ``scoped``, visible to the caller)
+        """
+        if not ids:
+            return set()
+        query: dict[str, Any] = {"_id": {"$in": ids}}
+        if scoped and self._scope:
+            query = {"$and": [self._scope, query]}
+        collection = self.document_model.get_pymongo_collection()
+        return {doc["_id"] async for doc in collection.find(query, {"_id": 1})}
+
     async def set_stats_and_columns(self, updates: dict[str, tuple[Stats, list[Column]]]) -> None:
         """Overwrite the derived ``stats``/``columns`` of the given projects in one bulk write.
 

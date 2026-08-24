@@ -420,3 +420,40 @@ class TestToolboxPrimitives:
         doc.title = "Second"
         await _repo(ADMIN).upsert_one(doc)
         assert (await Project.find_one(Project.id == "save-doc")).title == "Second"
+
+
+# ---------------------------------------------------------------------------
+# existing_ids — batched existence check for a list of project ids (scoped or global)
+# ---------------------------------------------------------------------------
+
+
+class TestExistingIds:
+    async def test_returns_only_ids_that_exist(self, db):
+        await _insert("ex-1", is_public=True, is_approved=True)
+        await _insert("ex-2", is_public=True, is_approved=True)
+        found = await _repo(ADMIN).existing_ids(["ex-1", "ex-2", "ex-missing"], scoped=True)
+        assert found == {"ex-1", "ex-2"}
+
+    async def test_empty_input_returns_empty_set_without_query(self, db):
+        assert await _repo(ADMIN).existing_ids([], scoped=True) == set()
+        assert await _repo(ADMIN).existing_ids([], scoped=False) == set()
+
+    async def test_scoped_hides_invisible_projects(self, db):
+        # scoped=True: Bob may see the public project but not Alice's private one, so only the visible
+        # id comes back even though both exist — existence is reported through the caller's read scope.
+        await _insert("ex-pub", owner=ALICE_EMAIL, is_public=True, is_approved=True)
+        await _insert("ex-priv", owner=ALICE_EMAIL, is_public=False)
+        found = await _repo(BOB).existing_ids(["ex-pub", "ex-priv"], scoped=True)
+        assert found == {"ex-pub"}
+
+    async def test_unscoped_sees_every_existing_id(self, db):
+        # scoped=False: a global existence check (e.g. duplicate-id detection) spans every project
+        # regardless of the caller's scope — Bob sees the private id exists even though he cannot read it.
+        await _insert("ex-g-pub", owner=ALICE_EMAIL, is_public=True, is_approved=True)
+        await _insert("ex-g-priv", owner=ALICE_EMAIL, is_public=False)
+        found = await _repo(BOB).existing_ids(["ex-g-pub", "ex-g-priv", "ex-g-missing"], scoped=False)
+        assert found == {"ex-g-pub", "ex-g-priv"}
+
+    async def test_owner_sees_own_private_project_when_scoped(self, db):
+        await _insert("ex-own", owner=ALICE_EMAIL, is_public=False)
+        assert await _repo(ALICE).existing_ids(["ex-own"], scoped=True) == {"ex-own"}
