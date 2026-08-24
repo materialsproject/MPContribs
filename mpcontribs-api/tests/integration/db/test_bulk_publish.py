@@ -14,6 +14,7 @@ from mpcontribs_api.domains.contributions.service import ContributionService
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
 from mpcontribs_api.domains.structures.repository import MongoDbStructureRepository
 from mpcontribs_api.domains.tables.repository import MongoDbTableRepository
+from mpcontribs_api.exceptions import PermissionError
 
 pytestmark = [pytest.mark.db, pytest.mark.asyncio(loop_scope="session")]
 
@@ -231,3 +232,58 @@ class TestBulkPatchPerRow:
         assert summary.projects == [PROJ_A]
         assert (await _reload(mine.id)).data == {"x": 1.0, "y": 9.0}  # merged, not replaced
         assert (await _reload(foreign.id)).data == {"x": 1.0}  # foreign project untouched
+
+
+# ---------------------------------------------------------------------------
+# delete / single-patch write scope — a write must be gated on write access, not
+# the read scope (which also exposes public contributions). Regression guard for
+# the hole where any authenticated caller could delete/patch public contributions
+# under a project they had no write role on.
+# ---------------------------------------------------------------------------
+
+
+class TestDeleteWriteScope:
+    async def test_non_writer_cannot_bulk_delete_public_foreign(self, db, mongo_client):
+        # Alice can *see* this public proj-b contribution (read scope), but cannot write proj-b, so a
+        # broad delete must not touch it.
+        pub = await _insert(PROJ_B, "del-foreign", is_public=True)
+        summary = await _service(mongo_client, ALICE).delete_many(ContributionFilter())
+        assert summary.num_deleted == 0
+        assert await Contribution.find_one(Contribution.id == pub.id) is not None
+
+    async def test_non_writer_delete_one_public_foreign_noops(self, db, mongo_client):
+        pub = await _insert(PROJ_B, "del-one-foreign", is_public=True)
+        summary = await _service(mongo_client, ALICE).delete_one({"id": pub.id})
+        assert summary.num_deleted == 0
+        assert await Contribution.find_one(Contribution.id == pub.id) is not None
+
+    async def test_writer_can_delete_own(self, db, mongo_client):
+        own = await _insert(PROJ_A, "del-own", is_public=True)
+        summary = await _service(mongo_client, ALICE).delete_one({"id": own.id})
+        assert summary.num_deleted == 1
+        assert await Contribution.find_one(Contribution.id == own.id) is None
+
+    async def test_admin_can_delete_foreign(self, db, mongo_client):
+        pub = await _insert(PROJ_B, "del-admin", is_public=True)
+        summary = await _service(mongo_client, ADMIN).delete_one({"id": pub.id})
+        assert summary.num_deleted == 1
+        assert await Contribution.find_one(Contribution.id == pub.id) is None
+
+
+class TestPatchOneWriteScope:
+    async def test_non_writer_cannot_patch_public_foreign(self, db, mongo_client):
+        # Alice sees the public proj-b contribution but has no write role → 403, left unchanged.
+        pub = await _insert(PROJ_B, "patch-foreign", is_public=True)
+        with pytest.raises(PermissionError):
+            await _service(mongo_client, ALICE).patch_one({"id": pub.id}, ContributionPatch(is_public=False))
+        assert await _is_public(pub.id) is True
+
+    async def test_writer_can_patch_own(self, db, mongo_client):
+        own = await _insert(PROJ_A, "patch-own", is_public=True)
+        await _service(mongo_client, ALICE).patch_one({"id": own.id}, ContributionPatch(is_public=False))
+        assert await _is_public(own.id) is False
+
+    async def test_admin_can_patch_foreign(self, db, mongo_client):
+        pub = await _insert(PROJ_B, "patch-admin", is_public=True)
+        await _service(mongo_client, ADMIN).patch_one({"id": pub.id}, ContributionPatch(is_public=False))
+        assert await _is_public(pub.id) is False

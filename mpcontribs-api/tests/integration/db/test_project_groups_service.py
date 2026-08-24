@@ -286,3 +286,61 @@ class TestPatchAuthorization:
             await _service(ANON).patch_one(
                 {"name": "patch-hidden", "owner": ALICE_EMAIL}, ProjectGroupPatch(description="hijacked")
             )
+
+
+# ---------------------------------------------------------------------------
+# Membership (add/remove projects) — owner-or-admin, mirroring patch/delete
+# ---------------------------------------------------------------------------
+
+
+async def _insert_public_group(name: str, owner: str = ALICE_EMAIL) -> ProjectGroup:
+    return await MongoDbProjectGroupRepository(ADMIN).insert_one(
+        ProjectGroup.from_input_model(
+            ProjectGroupIn(name=name, owner=owner, projects=[], description="d", is_public=True)
+        )
+    )
+
+
+class TestMembershipAuthorization:
+    async def test_owner_can_add_projects(self, db):
+        group = await _insert_group("mem-own")
+        await _insert_project("mem-p1")
+        summary = await _service(ALICE).add_projects({"id": str(group.id)}, ["mem-p1"])
+        assert summary.succeeded == ["mem-p1"]
+        assert await _members(group.id) == ["mem-p1"]
+
+    async def test_admin_can_add_projects(self, db):
+        group = await _insert_group("mem-admin")
+        await _insert_project("mem-p2")
+        summary = await _service(ADMIN).add_projects({"id": str(group.id)}, ["mem-p2"])
+        assert summary.succeeded == ["mem-p2"]
+
+    async def test_visible_public_non_owner_cannot_add(self, db):
+        # Bob can see Alice's public group but does not own it → 403, membership untouched.
+        group = await _insert_public_group("mem-pub-add")
+        await _insert_project("mem-p3")
+        with pytest.raises(PermissionError):
+            await _service(BOB).add_projects({"id": str(group.id)}, ["mem-p3"])
+        assert await _members(group.id) == []
+
+    async def test_role_holder_cannot_add(self, db):
+        # A project-group role grants visibility, but membership management stays owner-or-admin.
+        group = await _insert_group("mem-role-add")
+        await _insert_project("mem-p4")
+        with pytest.raises(PermissionError):
+            await _service(_role_user(group.id)).add_projects({"id": str(group.id)}, ["mem-p4"])
+        assert await _members(group.id) == []
+
+    async def test_visible_public_non_owner_cannot_delete(self, db):
+        group = await _insert_public_group("mem-pub-del")
+        await _insert_project("mem-p5")
+        await _service(ADMIN).add_projects({"id": str(group.id)}, ["mem-p5"])
+        with pytest.raises(PermissionError):
+            await _service(BOB).delete_projects({"id": str(group.id)}, ["mem-p5"])
+        assert await _members(group.id) == ["mem-p5"]
+
+    async def test_out_of_scope_add_is_not_found(self, db):
+        # Anon cannot see Alice's private group → 404 (existence not leaked as a 403).
+        group = await _insert_group("mem-hidden")
+        with pytest.raises(NotFoundError):
+            await _service(ANON).add_projects({"id": str(group.id)}, ["mem-p6"])

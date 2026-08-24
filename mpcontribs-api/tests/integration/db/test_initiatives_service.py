@@ -3,13 +3,14 @@ from beanie import Link
 
 from mpcontribs_api.authz import User
 from mpcontribs_api.config import get_settings
-from mpcontribs_api.domains.initiatives.models import Initiative, InitiativeIn, InitiativePatch
+from mpcontribs_api.domains.initiatives.models import Initiative, InitiativeFilter, InitiativeIn, InitiativePatch
 from mpcontribs_api.domains.initiatives.repository import MongoDbInitiativeRepository
 from mpcontribs_api.domains.initiatives.service import InitiativeService
 from mpcontribs_api.domains.projects.models import Project, ProjectIn, ProjectPatch
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
 from mpcontribs_api.domains.projects.service import ProjectService
 from mpcontribs_api.exceptions import ConflictError, NotFoundError, PermissionError, ValidationError
+from mpcontribs_api.pagination import CursorParams
 
 pytestmark = [pytest.mark.db, pytest.mark.asyncio(loop_scope="session")]
 
@@ -349,3 +350,50 @@ class TestInitiativeDelete:
         reloaded = await MongoDbProjectRepository(ADMIN).find_by_id_unscoped("del-refs-proj")
         assert reloaded is not None
         assert _assigned_id(reloaded) is None
+
+
+# ---------------------------------------------------------------------------
+# Read scope — get_many / get_one filter by visibility; out-of-scope writes 404
+# ---------------------------------------------------------------------------
+
+
+class TestInitiativeReadScope:
+    async def test_get_many_hides_private_unowned(self, db):
+        # A stranger (no roles) sees only public+approved initiatives, never Alice's private one.
+        await _insert_initiative("scope-priv", ALICE)
+        await _insert_initiative("scope-pub", ALICE)
+        await _approve("scope-pub")
+        await _initiative_service(ADMIN).patch_one({"slug": "scope-pub"}, InitiativePatch(is_public=True))
+        stranger = User(username=CAROL_EMAIL, groups=frozenset())
+        page = await _initiative_service(stranger).get_many(
+            filter=InitiativeFilter(), pagination=CursorParams(), fields=None
+        )
+        slugs = {i.slug for i in page.items}
+        assert "scope-pub" in slugs
+        assert "scope-priv" not in slugs
+
+    async def test_get_one_private_unowned_returns_none(self, db):
+        await _insert_initiative("scope-one-priv", ALICE)
+        stranger = User(username=CAROL_EMAIL, groups=frozenset())
+        assert await _initiative_service(stranger).get_one({"slug": "scope-one-priv"}, fields=None) is None
+
+    async def test_owner_sees_own_private_initiative(self, db):
+        await _insert_initiative("scope-own", ALICE)
+        found = await _initiative_service(ALICE).get_one({"slug": "scope-own"}, fields=None)
+        assert found is not None and found.slug == "scope-own"
+
+
+class TestInitiativeOutOfScopeWrites:
+    async def test_patch_private_unowned_is_not_found(self, db):
+        # A private initiative is invisible to a stranger, so patching it is a 404, not a 403 — the
+        # 404-before-403 rule (existence is not leaked to callers who cannot see the resource).
+        await _insert_initiative("oos-patch", ALICE)
+        stranger = User(username=CAROL_EMAIL, groups=frozenset())
+        with pytest.raises(NotFoundError):
+            await _initiative_service(stranger).patch_one({"slug": "oos-patch"}, InitiativePatch(name="hijack"))
+
+    async def test_delete_private_unowned_is_not_found(self, db):
+        await _insert_initiative("oos-del", ALICE)
+        stranger = User(username=CAROL_EMAIL, groups=frozenset())
+        with pytest.raises(NotFoundError):
+            await _initiative_service(stranger).delete_one({"slug": "oos-del"})

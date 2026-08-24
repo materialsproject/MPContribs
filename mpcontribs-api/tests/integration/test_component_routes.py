@@ -327,6 +327,33 @@ class TestComponentMutationsRequireAuth:
         assert r.status_code == 401
         attachment_service.delete_one.assert_not_called()
 
+    def test_attachment_batch_delete_anon_401(self, client, attachment_service):
+        r = client.delete("/api/v1/attachments", headers=FORCE_ANON_HEADERS)
+        assert r.status_code == 401
+        attachment_service.delete_many.assert_not_called()
+
+    def test_attachment_patch_by_id_anon_401(self, client, attachment_service):
+        r = client.patch(f"/api/v1/attachments/{PydanticObjectId()}", json={"name": "x"}, headers=FORCE_ANON_HEADERS)
+        assert r.status_code == 401
+        attachment_service.patch_one.assert_not_called()
+
+    def test_tables_post_anon_401(self, client, table_service):
+        # POST is guarded by require_writer, which rejects an anonymous caller with 401 (before the
+        # non-writer 403 path is even reached).
+        r = client.post("/api/v1/tables", json=[], headers=FORCE_ANON_HEADERS)
+        assert r.status_code == 401
+        table_service.insert_many.assert_not_called()
+
+    def test_table_delete_by_id_anon_401(self, client, table_service):
+        r = client.delete(f"/api/v1/tables/{PydanticObjectId()}", headers=FORCE_ANON_HEADERS)
+        assert r.status_code == 401
+        table_service.delete_one.assert_not_called()
+
+    def test_table_patch_by_id_anon_401(self, client, table_service):
+        r = client.patch(f"/api/v1/tables/{PydanticObjectId()}", json={"name": "x"}, headers=FORCE_ANON_HEADERS)
+        assert r.status_code == 401
+        table_service.patch_one.assert_not_called()
+
     def test_structures_get_still_open_to_anon(self, client, structure_service):
         structure_service.get_many.return_value = Page(items=[], next_cursor=None)
         r = client.get("/api/v1/structures", headers=FORCE_ANON_HEADERS)
