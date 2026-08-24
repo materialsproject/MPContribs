@@ -2,7 +2,6 @@ import pytest
 
 from mpcontribs_api.authz import User
 from mpcontribs_api.config import get_settings
-from mpcontribs_api.domains.consumers.dependencies import get_effective_limits
 from mpcontribs_api.domains.consumers.models import (
     Consumer,
     ConsumerIn,
@@ -10,6 +9,7 @@ from mpcontribs_api.domains.consumers.models import (
     ConsumerSettings,
 )
 from mpcontribs_api.domains.consumers.repository import MongoDbConsumerRepository
+from mpcontribs_api.domains.consumers.service import ConsumerService
 from mpcontribs_api.exceptions import ConflictError, NotFoundError
 
 # Same loop-scope contract as the other db suites (see test_projects_repository).
@@ -185,15 +185,20 @@ class TestUpsertMany:
 
 
 # ---------------------------------------------------------------------------
-# get_effective_limits — the resolution actually consumed by the write paths
+# ConsumerService.effective_limits — the resolution actually consumed by the write paths
 # ---------------------------------------------------------------------------
+
+
+def _service(user: User) -> ConsumerService:
+    """A ConsumerService wired like the FastAPI factory, for ``user``."""
+    return ConsumerService(consumer=MongoDbConsumerRepository(user))
 
 
 class TestEffectiveLimits:
     async def test_no_consumer_id_returns_defaults_without_lookup(self, db):
         # A caller with no Kong consumer_id (anonymous/dev) never touches the override collection.
         user = User(username="google:alice@example.com", groups=frozenset())
-        limits = await get_effective_limits(user)
+        limits = await _service(user).effective_limits(user.consumer_id)
         assert limits.max_projects == get_settings().consumer.max_projects
 
     async def test_stored_override_is_returned(self, db):
@@ -201,10 +206,10 @@ class TestEffectiveLimits:
             ConsumerIn(consumer_id="kong-eff", settings=ConsumerSettings(max_projects=42))
         )
         user = User(consumer_id="kong-eff", username="google:alice@example.com", groups=frozenset())
-        limits = await get_effective_limits(user)
+        limits = await _service(user).effective_limits(user.consumer_id)
         assert limits.max_projects == 42
 
     async def test_consumer_id_without_override_falls_back_to_defaults(self, db):
         user = User(consumer_id="kong-unknown", username="google:alice@example.com", groups=frozenset())
-        limits = await get_effective_limits(user)
+        limits = await _service(user).effective_limits(user.consumer_id)
         assert limits.max_projects == get_settings().consumer.max_projects

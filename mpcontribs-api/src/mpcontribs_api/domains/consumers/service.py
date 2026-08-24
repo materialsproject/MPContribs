@@ -1,4 +1,11 @@
-from mpcontribs_api.domains.consumers.models import Consumer, ConsumerFilter, ConsumerIn, ConsumerOut, ConsumerPatch
+from mpcontribs_api.domains.consumers.models import (
+    Consumer,
+    ConsumerFilter,
+    ConsumerIn,
+    ConsumerOut,
+    ConsumerPatch,
+    ConsumerSettings,
+)
 from mpcontribs_api.domains.consumers.repository import MongoDbConsumerRepository
 from mpcontribs_api.pagination import CursorParams, Page
 
@@ -6,6 +13,18 @@ from mpcontribs_api.pagination import CursorParams, Page
 class ConsumerService:
     def __init__(self, consumer: MongoDbConsumerRepository):
         self._consumer = consumer
+
+    async def effective_limits(self, consumer_id: str | None) -> ConsumerSettings:
+        """Resolve the settings in effect for a caller's Kong ``consumer_id``.
+
+        Returns the stored override's ``settings`` if one exists, otherwise a default
+        ``ConsumerSettings`` (which fills from the env-backed global defaults). A caller with no
+        ``consumer_id`` (anonymous/dev) skips the lookup entirely.
+        """
+        if consumer_id is None:
+            return ConsumerSettings()
+        override = await self._consumer.get_one({"consumer_id": consumer_id}, fields=None)
+        return override.settings if override and override.settings else ConsumerSettings()
 
     async def get_many(
         self, filter: ConsumerFilter, pagination: CursorParams, fields: frozenset[str] | None
