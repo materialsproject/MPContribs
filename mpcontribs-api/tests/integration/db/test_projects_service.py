@@ -90,6 +90,48 @@ class TestDeleteAuthorization:
 
 
 # ---------------------------------------------------------------------------
+# patch_one — owner-or-admin, 403 vs 404 (mirrors delete_one)
+# ---------------------------------------------------------------------------
+
+
+class TestPatchAuthorization:
+    async def test_owner_can_patch_own_project(self, db):
+        await _insert("svc-patch-own", owner=ALICE_EMAIL)
+        updated = await _service(ALICE).patch_one({"id": "svc-patch-own"}, ProjectPatch(title="By Owner"))
+        assert updated.title == "By Owner"
+
+    async def test_admin_can_patch_any_project(self, db):
+        await _insert("svc-patch-admin", owner=ALICE_EMAIL)
+        updated = await _service(ADMIN).patch_one({"id": "svc-patch-admin"}, ProjectPatch(title="By Admin"))
+        assert updated.title == "By Admin"
+
+    async def test_group_member_non_owner_cannot_patch(self, db):
+        # A user whose group grants a role on the project can *see* it, but only the owner may patch.
+        member = User(username="google:carol@example.com", groups=frozenset({"svc-patch-grp"}))
+        await _insert("svc-patch-grp", owner=ALICE_EMAIL)
+        with pytest.raises(AppPermissionError):
+            await _service(member).patch_one({"id": "svc-patch-grp"}, ProjectPatch(title="Hijacked"))
+        doc = await Project.find_one(Project.id == "svc-patch-grp")
+        assert doc is not None and doc.title == "svc-patch-grp"[:30]
+
+    async def test_visible_public_non_owner_cannot_patch(self, db):
+        # BOB can see the public+approved project but does not own it → 403, and it is left unchanged.
+        await _insert("svc-patch-pub", owner=ALICE_EMAIL, is_public=True, is_approved=True)
+        with pytest.raises(AppPermissionError):
+            await _service(BOB).patch_one({"id": "svc-patch-pub"}, ProjectPatch(owner=BOB_EMAIL))
+        doc = await Project.find_one(Project.id == "svc-patch-pub")
+        assert doc is not None and doc.owner == ALICE_EMAIL
+
+    async def test_out_of_scope_patch_not_found(self, db):
+        # BOB cannot see Alice's private project → 404 (existence is not leaked as a 403).
+        await _insert("svc-patch-hidden", owner=ALICE_EMAIL, is_public=False)
+        with pytest.raises(NotFoundError):
+            await _service(BOB).patch_one({"id": "svc-patch-hidden"}, ProjectPatch(title="Hijacked"))
+        doc = await Project.find_one(Project.id == "svc-patch-hidden")
+        assert doc is not None and doc.title == "svc-patch-hidden"[:30]
+
+
+# ---------------------------------------------------------------------------
 # upsert_one — create / update / path-id
 # ---------------------------------------------------------------------------
 

@@ -142,11 +142,14 @@ class ProjectService:
     async def _enforce_patch_rules(self, id: str, update: ProjectPatch) -> None:
         """Enforce project patch invariants against the scoped target.
 
+        - Only the project's owner or an admin may patch it. Read visibility (public/approved or a
+          project role grant) is not enough to write, mirroring ``upsert_one`` and ``delete_one``.
         - Only an admin may change ``is_approved``.
         - The resulting state must satisfy the ``is_public ⇒ is_approved`` condition.
 
         Raises ``NotFoundError`` when the project is invisible to the caller or absent, so both the
-        plain and initiative-bearing patch paths reject unseen documents identically.
+        plain and initiative-bearing patch paths reject unseen documents identically. A caller who
+        can see the project but does not own it gets a ``PermissionError`` (403).
         """
         data = update.model_dump(exclude_unset=True)
         if "is_approved" in data and not self._user.is_admin:
@@ -155,6 +158,8 @@ class ProjectService:
         existing = await self._projects.get_one({"id": id})
         if existing is None:
             raise NotFoundError("Project not found", id=id)
+        if not (self._user.is_admin or existing.owner == self._user.username):
+            raise PermissionError(required_role="owner-or-admin")
 
         resulting_approved = data.get("is_approved", existing.is_approved)
         resulting_public = data.get("is_public", existing.is_public)
