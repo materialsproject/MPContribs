@@ -830,6 +830,12 @@ class ContributionService:
         ``unique_value`` is resolved against the same post-write view the repository will persist.
         """
         identifiers = self._contributions.coerce_identifiers(identifiers)
+        if not self._user.is_admin:
+            target = await self._contributions.get_one(identifiers, frozenset({"id", "project"}))
+            if target is None:
+                raise NotFoundError("contribution not found", identifiers=identifiers)
+            if target.project not in self._user.writable_projects:
+                raise PermissionError(f"not authorized to write to project '{target.project}'")
         set_fields = update.model_dump(exclude_unset=True)
         touches_unique = "data" in set_fields or "project" in set_fields
         touches_identity = bool(ContributionIdentity.HIERARCHY_FIELDS & set_fields.keys())
@@ -912,6 +918,8 @@ class ContributionService:
         Returns:
             BulkDeleteSummary: a summary of how many documents and child documents were deleted
         """
+        if not self._user.is_admin:
+            filter = filter.model_copy(update={"project__in": sorted(self._user.writable_projects)})
         num_deleted_components = 0
         num_deleted_contributions = 0
         # Projects touched by this delete, so their rollup stats can be recomputed once at the end.
