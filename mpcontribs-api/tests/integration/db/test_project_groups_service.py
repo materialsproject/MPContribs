@@ -2,7 +2,12 @@ import pytest
 from beanie import PydanticObjectId
 
 from mpcontribs_api.authz import User
-from mpcontribs_api.domains.project_groups.models import ProjectGroup, ProjectGroupFilter, ProjectGroupIn
+from mpcontribs_api.domains.project_groups.models import (
+    ProjectGroup,
+    ProjectGroupFilter,
+    ProjectGroupIn,
+    ProjectGroupPatch,
+)
 from mpcontribs_api.domains.project_groups.repository import MongoDbProjectGroupRepository
 from mpcontribs_api.domains.project_groups.service import ProjectGroupService
 from mpcontribs_api.domains.projects.models import Project, ProjectIn
@@ -229,3 +234,55 @@ class TestBulkDeleteAuthorization:
         result = await _service(ADMIN).delete_many(filter=ProjectGroupFilter(owner=ALICE_EMAIL))
         assert result.num_deleted == 2
         assert await ProjectGroup.find_one(ProjectGroup.owner == BOB_EMAIL) is not None
+
+
+# ---------------------------------------------------------------------------
+# patch_one — owner-or-admin, mirroring delete_one
+# ---------------------------------------------------------------------------
+
+
+class TestPatchAuthorization:
+    async def test_owner_can_patch_own(self, db):
+        await _insert_group("patch-own", owner=ALICE_EMAIL)
+        updated = await _service(ALICE).patch_one(
+            {"name": "patch-own", "owner": ALICE_EMAIL}, ProjectGroupPatch(description="by owner")
+        )
+        assert updated.description == "by owner"
+
+    async def test_admin_can_patch_any(self, db):
+        await _insert_group("patch-admin", owner=ALICE_EMAIL)
+        updated = await _service(ADMIN).patch_one(
+            {"name": "patch-admin", "owner": ALICE_EMAIL}, ProjectGroupPatch(description="by admin")
+        )
+        assert updated.description == "by admin"
+
+    async def test_visible_public_non_owner_forbidden(self, db):
+        # Bob can *see* Alice's public group but does not own it → 403, and it is left unchanged.
+        await MongoDbProjectGroupRepository(ADMIN).insert_one(
+            ProjectGroup.from_input_model(
+                ProjectGroupIn(name="patch-pub", owner=ALICE_EMAIL, projects=[], description="d", is_public=True)
+            )
+        )
+        with pytest.raises(PermissionError):
+            await _service(BOB).patch_one(
+                {"name": "patch-pub", "owner": ALICE_EMAIL}, ProjectGroupPatch(description="hijacked")
+            )
+        doc = await ProjectGroup.find_one(ProjectGroup.name == "patch-pub")
+        assert doc is not None and doc.description == "d"
+
+    async def test_role_holder_can_see_but_not_patch(self, db):
+        # A project-group role makes the group visible, but patching stays owner-or-admin (403).
+        group = await _insert_group("patch-role", owner=ALICE_EMAIL)
+        with pytest.raises(PermissionError):
+            await _service(_role_user(group.id)).patch_one(
+                {"name": "patch-role", "owner": ALICE_EMAIL}, ProjectGroupPatch(description="hijacked")
+            )
+        doc = await ProjectGroup.find_one(ProjectGroup.name == "patch-role")
+        assert doc is not None and doc.description == "d"
+
+    async def test_out_of_scope_is_not_found(self, db):
+        await _insert_group("patch-hidden", owner=ALICE_EMAIL)
+        with pytest.raises(NotFoundError):
+            await _service(ANON).patch_one(
+                {"name": "patch-hidden", "owner": ALICE_EMAIL}, ProjectGroupPatch(description="hijacked")
+            )

@@ -87,6 +87,11 @@ class ProjectGroupService:
 
     async def patch_one(self, identifiers: dict[str, Any], update: ProjectGroupPatch) -> ProjectGroup:
         """Patch the single group matching ``identifiers`` (``{"name", "owner"}`` or ``{"id"}``)."""
+        group = await self._groups.get_one(identifiers, fields=frozenset({"id", "owner"}))
+        if group is None:
+            raise NotFoundError("ProjectGroup not found", **identifiers)
+        if not (self._user.is_admin or group.owner == self._user.username):
+            raise PermissionError(required_role="owner-or-admin")
         return await self._groups.patch_one(identifiers, update)
 
     async def delete_one(self, identifiers: dict[str, Any]) -> DeleteResponse:

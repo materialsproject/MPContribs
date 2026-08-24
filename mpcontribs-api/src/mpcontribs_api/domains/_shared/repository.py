@@ -62,7 +62,7 @@ class MongoDbRepository[
 
         The repository holds no reference to the ``User`` itself — it is a query/persistence toolbox
         that makes no authorization decisions. Only the derived read scope (``_scope``) is retained;
-        all policy lives in the services. See the module docstring.
+        all policy lives in the services.
 
         Args:
             user (User): the current user, used once to compute the read scope
