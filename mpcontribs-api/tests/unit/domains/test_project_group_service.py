@@ -34,9 +34,9 @@ def _make_service(group: ProjectGroupOut | None, *, visible_projects: set[str] |
     admin = User(username="google:admin@example.com", groups=frozenset({"admin"}))
 
     if ambiguous:
-        groups.get_one.side_effect = ConflictError("ambiguous")
+        groups.read_one.side_effect = ConflictError("ambiguous")
     else:
-        groups.get_one.return_value = group
+        groups.read_one.return_value = group
     # coerce_identifiers is a sync repo method; keep it sync so the service gets a real dict, not a coroutine.
     def _coerce_identifiers(identifiers):
         if isinstance(identifiers.get("id"), str):

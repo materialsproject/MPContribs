@@ -99,7 +99,7 @@ class TestProjectGroupMutationsRequireAuth:
     def test_anonymous_patch_item_returns_401(self, client, group_service):
         r = client.patch("/api/v1/project_groups/item", params=_Q, json={"description": "x"}, headers=ANON_HEADERS)
         assert r.status_code == 401
-        group_service.patch_one.assert_not_called()
+        group_service.update_one.assert_not_called()
 
     def test_anonymous_delete_item_returns_401(self, client, group_service):
         r = client.delete("/api/v1/project_groups/item", params=_Q, headers=ANON_HEADERS)

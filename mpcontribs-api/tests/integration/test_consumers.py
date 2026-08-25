@@ -38,11 +38,11 @@ def _requests(client):
     and admin.
     """
     return [
-        ("get_many", lambda h: client.get("/api/v1/admin/consumers", headers=h)),
-        ("get_one", lambda h: client.get("/api/v1/admin/consumers/507f1f77bcf86cd799439011", headers=h)),
+        ("read_many", lambda h: client.get("/api/v1/admin/consumers", headers=h)),
+        ("read_one", lambda h: client.get("/api/v1/admin/consumers/507f1f77bcf86cd799439011", headers=h)),
         ("insert_one", lambda h: client.post("/api/v1/admin/consumers", json={"consumer_id": "c-new"}, headers=h)),
         (
-            "patch_one",
+            "update_one",
             lambda h: client.patch(
                 "/api/v1/admin/consumers/507f1f77bcf86cd799439011",
                 json={"settings": {"max_projects": 5}},
@@ -59,7 +59,7 @@ def _requests(client):
 
 
 class TestConsumerRoutesRequireAdmin:
-    @pytest.mark.parametrize("label", ["get_many", "get_one", "insert_one", "patch_one", "delete_one"])
+    @pytest.mark.parametrize("label", ["read_many", "read_one", "insert_one", "update_one", "delete_one"])
     def test_anonymous_rejected_401(self, client, consumer_service, label):
         request = dict(_requests(client))[label]
         r = request(ANON_HEADERS)
@@ -67,7 +67,7 @@ class TestConsumerRoutesRequireAdmin:
         assert r.json()["error"]["code"] == "authentication_error"
         getattr(consumer_service, label).assert_not_called()
 
-    @pytest.mark.parametrize("label", ["get_many", "get_one", "insert_one", "patch_one", "delete_one"])
+    @pytest.mark.parametrize("label", ["read_many", "read_one", "insert_one", "update_one", "delete_one"])
     def test_authenticated_non_admin_rejected_403(self, client, consumer_service, label):
         # AUTHED_HEADERS is an authenticated, non-admin caller (alice / mp-team).
         request = dict(_requests(client))[label]
@@ -83,13 +83,13 @@ class TestConsumerRoutesRequireAdmin:
 
 class TestConsumerRoutesAdminAllowed:
     def test_admin_get_many_returns_200(self, client, consumer_service):
-        consumer_service.get_many.return_value = Page(items=[SAMPLE_CONSUMER], next_cursor=None)
+        consumer_service.read_many.return_value = Page(items=[SAMPLE_CONSUMER], next_cursor=None)
         r = client.get("/api/v1/admin/consumers", headers=ADMIN_HEADERS)
         assert r.status_code == 200
-        consumer_service.get_many.assert_called_once()
+        consumer_service.read_many.assert_called_once()
 
     def test_admin_get_one_returns_200(self, client, consumer_service):
-        consumer_service.get_one.return_value = SAMPLE_CONSUMER
+        consumer_service.read_one.return_value = SAMPLE_CONSUMER
         r = client.get("/api/v1/admin/consumers/507f1f77bcf86cd799439011", headers=ADMIN_HEADERS)
         assert r.status_code == 200
 
@@ -100,14 +100,14 @@ class TestConsumerRoutesAdminAllowed:
         consumer_service.insert_one.assert_called_once()
 
     def test_admin_patch_returns_200(self, client, consumer_service):
-        consumer_service.patch_one.return_value = SAMPLE_CONSUMER
+        consumer_service.update_one.return_value = SAMPLE_CONSUMER
         r = client.patch(
             "/api/v1/admin/consumers/507f1f77bcf86cd799439011",
             json={"settings": {"max_projects": 5}},
             headers=ADMIN_HEADERS,
         )
         assert r.status_code == 200
-        consumer_service.patch_one.assert_called_once()
+        consumer_service.update_one.assert_called_once()
 
     def test_admin_delete_returns_204(self, client, consumer_service):
         consumer_service.delete_one.return_value = None

@@ -88,7 +88,7 @@ class MongoDbRepository[
             return {**identifiers, "id": self._convert_object_id(id)}
         return identifiers
 
-    async def get_many(
+    async def read_many(
         self,
         filter: TFilter,
         fields: frozenset[str] | None = None,
@@ -144,7 +144,7 @@ class MongoDbRepository[
             )
         return {("_id" if key == "id" else key): value for key, value in identifiers.items()}
 
-    async def get_one(
+    async def read_one(
         self,
         identifiers: dict[str, Any],
         fields: frozenset[str] | None = None,
@@ -300,7 +300,7 @@ class MongoDbRepository[
             raise NotFoundError(f"{self.document_model.__name__} not found", identifiers=identifiers)
         return DeleteResponse.from_delete_result(result)
 
-    def _patch_update_fields(self, update: TPatch) -> dict[str, Any]:
+    def _update_fields(self, update: TPatch) -> dict[str, Any]:
         """Map a patch model to the MongoDB ``$set`` field dict.
 
         Defaults to the patch's set fields (``exclude_unset``), which replaces each named field
@@ -309,7 +309,7 @@ class MongoDbRepository[
         """
         return update.model_dump(exclude_unset=True)
 
-    async def _patch_matching(
+    async def _update_matching(
         self,
         match: Any,
         update: TPatch,
@@ -327,7 +327,7 @@ class MongoDbRepository[
         ``$set`` after the patch dump, so a non-empty ``extra_set`` also makes the update non-empty.
         """
         # Only retain set fields (patch)
-        update_data = self._patch_update_fields(update)
+        update_data = self._update_fields(update)
         if extra_set:
             update_data |= extra_set
         existing = await self.document_model.find_one(self._scope, match, session=session)
@@ -357,7 +357,7 @@ class MongoDbRepository[
             raise not_found
         return updated
 
-    async def patch_one(
+    async def update_one(
         self,
         identifiers: dict[str, Any],
         update: TPatch,
@@ -375,7 +375,7 @@ class MongoDbRepository[
         """
         query = self._identifier_query(identifiers)
         not_found = NotFoundError(f"{self.document_model.__name__} not found", identifiers=identifiers)
-        return await self._patch_matching(query, update, not_found, session=session, extra_set=extra_set)
+        return await self._update_matching(query, update, not_found, session=session, extra_set=extra_set)
 
     def _hash_payload(self, payload: dict[str, Any], *, separators: tuple[str, str] = (",", ":")) -> str:
         canonical = json.dumps(

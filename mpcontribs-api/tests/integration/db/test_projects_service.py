@@ -91,19 +91,19 @@ class TestDeleteAuthorization:
 
 
 # ---------------------------------------------------------------------------
-# patch_one — owner-or-admin, 403 vs 404 (mirrors delete_one)
+# update_one — owner-or-admin, 403 vs 404 (mirrors delete_one)
 # ---------------------------------------------------------------------------
 
 
 class TestPatchAuthorization:
     async def test_owner_can_patch_own_project(self, db):
         await _insert("svc-patch-own", owner=ALICE_EMAIL)
-        updated = await _service(ALICE).patch_one({"id": "svc-patch-own"}, ProjectPatch(title="By Owner"))
+        updated = await _service(ALICE).update_one({"id": "svc-patch-own"}, ProjectPatch(title="By Owner"))
         assert updated.title == "By Owner"
 
     async def test_admin_can_patch_any_project(self, db):
         await _insert("svc-patch-admin", owner=ALICE_EMAIL)
-        updated = await _service(ADMIN).patch_one({"id": "svc-patch-admin"}, ProjectPatch(title="By Admin"))
+        updated = await _service(ADMIN).update_one({"id": "svc-patch-admin"}, ProjectPatch(title="By Admin"))
         assert updated.title == "By Admin"
 
     async def test_group_member_non_owner_cannot_patch(self, db):
@@ -111,7 +111,7 @@ class TestPatchAuthorization:
         member = User(username="google:carol@example.com", groups=frozenset({"svc-patch-grp"}))
         await _insert("svc-patch-grp", owner=ALICE_EMAIL)
         with pytest.raises(AppPermissionError):
-            await _service(member).patch_one({"id": "svc-patch-grp"}, ProjectPatch(title="Hijacked"))
+            await _service(member).update_one({"id": "svc-patch-grp"}, ProjectPatch(title="Hijacked"))
         doc = await Project.find_one(Project.id == "svc-patch-grp")
         assert doc is not None and doc.title == "svc-patch-grp"[:30]
 
@@ -119,7 +119,7 @@ class TestPatchAuthorization:
         # BOB can see the public+approved project but does not own it → 403, and it is left unchanged.
         await _insert("svc-patch-pub", owner=ALICE_EMAIL, is_public=True, is_approved=True)
         with pytest.raises(AppPermissionError):
-            await _service(BOB).patch_one({"id": "svc-patch-pub"}, ProjectPatch(owner=BOB_EMAIL))
+            await _service(BOB).update_one({"id": "svc-patch-pub"}, ProjectPatch(owner=BOB_EMAIL))
         doc = await Project.find_one(Project.id == "svc-patch-pub")
         assert doc is not None and doc.owner == ALICE_EMAIL
 
@@ -127,7 +127,7 @@ class TestPatchAuthorization:
         # BOB cannot see Alice's private project → 404 (existence is not leaked as a 403).
         await _insert("svc-patch-hidden", owner=ALICE_EMAIL, is_public=False)
         with pytest.raises(NotFoundError):
-            await _service(BOB).patch_one({"id": "svc-patch-hidden"}, ProjectPatch(title="Hijacked"))
+            await _service(BOB).update_one({"id": "svc-patch-hidden"}, ProjectPatch(title="Hijacked"))
         doc = await Project.find_one(Project.id == "svc-patch-hidden")
         assert doc is not None and doc.title == "svc-patch-hidden"[:30]
 
@@ -215,25 +215,25 @@ class TestApprovalIsAdminOnly:
     async def test_non_admin_cannot_patch_is_approved(self, db):
         await _insert("svc-appr-patch", owner=ALICE_EMAIL)
         with pytest.raises(AppPermissionError):
-            await _service(ALICE).patch_one({"id": "svc-appr-patch"}, ProjectPatch(is_approved=True))
+            await _service(ALICE).update_one({"id": "svc-appr-patch"}, ProjectPatch(is_approved=True))
         found = await Project.find_one(Project.id == "svc-appr-patch")
         assert found.is_approved is False
 
     async def test_admin_can_patch_is_approved(self, db):
         await _insert("svc-appr-admin", owner=ALICE_EMAIL)
-        await _service(ADMIN).patch_one({"id": "svc-appr-admin"}, ProjectPatch(is_approved=True))
+        await _service(ADMIN).update_one({"id": "svc-appr-admin"}, ProjectPatch(is_approved=True))
         found = await Project.find_one(Project.id == "svc-appr-admin")
         assert found.is_approved is True
 
     async def test_non_admin_plain_patch_is_allowed(self, db):
         await _insert("svc-patch-plain", owner=ALICE_EMAIL)
-        await _service(ALICE).patch_one({"id": "svc-patch-plain"}, ProjectPatch(title="New Title"))
+        await _service(ALICE).update_one({"id": "svc-patch-plain"}, ProjectPatch(title="New Title"))
         found = await Project.find_one(Project.id == "svc-patch-plain")
         assert found.title == "New Title"
 
     async def test_patch_missing_project_raises_not_found(self, db):
         with pytest.raises(NotFoundError):
-            await _service(ADMIN).patch_one({"id": "svc-patch-ghost"}, ProjectPatch(title="xyz"))
+            await _service(ADMIN).update_one({"id": "svc-patch-ghost"}, ProjectPatch(title="xyz"))
 
 
 # ---------------------------------------------------------------------------
@@ -245,20 +245,20 @@ class TestPublicRequiresApproved:
     async def test_patch_public_on_unapproved_rejected(self, db):
         await _insert("svc-pub-unappr", owner=ALICE_EMAIL, is_approved=False)
         with pytest.raises(ValidationError, match="approved"):
-            await _service(ADMIN).patch_one({"id": "svc-pub-unappr"}, ProjectPatch(is_public=True))
+            await _service(ADMIN).update_one({"id": "svc-pub-unappr"}, ProjectPatch(is_public=True))
         found = await Project.find_one(Project.id == "svc-pub-unappr")
         assert found.is_public is False
 
     async def test_patch_public_and_approved_together_succeeds(self, db):
         await _insert("svc-pub-both", owner=ALICE_EMAIL, is_approved=False)
-        await _service(ADMIN).patch_one({"id": "svc-pub-both"}, ProjectPatch(is_public=True, is_approved=True))
+        await _service(ADMIN).update_one({"id": "svc-pub-both"}, ProjectPatch(is_public=True, is_approved=True))
         found = await Project.find_one(Project.id == "svc-pub-both")
         assert found.is_public is True
         assert found.is_approved is True
 
     async def test_patch_public_on_approved_succeeds(self, db):
         await _insert("svc-pub-approved", owner=ALICE_EMAIL, is_approved=True)
-        await _service(ADMIN).patch_one({"id": "svc-pub-approved"}, ProjectPatch(is_public=True))
+        await _service(ADMIN).update_one({"id": "svc-pub-approved"}, ProjectPatch(is_public=True))
         found = await Project.find_one(Project.id == "svc-pub-approved")
         assert found.is_public is True
 
@@ -362,21 +362,21 @@ class TestReadScope:
         # public+approved one; Alice's private project must not leak into his listing.
         await _insert("scope-pub", owner=ALICE_EMAIL, is_public=True, is_approved=True)
         await _insert("scope-priv", owner=ALICE_EMAIL, is_public=False)
-        page = await _service(BOB).get_many(filter=ProjectFilter(), pagination=CursorParams(), fields=None)
+        page = await _service(BOB).read_many(filter=ProjectFilter(), pagination=CursorParams(), fields=None)
         ids = {p.id for p in page.items}
         assert "scope-pub" in ids
         assert "scope-priv" not in ids
 
     async def test_get_one_private_unowned_returns_none(self, db):
         await _insert("scope-one-priv", owner=ALICE_EMAIL, is_public=False)
-        assert await _service(BOB).get_one({"id": "scope-one-priv"}, fields=None) is None
+        assert await _service(BOB).read_one({"id": "scope-one-priv"}, fields=None) is None
 
     async def test_get_one_public_visible_to_non_owner(self, db):
         await _insert("scope-one-pub", owner=ALICE_EMAIL, is_public=True, is_approved=True)
-        found = await _service(BOB).get_one({"id": "scope-one-pub"}, fields=None)
+        found = await _service(BOB).read_one({"id": "scope-one-pub"}, fields=None)
         assert found is not None and found.id == "scope-one-pub"
 
     async def test_owner_sees_own_private_project(self, db):
         await _insert("scope-own-priv", owner=ALICE_EMAIL, is_public=False)
-        found = await _service(ALICE).get_one({"id": "scope-own-priv"}, fields=None)
+        found = await _service(ALICE).read_one({"id": "scope-own-priv"}, fields=None)
         assert found is not None and found.id == "scope-own-priv"

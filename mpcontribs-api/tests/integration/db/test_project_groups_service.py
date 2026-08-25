@@ -237,21 +237,21 @@ class TestBulkDeleteAuthorization:
 
 
 # ---------------------------------------------------------------------------
-# patch_one — owner-or-admin, mirroring delete_one
+# update_one — owner-or-admin, mirroring delete_one
 # ---------------------------------------------------------------------------
 
 
 class TestPatchAuthorization:
     async def test_owner_can_patch_own(self, db):
         await _insert_group("patch-own", owner=ALICE_EMAIL)
-        updated = await _service(ALICE).patch_one(
+        updated = await _service(ALICE).update_one(
             {"name": "patch-own", "owner": ALICE_EMAIL}, ProjectGroupPatch(description="by owner")
         )
         assert updated.description == "by owner"
 
     async def test_admin_can_patch_any(self, db):
         await _insert_group("patch-admin", owner=ALICE_EMAIL)
-        updated = await _service(ADMIN).patch_one(
+        updated = await _service(ADMIN).update_one(
             {"name": "patch-admin", "owner": ALICE_EMAIL}, ProjectGroupPatch(description="by admin")
         )
         assert updated.description == "by admin"
@@ -264,7 +264,7 @@ class TestPatchAuthorization:
             )
         )
         with pytest.raises(PermissionError):
-            await _service(BOB).patch_one(
+            await _service(BOB).update_one(
                 {"name": "patch-pub", "owner": ALICE_EMAIL}, ProjectGroupPatch(description="hijacked")
             )
         doc = await ProjectGroup.find_one(ProjectGroup.name == "patch-pub")
@@ -274,7 +274,7 @@ class TestPatchAuthorization:
         # A project-group role makes the group visible, but patching stays owner-or-admin (403).
         group = await _insert_group("patch-role", owner=ALICE_EMAIL)
         with pytest.raises(PermissionError):
-            await _service(_role_user(group.id)).patch_one(
+            await _service(_role_user(group.id)).update_one(
                 {"name": "patch-role", "owner": ALICE_EMAIL}, ProjectGroupPatch(description="hijacked")
             )
         doc = await ProjectGroup.find_one(ProjectGroup.name == "patch-role")
@@ -283,7 +283,7 @@ class TestPatchAuthorization:
     async def test_out_of_scope_is_not_found(self, db):
         await _insert_group("patch-hidden", owner=ALICE_EMAIL)
         with pytest.raises(NotFoundError):
-            await _service(ANON).patch_one(
+            await _service(ANON).update_one(
                 {"name": "patch-hidden", "owner": ALICE_EMAIL}, ProjectGroupPatch(description="hijacked")
             )
 

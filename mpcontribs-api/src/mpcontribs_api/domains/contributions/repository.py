@@ -61,7 +61,7 @@ class MongoDbContributionRepository(
     # caller may write to (keyed on ``project``). Admins bypass scope (handled by ``Scope``).
     read_scope = Scope(Public(), RoleIn("project", "writable_projects"))
 
-    async def patch_one(  # pyright: ignore[reportIncompatibleMethodOverride]
+    async def update_one(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         identifiers: dict[str, Any],
         update: ContributionPatch,
@@ -87,7 +87,7 @@ class MongoDbContributionRepository(
         not_found = NotFoundError(f"{self.document_model.__name__} not found", identifiers=identifiers)
         try:
             if unique_value is _UNSET:
-                return await self._patch_matching(match, update, not_found, session=session)
+                return await self._update_matching(match, update, not_found, session=session)
             update_data = _build_update_set(
                 update.model_dump(exclude_unset=True), existing_data, replace_data=replace_data
             )
@@ -105,7 +105,7 @@ class MongoDbContributionRepository(
                 identifiers=identifiers,
             ) from err
 
-    async def patch_many(
+    async def update_many(
         self,
         filter: ContributionFilter,
         fields: dict[str, Any],

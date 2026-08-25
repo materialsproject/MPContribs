@@ -106,7 +106,7 @@ class ContributionService:
             "tables": self._tables,
         }
 
-    async def get_one(
+    async def read_one(
         self, identifiers: dict[str, Any], fields: frozenset[str] | None
     ) -> Contribution | ContributionOut | None:
         """Return the single scoped contribution matching ``identifiers``.
@@ -114,12 +114,12 @@ class ContributionService:
         Accepts either the bare ``{"id": ...}`` form or the semantic
         ``{"project", "identifier", "version"}`` set, resolved by the base ``_identifier_query``.
         """
-        return await self._contributions.get_one(identifiers, fields)
+        return await self._contributions.read_one(identifiers, fields)
 
-    async def get_many(
+    async def read_many(
         self, pagination: CursorParams, filter: ContributionFilter, fields: frozenset[str] | None
     ) -> Page[ContributionOut]:
-        return await self._contributions.get_many(pagination=pagination, filter=filter, fields=fields)
+        return await self._contributions.read_many(pagination=pagination, filter=filter, fields=fields)
 
     async def download(
         self,
@@ -153,7 +153,7 @@ class ContributionService:
         if set(identifiers) == {"id"}:
             filter = ContributionFilter(id=identifiers["id"])
         else:
-            existing = await self._contributions.get_one(identifiers, frozenset({"id"}))
+            existing = await self._contributions.read_one(identifiers, frozenset({"id"}))
             if existing is None:
                 return BulkDeleteSummary(num_deleted=0, num_children_deleted=0)
             filter = ContributionFilter(id=existing.id)
@@ -166,7 +166,7 @@ class ContributionService:
         be read in the current scope (existence/permission is enforced on insert, not here). The
         caller turns the count into a remaining allowance against the cap.
         """
-        project = await self._projects.get_one({"id": project_id}, frozenset({"is_approved"}))
+        project = await self._projects.read_one({"id": project_id}, frozenset({"is_approved"}))
         if not project or project.is_approved:
             return None
         # Soft limit: this count feeds a non-atomic check-then-write, so concurrent writes to the
@@ -698,7 +698,7 @@ class ContributionService:
         await self.update_project({doc.project for doc in succeeded})
         return BulkWriteSummary[Contribution](total=len(contributions), succeeded=succeeded, failed=failed)
 
-    async def patch_many(
+    async def update_many(
         self,
         filter: ContributionFilter,
         update: ContributionPatch,
@@ -714,7 +714,7 @@ class ContributionService:
         - **Fast path** — the patch touches no identity input. A single ``$set`` is applied to every
           matched row in one ``update_many``.
         - **Per-row path** — the patch changes an Identifer field (or ``data``). Each matched row is
-          patched individually via ``patch_one`` and any per-row conflict is reported
+          patched individually via ``update_one`` and any per-row conflict is reported
           in ``failed``.
 
         A ``data`` patch deep-merges into each row's stored ``data`` by default (unmentioned leaves
@@ -741,7 +741,7 @@ class ContributionService:
         touches_identity = bool(ContributionIdentity.model_fields() & fields.keys()) or "data" in fields
         if not touches_identity:
             # No identity/unique_value recompute needed, so a uniform $set is safe.
-            summary = await self._contributions.patch_many(filter, fields)
+            summary = await self._contributions.update_many(filter, fields)
             await self.update_project(project_ids=summary.projects)
             return summary
 
@@ -767,7 +767,7 @@ class ContributionService:
         async def _patch_one(index: int, oid: PydanticObjectId) -> Contribution | BulkFailure:
             async with sem:
                 try:
-                    return await self.patch_one({"id": str(oid)}, update, replace_data=replace_data)
+                    return await self.update_one({"id": str(oid)}, update, replace_data=replace_data)
                 except Exception as exc:
                     logger.info("bulk_patch_item_failed", id=str(oid))
                     return bulk_failure_from_exception(index, {"id": str(oid)}, exc)
@@ -801,7 +801,7 @@ class ContributionService:
         """
         if not self._user.can_write(contribution.project):
             raise PermissionError(f"not authorized to write to project '{contribution.project}'")
-        existing = await self._contributions.get_one(identifiers, None)
+        existing = await self._contributions.read_one(identifiers, None)
         if existing is None:
             stored = await self._unapproved_stored_count(contribution.project)
             cap = self._limits.max_unapproved_contributions_per_project
@@ -814,7 +814,7 @@ class ContributionService:
         unique_value = await self._resolve_unique_value(contribution.project, contribution.data)
         return await self._contributions.upsert_one(identifiers, contribution, unique_value)
 
-    async def patch_one(
+    async def update_one(
         self, identifiers: dict[str, Any], update: ContributionPatch, *, replace_data: bool = False
     ) -> Contribution:
         """Partially update the single scoped contribution matching ``identifiers``.
@@ -832,7 +832,7 @@ class ContributionService:
         ``unique_value`` is resolved against the same post-write view the repository will persist.
         """
         if not self._user.is_admin:
-            target = await self._contributions.get_one(identifiers, frozenset({"id", "project"}))
+            target = await self._contributions.read_one(identifiers, frozenset({"id", "project"}))
             if target is None:
                 raise NotFoundError("contribution not found", identifiers=identifiers)
             if target.project not in self._user.writable_projects:
@@ -841,13 +841,13 @@ class ContributionService:
         touches_unique = "data" in set_fields or "project" in set_fields
         touches_identity = bool(ContributionIdentity.HIERARCHY_FIELDS & set_fields.keys())
         if not touches_unique and not touches_identity:
-            return await self._contributions.patch_one(identifiers, update)
+            return await self._contributions.update_one(identifiers, update)
 
         if replace_data and set_fields.get("data") is not None:
             # A whole-dict overwrite must satisfy the strict insert-path rules (no leaf fragments).
             validate_contribution_data(set_fields["data"])
 
-        existing = await self._contributions.get_one(identifiers, None)
+        existing = await self._contributions.read_one(identifiers, None)
         if existing is None or existing.project is None:
             raise NotFoundError("contribution not found", identifiers=identifiers)
 
@@ -859,7 +859,7 @@ class ContributionService:
                 existing_formula=existing.formula,
             )
         if not touches_unique:
-            return await self._contributions.patch_one(identifiers, update)
+            return await self._contributions.update_one(identifiers, update)
 
         project = set_fields.get("project") or existing.project
         # Resolve unique_value against the data the write will actually leave behind: the merged view
@@ -871,7 +871,7 @@ class ContributionService:
         else:
             data = QuantityLeaf.merge_data(existing.data, set_fields["data"])
         unique_value = await self._resolve_unique_value(project, data)
-        return await self._contributions.patch_one(
+        return await self._contributions.update_one(
             identifiers,
             update,
             unique_value=unique_value,
@@ -928,7 +928,7 @@ class ContributionService:
         # Loop through cursor rather than materialize arbitrary number of Contributions
         while True:
             # Since we are deleting everything matching filter, we can continuously get the 1st page
-            page = await self._contributions.get_many(
+            page = await self._contributions.read_many(
                 pagination=CursorParams(cursor=None, limit=100),
                 filter=filter,
             )

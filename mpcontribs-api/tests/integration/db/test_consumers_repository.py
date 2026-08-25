@@ -34,14 +34,14 @@ async def _insert(consumer: ConsumerIn) -> Consumer:
 
 
 # ---------------------------------------------------------------------------
-# insert_one / get_one (by consumer_id)
+# insert_one / read_one (by consumer_id)
 # ---------------------------------------------------------------------------
 
 
 class TestInsertAndLookup:
     async def test_insert_then_lookup_by_consumer_id(self, db):
         await _insert(ConsumerIn(consumer_id="kong-1"))
-        found = await _repo().get_one({"consumer_id": "kong-1"})
+        found = await _repo().read_one({"consumer_id": "kong-1"})
         assert found is not None
         assert found.consumer_id == "kong-1"
 
@@ -51,7 +51,7 @@ class TestInsertAndLookup:
             await _insert(ConsumerIn(consumer_id="kong-dup"))
 
     async def test_lookup_missing_returns_none(self, db):
-        assert await _repo().get_one({"consumer_id": "kong-absent"}) is None
+        assert await _repo().read_one({"consumer_id": "kong-absent"}) is None
 
     async def test_partial_override_snapshots_defaults_for_siblings(self, db):
         # Admin overrides only max_projects; the stored document must carry a fully-resolved
@@ -59,7 +59,7 @@ class TestInsertAndLookup:
         await _insert(
             ConsumerIn(consumer_id="kong-partial", settings=ConsumerSettings(max_projects=1))
         )
-        stored = await _repo().get_one({"consumer_id": "kong-partial"})
+        stored = await _repo().read_one({"consumer_id": "kong-partial"})
         assert stored is not None
         assert stored.settings is not None
         assert stored.settings.max_projects == 1
@@ -67,26 +67,26 @@ class TestInsertAndLookup:
 
 
 # ---------------------------------------------------------------------------
-# get_one (document id)
+# read_one (document id)
 # ---------------------------------------------------------------------------
 
 
 class TestGetByDocumentId:
     async def test_returns_out_model(self, db):
         created = await _insert(ConsumerIn(consumer_id="kong-doc"))
-        result = await _repo().get_one({"id": created.id}, None)
+        result = await _repo().read_one({"id": created.id}, None)
         assert result is not None
         assert result.consumer_id == "kong-doc"
 
     async def test_missing_returns_none(self, db):
         from beanie import PydanticObjectId
 
-        result = await _repo().get_one({"id": PydanticObjectId()}, None)
+        result = await _repo().read_one({"id": PydanticObjectId()}, None)
         assert result is None
 
 
 # ---------------------------------------------------------------------------
-# patch_one — partial, sibling-preserving
+# update_one — partial, sibling-preserving
 # ---------------------------------------------------------------------------
 
 
@@ -95,7 +95,7 @@ class TestPatchConsumer:
         created = await _insert(ConsumerIn(consumer_id="kong-patch"))
         original_columns = created.settings.max_columns
 
-        updated = await _repo().patch_one(
+        updated = await _repo().update_one(
             {"id": created.id},
             update=ConsumerPatch(settings=ConsumerSettings(max_projects=1)),
         )
@@ -105,7 +105,7 @@ class TestPatchConsumer:
 
     async def test_empty_patch_returns_existing_unchanged(self, db):
         created = await _insert(ConsumerIn(consumer_id="kong-noop"))
-        result = await _repo().patch_one({"id": created.id}, update=ConsumerPatch())
+        result = await _repo().update_one({"id": created.id}, update=ConsumerPatch())
         assert result.consumer_id == "kong-noop"
         assert result.settings.max_projects == created.settings.max_projects
 
@@ -113,7 +113,7 @@ class TestPatchConsumer:
         from beanie import PydanticObjectId
 
         with pytest.raises(NotFoundError):
-            await _repo().patch_one(
+            await _repo().update_one(
                 {"id": PydanticObjectId()},
                 update=ConsumerPatch(settings=ConsumerSettings(max_projects=1)),
             )
@@ -128,7 +128,7 @@ class TestDeleteConsumer:
     async def test_delete_removes_override(self, db):
         created = await _insert(ConsumerIn(consumer_id="kong-del"))
         await _repo().delete_one({"id": created.id})
-        assert await _repo().get_one({"consumer_id": "kong-del"}) is None
+        assert await _repo().read_one({"consumer_id": "kong-del"}) is None
 
     async def test_delete_missing_raises_not_found(self, db):
         from beanie import PydanticObjectId
@@ -157,7 +157,7 @@ class TestUpsertMany:
         assert {c.consumer_id for c in summary.succeeded} == {"kong-up-0", "kong-up-1", "kong-up-2"}
         # All three are actually persisted.
         for i in range(3):
-            assert await _repo().get_one({"consumer_id": f"kong-up-{i}"}) is not None
+            assert await _repo().read_one({"consumer_id": f"kong-up-{i}"}) is not None
 
     async def test_one_conflict_does_not_abort_the_batch(self, db):
         # Pre-existing consumer occupies the unique consumer_id the middle item will collide with.
@@ -174,8 +174,8 @@ class TestUpsertMany:
         assert [f.index for f in summary.failed] == [1]
         assert summary.failed[0].error_code == "conflict"
         assert {c.consumer_id for c in summary.succeeded} == {"kong-fresh-a", "kong-fresh-b"}
-        assert await _repo().get_one({"consumer_id": "kong-fresh-a"}) is not None
-        assert await _repo().get_one({"consumer_id": "kong-fresh-b"}) is not None
+        assert await _repo().read_one({"consumer_id": "kong-fresh-a"}) is not None
+        assert await _repo().read_one({"consumer_id": "kong-fresh-b"}) is not None
 
     async def test_empty_batch_is_a_noop_summary(self, db):
         summary = await _repo().upsert_many([])

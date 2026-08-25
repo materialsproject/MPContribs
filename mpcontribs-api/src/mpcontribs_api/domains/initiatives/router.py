@@ -18,7 +18,7 @@ router = APIRouter()
 
 
 @router.get("")
-async def get_many(
+async def read_many(
     service: InitiativeServiceDep,
     pagination: Annotated[CursorParams, Depends()],
     filter: InitiativeFilter = FilterDepends(InitiativeFilter),
@@ -26,18 +26,18 @@ async def get_many(
 ):
     """Return paginated initiatives matching a filter, scoped to the caller."""
     selected = InitiativeOut.parse_fields(fields)
-    return await service.get_many(pagination=pagination, filter=filter, fields=selected)
+    return await service.read_many(pagination=pagination, filter=filter, fields=selected)
 
 
 @router.get("/{slug}")
-async def get_one(
+async def read_one(
     service: InitiativeServiceDep,
     slug: str,
     fields: FieldSelector = None,
 ):
     """Return the single initiative identified by ``slug``, scoped to the caller."""
     selected = InitiativeOut.parse_fields(fields)
-    return await service.get_one({"slug": slug}, fields=selected)
+    return await service.read_one({"slug": slug}, fields=selected)
 
 
 @router.post(
@@ -56,7 +56,7 @@ async def insert_one(
 
 
 @router.patch("/{slug}", response_model=InitiativeOut, dependencies=[Depends(require_user)])
-async def patch_one(
+async def update_one(
     service: InitiativeServiceDep,
     slug: str,
     update: InitiativePatch,
@@ -66,7 +66,7 @@ async def patch_one(
     Requires manage rights (owner/collaborator/admin). ``is_approved`` is admin-only, and an
     initiative cannot be made public until it is approved.
     """
-    return await service.patch_one({"slug": slug}, update=update)
+    return await service.update_one({"slug": slug}, update=update)
 
 
 @router.delete("/{slug}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_user)])

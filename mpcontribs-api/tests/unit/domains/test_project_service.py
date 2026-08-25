@@ -62,10 +62,10 @@ def _service(user: User, *, existing=None, scoped=None, count: int = 0, limits: 
     # class (an AsyncMock child would turn the classmethod call into a coroutine).
     projects.document_model = Project
     projects.find_by_id_unscoped.return_value = existing
-    projects.get_one.return_value = scoped
+    projects.read_one.return_value = scoped
     projects.count_matching.return_value = count
     projects.upsert_one.side_effect = lambda doc, **kw: doc
-    projects.patch_one.return_value = _project()
+    projects.update_one.return_value = _project()
     projects.delete_one.return_value = DeleteResponse(num_deleted=1)
     initiatives = AsyncMock()
     svc = ProjectService(user=user, projects=projects, initiatives=initiatives, limits=limits)
@@ -159,7 +159,7 @@ class TestUpsert:
 
 
 # ---------------------------------------------------------------------------
-# patch_one
+# update_one
 # ---------------------------------------------------------------------------
 
 
@@ -167,39 +167,39 @@ class TestPatch:
     async def test_non_admin_is_approved_raises_permission(self):
         svc, projects, _ = _service(ALICE, scoped=_project())
         with pytest.raises(AppPermissionError):
-            await svc.patch_one({"id": "proj-1"}, ProjectPatch(is_approved=True))
-        projects.patch_one.assert_not_called()
+            await svc.update_one({"id": "proj-1"}, ProjectPatch(is_approved=True))
+        projects.update_one.assert_not_called()
 
     async def test_missing_raises_not_found(self):
         svc, projects, _ = _service(ADMIN, scoped=None)
         with pytest.raises(NotFoundError):
-            await svc.patch_one({"id": "proj-1"}, ProjectPatch(title="new-title"))
-        projects.patch_one.assert_not_called()
+            await svc.update_one({"id": "proj-1"}, ProjectPatch(title="new-title"))
+        projects.update_one.assert_not_called()
 
     async def test_public_on_unapproved_raises_validation(self):
         svc, projects, _ = _service(ADMIN, scoped=_project(is_approved=False, is_public=False))
         with pytest.raises(ValidationError):
-            await svc.patch_one({"id": "proj-1"}, ProjectPatch(is_public=True))
-        projects.patch_one.assert_not_called()
+            await svc.update_one({"id": "proj-1"}, ProjectPatch(is_public=True))
+        projects.update_one.assert_not_called()
 
     async def test_plain_patch_forwards_to_repo(self):
         svc, projects, _ = _service(ADMIN, scoped=_project(is_approved=True))
-        await svc.patch_one({"id": "proj-1"}, ProjectPatch(title="new"))
-        projects.patch_one.assert_awaited_once()
+        await svc.update_one({"id": "proj-1"}, ProjectPatch(title="new"))
+        projects.update_one.assert_awaited_once()
         # plain path: no extra_set
-        assert "extra_set" not in projects.patch_one.call_args.kwargs
+        assert "extra_set" not in projects.update_one.call_args.kwargs
 
     async def test_initiative_assignment_resolves_link_and_sets_extra(self):
         oid = PydanticObjectId()
         svc, projects, initiatives = _service(ADMIN, scoped=_project(is_approved=True))
-        initiatives.get_one.return_value = MagicMock(id=oid, owner="someone@x.com", is_approved=True)
-        await svc.patch_one({"id": "proj-1"}, ProjectPatch(initiative="solar"))
+        initiatives.read_one.return_value = MagicMock(id=oid, owner="someone@x.com", is_approved=True)
+        await svc.update_one({"id": "proj-1"}, ProjectPatch(initiative="solar"))
         # The service resolves the slug to a DBRef and hands it to the repo via extra_set.
-        extra = projects.patch_one.call_args.kwargs["extra_set"]
+        extra = projects.update_one.call_args.kwargs["extra_set"]
         assert extra["initiative"] == DBRef("initiatives", oid)
 
     async def test_initiative_unassign_passes_none(self):
         svc, projects, initiatives = _service(ADMIN, scoped=_project(is_approved=True))
-        await svc.patch_one({"id": "proj-1"}, ProjectPatch(initiative=None))
-        initiatives.get_one.assert_not_called()
-        assert projects.patch_one.call_args.kwargs["extra_set"] == {"initiative": None}
+        await svc.update_one({"id": "proj-1"}, ProjectPatch(initiative=None))
+        initiatives.read_one.assert_not_called()
+        assert projects.update_one.call_args.kwargs["extra_set"] == {"initiative": None}

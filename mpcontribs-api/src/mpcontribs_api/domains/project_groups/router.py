@@ -21,7 +21,7 @@ router = APIRouter()
 
 
 @router.get("")
-async def get_project_groups(
+async def read_many(
     service: ProjectGroupServiceDep,
     pagination: Annotated[CursorParams, Depends()],
     filter: ProjectGroupFilter = FilterDepends(ProjectGroupFilter),
@@ -36,11 +36,11 @@ async def get_project_groups(
         fields (FieldSelector): the fields to return to a user
     """
     selected = ProjectGroupOut.parse_fields(fields)
-    return await service.get_many(pagination=pagination, filter=filter, fields=selected)
+    return await service.read_many(pagination=pagination, filter=filter, fields=selected)
 
 
 @router.get("/item")
-async def get_one(
+async def read_one(
     service: ProjectGroupServiceDep,
     name: SearchStr,
     owner: PrefixedEmail,
@@ -55,13 +55,13 @@ async def get_one(
         fields (FieldSelector): the fields to return to a user
     """
     selected = ProjectGroupOut.parse_fields(fields)
-    return await service.get_one({"name": name, "owner": owner}, fields=selected)
+    return await service.read_one({"name": name, "owner": owner}, fields=selected)
 
 
 @router.post(
     "", response_model=ProjectGroupOut, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_user)]
 )
-async def insert_project_group(
+async def insert_one(
     service: ProjectGroupServiceDep,
     project_group: ProjectGroupIn,
 ):
@@ -78,7 +78,7 @@ async def insert_project_group(
 
 
 @router.patch("/item", response_model=ProjectGroupOut, dependencies=[Depends(require_user)])
-async def patch_one(
+async def update_one(
     service: ProjectGroupServiceDep,
     name: SearchStr,
     owner: PrefixedEmail,
@@ -92,7 +92,7 @@ async def patch_one(
         owner (PrefixedEmail): the project group's owner
         update (ProjectGroupPatch): the partial update to apply - unset fields are dropped
     """
-    return await service.patch_one({"name": name, "owner": owner}, update=update)
+    return await service.update_one({"name": name, "owner": owner}, update=update)
 
 
 @router.delete("/item", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_user)])
@@ -115,7 +115,7 @@ async def delete_one(
 
 
 @router.delete("", response_model=DeleteResponse, dependencies=[Depends(require_user)])
-async def delete_project_groups(
+async def delete_many(
     service: ProjectGroupServiceDep,
     filter: ProjectGroupFilter = FilterDepends(ProjectGroupFilter),
 ):

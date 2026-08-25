@@ -36,48 +36,48 @@ SAMPLE_CONTRIBUTION = ContributionOut(
 
 class TestListContributions:
     def test_empty_page_returns_200(self, client, contribution_service):
-        contribution_service.get_many.return_value = Page(items=[], next_cursor=None)
+        contribution_service.read_many.return_value = Page(items=[], next_cursor=None)
         r = client.get("/api/v1/contributions", headers=AUTHED_HEADERS)
         assert r.status_code == 200
 
     def test_response_has_page_shape(self, client, contribution_service):
-        contribution_service.get_many.return_value = Page(items=[], next_cursor=None)
+        contribution_service.read_many.return_value = Page(items=[], next_cursor=None)
         body = client.get("/api/v1/contributions", headers=AUTHED_HEADERS).json()
         assert "items" in body
         assert "next_cursor" in body
 
     def test_items_in_response(self, client, contribution_service):
-        contribution_service.get_many.return_value = Page(items=[SAMPLE_CONTRIBUTION], next_cursor=None)
+        contribution_service.read_many.return_value = Page(items=[SAMPLE_CONTRIBUTION], next_cursor=None)
         body = client.get("/api/v1/contributions", headers=AUTHED_HEADERS).json()
         assert len(body["items"]) == 1
 
     def test_repo_called_with_pagination(self, client, contribution_service):
-        contribution_service.get_many.return_value = Page(items=[], next_cursor=None)
+        contribution_service.read_many.return_value = Page(items=[], next_cursor=None)
         client.get("/api/v1/contributions", params={"limit": 10}, headers=AUTHED_HEADERS)
-        _, kwargs = contribution_service.get_many.call_args
+        _, kwargs = contribution_service.read_many.call_args
         assert kwargs["pagination"].limit == 10
 
     def test_fields_forwarded(self, client, contribution_service):
-        contribution_service.get_many.return_value = Page(items=[], next_cursor=None)
+        contribution_service.read_many.return_value = Page(items=[], next_cursor=None)
         client.get("/api/v1/contributions", params={"_fields": ["formula"]}, headers=AUTHED_HEADERS)
-        _, kwargs = contribution_service.get_many.call_args
+        _, kwargs = contribution_service.read_many.call_args
         assert kwargs["fields"] is not None
         assert "formula" in kwargs["fields"]
 
     def test_invalid_fields_returns_422(self, client, contribution_service):
-        contribution_service.get_many.return_value = Page(items=[], next_cursor=None)
+        contribution_service.read_many.return_value = Page(items=[], next_cursor=None)
         r = client.get("/api/v1/contributions", params={"_fields": "bad_field"}, headers=AUTHED_HEADERS)
         assert r.status_code == 422
 
     def test_anonymous_can_list(self, client, contribution_service):
-        contribution_service.get_many.return_value = Page(items=[], next_cursor=None)
+        contribution_service.read_many.return_value = Page(items=[], next_cursor=None)
         r = client.get("/api/v1/contributions", headers=ANON_HEADERS)
         assert r.status_code == 200
 
     def test_filter_param_forwarded_to_repo(self, client, contribution_service):
-        contribution_service.get_many.return_value = Page(items=[], next_cursor=None)
+        contribution_service.read_many.return_value = Page(items=[], next_cursor=None)
         client.get("/api/v1/contributions", params={"formula": "Fe2O3"}, headers=AUTHED_HEADERS)
-        contribution_service.get_many.assert_called_once()
+        contribution_service.read_many.assert_called_once()
 
 
 # ---------------------------------------------------------------------------

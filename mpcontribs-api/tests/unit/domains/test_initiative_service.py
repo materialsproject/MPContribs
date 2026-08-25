@@ -41,12 +41,12 @@ def _existing(owner: str = ALICE_EMAIL, *, is_public: bool = False, is_approved:
 
 def _service(user: User, *, existing=None, unapproved: int = 0):
     initiatives = AsyncMock()
-    initiatives.get_one.return_value = existing
+    initiatives.read_one.return_value = existing
     initiatives.count_matching.return_value = unapproved
     # The service builds the stored document (document_model.from_input_model, which stamps owner)
     # before inserting; keep document_model a sync mock so it returns a document, not a coroutine.
     initiatives.document_model = MagicMock()
-    initiatives.patch_one.return_value = _existing()
+    initiatives.update_one.return_value = _existing()
     initiatives.delete_one.return_value = DeleteResponse(num_deleted=1)
     projects = AsyncMock()
     projects.clear_initiative_refs.return_value = 0
@@ -91,7 +91,7 @@ class TestInsert:
 
 
 # ---------------------------------------------------------------------------
-# patch_one
+# update_one
 # ---------------------------------------------------------------------------
 
 
@@ -99,38 +99,38 @@ class TestPatch:
     async def test_missing_raises_not_found(self):
         svc, initiatives = _service(ADMIN, existing=None)
         with pytest.raises(NotFoundError):
-            await svc.patch_one({"slug": "init-1"}, InitiativePatch(name="new-name"))
-        initiatives.patch_one.assert_not_called()
+            await svc.update_one({"slug": "init-1"}, InitiativePatch(name="new-name"))
+        initiatives.update_one.assert_not_called()
 
     async def test_unmanaged_caller_raises_permission(self):
         # A stranger who can see the initiative still cannot manage it.
         stranger = User(username="google:carol@example.com", groups=frozenset())
         svc, initiatives = _service(stranger, existing=_existing(owner=ALICE_EMAIL))
         with pytest.raises(AppPermissionError):
-            await svc.patch_one({"slug": "init-1"}, InitiativePatch(name="hijack"))
-        initiatives.patch_one.assert_not_called()
+            await svc.update_one({"slug": "init-1"}, InitiativePatch(name="hijack"))
+        initiatives.update_one.assert_not_called()
 
     async def test_collaborator_can_patch(self):
         svc, initiatives = _service(_collaborator("init-1"), existing=_existing(owner=ALICE_EMAIL))
-        await svc.patch_one({"slug": "init-1"}, InitiativePatch(name="ok"))
-        initiatives.patch_one.assert_awaited_once()
+        await svc.update_one({"slug": "init-1"}, InitiativePatch(name="ok"))
+        initiatives.update_one.assert_awaited_once()
 
     async def test_non_admin_approve_raises_permission(self):
         svc, initiatives = _service(ALICE, existing=_existing(owner=ALICE_EMAIL))
         with pytest.raises(AppPermissionError):
-            await svc.patch_one({"slug": "init-1"}, InitiativePatch(is_approved=True))
-        initiatives.patch_one.assert_not_called()
+            await svc.update_one({"slug": "init-1"}, InitiativePatch(is_approved=True))
+        initiatives.update_one.assert_not_called()
 
     async def test_public_on_unapproved_raises_validation(self):
         svc, initiatives = _service(ADMIN, existing=_existing(owner=ALICE_EMAIL, is_approved=False))
         with pytest.raises(ValidationError):
-            await svc.patch_one({"slug": "init-1"}, InitiativePatch(is_public=True))
-        initiatives.patch_one.assert_not_called()
+            await svc.update_one({"slug": "init-1"}, InitiativePatch(is_public=True))
+        initiatives.update_one.assert_not_called()
 
     async def test_admin_approve_and_publish_together_ok(self):
         svc, initiatives = _service(ADMIN, existing=_existing(owner=ALICE_EMAIL, is_approved=False))
-        await svc.patch_one({"slug": "init-1"}, InitiativePatch(is_approved=True, is_public=True))
-        initiatives.patch_one.assert_awaited_once()
+        await svc.update_one({"slug": "init-1"}, InitiativePatch(is_approved=True, is_public=True))
+        initiatives.update_one.assert_awaited_once()
 
 
 # ---------------------------------------------------------------------------

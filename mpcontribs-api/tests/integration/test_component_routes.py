@@ -64,37 +64,37 @@ SAMPLE_TABLE = TableOut(name="bandgaps", md5="b" * 32)
 
 class TestStructuresList:
     def test_empty_page_returns_200(self, client, structure_service):
-        structure_service.get_many.return_value = Page(items=[], next_cursor=None)
+        structure_service.read_many.return_value = Page(items=[], next_cursor=None)
         assert client.get("/api/v1/structures").status_code == 200
 
     def test_page_shape(self, client, structure_service):
-        structure_service.get_many.return_value = Page(items=[SAMPLE_STRUCTURE], next_cursor="c")
+        structure_service.read_many.return_value = Page(items=[SAMPLE_STRUCTURE], next_cursor="c")
         body = client.get("/api/v1/structures").json()
         assert "items" in body
         assert body["next_cursor"] == "c"
 
     def test_service_called_with_pagination(self, client, structure_service):
-        structure_service.get_many.return_value = Page(items=[], next_cursor=None)
+        structure_service.read_many.return_value = Page(items=[], next_cursor=None)
         client.get("/api/v1/structures?limit=5")
-        kwargs = structure_service.get_many.call_args.kwargs
+        kwargs = structure_service.read_many.call_args.kwargs
         assert kwargs["pagination"].limit == 5
 
     def test_invalid_fields_returns_422(self, client, structure_service):
-        structure_service.get_many.return_value = Page(items=[], next_cursor=None)
+        structure_service.read_many.return_value = Page(items=[], next_cursor=None)
         assert client.get("/api/v1/structures?_fields=not_a_field").status_code == 422
 
     def test_valid_fields_forwarded(self, client, structure_service):
-        structure_service.get_many.return_value = Page(items=[], next_cursor=None)
+        structure_service.read_many.return_value = Page(items=[], next_cursor=None)
         client.get("/api/v1/structures?_fields=name")
         # parse_fields always includes the id identity field.
-        assert structure_service.get_many.call_args.kwargs["fields"] == frozenset({"id", "name"})
+        assert structure_service.read_many.call_args.kwargs["fields"] == frozenset({"id", "name"})
 
     def test_content_fields_are_selectable(self, client, structure_service):
         # Regression for #4: structure content must be reachable via _fields (on the Out model).
-        structure_service.get_many.return_value = Page(items=[], next_cursor=None)
+        structure_service.read_many.return_value = Page(items=[], next_cursor=None)
         r = client.get("/api/v1/structures?_fields=lattice&_fields=sites&_fields=charge&_fields=cif")
         assert r.status_code == 200
-        assert structure_service.get_many.call_args.kwargs["fields"] == frozenset(
+        assert structure_service.read_many.call_args.kwargs["fields"] == frozenset(
             {"id", "lattice", "sites", "charge", "cif"}
         )
 
@@ -127,7 +127,7 @@ class TestStructuresInsert:
 
 class TestStructuresByIdRouting:
     def test_get_by_id_conventional_path(self, client, structure_service):
-        structure_service.get_one.return_value = SAMPLE_STRUCTURE
+        structure_service.read_one.return_value = SAMPLE_STRUCTURE
         assert client.get(f"/api/v1/structures/{PydanticObjectId()}").status_code == 200
 
     def test_delete_by_id_conventional_path(self, client, structure_service):
@@ -135,7 +135,7 @@ class TestStructuresByIdRouting:
         assert client.delete(f"/api/v1/structures/{PydanticObjectId()}").status_code == 200
 
     def test_patch_by_id_conventional_path(self, client, structure_service):
-        structure_service.patch_one.return_value = SAMPLE_STRUCTURE
+        structure_service.update_one.return_value = SAMPLE_STRUCTURE
         r = client.patch(f"/api/v1/structures/{PydanticObjectId()}", json={"name": "renamed"})
         assert r.status_code == 200
 
@@ -151,19 +151,19 @@ class TestStructuresByIdRouting:
 
 class TestTablesList:
     def test_empty_page_returns_200(self, client, table_service):
-        table_service.get_many.return_value = Page(items=[], next_cursor=None)
+        table_service.read_many.return_value = Page(items=[], next_cursor=None)
         assert client.get("/api/v1/tables").status_code == 200
 
     def test_page_shape(self, client, table_service):
-        table_service.get_many.return_value = Page(items=[SAMPLE_TABLE], next_cursor=None)
+        table_service.read_many.return_value = Page(items=[SAMPLE_TABLE], next_cursor=None)
         assert "items" in client.get("/api/v1/tables").json()
 
     def test_invalid_fields_returns_422(self, client, table_service):
-        table_service.get_many.return_value = Page(items=[], next_cursor=None)
+        table_service.read_many.return_value = Page(items=[], next_cursor=None)
         assert client.get("/api/v1/tables?_fields=nope").status_code == 422
 
     def test_default_fields_accepted(self, client, table_service):
-        table_service.get_many.return_value = Page(items=[], next_cursor=None)
+        table_service.read_many.return_value = Page(items=[], next_cursor=None)
         assert client.get("/api/v1/tables").status_code == 200
 
 
@@ -186,7 +186,7 @@ class TestTablesInsert:
 
 class TestTablesByIdRouting:
     def test_get_by_id_conventional_path(self, client, table_service):
-        table_service.get_one.return_value = SAMPLE_TABLE
+        table_service.read_one.return_value = SAMPLE_TABLE
         assert client.get(f"/api/v1/tables/{PydanticObjectId()}").status_code == 200
 
     def test_delete_by_id_conventional_path(self, client, table_service):
@@ -194,7 +194,7 @@ class TestTablesByIdRouting:
         assert client.delete(f"/api/v1/tables/{PydanticObjectId()}").status_code == 200
 
     def test_patch_by_id_conventional_path(self, client, table_service):
-        table_service.patch_one.return_value = SAMPLE_TABLE
+        table_service.update_one.return_value = SAMPLE_TABLE
         r = client.patch(f"/api/v1/tables/{PydanticObjectId()}", json={"name": "x"})
         assert r.status_code == 200
 
@@ -206,15 +206,15 @@ class TestTablesByIdRouting:
 
 class TestAttachmentsRouterWiring:
     def test_list_calls_attachment_service(self, client, attachment_service):
-        attachment_service.get_many.return_value = Page(items=[], next_cursor=None)
+        attachment_service.read_many.return_value = Page(items=[], next_cursor=None)
         r = client.get("/api/v1/attachments")
         assert r.status_code == 200
-        attachment_service.get_many.assert_awaited_once()
+        attachment_service.read_many.assert_awaited_once()
 
     def test_get_by_id_calls_attachment_service(self, client, attachment_service):
-        attachment_service.get_one.return_value = None
+        attachment_service.read_one.return_value = None
         client.get(f"/api/v1/attachments/{PydanticObjectId()}")
-        attachment_service.get_one.assert_awaited_once()
+        attachment_service.read_one.assert_awaited_once()
 
     def test_delete_by_id_calls_attachment_service(self, client, attachment_service):
         attachment_service.delete_one.return_value = ComponentDeleteResponse(num_deleted=1)
@@ -315,7 +315,7 @@ class TestComponentMutationsRequireAuth:
     def test_structure_patch_by_id_anon_401(self, client, structure_service):
         r = client.patch(f"/api/v1/structures/{PydanticObjectId()}", json={"name": "x"}, headers=FORCE_ANON_HEADERS)
         assert r.status_code == 401
-        structure_service.patch_one.assert_not_called()
+        structure_service.update_one.assert_not_called()
 
     def test_tables_delete_anon_401(self, client, table_service):
         r = client.delete("/api/v1/tables", headers=FORCE_ANON_HEADERS)
@@ -335,7 +335,7 @@ class TestComponentMutationsRequireAuth:
     def test_attachment_patch_by_id_anon_401(self, client, attachment_service):
         r = client.patch(f"/api/v1/attachments/{PydanticObjectId()}", json={"name": "x"}, headers=FORCE_ANON_HEADERS)
         assert r.status_code == 401
-        attachment_service.patch_one.assert_not_called()
+        attachment_service.update_one.assert_not_called()
 
     def test_tables_post_anon_401(self, client, table_service):
         # POST is guarded by require_writer, which rejects an anonymous caller with 401 (before the
@@ -352,10 +352,10 @@ class TestComponentMutationsRequireAuth:
     def test_table_patch_by_id_anon_401(self, client, table_service):
         r = client.patch(f"/api/v1/tables/{PydanticObjectId()}", json={"name": "x"}, headers=FORCE_ANON_HEADERS)
         assert r.status_code == 401
-        table_service.patch_one.assert_not_called()
+        table_service.update_one.assert_not_called()
 
     def test_structures_get_still_open_to_anon(self, client, structure_service):
-        structure_service.get_many.return_value = Page(items=[], next_cursor=None)
+        structure_service.read_many.return_value = Page(items=[], next_cursor=None)
         r = client.get("/api/v1/structures", headers=FORCE_ANON_HEADERS)
         assert r.status_code == 200
 

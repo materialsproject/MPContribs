@@ -128,11 +128,11 @@ class TestContributionByIdRouting:
     """RED: routes mount as /contributions{id} not /contributions/{id}."""
 
     def test_get_by_id_conventional_path(self, client, contribution_service):
-        contribution_service.get_one.return_value = SAMPLE_OUT
+        contribution_service.read_one.return_value = SAMPLE_OUT
         assert client.get(f"/api/v1/contributions/{PydanticObjectId()}").status_code == 200
 
     def test_patch_by_id_conventional_path(self, client, contribution_service):
-        contribution_service.patch_one.return_value = SAMPLE_OUT
+        contribution_service.update_one.return_value = SAMPLE_OUT
         r = client.patch(f"/api/v1/contributions/{PydanticObjectId()}", json={"formula": "H2O"})
         assert r.status_code == 200
 
@@ -242,7 +242,7 @@ class TestDownloadContributions:
 
 class TestBulkUpdateContributions:
     def test_publish_returns_200_and_summary(self, client, contribution_service):
-        contribution_service.patch_many.return_value = BulkUpdateSummary(matched=3, modified=2, projects=["mp-team"])
+        contribution_service.update_many.return_value = BulkUpdateSummary(matched=3, modified=2, projects=["mp-team"])
         r = client.patch("/api/v1/contributions", json={"is_public": True})
         assert r.status_code == 200
         assert r.json() == {"matched": 3, "modified": 2, "projects": ["mp-team"], "failed": []}
@@ -250,57 +250,57 @@ class TestBulkUpdateContributions:
     def test_forwards_update_and_filter(self, client, contribution_service):
         from mpcontribs_api.domains.contributions.models import ContributionFilter
 
-        contribution_service.patch_many.return_value = BulkUpdateSummary(matched=0, modified=0, projects=[])
+        contribution_service.update_many.return_value = BulkUpdateSummary(matched=0, modified=0, projects=[])
         client.patch("/api/v1/contributions?project=mp-team", json={"is_public": True})
-        contribution_service.patch_many.assert_awaited_once()
-        kwargs = contribution_service.patch_many.call_args.kwargs
+        contribution_service.update_many.assert_awaited_once()
+        kwargs = contribution_service.update_many.call_args.kwargs
         assert kwargs["update"].is_public is True
         assert isinstance(kwargs["filter"], ContributionFilter)
 
     def test_forwards_full_patch_body(self, client, contribution_service):
         # The bulk patch now accepts the same fields as the single-item patch (not just is_public).
-        contribution_service.patch_many.return_value = BulkUpdateSummary(matched=1, modified=1, projects=["mp-team"])
+        contribution_service.update_many.return_value = BulkUpdateSummary(matched=1, modified=1, projects=["mp-team"])
         r = client.patch("/api/v1/contributions", json={"formula": "Fe2O3", "data": {"y": 9.0}})
         assert r.status_code == 200
-        update = contribution_service.patch_many.call_args.kwargs["update"]
+        update = contribution_service.update_many.call_args.kwargs["update"]
         assert update.formula == "Fe2O3"
         assert update.data == {"y": 9.0}
 
     def test_empty_patch_is_accepted_as_noop(self, client, contribution_service):
         # An empty patch is a valid no-op (parity with the single-item patch), no longer a 422.
-        contribution_service.patch_many.return_value = BulkUpdateSummary(matched=0, modified=0, projects=[])
+        contribution_service.update_many.return_value = BulkUpdateSummary(matched=0, modified=0, projects=[])
         r = client.patch("/api/v1/contributions", json={})
         assert r.status_code == 200
-        contribution_service.patch_many.assert_awaited_once()
+        contribution_service.update_many.assert_awaited_once()
 
     def test_replace_data_query_param_forwarded(self, client, contribution_service):
         # ?replace_data=true opts a data patch out of the additive-merge default (whole-dict overwrite).
-        contribution_service.patch_many.return_value = BulkUpdateSummary(matched=0, modified=0, projects=[])
+        contribution_service.update_many.return_value = BulkUpdateSummary(matched=0, modified=0, projects=[])
         client.patch("/api/v1/contributions?replace_data=true", json={"data": {"y": 9.0}})
-        assert contribution_service.patch_many.call_args.kwargs["replace_data"] is True
+        assert contribution_service.update_many.call_args.kwargs["replace_data"] is True
 
     def test_replace_data_defaults_to_false(self, client, contribution_service):
         # Omitting the flag keeps the additive-merge default.
-        contribution_service.patch_many.return_value = BulkUpdateSummary(matched=0, modified=0, projects=[])
+        contribution_service.update_many.return_value = BulkUpdateSummary(matched=0, modified=0, projects=[])
         client.patch("/api/v1/contributions", json={"data": {"y": 9.0}})
-        assert contribution_service.patch_many.call_args.kwargs["replace_data"] is False
+        assert contribution_service.update_many.call_args.kwargs["replace_data"] is False
 
     def test_patch_by_id_forwards_is_public(self, client, contribution_service):
         # The single-contribution publish path: {"is_public": true} reaches the service patch.
-        contribution_service.patch_one.return_value = SAMPLE_OUT
+        contribution_service.update_one.return_value = SAMPLE_OUT
         r = client.patch(f"/api/v1/contributions/{PydanticObjectId()}", json={"is_public": True})
         assert r.status_code == 200
-        update = contribution_service.patch_one.call_args.kwargs["update"]
+        update = contribution_service.update_one.call_args.kwargs["update"]
         assert update.is_public is True
 
     def test_patch_by_id_forwards_replace_data(self, client, contribution_service):
         # The single-item path exposes the same overwrite opt-out as the bulk path.
-        contribution_service.patch_one.return_value = SAMPLE_OUT
+        contribution_service.update_one.return_value = SAMPLE_OUT
         r = client.patch(
             f"/api/v1/contributions/{PydanticObjectId()}?replace_data=true", json={"data": {"y": 9.0}}
         )
         assert r.status_code == 200
-        assert contribution_service.patch_one.call_args.kwargs["replace_data"] is True
+        assert contribution_service.update_one.call_args.kwargs["replace_data"] is True
 
 
 class TestContributionMutationsRequireAuth:
@@ -323,7 +323,7 @@ class TestContributionMutationsRequireAuth:
     def test_patch_collection_anon_401(self, client, contribution_service):
         r = client.patch("/api/v1/contributions", json={"is_public": True}, headers=FORCE_ANON_HEADERS)
         assert r.status_code == 401
-        contribution_service.patch_many.assert_not_called()
+        contribution_service.update_many.assert_not_called()
 
     def test_delete_by_id_anon_401(self, client, contribution_service):
         r = client.delete(f"/api/v1/contributions/{PydanticObjectId()}", headers=FORCE_ANON_HEADERS)
@@ -343,11 +343,11 @@ class TestContributionMutationsRequireAuth:
             f"/api/v1/contributions/{PydanticObjectId()}", json={"formula": "H2O"}, headers=FORCE_ANON_HEADERS
         )
         assert r.status_code == 401
-        contribution_service.patch_one.assert_not_called()
+        contribution_service.update_one.assert_not_called()
 
     def test_get_collection_still_open_to_anon(self, client, contribution_service):
         from mpcontribs_api.pagination import Page
 
-        contribution_service.get_many.return_value = Page(items=[], next_cursor=None)
+        contribution_service.read_many.return_value = Page(items=[], next_cursor=None)
         r = client.get("/api/v1/contributions", headers=FORCE_ANON_HEADERS)
         assert r.status_code == 200

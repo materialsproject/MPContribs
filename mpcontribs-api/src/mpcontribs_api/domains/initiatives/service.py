@@ -40,17 +40,17 @@ class InitiativeService:
         self._projects = projects
         self._limits = get_settings().domain.initiatives
 
-    async def get_many(
+    async def read_many(
         self, pagination: CursorParams, filter: InitiativeFilter, fields: frozenset[str] | None
     ) -> Page[InitiativeOut]:
         """Return a page of scoped initiatives matching ``filter``."""
-        return await self._initiatives.get_many(pagination=pagination, filter=filter, fields=fields)
+        return await self._initiatives.read_many(pagination=pagination, filter=filter, fields=fields)
 
-    async def get_one(
+    async def read_one(
         self, identifiers: dict[str, Any], fields: frozenset[str] | None
     ) -> Initiative | InitiativeOut | None:
         """Return the single scoped initiative matching ``identifiers`` (``{"slug": ...}``)."""
-        return await self._initiatives.get_one(identifiers, fields)
+        return await self._initiatives.read_one(identifiers, fields)
 
     async def insert_one(self, data: InitiativeIn) -> Initiative:
         """Create an initiative owned by the caller, enforcing the per-owner unapproved quota.
@@ -80,7 +80,7 @@ class InitiativeService:
         initiative = self._initiatives.document_model.from_input_model(data, owner=self._user.username)
         return await self._initiatives.insert_one(initiative)
 
-    async def patch_one(self, identifiers: dict[str, Any], update: InitiativePatch) -> Initiative:
+    async def update_one(self, identifiers: dict[str, Any], update: InitiativePatch) -> Initiative:
         """Patch a scoped initiative by ``slug``, enforcing manage rights and approval rules.
 
         - The caller must be able to *manage* the initiative (owner/collaborator/admin).
@@ -89,7 +89,7 @@ class InitiativeService:
           partial ``$set`` does not run the document validator).
         """
         slug = identifiers["slug"]
-        existing = await self._initiatives.get_one(identifiers)
+        existing = await self._initiatives.read_one(identifiers)
         if existing is None:
             raise NotFoundError("Initiative not found", slug=slug)
         if not (self._user.can_manage(id=slug, resource="initiative") or self._user.username == existing.owner):
@@ -104,7 +104,7 @@ class InitiativeService:
         if resulting_public and not resulting_approved:
             raise ValidationError("an initiative cannot be public until it is approved", slug=slug)
 
-        return await self._initiatives.patch_one(identifiers, update)
+        return await self._initiatives.update_one(identifiers, update)
 
     async def delete_one(self, identifiers: dict[str, Any]) -> DeleteResponse:
         """Delete a scoped initiative by ``slug``. Restricted to the owner or an admin.
@@ -113,7 +113,7 @@ class InitiativeService:
         see the initiative gets a 404; one who can see it but does not own it gets a 403. After the
         initiative is removed, the ``initiative`` link is unset on every member project.
         """
-        existing = await self._initiatives.get_one(identifiers)
+        existing = await self._initiatives.read_one(identifiers)
         if existing is None:
             raise NotFoundError("Initiative not found", **identifiers)
         if not (self._user.is_admin or existing.owner == self._user.username):

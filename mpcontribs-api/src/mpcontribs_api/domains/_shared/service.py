@@ -57,7 +57,7 @@ class ComponentService[
         self._ref_field = ref_field
         self._bucket_name = bucket_name or ref_field
 
-    async def get_many(
+    async def read_many(
         self,
         filter: TFilter,
         pagination: CursorParams,
@@ -70,16 +70,16 @@ class ComponentService[
         allowed to see
         """
         allowed = await self._contributions.referenced_component_ids(self._ref_field, scoped=True)
-        return await self._components.get_many(
+        return await self._components.read_many(
             pagination=pagination, filter=filter, fields=fields, restrict_ids=allowed
         )
 
     async def _resolve_component_id(self, identifiers: dict[str, Any]) -> PydanticObjectId | None:
         """Return the component ``_id`` after finding it via identifiers, or None if absent."""
-        existing = await self._components.get_one(identifiers, frozenset({"id"}))
+        existing = await self._components.read_one(identifiers, frozenset({"id"}))
         return existing.id if existing is not None else None
 
-    async def get_one(self, identifiers: dict[str, Any], fields: frozenset[str] | None) -> TDoc | TOut | None:
+    async def read_one(self, identifiers: dict[str, Any], fields: frozenset[str] | None) -> TDoc | TOut | None:
         """Find a single component matching ``identifiers``, gated by contribution reachability.
 
         Returns ``None``  when no in-scope contribution references the component.
@@ -88,7 +88,7 @@ class ComponentService[
         oid = await self._resolve_component_id(identifiers)
         if oid is None or not await self._contributions.referenced_component_ids(self._ref_field, [oid], scoped=True):
             return None
-        return await self._components.get_one(identifiers, fields)
+        return await self._components.read_one(identifiers, fields)
 
     async def insert_many(
         self,
@@ -124,7 +124,7 @@ class ComponentService[
         failed = sorted(failures, key=lambda failure: failure.index)
         return BulkWriteSummary[TDoc](total=len(components), succeeded=succeeded, failed=failed)
 
-    async def patch_one(self, identifiers: dict[str, Any], update: TPatch) -> TDoc:
+    async def update_one(self, identifiers: dict[str, Any], update: TPatch) -> TDoc:
         """Partially update a component matching ``identifiers``, gated by contribution reachability.
 
         Accepts either the bare ``{"id": ...}`` form or the content-hash ``{"md5": ...}`` form.
@@ -135,7 +135,7 @@ class ComponentService[
         oid = await self._resolve_component_id(identifiers)
         if oid is None or not await self._contributions.referenced_component_ids(self._ref_field, [oid], scoped=True):
             raise NotFoundError(f"{self._components.document_model.__name__} not found", **identifiers)
-        return await self._components.patch_one(identifiers, update)
+        return await self._components.update_one(identifiers, update)
 
     async def download(
         self,

@@ -20,25 +20,25 @@ router = APIRouter()
 
 
 @router.get("")
-async def get_attachments(
+async def read_many(
     service: AttachmentServiceDep,
     pagination: Annotated[CursorParams, Depends()],
     filter: AttachmentFilter = FilterDepends(AttachmentFilter),
     fields: FieldSelector = None,
 ):
     selected = AttachmentOut.parse_fields(fields)
-    return await service.get_many(filter=filter, fields=selected, pagination=pagination)
+    return await service.read_many(filter=filter, fields=selected, pagination=pagination)
 
 
 @router.get("/{id}")
-async def get_one(
+async def read_one(
     service: AttachmentServiceDep,
     id: str,
     fields: FieldSelector = None,
 ):
     """Return a single attachment addressed by its ``_id``."""
     selected = AttachmentOut.parse_fields(fields)
-    return await service.get_one(identifiers={"id": id}, fields=selected)
+    return await service.read_one(identifiers={"id": id}, fields=selected)
 
 
 @router.get("/download/{short_mime}")
@@ -69,7 +69,7 @@ async def download_attachment(
 
 
 @router.delete("", response_model=ComponentDeleteResponse, dependencies=[Depends(require_user)])
-async def delete_attachments(service: AttachmentServiceDep, filter: AttachmentFilter = FilterDepends(AttachmentFilter)):
+async def delete_many(service: AttachmentServiceDep, filter: AttachmentFilter = FilterDepends(AttachmentFilter)):
     return await service.delete_many(filter=filter)
 
 
@@ -80,10 +80,10 @@ async def delete_one(service: AttachmentServiceDep, id: str):
 
 
 @router.patch("/{id}", dependencies=[Depends(require_user)])
-async def patch_one(
+async def update_one(
     service: AttachmentServiceDep,
     id: str,
     update: AttachmentPatch,
 ):
     """Patch a single attachment addressed by its ``_id`` or its content ``md5``."""
-    return await service.patch_one(identifiers={"id": id}, update=update)
+    return await service.update_one(identifiers={"id": id}, update=update)

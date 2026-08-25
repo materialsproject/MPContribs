@@ -63,15 +63,15 @@ class ProjectGroupService:
         document = self._groups.document_model.from_input_model(project_group)
         return await self._groups.insert_one(document)
 
-    async def get_many(
+    async def read_many(
         self, filter: ProjectGroupFilter, pagination: CursorParams, fields: frozenset[str] | None
     ) -> Page[ProjectGroupOut]:
         """Return a page of scoped project groups matching ``filter``."""
-        return await self._groups.get_many(pagination=pagination, filter=filter, fields=fields)
+        return await self._groups.read_many(pagination=pagination, filter=filter, fields=fields)
 
-    async def get_one(self, identifiers: dict[str, Any], fields: frozenset[str] | None) -> ProjectGroupOut | None:
+    async def read_one(self, identifiers: dict[str, Any], fields: frozenset[str] | None) -> ProjectGroupOut | None:
         """Return the single group matching ``identifiers`` (``{"name", "owner"}`` or ``{"id"}``)."""
-        return await self._groups.get_one(identifiers, fields)
+        return await self._groups.read_one(identifiers, fields)
 
     async def delete_many(self, filter: ProjectGroupFilter) -> DeleteResponse:
         """Bulk-delete scoped project groups matching ``filter``, restricted to the caller's own.
@@ -83,14 +83,14 @@ class ProjectGroupService:
             filter.owner = self._user.username
         return await self._groups.delete_many(filter=filter)
 
-    async def patch_one(self, identifiers: dict[str, Any], update: ProjectGroupPatch) -> ProjectGroup:
+    async def update_one(self, identifiers: dict[str, Any], update: ProjectGroupPatch) -> ProjectGroup:
         """Patch the single group matching ``identifiers`` (``{"name", "owner"}`` or ``{"id"}``)."""
-        group = await self._groups.get_one(identifiers, fields=frozenset({"id", "owner"}))
+        group = await self._groups.read_one(identifiers, fields=frozenset({"id", "owner"}))
         if group is None:
             raise NotFoundError("ProjectGroup not found", **identifiers)
         if not (self._user.is_admin or group.owner == self._user.username):
             raise PermissionError(required_role="owner-or-admin")
-        return await self._groups.patch_one(identifiers, update)
+        return await self._groups.update_one(identifiers, update)
 
     async def delete_one(self, identifiers: dict[str, Any]) -> DeleteResponse:
         """Delete the single group matching ``identifiers`` (``{"name", "owner"}`` or ``{"id"}``).
@@ -99,7 +99,7 @@ class ProjectGroupService:
         gate: a caller who cannot see the group gets a 404, one who can see it (e.g. a public group)
         but does not own it gets a 403 rather than a silent no-op.
         """
-        group = await self._groups.get_one(identifiers, fields=frozenset({"id", "owner"}))
+        group = await self._groups.read_one(identifiers, fields=frozenset({"id", "owner"}))
         if group is None:
             raise NotFoundError("ProjectGroup not found", **identifiers)
         if not (self._user.is_admin or group.owner == self._user.username):
@@ -113,7 +113,7 @@ class ProjectGroupService:
         ``{"name": ..., "owner": ...}``. Propagates ``ConflictError`` from the repository if
         ``(name, owner)`` identifiers are ambiguous.
         """
-        group = await self._groups.get_one(identifiers, fields=_GROUP_FIELDS)
+        group = await self._groups.read_one(identifiers, fields=_GROUP_FIELDS)
         if group is None:
             raise NotFoundError("ProjectGroup not found", **identifiers)
         if not (self._user.is_admin or group.owner == self._user.username):

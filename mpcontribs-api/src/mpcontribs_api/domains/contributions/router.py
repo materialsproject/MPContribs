@@ -51,18 +51,18 @@ def _enforce_bulk_limit(contributions: list[ContributionIn]) -> None:
 
 
 @router.get("")
-async def get_many(
+async def read_many(
     service: ContributionServiceDep,
     pagination: Annotated[CursorParams, Depends()],
     filter: ContributionFilter = FilterDepends(ContributionFilter),
     fields: FieldSelector = None,
 ):
     selected = ContributionOut.parse_fields(fields)
-    return await service.get_many(pagination=pagination, filter=filter, fields=selected)
+    return await service.read_many(pagination=pagination, filter=filter, fields=selected)
 
 
 @router.delete("", response_model=DeleteResponse, dependencies=[Depends(require_user)])
-async def delete_contributions(
+async def delete_many(
     service: ContributionServiceDep,
     filter: ContributionFilter = FilterDepends(ContributionFilter),
 ) -> BulkDeleteSummary:
@@ -70,7 +70,7 @@ async def delete_contributions(
 
 
 @router.patch("", dependencies=[Depends(require_user)])
-async def patch_contributions(
+async def update_many(
     service: ContributionServiceDep,
     body: ContributionPatch,
     filter: ContributionFilter = FilterDepends(ContributionFilter),
@@ -84,12 +84,12 @@ async def patch_contributions(
     ``data`` deep-merges into each row's stored ``data`` by default
     Pass ``?replace_data=true`` to overwrite the whole ``data`` dict instead.
     """
-    return await service.patch_many(filter=filter, update=body, replace_data=replace_data)
+    return await service.update_many(filter=filter, update=body, replace_data=replace_data)
 
 
 # TODO: Might want to take contributions in from request body and run model_validate_json on it (much faster)
 @router.post("", response_model=BulkWriteSummary[Contribution], dependencies=[Depends(require_user)])
-async def insert_contributions(
+async def insert_many(
     service: ContributionServiceDep,
     contributions: list[ContributionIn],
 ):
@@ -98,7 +98,7 @@ async def insert_contributions(
 
 
 @router.put("", response_model=BulkWriteSummary[Contribution], dependencies=[Depends(require_user)])
-async def upsert_contributions(
+async def upsert_many(
     service: ContributionServiceDep,
     contributions: list[ContributionIn],
 ):
@@ -142,13 +142,13 @@ async def delete_one(
 
 
 @router.get("/{id}")
-async def get_one(
+async def read_one(
     service: ContributionServiceDep,
     id: str,
     fields: FieldSelector = None,
 ):
     selected = ContributionOut.parse_fields(fields)
-    return await service.get_one({"id": id}, fields=selected)
+    return await service.read_one({"id": id}, fields=selected)
 
 
 @router.put("/{id}", dependencies=[Depends(require_user)])
@@ -159,8 +159,8 @@ async def upsert_one(service: ContributionServiceDep, id: str, contribution: Con
 
 
 @router.patch("/{id}", dependencies=[Depends(require_user)])
-async def patch_one(service: ContributionServiceDep, id: str, update: ContributionPatch, replace_data: bool = False):
+async def update_one(service: ContributionServiceDep, id: str, update: ContributionPatch, replace_data: bool = False):
     # The by-id patch re-resolves ``unique_value`` and validates the identifier hierarchy against the
-    # merged state (see ``ContributionService.patch_one``); ``?replace_data=true``
+    # merged state (see ``ContributionService.update_one``); ``?replace_data=true``
     # overwrites the whole ``data`` dict instead of deep-merging.
-    return await service.patch_one({"id": id}, update=update, replace_data=replace_data)
+    return await service.update_one({"id": id}, update=update, replace_data=replace_data)

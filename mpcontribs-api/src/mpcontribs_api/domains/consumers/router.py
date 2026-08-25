@@ -21,7 +21,7 @@ router = APIRouter(dependencies=[Depends(require_admin)])
 
 
 @router.get("")
-async def get_many(
+async def read_many(
     service: ConsumerServiceDep,
     pagination: Annotated[CursorParams, Depends()],
     filter: ConsumerFilter = FilterDepends(ConsumerFilter),
@@ -29,18 +29,18 @@ async def get_many(
 ):
     """List consumer overrides (admin only)."""
     selected = ConsumerOut.parse_fields(fields)
-    return await service.get_many(filter=filter, pagination=pagination, fields=selected)
+    return await service.read_many(filter=filter, pagination=pagination, fields=selected)
 
 
 @router.get("/{id}")
-async def get_one(
+async def read_one(
     id: str,
     service: ConsumerServiceDep,
     fields: FieldSelector = None,
 ):
     """Get a single consumer override by document id (admin only)."""
     selected = ConsumerOut.parse_fields(fields)
-    return await service.get_one(id, fields=selected)
+    return await service.read_one(id, fields=selected)
 
 
 @router.post("", response_model=ConsumerOut, status_code=status.HTTP_201_CREATED)
@@ -53,13 +53,13 @@ async def insert_one(
 
 
 @router.patch("/{id}", response_model=ConsumerOut)
-async def patch_one(
+async def update_one(
     service: ConsumerServiceDep,
     id: str,
     update: ConsumerPatch,
 ):
     """Partially update a consumer override by document id (admin only)."""
-    return await service.patch_one(id, update)
+    return await service.update_one(id, update)
 
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)

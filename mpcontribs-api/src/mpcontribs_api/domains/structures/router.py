@@ -21,25 +21,25 @@ router = APIRouter()
 
 
 @router.get("")
-async def get_structures(
+async def read_many(
     service: StructureServiceDep,
     pagination: Annotated[CursorParams, Depends()],
     filter: StructureFilter = FilterDepends(StructureFilter),
     fields: FieldSelector = None,
 ):
     selected = StructureOut.parse_fields(fields)
-    return await service.get_many(filter=filter, fields=selected, pagination=pagination)
+    return await service.read_many(filter=filter, fields=selected, pagination=pagination)
 
 
 @router.get("/{id}")
-async def get_one(
+async def read_one(
     service: StructureServiceDep,
     id: str,
     fields: FieldSelector = None,
 ):
     """Return a single structure addressed by its ``_id`` or its content ``md5``."""
     selected = StructureOut.parse_fields(fields)
-    return await service.get_one(identifiers={"id": id}, fields=selected)
+    return await service.read_one(identifiers={"id": id}, fields=selected)
 
 
 @router.get("/download/{short_mime}")
@@ -70,7 +70,7 @@ async def download_structure(
 
 
 @router.post("", response_model=BulkWriteSummary[StructureOut], dependencies=[Depends(require_writer)])
-async def insert_structures(
+async def insert_many(
     service: StructureServiceDep,
     structures: list[StructureIn],
 ):
@@ -78,7 +78,7 @@ async def insert_structures(
 
 
 @router.delete("", response_model=ComponentDeleteResponse, dependencies=[Depends(require_user)])
-async def delete_structures(service: StructureServiceDep, filter: StructureFilter = FilterDepends(StructureFilter)):
+async def delete_many(service: StructureServiceDep, filter: StructureFilter = FilterDepends(StructureFilter)):
     return await service.delete_many(filter=filter)
 
 
@@ -89,10 +89,10 @@ async def delete_one(service: StructureServiceDep, id: str):
 
 
 @router.patch("/{id}", dependencies=[Depends(require_user)])
-async def patch_one(
+async def update_one(
     service: StructureServiceDep,
     id: str,
     update: StructurePatch,
 ):
     """Patch a single structure addressed by its ``_id`` or its content ``md5``."""
-    return await service.patch_one(identifiers={"id": id}, update=update)
+    return await service.update_one(identifiers={"id": id}, update=update)

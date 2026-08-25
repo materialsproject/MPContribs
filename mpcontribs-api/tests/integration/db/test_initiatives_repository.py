@@ -4,7 +4,7 @@ Authorization (authenticated-create, manage-rights, admin-only approval, owner-o
 ``public ⇒ approved`` invariant, and the per-owner unapproved quota moved to
 :class:`InitiativeService` (see ``test_initiatives_service.py``). What remains here is the toolbox:
 scoped reads (visibility, filters), the mechanical ``insert`` (owner-stamp + dup-slug reject), and
-the shared ``count_matching`` primitive. State-seeding uses the base ``patch_one`` (a mechanical
+the shared ``count_matching`` primitive. State-seeding uses the base ``update_one`` (a mechanical
 ``$set`` with no auth), which the repo no longer overrides.
 """
 
@@ -59,7 +59,7 @@ async def _insert(slug: str, owner_user: User = ALICE, name: str = "An Initiativ
 
 async def _publish(slug: str) -> None:
     """Mark ``slug`` approved+public via the base (mechanical, no-auth) patch — for scope seeding."""
-    await _repo(ADMIN).patch_one({"slug": slug}, InitiativePatch(is_approved=True, is_public=True))
+    await _repo(ADMIN).update_one({"slug": slug}, InitiativePatch(is_approved=True, is_public=True))
 
 
 # ---------------------------------------------------------------------------
@@ -112,16 +112,16 @@ class TestCountUnapprovedForOwner:
 class TestReadScope:
     async def test_private_unapproved_visibility(self, db):
         await _insert("scoped-priv", ALICE)
-        assert await _repo(ALICE).get_one({"slug": "scoped-priv"}, fields=None) is not None  # owner
-        assert await _repo(ADMIN).get_one({"slug": "scoped-priv"}, fields=None) is not None  # admin
-        assert await _repo(_collaborator("scoped-priv")).get_one({"slug": "scoped-priv"}, fields=None) is not None
-        assert await _repo(ANON).get_one({"slug": "scoped-priv"}, fields=None) is None  # anon
-        assert await _repo(BOB).get_one({"slug": "scoped-priv"}, fields=None) is None  # unrelated user
+        assert await _repo(ALICE).read_one({"slug": "scoped-priv"}, fields=None) is not None  # owner
+        assert await _repo(ADMIN).read_one({"slug": "scoped-priv"}, fields=None) is not None  # admin
+        assert await _repo(_collaborator("scoped-priv")).read_one({"slug": "scoped-priv"}, fields=None) is not None
+        assert await _repo(ANON).read_one({"slug": "scoped-priv"}, fields=None) is None  # anon
+        assert await _repo(BOB).read_one({"slug": "scoped-priv"}, fields=None) is None  # unrelated user
 
     async def test_public_approved_visible_to_anon(self, db):
         await _insert("scoped-pub", ALICE)
         await _publish("scoped-pub")
-        assert await _repo(ANON).get_one({"slug": "scoped-pub"}, fields=None) is not None
+        assert await _repo(ANON).read_one({"slug": "scoped-pub"}, fields=None) is not None
 
 
 # ---------------------------------------------------------------------------
@@ -133,7 +133,7 @@ class TestListAndFilter:
     async def test_list_scoped_to_caller(self, db):
         await _insert("mine-1", ALICE)
         await _insert("bobs-1", BOB)  # Bob's private initiative, invisible to Alice
-        page = await _repo(ALICE).get_many(InitiativeFilter(), pagination=CursorParams(), fields=None)
+        page = await _repo(ALICE).read_many(InitiativeFilter(), pagination=CursorParams(), fields=None)
         slugs = {i.slug for i in page.items}
         assert "mine-1" in slugs
         assert "bobs-1" not in slugs
@@ -142,7 +142,7 @@ class TestListAndFilter:
         await _insert("appr-1", ALICE)
         await _insert("unappr-1", ALICE)
         await _publish("appr-1")
-        page = await _repo(ADMIN).get_many(InitiativeFilter(is_approved=True), pagination=CursorParams(), fields=None)
+        page = await _repo(ADMIN).read_many(InitiativeFilter(is_approved=True), pagination=CursorParams(), fields=None)
         slugs = {i.slug for i in page.items}
         assert "appr-1" in slugs
         assert "unappr-1" not in slugs
@@ -150,5 +150,5 @@ class TestListAndFilter:
     async def test_filter_by_owner(self, db):
         await _insert("owned-alice", ALICE)
         await _insert("owned-bob", BOB)
-        page = await _repo(ADMIN).get_many(InitiativeFilter(owner=BOB_EMAIL), pagination=CursorParams(), fields=None)
+        page = await _repo(ADMIN).read_many(InitiativeFilter(owner=BOB_EMAIL), pagination=CursorParams(), fields=None)
         assert {i.slug for i in page.items} == {"owned-bob"}

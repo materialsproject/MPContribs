@@ -24,7 +24,7 @@ class MongoDbConsumerRepository(MongoDbRepository[Consumer, ConsumerIn, Consumer
     # Admin-only resource (routes enforce ``require_admin``); no clauses → no visibility filter.
     read_scope = Scope()
 
-    def _patch_update_fields(self, update: ConsumerPatch) -> dict[str, Any]:
+    def _update_fields(self, update: ConsumerPatch) -> dict[str, Any]:
         """Flatten the patch to dotted ``settings.<field>`` keys.
 
         The limits live under a nested ``settings`` sub-document; dotting the update makes a partial

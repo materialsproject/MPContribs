@@ -29,15 +29,15 @@ class ProjectService:
         self._initiative_limits = get_settings().domain.initiatives
         self._consumer_limits = limits or ConsumerSettings()
 
-    async def get_many(
+    async def read_many(
         self, filter: ProjectFilter, pagination: CursorParams, fields: frozenset[str] | None
     ) -> Page[ProjectOut]:
         """Return a page of scoped projects matching ``filter``."""
-        return await self._projects.get_many(filter=filter, pagination=pagination, fields=fields)
+        return await self._projects.read_many(filter=filter, pagination=pagination, fields=fields)
 
-    async def get_one(self, identifiers: dict[str, Any], fields: frozenset[str] | None) -> Project | ProjectOut | None:
+    async def read_one(self, identifiers: dict[str, Any], fields: frozenset[str] | None) -> Project | ProjectOut | None:
         """Return the single scoped project matching ``identifiers`` (``{"id": ...}``)."""
-        return await self._projects.get_one(identifiers, fields)
+        return await self._projects.read_one(identifiers, fields)
 
     async def upsert_one(self, identifiers: dict[str, Any], data: ProjectIn) -> Project:
         """Upsert a project by id, applying every write-policy decision before persisting.
@@ -89,7 +89,7 @@ class ProjectService:
             raise ValidationError("a project cannot be public until it is approved", id=id)
         return await self._projects.upsert_one(project)
 
-    async def patch_one(self, identifiers: dict[str, Any], update: ProjectPatch) -> Project:
+    async def update_one(self, identifiers: dict[str, Any], update: ProjectPatch) -> Project:
         """Apply a project patch, enforcing approval rules and routing ``initiative`` changes.
 
         The approval rules (admin-only ``is_approved``, ``public ⇒ approved``) are checked against the
@@ -99,7 +99,7 @@ class ProjectService:
         await self._enforce_patch_rules(id, update)
 
         if "initiative" not in update.model_fields_set:
-            return await self._projects.patch_one(identifiers, update)
+            return await self._projects.update_one(identifiers, update)
 
         data = update.model_dump(exclude_unset=True)
         slug = data.pop("initiative", None)
@@ -108,7 +108,7 @@ class ProjectService:
         ref = await self._resolve_initiative_assignment(project_id=id, slug=slug)
 
         # `initiative` is server derived, so ProjectPatch can't handle it (expects str), so hand it in extra_set
-        return await self._projects.patch_one(identifiers, ProjectPatch(**data), extra_set={"initiative": ref})
+        return await self._projects.update_one(identifiers, ProjectPatch(**data), extra_set={"initiative": ref})
 
     async def delete_one(self, identifiers: dict[str, Any]) -> DeleteResponse:
         """Delete a scoped project by id. Restricted to the owner or an admin.
@@ -116,7 +116,7 @@ class ProjectService:
         Project must be deleted by an owner or admin. A caller who cannot see the project gets a 404; a
         caller who can see it but does not own it gets a 403.
         """
-        existing = await self._projects.get_one(identifiers)
+        existing = await self._projects.read_one(identifiers)
         if existing is None:
             raise NotFoundError("Project not found", **identifiers)
         if not (self._user.is_admin or existing.owner == self._user.username):
@@ -155,7 +155,7 @@ class ProjectService:
         if "is_approved" in data and not self._user.is_admin:
             raise PermissionError(required_role="admin")
 
-        existing = await self._projects.get_one({"id": id})
+        existing = await self._projects.read_one({"id": id})
         if existing is None:
             raise NotFoundError("Project not found", id=id)
         if not (self._user.is_admin or existing.owner == self._user.username):
@@ -176,7 +176,7 @@ class ProjectService:
         if slug is None:
             return None
 
-        initiative = await self._initiatives.get_one({"slug": slug})
+        initiative = await self._initiatives.read_one({"slug": slug})
         if initiative is None or initiative.id is None:
             raise NotFoundError("Initiative not found or not visible", slug=slug)
 

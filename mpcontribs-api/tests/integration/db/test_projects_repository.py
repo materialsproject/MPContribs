@@ -95,7 +95,7 @@ class TestAuthorizationScope:
     async def test_admin_sees_all(self, db):
         await _insert("scope-priv", is_public=False)
         await _insert("scope-pub", is_public=True, is_approved=True)
-        page = await _repo(ADMIN).get_many(filter=_noop_filter(), pagination=CursorParams(), fields=None)
+        page = await _repo(ADMIN).read_many(filter=_noop_filter(), pagination=CursorParams(), fields=None)
         ids = {p.id for p in page.items}
         assert "scope-priv" in ids
         assert "scope-pub" in ids
@@ -104,7 +104,7 @@ class TestAuthorizationScope:
         await _insert("anon-priv", is_public=False)
         await _insert("anon-pub", is_public=True, is_approved=True)
         await _insert("anon-pub-unapproved", is_public=True, is_approved=False)
-        page = await _repo(ANON).get_many(filter=_noop_filter(), pagination=CursorParams(), fields=None)
+        page = await _repo(ANON).read_many(filter=_noop_filter(), pagination=CursorParams(), fields=None)
         ids = {p.id for p in page.items}
         assert "anon-pub" in ids
         assert "anon-priv" not in ids
@@ -114,7 +114,7 @@ class TestAuthorizationScope:
         await _insert("auth-alice-priv", owner=ALICE_EMAIL, is_public=False)
         await _insert("auth-bob-priv", owner=BOB_EMAIL, is_public=False)
         await _insert("auth-pub", is_public=True, is_approved=True)
-        page = await _repo(ALICE).get_many(filter=_noop_filter(), pagination=CursorParams(), fields=None)
+        page = await _repo(ALICE).read_many(filter=_noop_filter(), pagination=CursorParams(), fields=None)
         ids = {p.id for p in page.items}
         assert "auth-alice-priv" in ids
         assert "auth-pub" in ids
@@ -124,44 +124,44 @@ class TestAuthorizationScope:
         # A bare project role (the project id) grants visibility of an otherwise-private project.
         member = User(username="google:carol@example.com", groups=frozenset({"scope-granted"}))
         await _insert("scope-granted", owner=ALICE_EMAIL, is_public=False)
-        page = await _repo(member).get_many(filter=_noop_filter(), pagination=CursorParams(), fields=None)
+        page = await _repo(member).read_many(filter=_noop_filter(), pagination=CursorParams(), fields=None)
         assert "scope-granted" in {p.id for p in page.items}
 
 
 # ---------------------------------------------------------------------------
-# get_one
+# read_one
 # ---------------------------------------------------------------------------
 
 
 class TestGetProjectById:
     async def test_returns_project_for_valid_id(self, db):
         await _insert("get-by-id")
-        result = await _repo(ADMIN).get_one({"id": "get-by-id"}, fields=None)
+        result = await _repo(ADMIN).read_one({"id": "get-by-id"}, fields=None)
         assert result is not None
         assert result.id == "get-by-id"
 
     async def test_returns_none_for_missing_id(self, db):
-        result = await _repo(ADMIN).get_one({"id": "does-not-exist"}, fields=None)
+        result = await _repo(ADMIN).read_one({"id": "does-not-exist"}, fields=None)
         assert result is None
 
     async def test_admin_can_get_private_project(self, db):
         await _insert("get-priv", is_public=False)
-        result = await _repo(ADMIN).get_one({"id": "get-priv"}, fields=None)
+        result = await _repo(ADMIN).read_one({"id": "get-priv"}, fields=None)
         assert result is not None
 
     async def test_anon_cannot_get_private_project(self, db):
         await _insert("get-priv-anon", is_public=False)
-        result = await _repo(ANON).get_one({"id": "get-priv-anon"}, fields=None)
+        result = await _repo(ANON).read_one({"id": "get-priv-anon"}, fields=None)
         assert result is None
 
 
 # ---------------------------------------------------------------------------
-# get_many — id filtering
+# read_many — id filtering
 #
 # Regression: Beanie stores the primary key under Mongo's ``_id`` (``id`` is an
 # alias), but fastapi-filter keys queries on the raw field name. Without the
 # ``id`` -> ``_id`` remap in BaseFilter these filters matched nothing even
-# though get_one (which queries ``_id`` directly) found the document.
+# though read_one (which queries ``_id`` directly) found the document.
 # ---------------------------------------------------------------------------
 
 
@@ -170,7 +170,7 @@ class TestGetProjectsIdFilter:
         from mpcontribs_api.domains.projects.models import ProjectFilter
 
         await _insert("filter-id-hit")
-        page = await _repo(ADMIN).get_many(
+        page = await _repo(ADMIN).read_many(
             filter=ProjectFilter(id="filter-id-hit"), pagination=CursorParams(), fields=None
         )
         assert {p.id for p in page.items} == {"filter-id-hit"}
@@ -181,7 +181,7 @@ class TestGetProjectsIdFilter:
         await _insert("filter-id-in-a")
         await _insert("filter-id-in-b")
         await _insert("filter-id-in-c")
-        page = await _repo(ADMIN).get_many(
+        page = await _repo(ADMIN).read_many(
             filter=ProjectFilter(id__in=["filter-id-in-a", "filter-id-in-b"]),
             pagination=CursorParams(),
             fields=None,
@@ -193,7 +193,7 @@ class TestGetProjectsIdFilter:
 
         await _insert("filter-id-neq-keep")
         await _insert("filter-id-neq-drop")
-        page = await _repo(ADMIN).get_many(
+        page = await _repo(ADMIN).read_many(
             filter=ProjectFilter(id__neq="filter-id-neq-drop"), pagination=CursorParams(), fields=None
         )
         ids = {p.id for p in page.items}
@@ -202,7 +202,7 @@ class TestGetProjectsIdFilter:
 
 
 # ---------------------------------------------------------------------------
-# get_many — tags filtering
+# read_many — tags filtering
 #
 # ``tags__contains`` maps to MongoDB ``$all``: a project matches only when its
 # tags are a superset of every value supplied (the query list is a subset of
@@ -218,7 +218,7 @@ class TestGetProjectsTagsFilter:
         await _insert("tags-superset", tags=["alpha", "beta", "gamma"])
         await _insert("tags-partial", tags=["alpha", "beta"])
         await _insert("tags-none", tags=["delta"])
-        page = await _repo(ADMIN).get_many(
+        page = await _repo(ADMIN).read_many(
             filter=ProjectFilter(tags__contains=["alpha", "gamma"]),
             pagination=CursorParams(),
             fields=None,
@@ -230,7 +230,7 @@ class TestGetProjectsTagsFilter:
 
         await _insert("tags-single-hit", tags=["alpha", "beta"])
         await _insert("tags-single-miss", tags=["beta", "gamma"])
-        page = await _repo(ADMIN).get_many(
+        page = await _repo(ADMIN).read_many(
             filter=ProjectFilter(tags__contains=["alpha"]),
             pagination=CursorParams(),
             fields=None,
@@ -244,7 +244,7 @@ class TestGetProjectsTagsFilter:
         await _insert("tags-csv-miss", tags=["alpha"])
         # FilterDepends collapses the list query param to a comma string; the
         # BaseFilter validator must re-expand it.
-        page = await _repo(ADMIN).get_many(
+        page = await _repo(ADMIN).read_many(
             filter=ProjectFilter(tags__contains="alpha,beta"),
             pagination=CursorParams(),
             fields=None,
@@ -261,7 +261,7 @@ class TestFieldProjection:
     async def test_projection_returns_only_requested_fields(self, db):
         await _insert("proj-fields", is_public=True, is_approved=True)
         fields = ProjectOut.parse_fields(["title"])
-        page = await _repo(ADMIN).get_many(filter=_noop_filter(), pagination=CursorParams(), fields=fields)
+        page = await _repo(ADMIN).read_many(filter=_noop_filter(), pagination=CursorParams(), fields=fields)
         assert len(page.items) == 1
         item = page.items[0]
         assert item.title == "proj-fields"
@@ -270,7 +270,7 @@ class TestFieldProjection:
 
     async def test_no_projection_returns_all_fields(self, db):
         await _insert("proj-all", is_public=True, is_approved=True)
-        page = await _repo(ADMIN).get_many(filter=_noop_filter(), pagination=CursorParams(), fields=None)
+        page = await _repo(ADMIN).read_many(filter=_noop_filter(), pagination=CursorParams(), fields=None)
         item = page.items[0]
         assert item.title is not None
         assert item.authors is not None
@@ -285,27 +285,27 @@ class TestPagination:
     async def test_limit_is_respected(self, db):
         for i in range(5):
             await _insert(f"pag-limit-{i:02d}", is_public=True, is_approved=True)
-        page = await _repo(ADMIN).get_many(filter=_noop_filter(), pagination=CursorParams(limit=3), fields=None)
+        page = await _repo(ADMIN).read_many(filter=_noop_filter(), pagination=CursorParams(limit=3), fields=None)
         assert len(page.items) == 3
 
     async def test_next_cursor_set_when_more_items(self, db):
         for i in range(4):
             await _insert(f"pag-cursor-{i:02d}", is_public=True, is_approved=True)
-        page = await _repo(ADMIN).get_many(filter=_noop_filter(), pagination=CursorParams(limit=2), fields=None)
+        page = await _repo(ADMIN).read_many(filter=_noop_filter(), pagination=CursorParams(limit=2), fields=None)
         assert page.next_cursor is not None
 
     async def test_next_cursor_none_on_last_page(self, db):
         for i in range(3):
             await _insert(f"pag-last-{i:02d}", is_public=True, is_approved=True)
-        page = await _repo(ADMIN).get_many(filter=_noop_filter(), pagination=CursorParams(limit=10), fields=None)
+        page = await _repo(ADMIN).read_many(filter=_noop_filter(), pagination=CursorParams(limit=10), fields=None)
         assert page.next_cursor is None
 
     async def test_cursor_fetches_next_page(self, db):
         for i in range(4):
             await _insert(f"pag-next-{i:02d}", is_public=True, is_approved=True)
-        page1 = await _repo(ADMIN).get_many(filter=_noop_filter(), pagination=CursorParams(limit=2), fields=None)
+        page1 = await _repo(ADMIN).read_many(filter=_noop_filter(), pagination=CursorParams(limit=2), fields=None)
         assert page1.next_cursor is not None
-        page2 = await _repo(ADMIN).get_many(
+        page2 = await _repo(ADMIN).read_many(
             filter=_noop_filter(), pagination=CursorParams(limit=2, cursor=page1.next_cursor), fields=None
         )
         ids1 = {p.id for p in page1.items}
@@ -318,7 +318,7 @@ class TestPagination:
         all_ids: set[str] = set()
         cursor = None
         while True:
-            page = await _repo(ADMIN).get_many(
+            page = await _repo(ADMIN).read_many(
                 filter=_noop_filter(), pagination=CursorParams(limit=2, cursor=cursor), fields=None
             )
             all_ids.update(p.id for p in page.items)
@@ -329,31 +329,31 @@ class TestPagination:
 
 
 # ---------------------------------------------------------------------------
-# patch_one  (base mechanics: scoped $set; policy lives in the service)
+# update_one  (base mechanics: scoped $set; policy lives in the service)
 # ---------------------------------------------------------------------------
 
 
 class TestPatchProject:
     async def test_updates_single_field(self, db):
         await _insert("patch-me")
-        await _repo(ADMIN).patch_one({"id": "patch-me"}, ProjectPatch(title="Updated Title"))
+        await _repo(ADMIN).update_one({"id": "patch-me"}, ProjectPatch(title="Updated Title"))
         found = await Project.find_one(Project.id == "patch-me")
         assert found.title == "Updated Title"
 
     async def test_unset_fields_not_overwritten(self, db):
         await _insert("patch-preserve")
         original = await Project.find_one(Project.id == "patch-preserve")
-        await _repo(ADMIN).patch_one({"id": "patch-preserve"}, ProjectPatch(title="New Title"))
+        await _repo(ADMIN).update_one({"id": "patch-preserve"}, ProjectPatch(title="New Title"))
         found = await Project.find_one(Project.id == "patch-preserve")
         assert found.authors == original.authors
 
     async def test_not_found_raises(self, db):
         with pytest.raises(NotFoundError):
-            await _repo(ADMIN).patch_one({"id": "no-such-id"}, ProjectPatch(title="Won't work"))
+            await _repo(ADMIN).update_one({"id": "no-such-id"}, ProjectPatch(title="Won't work"))
 
     async def test_empty_patch_returns_existing(self, db):
         await _insert("patch-empty")
-        result = await _repo(ADMIN).patch_one({"id": "patch-empty"}, ProjectPatch())
+        result = await _repo(ADMIN).update_one({"id": "patch-empty"}, ProjectPatch())
         assert result.id == "patch-empty"
 
 
@@ -366,7 +366,7 @@ class TestDeleteProject:
     async def test_deleted_project_not_in_default_query(self, db):
         await _insert("del-me", is_public=True, is_approved=True)
         await _repo(ADMIN).delete_one({"id": "del-me"})
-        page = await _repo(ADMIN).get_many(filter=_noop_filter(), pagination=CursorParams(), fields=None)
+        page = await _repo(ADMIN).read_many(filter=_noop_filter(), pagination=CursorParams(), fields=None)
         assert "del-me" not in {p.id for p in page.items}
 
     async def test_delete_nonexistent_throws_error(self, db):
