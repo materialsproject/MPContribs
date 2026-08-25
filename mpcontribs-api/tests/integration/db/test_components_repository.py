@@ -38,13 +38,22 @@ async def _count() -> int:
     return await Attachment.find_all().count()
 
 
+def _build(repo, inputs) -> list:
+    """Coerce inputs into stored documents the way the service layer does before inserting.
+
+    The repository's ``insert_many`` now takes fully-built documents (md5 is computed by the model on
+    validation), so tests build via ``from_input`` first.
+    """
+    return [repo.document_model.from_input(i) for i in inputs]
+
+
 async def _insert(repo, inputs) -> list:
     """Insert and return just the resolved docs, asserting no per-item failures.
 
     ``insert_many`` now returns ``(indexed_successes, failures)`` (per-item reporting); most tests
     only care about the resolved documents on the success path.
     """
-    successes, failures = await repo.insert_many(inputs)
+    successes, failures = await repo.insert_many(_build(repo, inputs))
     assert failures == []
     return [doc for _, doc in successes]
 
@@ -57,7 +66,8 @@ async def _insert(repo, inputs) -> list:
 class TestInsertComponentsDedupe:
     async def test_duplicate_content_in_batch_inserted_once(self, db):
         # Two inputs share content (-> same md5); only one document should be written.
-        await _repo().insert_many([_attachment(1), _attachment(1), _attachment(2)])
+        repo = _repo()
+        await repo.insert_many(_build(repo, [_attachment(1), _attachment(1), _attachment(2)]))
         assert await _count() == 2
 
     async def test_returns_one_doc_per_input_deduped_to_same_doc(self, db):
@@ -66,9 +76,10 @@ class TestInsertComponentsDedupe:
         assert docs[0].id == docs[1].id
 
     async def test_existing_md5_not_reinserted(self, db):
-        await _repo().insert_many([_attachment(1)])
+        repo = _repo()
+        await repo.insert_many(_build(repo, [_attachment(1)]))
         # Re-submit the existing content alongside new content.
-        await _repo().insert_many([_attachment(1), _attachment(2)])
+        await repo.insert_many(_build(repo, [_attachment(1), _attachment(2)]))
         assert await _count() == 2
 
     async def test_existing_doc_returned_with_original_id(self, db):
@@ -104,7 +115,9 @@ class TestInsertComponentsChunking:
 
 class TestInsertComponent:
     async def test_single_insert_persists(self, db):
-        doc = await _repo().insert_one(_attachment(3))
+        repo = _repo()
+        [built] = _build(repo, [_attachment(3)])
+        doc = await repo.insert_one(built)
         found = await Attachment.find_one(Attachment.id == doc.id)
         assert found is not None
         assert found.md5 == doc.md5
@@ -200,7 +213,8 @@ class TestPatchComponent:
 class TestComponentDownload:
     async def test_jsonl_download_round_trips(self, db):
         """Component downloads stream a decompressable gzip of all rows."""
-        await _repo().insert_many([_attachment(1), _attachment(2)])
+        repo = _repo()
+        await repo.insert_many(_build(repo, [_attachment(1), _attachment(2)]))
         stream = _repo().download(
             format=DownloadFormat.JSONL,
             short_mime=ShortMimeFormat.GZ,

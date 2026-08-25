@@ -5,10 +5,11 @@ from typing import Any
 from beanie import PydanticObjectId
 from fastapi_filter.contrib.beanie import Filter
 from pydantic import BaseModel
+from pydantic import ValidationError as PydanticValidationError
 from pymongo.asynchronous.client_session import AsyncClientSession
 from types_aiobotocore_s3 import S3Client
 
-from mpcontribs_api.domains._shared.bulk import BulkWriteSummary
+from mpcontribs_api.domains._shared.bulk import BulkFailure, BulkWriteSummary, bulk_failure_from_exception
 from mpcontribs_api.domains._shared.components import MongoDbComponentsRepository
 from mpcontribs_api.domains._shared.models import Component, ComponentDeleteResponse, ComponentIn, DocumentOut
 from mpcontribs_api.domains._shared.types import DownloadFormat, ShortMimeFormat
@@ -95,8 +96,31 @@ class ComponentService[
         session: AsyncClientSession | None = None,
     ) -> BulkWriteSummary[TDoc]:
         """Bulk-insert components (deduplicated by content hash), reporting per-item outcomes."""
-        indexed_successes, failures = await self._components.insert_many(components=components, session=session)
-        succeeded = [doc for _, doc in sorted(indexed_successes, key=lambda pair: pair[0])]
+        build_failures: list[BulkFailure] = []
+        origins: list[int] = []  # original input index for each successfully built document
+        docs: list[TDoc] = []
+        for index, comp in enumerate(components):
+            identifier = {"name": getattr(comp, "name", None)}
+            try:
+                docs.append(self._components.document_model.from_input(comp))
+            except PydanticValidationError as exc:
+                build_failures.append(
+                    BulkFailure(index=index, identifier=identifier, error_code="validation_error", message=str(exc))
+                )
+                continue
+            except Exception as exc:
+                build_failures.append(bulk_failure_from_exception(index, identifier, exc))
+                continue
+            origins.append(index)
+
+        indexed_successes, insert_failures = await self._components.insert_many(docs, session=session)
+        # Repository indices are positions in ``docs``; map them back to the original input positions.
+        successes = [(origins[position], doc) for position, doc in indexed_successes]
+        failures = build_failures + [
+            failure.model_copy(update={"index": origins[failure.index]}) for failure in insert_failures
+        ]
+
+        succeeded = [doc for _, doc in sorted(successes, key=lambda pair: pair[0])]
         failed = sorted(failures, key=lambda failure: failure.index)
         return BulkWriteSummary[TDoc](total=len(components), succeeded=succeeded, failed=failed)
 

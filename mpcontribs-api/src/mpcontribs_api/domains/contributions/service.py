@@ -7,6 +7,7 @@ from typing import Any, cast
 
 import structlog
 from beanie import Link, PydanticObjectId
+from pydantic import ValidationError as PydanticValidationError
 from pymongo import AsyncMongoClient
 from pymongo.asynchronous.client_session import AsyncClientSession
 from pymongo.errors import BulkWriteError
@@ -614,10 +615,13 @@ class ContributionService:
     async def _do_insert_group(self, group: list[PreparedWrite], session: AsyncClientSession) -> list[Contribution]:
         """Perform the insert of Contributions and their components within a single session."""
         template = group[0].contribution
-        structure_successes, structure_failures = await self._structures.insert_many(
-            template.structures or [], session=session
-        )
-        table_successes, table_failures = await self._tables.insert_many(template.tables or [], session=session)
+        try:
+            structure_docs = [Structure.from_input(s) for s in (template.structures or [])]
+            table_docs = [Table.from_input(t) for t in (template.tables or [])]
+        except PydanticValidationError as exc:
+            raise ValidationError(str(exc)) from exc
+        structure_successes, structure_failures = await self._structures.insert_many(structure_docs, session=session)
+        table_successes, table_failures = await self._tables.insert_many(table_docs, session=session)
         # A contribution and its components commit or roll back together, so any per-component failure
         # aborts the whole transaction. Re-raise it here; ``_insert_with_components`` maps the raised
         # error onto this contribution's ``BulkFailure``.
