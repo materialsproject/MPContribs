@@ -83,6 +83,7 @@ def require_writer(user: UserDep) -> User:
         raise AuthenticationError("authentication required")
     if not (user.is_admin or user.writable_projects):
         raise PermissionError("write access to at least one project is required")
+    return user
 
 
 def require_admin(user: UserDep) -> User:
