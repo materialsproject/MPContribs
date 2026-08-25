@@ -68,9 +68,6 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
     async def existing_ids(self, ids: list[str], *, scoped: bool) -> set[str]:
         """Return the subset of ``ids`` that exist, in one query.
 
-        Lets callers validate a batch of project references with a single round-trip instead of one
-        lookup per id.
-
         Args:
             ids: project ids to check
             scoped: when ``True`` the user read scope is merged in, so an id the caller cannot see is
@@ -91,10 +88,8 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
     async def set_stats_and_columns(self, updates: dict[str, tuple[Stats, list[Column]]]) -> None:
         """Overwrite the derived ``stats``/``columns`` of the given projects in one bulk write.
 
-        A **system-computed write**: identity is the project ``_id`` alone and the user scope is
-        deliberately not applied. Stats are recomputed from a project's contributions after a write
-        (see ``ContributionService.update_project``) and must land even when the caller is a group
-        contributor who does not own the project. Missing ids match nothing and are silently skipped.
+        A server-computer write after a writing contributions to a project.
+        Missing ids a silently skipped.
 
         Args:
             updates: ``{project_id: (stats, columns)}`` to persist
