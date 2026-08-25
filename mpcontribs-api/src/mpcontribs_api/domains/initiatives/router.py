@@ -18,7 +18,7 @@ router = APIRouter()
 
 
 @router.get("")
-async def get_initiatives(
+async def get_many(
     service: InitiativeServiceDep,
     pagination: Annotated[CursorParams, Depends()],
     filter: InitiativeFilter = FilterDepends(InitiativeFilter),
@@ -43,7 +43,7 @@ async def get_one(
 @router.post(
     "", response_model=InitiativeOut, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_user)]
 )
-async def insert_initiative(
+async def insert_one(
     service: InitiativeServiceDep,
     initiative: InitiativeIn,
 ):
