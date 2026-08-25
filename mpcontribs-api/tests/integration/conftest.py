@@ -97,14 +97,6 @@ def test_app() -> FastAPI:
 @pytest.fixture
 def client(test_app: FastAPI):
     """Function-scoped client; dependency overrides are cleared after each test."""
-    from mpcontribs_api.domains.consumers.dependencies import get_effective_limits
-    from mpcontribs_api.domains.consumers.models import ConsumerSettings
-
-    # Mock-based integration tests run without a database. Resolving per-consumer limits normally
-    # awaits the (mocked) consumers collection, which would 500 the request before it reaches the
-    # code under test. Default the dependency to the global-default limits; tests that specifically
-    # assert override behavior can install their own override.
-    test_app.dependency_overrides[get_effective_limits] = lambda: ConsumerSettings()
     with TestClient(test_app, raise_server_exceptions=False) as c:
         yield c
     test_app.dependency_overrides.clear()

@@ -2,10 +2,7 @@ import pytest
 from beanie import PydanticObjectId
 
 from mpcontribs_api.domains._shared.bulk import BulkDeleteSummary, BulkUpdateSummary, BulkWriteSummary
-from mpcontribs_api.domains.contributions.dependencies import (
-    get_contribution_service,
-    get_scoped_contributions,
-)
+from mpcontribs_api.domains.contributions.dependencies import get_contribution_service
 from mpcontribs_api.domains.contributions.models import ContributionOut
 from mpcontribs_api.exceptions import NotFoundError
 from tests.integration.conftest import AUTHED_HEADERS, FORCE_ANON_HEADERS
@@ -24,13 +21,6 @@ def _authenticate(client):
     explicitly by TestContributionMutationsRequireAuth via FORCE_ANON_HEADERS.
     """
     client.headers.update(AUTHED_HEADERS)
-
-
-@pytest.fixture
-def contribution_repo(test_app, mock_contribution_repo):
-    test_app.dependency_overrides[get_scoped_contributions] = lambda: mock_contribution_repo
-    yield mock_contribution_repo
-    test_app.dependency_overrides.pop(get_scoped_contributions, None)
 
 
 @pytest.fixture
@@ -138,11 +128,11 @@ class TestContributionByIdRouting:
     """RED: routes mount as /contributions{id} not /contributions/{id}."""
 
     def test_get_by_id_conventional_path(self, client, contribution_service):
-        contribution_service.get_one.return_value = SAMPLE_OUT
+        contribution_service.read_one.return_value = SAMPLE_OUT
         assert client.get(f"/api/v1/contributions/{PydanticObjectId()}").status_code == 200
 
     def test_patch_by_id_conventional_path(self, client, contribution_service):
-        contribution_service.patch_one.return_value = SAMPLE_OUT
+        contribution_service.update_one.return_value = SAMPLE_OUT
         r = client.patch(f"/api/v1/contributions/{PydanticObjectId()}", json={"formula": "H2O"})
         assert r.status_code == 200
 
@@ -155,8 +145,8 @@ class TestContributionByIdRouting:
         contribution_service.delete_one.return_value = BulkDeleteSummary(num_deleted=1, num_children_deleted=0)
         assert client.delete(f"/api/v1/contributions/{PydanticObjectId()}").status_code == 200
 
-    def test_download_route_conventional_path(self, client, contribution_repo):
-        contribution_repo.download_contributions.return_value = iter([b"x"])
+    def test_download_route_conventional_path(self, client, contribution_service):
+        contribution_service.download.return_value = iter([b"x"])
         assert client.get("/api/v1/contributions/download/gz").status_code == 200
 
 
@@ -186,60 +176,60 @@ class TestDeleteContributionByIdWiring:
 
 
 class TestDownloadContributions:
-    def test_default_format_jsonl_returns_200(self, client, contribution_repo):
+    def test_default_format_jsonl_returns_200(self, client, contribution_service):
         # The contributions route gives `format` a default of JSONL, so it works
         # with the param omitted (component routes require it — see test_component_routes).
-        contribution_repo.download_contributions.return_value = iter([b"x"])
+        contribution_service.download.return_value = iter([b"x"])
         assert client.get("/api/v1/contributions/download/gz").status_code == 200
 
-    def test_csv_format_returns_200(self, client, contribution_repo):
-        contribution_repo.download_contributions.return_value = iter([b"x"])
+    def test_csv_format_returns_200(self, client, contribution_service):
+        contribution_service.download.return_value = iter([b"x"])
         assert client.get("/api/v1/contributions/download/gz?format=csv").status_code == 200
 
-    def test_body_is_streamed_bytes(self, client, contribution_repo):
-        contribution_repo.download_contributions.return_value = iter([b"abc", b"def"])
+    def test_body_is_streamed_bytes(self, client, contribution_service):
+        contribution_service.download.return_value = iter([b"abc", b"def"])
         assert client.get("/api/v1/contributions/download/gz").content == b"abcdef"
 
-    def test_invalid_short_mime_returns_422(self, client, contribution_repo):
-        contribution_repo.download_contributions.return_value = iter([b"x"])
+    def test_invalid_short_mime_returns_422(self, client, contribution_service):
+        contribution_service.download.return_value = iter([b"x"])
         # Only 'gz' is a valid ShortMimeFormat.
         assert client.get("/api/v1/contributions/download/zip").status_code == 422
 
-    def test_invalid_format_returns_422(self, client, contribution_repo):
-        contribution_repo.download_contributions.return_value = iter([b"x"])
+    def test_invalid_format_returns_422(self, client, contribution_service):
+        contribution_service.download.return_value = iter([b"x"])
         assert client.get("/api/v1/contributions/download/gz?format=xml").status_code == 422
 
-    def test_format_forwarded_to_repo(self, client, contribution_repo):
-        contribution_repo.download_contributions.return_value = iter([b"x"])
+    def test_format_forwarded_to_repo(self, client, contribution_service):
+        contribution_service.download.return_value = iter([b"x"])
         client.get("/api/v1/contributions/download/gz?format=csv")
-        assert contribution_repo.download_contributions.call_args.kwargs["format"] == "csv"
+        assert contribution_service.download.call_args.kwargs["format"] == "csv"
 
-    def test_fields_parsed_and_forwarded(self, client, contribution_repo):
-        contribution_repo.download_contributions.return_value = iter([b"x"])
+    def test_fields_parsed_and_forwarded(self, client, contribution_service):
+        contribution_service.download.return_value = iter([b"x"])
         client.get("/api/v1/contributions/download/gz?_fields=project")
-        forwarded = contribution_repo.download_contributions.call_args.kwargs["fields"]
+        forwarded = contribution_service.download.call_args.kwargs["fields"]
         assert "project" in forwarded
 
-    def test_invalid_fields_returns_422(self, client, contribution_repo):
-        contribution_repo.download_contributions.return_value = iter([b"x"])
+    def test_invalid_fields_returns_422(self, client, contribution_service):
+        contribution_service.download.return_value = iter([b"x"])
         assert client.get("/api/v1/contributions/download/gz?_fields=not_a_field").status_code == 422
 
-    def test_filename_names_the_contributions_resource(self, client, contribution_repo):
+    def test_filename_names_the_contributions_resource(self, client, contribution_service):
         """The attachment filename references the contributions resource."""
-        contribution_repo.download_contributions.return_value = iter([b"x"])
+        contribution_service.download.return_value = iter([b"x"])
         cd = client.get("/api/v1/contributions/download/gz").headers["content-disposition"]
         assert "contributions" in cd
 
-    def test_csv_filename_uses_csv_extension(self, client, contribution_repo):
+    def test_csv_filename_uses_csv_extension(self, client, contribution_service):
         """A CSV download is named *.csv.gz, matching the requested format."""
-        contribution_repo.download_contributions.return_value = iter([b"x"])
+        contribution_service.download.return_value = iter([b"x"])
         cd = client.get("/api/v1/contributions/download/gz?format=csv").headers["content-disposition"]
         assert ".csv.gz" in cd
 
-    def test_repo_error_surfaces_as_uniform_json(self, client, contribution_repo):
+    def test_repo_error_surfaces_as_uniform_json(self, client, contribution_service):
         # An AppError raised while the repo builds the download surfaces through the
         # registered exception handler as the uniform error envelope (not a 500 traceback).
-        contribution_repo.download_contributions.side_effect = NotFoundError("nothing to download")
+        contribution_service.download.side_effect = NotFoundError("nothing to download")
         r = client.get("/api/v1/contributions/download/gz")
         assert r.status_code == 404
         assert r.json()["error"]["code"] == "not_found"
@@ -252,7 +242,7 @@ class TestDownloadContributions:
 
 class TestBulkUpdateContributions:
     def test_publish_returns_200_and_summary(self, client, contribution_service):
-        contribution_service.patch_many.return_value = BulkUpdateSummary(matched=3, modified=2, projects=["mp-team"])
+        contribution_service.update_many.return_value = BulkUpdateSummary(matched=3, modified=2, projects=["mp-team"])
         r = client.patch("/api/v1/contributions", json={"is_public": True})
         assert r.status_code == 200
         assert r.json() == {"matched": 3, "modified": 2, "projects": ["mp-team"], "failed": []}
@@ -260,57 +250,57 @@ class TestBulkUpdateContributions:
     def test_forwards_update_and_filter(self, client, contribution_service):
         from mpcontribs_api.domains.contributions.models import ContributionFilter
 
-        contribution_service.patch_many.return_value = BulkUpdateSummary(matched=0, modified=0, projects=[])
+        contribution_service.update_many.return_value = BulkUpdateSummary(matched=0, modified=0, projects=[])
         client.patch("/api/v1/contributions?project=mp-team", json={"is_public": True})
-        contribution_service.patch_many.assert_awaited_once()
-        kwargs = contribution_service.patch_many.call_args.kwargs
+        contribution_service.update_many.assert_awaited_once()
+        kwargs = contribution_service.update_many.call_args.kwargs
         assert kwargs["update"].is_public is True
         assert isinstance(kwargs["filter"], ContributionFilter)
 
     def test_forwards_full_patch_body(self, client, contribution_service):
         # The bulk patch now accepts the same fields as the single-item patch (not just is_public).
-        contribution_service.patch_many.return_value = BulkUpdateSummary(matched=1, modified=1, projects=["mp-team"])
+        contribution_service.update_many.return_value = BulkUpdateSummary(matched=1, modified=1, projects=["mp-team"])
         r = client.patch("/api/v1/contributions", json={"formula": "Fe2O3", "data": {"y": 9.0}})
         assert r.status_code == 200
-        update = contribution_service.patch_many.call_args.kwargs["update"]
+        update = contribution_service.update_many.call_args.kwargs["update"]
         assert update.formula == "Fe2O3"
         assert update.data == {"y": 9.0}
 
     def test_empty_patch_is_accepted_as_noop(self, client, contribution_service):
         # An empty patch is a valid no-op (parity with the single-item patch), no longer a 422.
-        contribution_service.patch_many.return_value = BulkUpdateSummary(matched=0, modified=0, projects=[])
+        contribution_service.update_many.return_value = BulkUpdateSummary(matched=0, modified=0, projects=[])
         r = client.patch("/api/v1/contributions", json={})
         assert r.status_code == 200
-        contribution_service.patch_many.assert_awaited_once()
+        contribution_service.update_many.assert_awaited_once()
 
     def test_replace_data_query_param_forwarded(self, client, contribution_service):
         # ?replace_data=true opts a data patch out of the additive-merge default (whole-dict overwrite).
-        contribution_service.patch_many.return_value = BulkUpdateSummary(matched=0, modified=0, projects=[])
+        contribution_service.update_many.return_value = BulkUpdateSummary(matched=0, modified=0, projects=[])
         client.patch("/api/v1/contributions?replace_data=true", json={"data": {"y": 9.0}})
-        assert contribution_service.patch_many.call_args.kwargs["replace_data"] is True
+        assert contribution_service.update_many.call_args.kwargs["replace_data"] is True
 
     def test_replace_data_defaults_to_false(self, client, contribution_service):
         # Omitting the flag keeps the additive-merge default.
-        contribution_service.patch_many.return_value = BulkUpdateSummary(matched=0, modified=0, projects=[])
+        contribution_service.update_many.return_value = BulkUpdateSummary(matched=0, modified=0, projects=[])
         client.patch("/api/v1/contributions", json={"data": {"y": 9.0}})
-        assert contribution_service.patch_many.call_args.kwargs["replace_data"] is False
+        assert contribution_service.update_many.call_args.kwargs["replace_data"] is False
 
     def test_patch_by_id_forwards_is_public(self, client, contribution_service):
         # The single-contribution publish path: {"is_public": true} reaches the service patch.
-        contribution_service.patch_one.return_value = SAMPLE_OUT
+        contribution_service.update_one.return_value = SAMPLE_OUT
         r = client.patch(f"/api/v1/contributions/{PydanticObjectId()}", json={"is_public": True})
         assert r.status_code == 200
-        update = contribution_service.patch_one.call_args.kwargs["update"]
+        update = contribution_service.update_one.call_args.kwargs["update"]
         assert update.is_public is True
 
     def test_patch_by_id_forwards_replace_data(self, client, contribution_service):
         # The single-item path exposes the same overwrite opt-out as the bulk path.
-        contribution_service.patch_one.return_value = SAMPLE_OUT
+        contribution_service.update_one.return_value = SAMPLE_OUT
         r = client.patch(
             f"/api/v1/contributions/{PydanticObjectId()}?replace_data=true", json={"data": {"y": 9.0}}
         )
         assert r.status_code == 200
-        assert contribution_service.patch_one.call_args.kwargs["replace_data"] is True
+        assert contribution_service.update_one.call_args.kwargs["replace_data"] is True
 
 
 class TestContributionMutationsRequireAuth:
@@ -325,15 +315,15 @@ class TestContributionMutationsRequireAuth:
         assert r.status_code == 401
         contribution_service.upsert_many.assert_not_called()
 
-    def test_delete_collection_anon_401(self, client, contribution_repo):
+    def test_delete_collection_anon_401(self, client, contribution_service):
         r = client.delete("/api/v1/contributions", headers=FORCE_ANON_HEADERS)
         assert r.status_code == 401
-        contribution_repo.delete_many.assert_not_called()
+        contribution_service.delete_many.assert_not_called()
 
     def test_patch_collection_anon_401(self, client, contribution_service):
         r = client.patch("/api/v1/contributions", json={"is_public": True}, headers=FORCE_ANON_HEADERS)
         assert r.status_code == 401
-        contribution_service.patch_many.assert_not_called()
+        contribution_service.update_many.assert_not_called()
 
     def test_delete_by_id_anon_401(self, client, contribution_service):
         r = client.delete(f"/api/v1/contributions/{PydanticObjectId()}", headers=FORCE_ANON_HEADERS)
@@ -353,11 +343,11 @@ class TestContributionMutationsRequireAuth:
             f"/api/v1/contributions/{PydanticObjectId()}", json={"formula": "H2O"}, headers=FORCE_ANON_HEADERS
         )
         assert r.status_code == 401
-        contribution_service.patch_one.assert_not_called()
+        contribution_service.update_one.assert_not_called()
 
-    def test_get_collection_still_open_to_anon(self, client, contribution_repo):
+    def test_get_collection_still_open_to_anon(self, client, contribution_service):
         from mpcontribs_api.pagination import Page
 
-        contribution_repo.get_many.return_value = Page(items=[], next_cursor=None)
+        contribution_service.read_many.return_value = Page(items=[], next_cursor=None)
         r = client.get("/api/v1/contributions", headers=FORCE_ANON_HEADERS)
         assert r.status_code == 200

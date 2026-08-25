@@ -15,6 +15,7 @@ from pydantic import BaseModel
 from mpcontribs_api.authz import User
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
 from mpcontribs_api.domains._shared.types import DownloadFormat, ShortMimeFormat
+from mpcontribs_api.scope import Scope
 
 # ---------------------------------------------------------------------------
 # Test doubles
@@ -73,10 +74,7 @@ class _FakeRepo(MongoDbRepository):
 
     document_model = MagicMock()
     out_model = _Out
-
-    @staticmethod
-    def _build_scope(user: User) -> dict[str, Any]:
-        return {}
+    read_scope = Scope()
 
 
 def _repo(out_model: type[BaseModel] = _Out) -> _FakeRepo:

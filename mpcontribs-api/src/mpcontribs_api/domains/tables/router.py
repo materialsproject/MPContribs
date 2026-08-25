@@ -21,25 +21,25 @@ router = APIRouter()
 
 
 @router.get("")
-async def get_tables(
+async def read_many(
     service: TableServiceDep,
     pagination: Annotated[CursorParams, Depends()],
     filter: TableFilter = FilterDepends(TableFilter),
     fields: FieldSelector = None,
 ):
     selected = TableOut.parse_fields(fields)
-    return await service.get_many(filter=filter, fields=selected, pagination=pagination)
+    return await service.read_many(filter=filter, fields=selected, pagination=pagination)
 
 
 @router.get("/{id}")
-async def get_one(
+async def read_one(
     service: TableServiceDep,
     id: str,
     fields: FieldSelector = None,
 ):
     """Return a single table addressed by its ``_id`` or its content ``md5``."""
     selected = TableOut.parse_fields(fields)
-    return await service.get_one(identifiers={"id": id}, fields=selected)
+    return await service.read_one(identifiers={"id": id}, fields=selected)
 
 
 @router.get("/download/{short_mime}")
@@ -70,7 +70,7 @@ async def download_table(
 
 
 @router.post("", response_model=BulkWriteSummary[Table], dependencies=[Depends(require_writer)])
-async def insert_tables(
+async def insert_many(
     service: TableServiceDep,
     tables: list[TableIn],
 ):
@@ -78,7 +78,7 @@ async def insert_tables(
 
 
 @router.delete("", response_model=ComponentDeleteResponse, dependencies=[Depends(require_user)])
-async def delete_tables(service: TableServiceDep, filter: TableFilter = FilterDepends(TableFilter)):
+async def delete_many(service: TableServiceDep, filter: TableFilter = FilterDepends(TableFilter)):
     return await service.delete_many(filter=filter)
 
 
@@ -89,10 +89,10 @@ async def delete_one(service: TableServiceDep, id: str):
 
 
 @router.patch("/{id}", dependencies=[Depends(require_user)])
-async def patch_one(
+async def update_one(
     service: TableServiceDep,
     id: str,
     update: TablePatch,
 ):
     """Patch a single table addressed by its ``_id``."""
-    return await service.patch_one(identifiers={"id": id}, update=update)
+    return await service.update_one(identifiers={"id": id}, update=update)

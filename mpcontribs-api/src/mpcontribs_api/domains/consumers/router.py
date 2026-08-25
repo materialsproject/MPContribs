@@ -5,7 +5,7 @@ from fastapi_filter import FilterDepends
 
 from mpcontribs_api.dependencies import require_admin
 from mpcontribs_api.domains._shared.types import FieldSelector
-from mpcontribs_api.domains.consumers.dependencies import ConsumerDep
+from mpcontribs_api.domains.consumers.dependencies import ConsumerServiceDep
 from mpcontribs_api.domains.consumers.models import (
     ConsumerFilter,
     ConsumerIn,
@@ -21,56 +21,52 @@ router = APIRouter(dependencies=[Depends(require_admin)])
 
 
 @router.get("")
-async def get_consumers(
-    repo: ConsumerDep,
+async def read_many(
+    service: ConsumerServiceDep,
     pagination: Annotated[CursorParams, Depends()],
     filter: ConsumerFilter = FilterDepends(ConsumerFilter),
     fields: FieldSelector = None,
 ):
     """List consumer overrides (admin only)."""
-    if fields is None:
-        fields = list(ConsumerOut.default_fields())
     selected = ConsumerOut.parse_fields(fields)
-    return await repo.get_many(filter=filter, pagination=pagination, fields=selected)
+    return await service.read_many(filter=filter, pagination=pagination, fields=selected)
 
 
 @router.get("/{id}")
-async def get_consumer_by_id(
+async def read_one(
     id: str,
-    repo: ConsumerDep,
+    service: ConsumerServiceDep,
     fields: FieldSelector = None,
 ):
     """Get a single consumer override by document id (admin only)."""
-    if fields is None:
-        fields = list(ConsumerOut.default_fields())
     selected = ConsumerOut.parse_fields(fields)
-    return await repo.get_one(repo.coerce_identifiers({"id": id}), selected)
+    return await service.read_one(id, fields=selected)
 
 
 @router.post("", response_model=ConsumerOut, status_code=status.HTTP_201_CREATED)
-async def create_consumer(
-    repo: ConsumerDep,
+async def insert_one(
+    service: ConsumerServiceDep,
     consumer: ConsumerIn,
 ):
     """Create a new consumer override, rejecting a duplicate ``consumer_id`` with 409 (admin only)."""
-    return await repo.insert_one(consumer)
+    return await service.insert_one(consumer)
 
 
 @router.patch("/{id}", response_model=ConsumerOut)
-async def patch_consumer_by_id(
-    repo: ConsumerDep,
+async def update_one(
+    service: ConsumerServiceDep,
     id: str,
     update: ConsumerPatch,
 ):
     """Partially update a consumer override by document id (admin only)."""
-    return await repo.patch_one(repo.coerce_identifiers({"id": id}), update)
+    return await service.update_one(id, update)
 
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_consumer_by_id(
-    repo: ConsumerDep,
+async def delete_one(
+    service: ConsumerServiceDep,
     id: str,
 ):
     """Delete a consumer override by document id (admin only)."""
-    await repo.delete_one(repo.coerce_identifiers({"id": id}))
+    await service.delete_one(id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

@@ -5,9 +5,11 @@ from typing import Any
 from beanie import PydanticObjectId
 from fastapi_filter.contrib.beanie import Filter
 from pydantic import BaseModel
+from pydantic import ValidationError as PydanticValidationError
 from pymongo.asynchronous.client_session import AsyncClientSession
 from types_aiobotocore_s3 import S3Client
 
+from mpcontribs_api.domains._shared.bulk import BulkFailure, BulkWriteSummary, bulk_failure_from_exception
 from mpcontribs_api.domains._shared.components import MongoDbComponentsRepository
 from mpcontribs_api.domains._shared.models import Component, ComponentDeleteResponse, ComponentIn, DocumentOut
 from mpcontribs_api.domains._shared.types import DownloadFormat, ShortMimeFormat
@@ -55,7 +57,7 @@ class ComponentService[
         self._ref_field = ref_field
         self._bucket_name = bucket_name or ref_field
 
-    async def get_many(
+    async def read_many(
         self,
         filter: TFilter,
         pagination: CursorParams,
@@ -68,38 +70,61 @@ class ComponentService[
         allowed to see
         """
         allowed = await self._contributions.referenced_component_ids(self._ref_field, scoped=True)
-        return await self._components.get_many(
+        return await self._components.read_many(
             pagination=pagination, filter=filter, fields=fields, restrict_ids=allowed
         )
 
     async def _resolve_component_id(self, identifiers: dict[str, Any]) -> PydanticObjectId | None:
         """Return the component ``_id`` after finding it via identifiers, or None if absent."""
-        if "id" in identifiers:
-            return identifiers["id"]
-        existing = await self._components.get_one(identifiers, frozenset({"id"}))
+        existing = await self._components.read_one(identifiers, frozenset({"id"}))
         return existing.id if existing is not None else None
 
-    async def get_one(self, identifiers: dict[str, Any], fields: frozenset[str] | None) -> TDoc | TOut | None:
+    async def read_one(self, identifiers: dict[str, Any], fields: frozenset[str] | None) -> TDoc | TOut | None:
         """Find a single component matching ``identifiers``, gated by contribution reachability.
 
         Returns ``None``  when no in-scope contribution references the component.
         Accepts either the bare ``{"id": ...}`` form or the content-hash ``{"md5": ...}`` form.
         """
-        identifiers = self._components.coerce_identifiers(identifiers)
         oid = await self._resolve_component_id(identifiers)
         if oid is None or not await self._contributions.referenced_component_ids(self._ref_field, [oid], scoped=True):
             return None
-        return await self._components.get_one(identifiers, fields)
+        return await self._components.read_one(identifiers, fields)
 
     async def insert_many(
         self,
         components: list[TIn],
         session: AsyncClientSession | None = None,
-    ) -> list[TDoc]:
-        """Bulk-insert components, deduplicated by content hash. See repository ``insert_many``."""
-        return await self._components.insert_many(components=components, session=session)
+    ) -> BulkWriteSummary[TDoc]:
+        """Bulk-insert components (deduplicated by content hash), reporting per-item outcomes."""
+        build_failures: list[BulkFailure] = []
+        origins: list[int] = []  # original input index for each successfully built document
+        docs: list[TDoc] = []
+        for index, comp in enumerate(components):
+            identifier = {"name": getattr(comp, "name", None)}
+            try:
+                docs.append(self._components.document_model.from_input(comp))
+            except PydanticValidationError as exc:
+                build_failures.append(
+                    BulkFailure(index=index, identifier=identifier, error_code="validation_error", message=str(exc))
+                )
+                continue
+            except Exception as exc:
+                build_failures.append(bulk_failure_from_exception(index, identifier, exc))
+                continue
+            origins.append(index)
 
-    async def patch_one(self, identifiers: dict[str, Any], update: TPatch) -> TDoc:
+        indexed_successes, insert_failures = await self._components.insert_many(docs, session=session)
+        # Repository indices are positions in ``docs``; map them back to the original input positions.
+        successes = [(origins[position], doc) for position, doc in indexed_successes]
+        failures = build_failures + [
+            failure.model_copy(update={"index": origins[failure.index]}) for failure in insert_failures
+        ]
+
+        succeeded = [doc for _, doc in sorted(successes, key=lambda pair: pair[0])]
+        failed = sorted(failures, key=lambda failure: failure.index)
+        return BulkWriteSummary[TDoc](total=len(components), succeeded=succeeded, failed=failed)
+
+    async def update_one(self, identifiers: dict[str, Any], update: TPatch) -> TDoc:
         """Partially update a component matching ``identifiers``, gated by contribution reachability.
 
         Accepts either the bare ``{"id": ...}`` form or the content-hash ``{"md5": ...}`` form.
@@ -107,11 +132,10 @@ class ComponentService[
         Raises:
             NotFoundError: when no in-scope contribution references the component
         """
-        identifiers = self._components.coerce_identifiers(identifiers)
         oid = await self._resolve_component_id(identifiers)
         if oid is None or not await self._contributions.referenced_component_ids(self._ref_field, [oid], scoped=True):
             raise NotFoundError(f"{self._components.document_model.__name__} not found", **identifiers)
-        return await self._components.patch_one(identifiers, update)
+        return await self._components.update_one(identifiers, update)
 
     async def download(
         self,
@@ -177,7 +201,6 @@ class ComponentService[
         Raises:
             NotFoundError: if the component is not reachable via any in-scope contribution
         """
-        identifiers = self._components.coerce_identifiers(identifiers)
         oid = await self._resolve_component_id(identifiers)
         if oid is None or not await self._contributions.referenced_component_ids(self._ref_field, [oid], scoped=True):
             raise NotFoundError(f"{self._components.document_model.__name__} not found", **identifiers)

@@ -28,15 +28,15 @@ def _make_service(group: ProjectGroupOut | None, *, visible_projects: set[str] |
     visible = visible_projects or set()
     groups = AsyncMock()
     projects = AsyncMock()
-    #.insert_one() forces owner to the caller for non-admins; give the stub an admin user so these
+    # insert_one forces owner to the caller for non-admins; construct the service as an admin so these
     # payload-identity assertions exercise the pass-through path (owner-forcing is covered end-to-end
     # in the db service test).
-    groups._user = User(username="google:admin@example.com", groups=frozenset({"admin"}))
+    admin = User(username="google:admin@example.com", groups=frozenset({"admin"}))
 
     if ambiguous:
-        groups.get_one.side_effect = ConflictError("ambiguous")
+        groups.read_one.side_effect = ConflictError("ambiguous")
     else:
-        groups.get_one.return_value = group
+        groups.read_one.return_value = group
     # coerce_identifiers is a sync repo method; keep it sync so the service gets a real dict, not a coroutine.
     def _coerce_identifiers(identifiers):
         if isinstance(identifiers.get("id"), str):
@@ -44,16 +44,20 @@ def _make_service(group: ProjectGroupOut | None, *, visible_projects: set[str] |
         return identifiers
 
     groups.coerce_identifiers = MagicMock(side_effect=_coerce_identifiers)
+    # The service builds the stored document (document_model.from_input_model) before inserting;
+    # keep document_model a sync mock so from_input_model returns a document, not a coroutine.
+    groups.document_model = MagicMock()
     groups.add_project_refs.return_value = group
     groups.delete_project_refs.return_value = group
 
-    async def _get_project(identifiers, fields=None):
-        pid = identifiers["id"]
-        return {"_id": pid} if pid in visible else None
+    # Project references are validated in one batched lookup: the projects repo reports the visible
+    # subset of the requested ids in a single call.
+    async def _existing_ids(ids, *, scoped):
+        return {pid for pid in ids if pid in visible}
 
-    projects.get_one.side_effect = _get_project
+    projects.existing_ids = AsyncMock(side_effect=_existing_ids)
 
-    return ProjectGroupService(groups=groups, projects=projects), groups, projects
+    return ProjectGroupService(user=admin, groups=groups, projects=projects), groups, projects
 
 
 def _group(project_ids: list[str] | None = None) -> ProjectGroupOut:
@@ -80,7 +84,9 @@ class TestInsert_one:
         payload = self._payload(["mp-1", "mp-2"])
         result = await service.insert_one(payload)
         assert result == "stored"
-        groups.insert_one.assert_awaited_once_with(in_resource=payload)
+        # The service converts the payload to a document, then inserts that document.
+        groups.document_model.from_input_model.assert_called_once_with(payload)
+        groups.insert_one.assert_awaited_once_with(groups.document_model.from_input_model.return_value)
 
     async def test_missing_project_raises_not_found_and_skips_insert_one(self):
         service, groups, _ = _make_service(None, visible_projects={"mp-1"})
@@ -89,12 +95,28 @@ class TestInsert_one:
         assert exc.value.context["ids"] == ["ghost"]
         groups.insert_one.assert_not_awaited()
 
-    async def test_empty_projects_insert_ones_without_validation(self):
+    async def test_projects_validated_in_single_batched_call(self):
+        service, groups, projects = _make_service(None, visible_projects={"mp-1", "mp-2", "mp-3"})
+        groups.insert_one.return_value = "stored"
+        await service.insert_one(self._payload(["mp-1", "mp-2", "mp-3"]))
+        # One lookup for the whole batch, not one query per project id.
+        projects.existing_ids.assert_awaited_once_with(["mp-1", "mp-2", "mp-3"], scoped=True)
+
+    async def test_mixed_valid_and_missing_reported_from_one_batch(self):
+        service, groups, _ = _make_service(None, visible_projects={"mp-1", "mp-3"})
+        with pytest.raises(NotFoundError) as exc:
+            await service.insert_one(self._payload(["mp-1", "mp-ghost", "mp-3"]))
+        assert exc.value.context["ids"] == ["mp-ghost"]
+        groups.insert_one.assert_not_awaited()
+
+    async def test_empty_projects_insert_ones_in_single_batched_check(self):
         service, groups, projects = _make_service(None)
         payload = self._payload([])
         await service.insert_one(payload)
-        projects.get_one.assert_not_awaited()
-        groups.insert_one.assert_awaited_once_with(in_resource=payload)
+        # Validation is one batched call (a no-op for an empty reference list), never per-project.
+        projects.existing_ids.assert_awaited_once_with([], scoped=True)
+        groups.document_model.from_input_model.assert_called_once_with(payload)
+        groups.insert_one.assert_awaited_once_with(groups.document_model.from_input_model.return_value)
 
 
 # ---------------------------------------------------------------------------
@@ -159,6 +181,13 @@ class TestAddProjects:
         summary = await service.add_projects({"id": str(group.id)}, ["mp-1", "mp-1"])
         assert summary.succeeded == ["mp-1"]
         groups.add_project_refs.assert_awaited_once_with(group.id, ["mp-1"])
+
+    async def test_projects_validated_in_single_batched_call(self):
+        group = _group()
+        service, groups, projects = _make_service(group, visible_projects={"mp-1", "mp-2", "mp-3"})
+        await service.add_projects({"id": str(group.id)}, ["mp-1", "mp-2", "mp-3"])
+        # One lookup for the whole batch, not one query per project id.
+        projects.existing_ids.assert_awaited_once_with(["mp-1", "mp-2", "mp-3"], scoped=True)
 
 
 # ---------------------------------------------------------------------------

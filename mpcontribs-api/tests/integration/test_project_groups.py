@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from mpcontribs_api.domains.project_groups.dependencies import get_project_group_service
-from tests.integration.conftest import AUTHED_HEADERS
+from tests.integration.conftest import ANON_HEADERS, AUTHED_HEADERS
 
 # A valid 24-char hex ObjectId string (ProjectGroupOut.id is a PydanticObjectId).
 SAMPLE_OID = "6eb7cf5a86d9755df3a6c593"
@@ -74,3 +74,61 @@ class TestInsertProjectGroupResponse:
         assert body["name"] == "echo-group"
         assert body["owner"] == "google:alice@example.com"
         assert body["is_public"] is True
+
+
+# ---------------------------------------------------------------------------
+# Authentication enforcement: every mutating route requires an authenticated
+# user (each carries ``dependencies=[Depends(require_user)]``). An anonymous
+# caller must be rejected with 401 before the service is ever touched.
+# ---------------------------------------------------------------------------
+
+_Q = {"name": "my-group", "owner": "google:alice@example.com"}
+_REFS = {"project_ids": ["mp-x"]}
+
+
+class TestProjectGroupMutationsRequireAuth:
+    def test_anonymous_post_returns_401(self, client, group_service):
+        r = client.post(
+            "/api/v1/project_groups",
+            json={"name": "g", "owner": "google:alice@example.com", "description": "d", "projects": []},
+            headers=ANON_HEADERS,
+        )
+        assert r.status_code == 401
+        group_service.insert_one.assert_not_called()
+
+    def test_anonymous_patch_item_returns_401(self, client, group_service):
+        r = client.patch("/api/v1/project_groups/item", params=_Q, json={"description": "x"}, headers=ANON_HEADERS)
+        assert r.status_code == 401
+        group_service.update_one.assert_not_called()
+
+    def test_anonymous_delete_item_returns_401(self, client, group_service):
+        r = client.delete("/api/v1/project_groups/item", params=_Q, headers=ANON_HEADERS)
+        assert r.status_code == 401
+        group_service.delete_one.assert_not_called()
+
+    def test_anonymous_bulk_delete_returns_401(self, client, group_service):
+        r = client.delete("/api/v1/project_groups", params={"owner": "google:alice@example.com"}, headers=ANON_HEADERS)
+        assert r.status_code == 401
+        group_service.delete_many.assert_not_called()
+
+    def test_anonymous_add_projects_by_identifiers_returns_401(self, client, group_service):
+        r = client.post("/api/v1/project_groups/item/projects", params=_Q, json=_REFS, headers=ANON_HEADERS)
+        assert r.status_code == 401
+        group_service.add_projects.assert_not_called()
+
+    def test_anonymous_delete_projects_by_identifiers_returns_401(self, client, group_service):
+        r = client.request(
+            "DELETE", "/api/v1/project_groups/item/projects", params=_Q, json=_REFS, headers=ANON_HEADERS
+        )
+        assert r.status_code == 401
+        group_service.delete_projects.assert_not_called()
+
+    def test_anonymous_add_projects_by_id_returns_401(self, client, group_service):
+        r = client.post("/api/v1/project_groups/gid/projects", json=_REFS, headers=ANON_HEADERS)
+        assert r.status_code == 401
+        group_service.add_projects.assert_not_called()
+
+    def test_anonymous_delete_projects_by_id_returns_401(self, client, group_service):
+        r = client.request("DELETE", "/api/v1/project_groups/gid/projects", json=_REFS, headers=ANON_HEADERS)
+        assert r.status_code == 401
+        group_service.delete_projects.assert_not_called()

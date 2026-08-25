@@ -7,7 +7,7 @@ from mpcontribs_api.dependencies import require_user
 from mpcontribs_api.domains._shared.bulk import BulkWriteSummary
 from mpcontribs_api.domains._shared.models import DeleteResponse
 from mpcontribs_api.domains._shared.types import FieldSelector, PrefixedEmail, SearchStr
-from mpcontribs_api.domains.project_groups.dependencies import ProjectGroupDep, ProjectGroupServiceDep
+from mpcontribs_api.domains.project_groups.dependencies import ProjectGroupServiceDep
 from mpcontribs_api.domains.project_groups.models import (
     ProjectGroupFilter,
     ProjectGroupIn,
@@ -21,30 +21,30 @@ router = APIRouter()
 
 
 @router.get("")
-async def get_project_groups(
-    repo: ProjectGroupDep,
+async def read_many(
+    service: ProjectGroupServiceDep,
     pagination: Annotated[CursorParams, Depends()],
     filter: ProjectGroupFilter = FilterDepends(ProjectGroupFilter),
-    fields: FieldSelector = ProjectGroupOut.default_fields(),
+    fields: FieldSelector = None,
 ):
     """Return paginated project groups matching a filter.
 
     Args:
-        repo (ProjectGroupDep): the project group repo we depend on
+        service (ProjectGroupServiceDep): the project group service we depend on
         pagination (CursorParams): arguments for cursor-based pagination
         filter (ProjectGroupFilter): optional filters to select ProjectGroups
         fields (FieldSelector): the fields to return to a user
     """
     selected = ProjectGroupOut.parse_fields(fields)
-    return await repo.get_many(pagination=pagination, filter=filter, fields=selected)
+    return await service.read_many(pagination=pagination, filter=filter, fields=selected)
 
 
 @router.get("/item")
-async def get_one(
+async def read_one(
     service: ProjectGroupServiceDep,
     name: SearchStr,
     owner: PrefixedEmail,
-    fields: FieldSelector = ProjectGroupOut.default_fields(),
+    fields: FieldSelector = None,
 ):
     """Return the single project group identified by ``name`` + ``owner``.
 
@@ -55,13 +55,13 @@ async def get_one(
         fields (FieldSelector): the fields to return to a user
     """
     selected = ProjectGroupOut.parse_fields(fields)
-    return await service.get_one({"name": name, "owner": owner}, fields=selected)
+    return await service.read_one({"name": name, "owner": owner}, fields=selected)
 
 
 @router.post(
     "", response_model=ProjectGroupOut, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_user)]
 )
-async def insert_project_group(
+async def insert_one(
     service: ProjectGroupServiceDep,
     project_group: ProjectGroupIn,
 ):
@@ -78,7 +78,7 @@ async def insert_project_group(
 
 
 @router.patch("/item", response_model=ProjectGroupOut, dependencies=[Depends(require_user)])
-async def patch_one(
+async def update_one(
     service: ProjectGroupServiceDep,
     name: SearchStr,
     owner: PrefixedEmail,
@@ -92,7 +92,7 @@ async def patch_one(
         owner (PrefixedEmail): the project group's owner
         update (ProjectGroupPatch): the partial update to apply - unset fields are dropped
     """
-    return await service.patch_one({"name": name, "owner": owner}, update=update)
+    return await service.update_one({"name": name, "owner": owner}, update=update)
 
 
 @router.delete("/item", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_user)])
@@ -115,17 +115,17 @@ async def delete_one(
 
 
 @router.delete("", response_model=DeleteResponse, dependencies=[Depends(require_user)])
-async def delete_project_groups(
-    repo: ProjectGroupDep,
+async def delete_many(
+    service: ProjectGroupServiceDep,
     filter: ProjectGroupFilter = FilterDepends(ProjectGroupFilter),
 ):
     """Bulk-delete every project group matching ``filter`` (e.g. all with a given owner).
 
     Args:
-        repo (ProjectGroupDep): the project group repo we depend on
+        service (ProjectGroupServiceDep): the project group service we depend on
         filter (ProjectGroupFilter): the query selecting which project groups to delete
     """
-    return await repo.delete_many(filter=filter)
+    return await service.delete_many(filter=filter)
 
 
 @router.post("/item/projects", response_model=BulkWriteSummary[str], dependencies=[Depends(require_user)])

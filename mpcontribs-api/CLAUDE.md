@@ -69,7 +69,7 @@ Components (structures/tables/attachments) have no access field of their own; th
 
 ### Repository pattern
 
-Repositories take a `User` at construction time and expose typed async methods (`get_*`, `insert_*`, `patch_*`, `upsert_*`, `delete_*`). They never leak the scope logic to routers — routers only call repository methods.
+Repositories take a `User` at construction time and expose typed async methods using CRUD nomenclature (`read_*`, `insert_*`, `update_*`, `upsert_*`, `delete_*`, each suffixed `_one`/`_many`). This same vocabulary is used consistently across all three layers — router handlers, services, and repositories — so a given operation carries the same method name end to end. They never leak the scope logic to routers — routers only call repository methods.
 
 ### Sparse field selection
 

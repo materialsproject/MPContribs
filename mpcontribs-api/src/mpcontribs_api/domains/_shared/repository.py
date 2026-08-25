@@ -1,13 +1,15 @@
+import asyncio
 import csv
 import hashlib
 import io
 import json
 import zlib
-from abc import ABC, abstractmethod
-from collections.abc import AsyncIterable, AsyncIterator, Callable, Iterable
+from abc import ABC
+from collections.abc import AsyncIterable, AsyncIterator, Callable, Iterable, Mapping
 from contextlib import AbstractAsyncContextManager
-from typing import Any
+from typing import Any, ClassVar
 
+import structlog
 from beanie import PydanticObjectId, UpdateResponse
 from beanie.operators import In, Set
 from bson.errors import InvalidId
@@ -18,10 +20,15 @@ from pymongo.errors import DuplicateKeyError
 from types_aiobotocore_s3 import S3Client
 
 from mpcontribs_api.authz import User
+from mpcontribs_api.config import get_settings
+from mpcontribs_api.domains._shared.bulk import BulkFailure, BulkWriteSummary, bulk_failure_from_exception
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DeleteResponse, DocumentOut
 from mpcontribs_api.domains._shared.types import DownloadFormat, ShortMimeFormat
 from mpcontribs_api.exceptions import ConflictError, DownloadError, NotFoundError, ValidationError
 from mpcontribs_api.pagination import CursorParams, Page, encode_cursor
+from mpcontribs_api.scope import Scope
+
+logger = structlog.get_logger(__name__)
 
 
 class MongoDbRepository[
@@ -34,36 +41,33 @@ class MongoDbRepository[
     """Base repository encapsulating shared MongoDB access patterns.
 
     Subclasses bind the document, input, output, filter, and patch types as type parameters, set
-    the matching ``document_model`` / ``out_model`` class attributes, and implement ``_build_scope``
-    to enforce per-user authorization. Shared CRUD logic (scoping, projection, cursor pagination,
-    insertion, single-document read/patch/delete) lives here so it exists in exactly one place and
-    cannot drift between resources. Subclasses expose domain-named methods that either forward to a
-    base method (vocabulary + concrete types for routers, no logic) or implement a genuinely
-    different shape (bulk insert, compound-key upsert, download).
+    the matching ``document_model`` / ``out_model`` class attributes, and declare a ``read_scope``
+    that defines per-user visibility. Subclasses implement domain-specific logic for access when required.
 
     Attributes:
         document_model: the ``BaseDocumentWithInput`` subclass this repository operates on
         out_model: the ``SparseFieldsModel`` subclass used to build projections for reads
-        _scope (dict[str, Any]): terms injected into every query to enforce user authorization
+        read_scope: the :class:`Scope` (composition of visibility clauses) this repository applies to
+            every read; the repo declares it, the base applies it — the repo never authors the rule
+        _scope (dict[str, Any]): terms injected into every query to enforce user authorization,
+            computed once from ``read_scope`` at construction time
     """
 
     document_model: type[TDoc]
     out_model: type[TOut]
+    read_scope: ClassVar[Scope]
 
     def __init__(self, user: User) -> None:
-        """Initializes an instance based on the current user.
+        """Initialize the repository's user scope.
+
+        The repository holds no reference to the ``User`` itself — it is a query/persistence toolbox
+        that makes no authorization decisions. Only the derived read scope (``_scope``) is retained;
+        all policy lives in the services.
 
         Args:
-            user (User): the current user requesting resources
+            user (User): the current user, used once to compute the read scope
         """
-        self._user = user
-        self._scope = self._build_scope(user)
-
-    @staticmethod
-    @abstractmethod
-    def _build_scope(user: User) -> dict[str, Any]:
-        """Provides scope based on current user's permitted groups and publicly released data."""
-        ...
+        self._scope = self.read_scope.query(user)
 
     def _convert_object_id(self, id: str) -> PydanticObjectId:
         """Converts the string representation of an ObjectId to an ObjectId"""
@@ -84,12 +88,13 @@ class MongoDbRepository[
             return {**identifiers, "id": self._convert_object_id(id)}
         return identifiers
 
-    async def get_many(
+    async def read_many(
         self,
         filter: TFilter,
         fields: frozenset[str] | None = None,
         pagination: CursorParams | None = None,
         restrict_ids: Iterable[Any] | None = None,
+        session: AsyncClientSession | None = None,
     ) -> Page[TOut]:
         """Return a scoped, filtered, cursor-paginated page of projected documents.
 
@@ -100,11 +105,12 @@ class MongoDbRepository[
             restrict_ids (Iterable | None): when provided, results are limited to these ids in
                 addition to the user scope. An empty iterable yields an empty page. Used to gate
                 reads that are authorized indirectly (e.g. components reachable via a contribution).
+            session (AsyncClientSession | None): optional client session for transactions
         """
         pagination = pagination or CursorParams()
 
         projection = self.out_model.projection(fields)
-        query = filter.filter(self.document_model.find(self._scope))
+        query = filter.filter(self.document_model.find(self._scope, session=session))
         if restrict_ids is not None:
             query = query.find(In(self.document_model.id, list(restrict_ids)))
         if pagination.cursor is not None:
@@ -128,6 +134,7 @@ class MongoDbRepository[
             identifiers (dict[str, Any]): identifier field values keyed by ``identifier_fields``,
                 or ``{"id": <primary key>}``
         """
+        identifiers = self.coerce_identifiers(identifiers)
         expected = self.document_model.identifier_fields()
         if identifiers.keys() != expected and identifiers.keys() != {"id"}:
             raise ValidationError(
@@ -137,20 +144,22 @@ class MongoDbRepository[
             )
         return {("_id" if key == "id" else key): value for key, value in identifiers.items()}
 
-    async def get_one(
+    async def read_one(
         self,
         identifiers: dict[str, Any],
         fields: frozenset[str] | None = None,
+        session: AsyncClientSession | None = None,
     ) -> TOut | None:
         """Return the single scoped document matching ``identifiers``, projected to ``fields``.
 
         Args:
             identifiers (dict[str, Any]): identifier field values keyed by ``identifier_fields``
             fields (frozenset[str] | None): fields to project; if None the full document is returned
+            session (AsyncClientSession | None): optional client session for transactions
         """
         query = self._identifier_query(identifiers)
         projection = self.out_model.projection(fields)
-        return await self.document_model.find_one(self._scope, query, projection_model=projection)  # pyright: ignore[reportArgumentType]
+        return await self.document_model.find_one(self._scope, query, projection_model=projection, session=session)  # pyright: ignore[reportArgumentType]
 
     async def list_ids(self, filter: TFilter, session: AsyncClientSession | None = None) -> list[Any]:
         """Return just the ids of scoped documents matching ``filter``.
@@ -167,17 +176,31 @@ class MongoDbRepository[
         docs = await query.project(projection).to_list()
         return [doc.id for doc in docs]
 
-    async def insert_one(self, in_resource: TIn) -> TDoc:
-        """Insert a new document built from its input model, rejecting an existing duplicate.
+    async def count_matching(self, query: Mapping[str, Any], *, scoped: bool) -> int:
+        """Count documents matching a raw Mongo ``query``.
 
-        Duplicates are determined by model-declared identifiers that uniquely identify a document.
+        Raw pymongo ``count_documents`` is used (rather than Beanie's ``find(...).count()``) so any
+        query shape is expressible — dotted keys (``initiative.$id``), operators (``$ne``, ``$and``).
 
         Args:
-            in_resource (TIn): the validated input payload to translate and store
+            query (Mapping[str, Any]): the Mongo filter to count against
+            scoped (bool): when ``True`` the user read scope is merged in; when ``False`` the count
+                spans every document (system/integrity count)
         """
-        document = self.document_model.from_input_model(in_resource)
+        match: dict[str, Any] = dict(query)
+        if scoped and self._scope:
+            match = {"$and": [self._scope, match]}
+        return await self.document_model.get_pymongo_collection().count_documents(match)
+
+    async def insert_one(self, document: TDoc, session: AsyncClientSession | None = None) -> TDoc:
+        """Persist a fully-built document, rejecting an existing duplicate.
+
+        Args:
+            document (TDoc): the stored document to insert
+            session (AsyncClientSession | None): optional client session for transactions
+        """
         try:
-            await document.insert()
+            await document.insert(session=session)
         except DuplicateKeyError as exc:
             raise ConflictError(
                 f"Cannot insert {self.document_model.__name__}: a conflicting document already exists",
@@ -185,12 +208,72 @@ class MongoDbRepository[
             ) from exc
         return document
 
+    async def insert_many(self, documents: list[TDoc], session: AsyncClientSession | None = None) -> Any:
+        """Bulk-insert fully-built documents in one round-trip.
+
+        Args:
+            documents (list[TDoc]): the stored documents to insert
+            session (AsyncClientSession | None): optional client session for transactions
+        """
+        return await self.document_model.insert_many(documents, ordered=False, session=session)
+
+    async def upsert_one(self, document: TDoc, session: AsyncClientSession | None = None) -> TDoc:
+        """Insert ``document`` or replace the existing one with the same ``_id`` (PUT semantics).
+
+        Domains whose upsert key is a compound identity rather than ``_id`` (e.g. contributions) override this.
+
+        Args:
+            document (TDoc): the fully-built document to persist
+            session (AsyncClientSession | None): optional client session for transactions
+        """
+        try:
+            return await document.save(session=session)
+        except DuplicateKeyError as exc:
+            raise ConflictError(
+                f"Cannot upsert {self.document_model.__name__}: a conflicting document already exists",
+                identifiers=document.identifiers(),
+            ) from exc
+
+    async def upsert_many(self, documents: list[TDoc]) -> BulkWriteSummary[TDoc]:
+        """Upsert each document by its ``_id`` concurrently, reporting per-item outcomes.
+
+        Each upsert is atomic. Failures are reported in 'failed', while the rest are committed.
+
+        There is no ``session`` parameter: a MongoDB session/transaction cannot be shared across
+        concurrent operations (pymongo sessions are not concurrency-safe). Callers that need an
+        all-or-nothing transactional upsert must orchestrate it themselves.
+
+        Args:
+            documents (list[TDoc]): the fully-built documents to persist
+
+        Returns:
+            BulkWriteSummary[TDoc]: per-item outcome, sized to ``len(documents)``
+        """
+        if not documents:
+            return BulkWriteSummary[TDoc](total=0, succeeded=[], failed=[])
+
+        sem = asyncio.Semaphore(get_settings().mongo.max_concurrent_transactions)
+
+        async def _bounded_upsert(index: int, document: TDoc) -> TDoc | BulkFailure:
+            async with sem:
+                try:
+                    return await self.upsert_one(document)
+                except Exception as exc:
+                    logger.error(
+                        "upsert_document_failed",
+                        index=index,
+                        identifier=document.identifiers(),
+                        exc_info=True,
+                    )
+                    return bulk_failure_from_exception(index, document.identifiers(), exc)
+
+        results = await asyncio.gather(*[_bounded_upsert(i, doc) for i, doc in enumerate(documents)])
+        succeeded = [r for r in results if not isinstance(r, BulkFailure)]
+        failed = [r for r in results if isinstance(r, BulkFailure)]
+        return BulkWriteSummary[TDoc](total=len(documents), succeeded=succeeded, failed=failed)
+
     async def delete_many(self, filter: TFilter, session: AsyncClientSession | None = None) -> DeleteResponse:
         """Delete every scoped document matching an arbitrary ``filter``.
-
-        This is the bulk path (e.g. "delete every ProjectGroup with owner == X"). It does not raise
-        on an empty match — a zero count is a valid, unambiguous outcome for a filter delete. Scoping
-        ensures callers cannot delete documents they are not permitted to see.
 
         Args:
             filter (TFilter): the fastapi-filter query to apply on top of the user scope
@@ -217,7 +300,7 @@ class MongoDbRepository[
             raise NotFoundError(f"{self.document_model.__name__} not found", identifiers=identifiers)
         return DeleteResponse.from_delete_result(result)
 
-    def _patch_update_fields(self, update: TPatch) -> dict[str, Any]:
+    def _update_fields(self, update: TPatch) -> dict[str, Any]:
         """Map a patch model to the MongoDB ``$set`` field dict.
 
         Defaults to the patch's set fields (``exclude_unset``), which replaces each named field
@@ -226,7 +309,7 @@ class MongoDbRepository[
         """
         return update.model_dump(exclude_unset=True)
 
-    async def _patch_matching(
+    async def _update_matching(
         self,
         match: Any,
         update: TPatch,
@@ -244,7 +327,7 @@ class MongoDbRepository[
         ``$set`` after the patch dump, so a non-empty ``extra_set`` also makes the update non-empty.
         """
         # Only retain set fields (patch)
-        update_data = self._patch_update_fields(update)
+        update_data = self._update_fields(update)
         if extra_set:
             update_data |= extra_set
         existing = await self.document_model.find_one(self._scope, match, session=session)
@@ -266,16 +349,15 @@ class MongoDbRepository[
         # Otherwise, update the fields fully (set)
         # Brendan TODO: Set will replace an entire field
         # - if we want to append to a list (ie. add a reference) we ned Push/AddToSet
-        query = self.document_model.find_one(self._scope, match, session=session).update(
+        updated = await self.document_model.find_one(self._scope, match, session=session).update(  # pyright: ignore[reportGeneralTypeIssues] # beanie UpdateQuery is awaitable, but pyright doesn't see it
             Set(update_data),
             response_type=UpdateResponse.NEW_DOCUMENT,
         )
-        updated = await query  # pyright: ignore[reportGeneralTypeIssues] # beanie UpdateQuery is awaitable, but pyright doesn't see it
         if updated is None:
             raise not_found
         return updated
 
-    async def patch_one(
+    async def update_one(
         self,
         identifiers: dict[str, Any],
         update: TPatch,
@@ -293,7 +375,7 @@ class MongoDbRepository[
         """
         query = self._identifier_query(identifiers)
         not_found = NotFoundError(f"{self.document_model.__name__} not found", identifiers=identifiers)
-        return await self._patch_matching(query, update, not_found, session=session, extra_set=extra_set)
+        return await self._update_matching(query, update, not_found, session=session, extra_set=extra_set)
 
     def _hash_payload(self, payload: dict[str, Any], *, separators: tuple[str, str] = (",", ":")) -> str:
         canonical = json.dumps(
@@ -362,6 +444,7 @@ class MongoDbRepository[
         bucket_name: str,
         key_name: str,
         restrict_ids: Iterable[Any] | None = None,
+        session: AsyncClientSession | None = None,
     ) -> AsyncIterable[bytes]:
         # Hash parameters to generate key for cache
         payload = {
@@ -376,7 +459,7 @@ class MongoDbRepository[
         # self._s3_object_exists(...)` and stream the cached object on a hit.
 
         # Build from MongoDB (and, in future, save to cache)
-        query = filter.filter(self.document_model.find(self._scope))
+        query = filter.filter(self.document_model.find(self._scope, session=session))
         if restrict_ids is not None:
             query = query.find(In(self.document_model.id, list(restrict_ids)))
         query = filter.sort(query)

@@ -58,12 +58,13 @@ async def _collect(stream) -> bytes:
 async def _download_bytes(repo: MongoDbContributionRepository, *, format="jsonl", fields=None, filter=None) -> bytes:
     from mpcontribs_api.domains._shared.types import DownloadFormat, ShortMimeFormat
 
-    stream = await repo.download_contributions(
+    stream = repo.download(
         format=DownloadFormat(format),
         short_mime=ShortMimeFormat.GZ,
         ignore_cache=True,
         filter=filter or ContributionFilter(),
         fields=fields,
+        bucket_name="",
         key_name="",
         s3=MagicMock(),
     )

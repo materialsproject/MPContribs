@@ -4,7 +4,7 @@ from fastapi import Depends
 
 from mpcontribs_api.dependencies import MongoClientDep, UserDep
 from mpcontribs_api.domains.attachments.repository import MongoDbAttachmentRepository
-from mpcontribs_api.domains.consumers.dependencies import ConsumerLimitsDep
+from mpcontribs_api.domains.consumers.dependencies import ConsumerServiceDep
 from mpcontribs_api.domains.contributions.repository import (
     MongoDbContributionRepository,
 )
@@ -14,27 +14,20 @@ from mpcontribs_api.domains.structures.repository import MongoDbStructureReposit
 from mpcontribs_api.domains.tables.repository import MongoDbTableRepository
 
 
-def get_scoped_contributions(user: UserDep) -> MongoDbContributionRepository:
-    return MongoDbContributionRepository(user)
-
-
-ContributionDep = Annotated[MongoDbContributionRepository, Depends(get_scoped_contributions)]
-
-
-def get_contribution_service(
+async def get_contribution_service(
     user: UserDep,
     client: MongoClientDep,
-    limits: ConsumerLimitsDep,
+    consumers: ConsumerServiceDep,
 ) -> ContributionService:
     return ContributionService(
         client=client,
         user=user,
-        projects=MongoDbProjectRepository(user, limits),
+        projects=MongoDbProjectRepository(user),
         contributions=MongoDbContributionRepository(user),
         structures=MongoDbStructureRepository(user),
         attachments=MongoDbAttachmentRepository(user),
         tables=MongoDbTableRepository(user),
-        limits=limits,
+        limits=await consumers.effective_limits(user.consumer_id),
     )
 
 

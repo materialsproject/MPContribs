@@ -1,11 +1,13 @@
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from beanie import PydanticObjectId
 
+from mpcontribs_api.domains._shared.bulk import BulkFailure
 from mpcontribs_api.domains._shared.models import ComponentDeleteResponse, DeleteResponse
 from mpcontribs_api.domains._shared.service import ComponentService
-from mpcontribs_api.domains.attachments.models import AttachmentFilter
+from mpcontribs_api.domains.attachments.models import Attachment, AttachmentFilter
 from mpcontribs_api.exceptions import NotFoundError
 
 pytestmark = pytest.mark.asyncio
@@ -15,11 +17,21 @@ def _oid() -> PydanticObjectId:
     return PydanticObjectId()
 
 
-def _coerce_identifiers(identifiers: dict) -> dict:
-    """Stub for the repo's ObjectId-keyed ``coerce_identifiers`` (string id -> ObjectId)."""
-    if isinstance(identifiers.get("id"), str):
-        return {**identifiers, "id": PydanticObjectId(identifiers["id"])}
-    return identifiers
+def _id_resolving_get_one() -> AsyncMock:
+    """A stand-in for the component repo's ``read_one``.
+
+    The service resolves a component's ``_id`` by asking the repo (which coerces a string ``id`` to
+    ``ObjectId`` internally), so the mock echoes a document whose ``id`` is the coerced identifier —
+    letting the reachability check key off the real ``ObjectId``.
+    """
+
+    async def _get_one(identifiers, fields=None, **kwargs):
+        if "id" in identifiers:
+            raw = identifiers["id"]
+            return SimpleNamespace(id=PydanticObjectId(raw) if isinstance(raw, str) else raw)
+        return None
+
+    return AsyncMock(side_effect=_get_one)
 
 
 def _make_service(
@@ -37,7 +49,7 @@ def _make_service(
     components.list_ids = AsyncMock(return_value=candidate_ids)
     components.delete_many = AsyncMock(side_effect=lambda filter: DeleteResponse(num_deleted=len(filter.id__in)))
     components.delete_one = AsyncMock(return_value=DeleteResponse(num_deleted=1))
-    components.coerce_identifiers = MagicMock(side_effect=_coerce_identifiers)
+    components.read_one = _id_resolving_get_one()
 
     contributions = AsyncMock(name="contributions")
 
@@ -154,14 +166,14 @@ async def test_delete_by_id_reachable_and_unreferenced_deletes():
 
 
 # ---------------------------------------------------------------------------
-# Read gating: get_by_id / get_many / patch_by_id are reachability-scoped
+# Read gating: get_by_id / read_many / patch_by_id are reachability-scoped
 # ---------------------------------------------------------------------------
 
 
 def _make_read_service(*, reachable: set[PydanticObjectId]) -> tuple[ComponentService, AsyncMock, AsyncMock]:
     """ComponentService whose contribution repo reports `reachable` ids as in-scope."""
     components = AsyncMock(name="components")
-    components.coerce_identifiers = MagicMock(side_effect=_coerce_identifiers)
+    components.read_one = _id_resolving_get_one()
 
     contributions = AsyncMock(name="contributions")
 
@@ -176,38 +188,40 @@ def _make_read_service(*, reachable: set[PydanticObjectId]) -> tuple[ComponentSe
     return service, components, contributions
 
 
-async def test_get_by_id_unreachable_returns_none_without_fetch():
+async def test_get_by_id_unreachable_returns_none():
+    # The id is resolved through the repo, but an unreachable component still yields None (and the
+    # full-fields fetch is skipped once the reachability gate fails).
     oid = _oid()
     svc, components, _ = _make_read_service(reachable=set())
 
-    result = await svc.get_one({"id": str(oid)}, fields=None)
+    result = await svc.read_one({"id": str(oid)}, fields=None)
 
     assert result is None
-    components.get_one.assert_not_awaited()
+    components.read_one.assert_awaited_once()
 
 
 async def test_get_by_id_reachable_fetches_component():
     oid = _oid()
     svc, components, _ = _make_read_service(reachable={oid})
-    components.get_one = AsyncMock(return_value="the-component")
 
-    result = await svc.get_one({"id": str(oid)}, fields=None)
+    result = await svc.read_one({"id": str(oid)}, fields=None)
 
-    assert result == "the-component"
-    components.get_one.assert_awaited_once()
+    # Resolved (id lookup) then fetched (full projection): the reachable component is returned.
+    assert result is not None and result.id == oid
+    assert components.read_one.await_count == 2
 
 
 async def test_get_many_restricts_to_reachable_ids():
     a, b = _oid(), _oid()
     svc, components, contributions = _make_read_service(reachable={a, b})
-    components.get_many = AsyncMock(return_value="page")
+    components.read_many = AsyncMock(return_value="page")
 
-    await svc.get_many(filter=AttachmentFilter(), pagination=None, fields=None)
+    await svc.read_many(filter=AttachmentFilter(), pagination=None, fields=None)
 
     contributions.referenced_component_ids.assert_awaited_once()
     assert contributions.referenced_component_ids.await_args.kwargs["scoped"] is True
     assert contributions.referenced_component_ids.await_args.args[1:] == ()
-    restrict = components.get_many.await_args.kwargs["restrict_ids"]
+    restrict = components.read_many.await_args.kwargs["restrict_ids"]
     assert set(restrict) == {a, b}
 
 
@@ -216,16 +230,48 @@ async def test_patch_by_id_unreachable_raises_not_found():
     svc, components, _ = _make_read_service(reachable=set())
 
     with pytest.raises(NotFoundError):
-        await svc.patch_one({"id": str(oid)}, update=MagicMock())
-    components.patch_one.assert_not_awaited()
+        await svc.update_one({"id": str(oid)}, update=MagicMock())
+    components.update_one.assert_not_awaited()
 
 
 async def test_patch_by_id_reachable_patches():
     oid = _oid()
     svc, components, _ = _make_read_service(reachable={oid})
-    components.patch_one = AsyncMock(return_value="patched")
+    components.update_one = AsyncMock(return_value="patched")
 
-    result = await svc.patch_one({"id": str(oid)}, update=MagicMock())
+    result = await svc.update_one({"id": str(oid)}, update=MagicMock())
 
     assert result == "patched"
-    components.patch_one.assert_awaited_once()
+    components.update_one.assert_awaited_once()
+
+
+# ---------------------------------------------------------------------------
+# insert_many — assembles a BulkWriteSummary from the repo's (successes, failures) tuple
+# ---------------------------------------------------------------------------
+
+
+async def test_insert_many_assembles_summary_sorted_by_index():
+    svc, components, _ = _make_service(candidate_ids=[], reachable=set(), referenced=set())
+    # spec=Attachment so the docs satisfy BulkWriteSummary's Component-typed ``succeeded`` field.
+    doc_a, doc_b = MagicMock(spec=Attachment), MagicMock(spec=Attachment)
+    failure = BulkFailure(index=1, error_code="conflict", message="dup")
+    # Repo reports successes out of order and one per-item failure; the service orders by input index.
+    components.insert_many = AsyncMock(return_value=([(2, doc_b), (0, doc_a)], [failure]))
+
+    summary = await svc.insert_many(components=["in0", "in1", "in2"])
+
+    assert summary.total == 3
+    assert summary.succeeded == [doc_a, doc_b]  # index 0 then index 2
+    assert [f.index for f in summary.failed] == [1]
+
+
+async def test_insert_many_all_succeed():
+    svc, components, _ = _make_service(candidate_ids=[], reachable=set(), referenced=set())
+    doc = MagicMock(spec=Attachment)
+    components.insert_many = AsyncMock(return_value=([(0, doc)], []))
+
+    summary = await svc.insert_many(components=["only"])
+
+    assert summary.total == 1
+    assert summary.succeeded == [doc]
+    assert summary.failed == []

@@ -1,14 +1,17 @@
 import asyncio
 from collections import defaultdict
-from collections.abc import Iterable
+from collections.abc import AsyncIterable, Iterable
+from contextlib import AbstractAsyncContextManager
 from dataclasses import dataclass
 from typing import Any, cast
 
 import structlog
 from beanie import Link, PydanticObjectId
+from pydantic import ValidationError as PydanticValidationError
 from pymongo import AsyncMongoClient
 from pymongo.asynchronous.client_session import AsyncClientSession
 from pymongo.errors import BulkWriteError
+from types_aiobotocore_s3 import S3Client
 
 from mpcontribs_api.authz import User
 from mpcontribs_api.config import MongoSettings, get_settings
@@ -20,6 +23,7 @@ from mpcontribs_api.domains._shared.bulk import (
     bulk_failure_from_exception,
 )
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
+from mpcontribs_api.domains._shared.types import DownloadFormat, ShortMimeFormat
 from mpcontribs_api.domains._shared.units import QuantityLeaf
 from mpcontribs_api.domains.attachments.models import AttachmentFilter
 from mpcontribs_api.domains.attachments.repository import MongoDbAttachmentRepository
@@ -44,7 +48,7 @@ from mpcontribs_api.domains.structures.repository import MongoDbStructureReposit
 from mpcontribs_api.domains.tables.models import Table, TableFilter
 from mpcontribs_api.domains.tables.repository import MongoDbTableRepository
 from mpcontribs_api.exceptions import AppError, ConflictError, NotFoundError, PermissionError, ValidationError
-from mpcontribs_api.pagination import CursorParams
+from mpcontribs_api.pagination import CursorParams, Page
 
 logger = structlog.get_logger(__name__)
 
@@ -102,7 +106,7 @@ class ContributionService:
             "tables": self._tables,
         }
 
-    async def get_one(
+    async def read_one(
         self, identifiers: dict[str, Any], fields: frozenset[str] | None
     ) -> Contribution | ContributionOut | None:
         """Return the single scoped contribution matching ``identifiers``.
@@ -110,7 +114,33 @@ class ContributionService:
         Accepts either the bare ``{"id": ...}`` form or the semantic
         ``{"project", "identifier", "version"}`` set, resolved by the base ``_identifier_query``.
         """
-        return await self._contributions.get_one(self._contributions.coerce_identifiers(identifiers), fields)
+        return await self._contributions.read_one(identifiers, fields)
+
+    async def read_many(
+        self, pagination: CursorParams, filter: ContributionFilter, fields: frozenset[str] | None
+    ) -> Page[ContributionOut]:
+        return await self._contributions.read_many(pagination=pagination, filter=filter, fields=fields)
+
+    async def download(
+        self,
+        format: DownloadFormat,
+        short_mime: ShortMimeFormat,
+        ignore_cache: bool,
+        filter: ContributionFilter,
+        fields: frozenset[str] | None,
+        s3: AbstractAsyncContextManager[S3Client],
+    ) -> AsyncIterable[bytes]:
+        """Stream a gzip-compressed export of matching contributions. See repository ``download``."""
+        return self._contributions.download(
+            format=format,
+            short_mime=short_mime,
+            ignore_cache=ignore_cache,
+            filter=filter,
+            fields=fields,
+            s3=s3,
+            key_name="",  # TODO: Temp
+            bucket_name="contributions",
+        )
 
     async def delete_one(self, identifiers: dict[str, Any]) -> BulkDeleteSummary:
         """Delete a single contribution and its child components, matching ``identifiers``.
@@ -120,11 +150,10 @@ class ContributionService:
         :meth:`delete_many` so children are never orphaned; a missing target is a zero-count
         result (mirroring the bulk delete path, which does not 404).
         """
-        identifiers = self._contributions.coerce_identifiers(identifiers)
         if set(identifiers) == {"id"}:
             filter = ContributionFilter(id=identifiers["id"])
         else:
-            existing = await self._contributions.get_one(identifiers, frozenset({"id"}))
+            existing = await self._contributions.read_one(identifiers, frozenset({"id"}))
             if existing is None:
                 return BulkDeleteSummary(num_deleted=0, num_children_deleted=0)
             filter = ContributionFilter(id=existing.id)
@@ -137,12 +166,13 @@ class ContributionService:
         be read in the current scope (existence/permission is enforced on insert, not here). The
         caller turns the count into a remaining allowance against the cap.
         """
-        project = await self._projects.get_one({"id": project_id}, frozenset({"is_approved"}))
+        project = await self._projects.read_one({"id": project_id}, frozenset({"is_approved"}))
         if not project or project.is_approved:
             return None
         # Soft limit: this count feeds a non-atomic check-then-write, so concurrent writes to the
         # same project can overshoot the cap by a bounded amount. Acceptable for an anti-abuse quota.
-        return await self._contributions.count_contributions_for_project(project_id)
+        # Unscoped: the quota is a property of the project as a whole, not of what the caller can see.
+        return await self._contributions.count_matching({"project": project_id}, scoped=False)
 
     async def insert_many(
         self,
@@ -445,33 +475,6 @@ class ContributionService:
         identities = [item.contribution.identity(item.unique_value, item.condition_key) for item in items]
         return await self._contributions.existing_identities(identities)
 
-    @staticmethod
-    def _log_quota_exceeded(
-        project_id: str,
-        cap: int,
-        stored: int,
-        accepted: int,
-        rejected: list[PreparedWrite],
-    ) -> None:
-        """Emit a structured audit event for an unapproved-project quota breach.
-
-        Request/user correlation (``consumer_id``, ``request_id``, ``trace_id``) is merged from the
-        per-request contextvars, so only the domain-specific dimensions are added here. The rejected
-        identifier list is capped to keep a pathological batch from bloating a single log line.
-        """
-        rejected_identifiers = [item.contribution.material_id for item in rejected[:_QUOTA_LOG_IDENTIFIER_CAP]]
-        logger.warning(
-            "contribution.unapproved_quota_exceeded",
-            project=project_id,
-            max_allowed=cap,
-            stored=stored,
-            attempted=accepted + len(rejected),
-            accepted=accepted,
-            rejected=len(rejected),
-            rejected_identifiers=rejected_identifiers,
-            rejected_identifiers_truncated=len(rejected) > _QUOTA_LOG_IDENTIFIER_CAP,
-        )
-
     async def _split_contributions(
         self, contributions: list[ContributionIn], *, is_upsert: bool
     ) -> tuple[list[BulkFailure], list[PreparedWrite]]:
@@ -522,7 +525,7 @@ class ContributionService:
             return [], []
         docs = []
         for item in items:
-            doc = Contribution.from_input_model(item.contribution)
+            doc = self._contributions.document_model.from_input_model(item.contribution)
             doc.unique_value = item.unique_value
             doc.condition_key = item.condition_key
             docs.append(doc)
@@ -612,13 +615,28 @@ class ContributionService:
     async def _do_insert_group(self, group: list[PreparedWrite], session: AsyncClientSession) -> list[Contribution]:
         """Perform the insert of Contributions and their components within a single session."""
         template = group[0].contribution
-        structures = await self._structures.insert_many(template.structures or [], session=session)
-        tables = await self._tables.insert_many(template.tables or [], session=session)
+        try:
+            structure_docs = [Structure.from_input(s) for s in (template.structures or [])]
+            table_docs = [Table.from_input(t) for t in (template.tables or [])]
+        except PydanticValidationError as exc:
+            raise ValidationError(str(exc)) from exc
+        structure_successes, structure_failures = await self._structures.insert_many(structure_docs, session=session)
+        table_successes, table_failures = await self._tables.insert_many(table_docs, session=session)
+        # A contribution and its components commit or roll back together, so any per-component failure
+        # aborts the whole transaction. Re-raise it here; ``_insert_with_components`` maps the raised
+        # error onto this contribution's ``BulkFailure``.
+        component_failures = structure_failures + table_failures
+        if component_failures:
+            first = component_failures[0]
+            message = f"Component insert failed: {first.message}"
+            raise ConflictError(message) if first.error_code == ConflictError.error_code else ValidationError(message)
+        structures = [doc for _, doc in structure_successes]
+        tables = [doc for _, doc in table_successes]
         struct_links = cast(list[Link[Structure]] | None, structures or None)
         table_links = cast(list[Link[Table]] | None, tables or None)
         inserted: list[Contribution] = []
         for item in group:
-            doc = Contribution.from_input_model(item.contribution)
+            doc = self._contributions.document_model.from_input_model(item.contribution)
             doc.unique_value = item.unique_value
             doc.condition_key = item.condition_key
             doc.structures = struct_links
@@ -680,7 +698,7 @@ class ContributionService:
         await self.update_project({doc.project for doc in succeeded})
         return BulkWriteSummary[Contribution](total=len(contributions), succeeded=succeeded, failed=failed)
 
-    async def patch_many(
+    async def update_many(
         self,
         filter: ContributionFilter,
         update: ContributionPatch,
@@ -696,7 +714,7 @@ class ContributionService:
         - **Fast path** — the patch touches no identity input. A single ``$set`` is applied to every
           matched row in one ``update_many``.
         - **Per-row path** — the patch changes an Identifer field (or ``data``). Each matched row is
-          patched individually via ``patch_one`` and any per-row conflict is reported
+          patched individually via ``update_one`` and any per-row conflict is reported
           in ``failed``.
 
         A ``data`` patch deep-merges into each row's stored ``data`` by default (unmentioned leaves
@@ -723,7 +741,7 @@ class ContributionService:
         touches_identity = bool(ContributionIdentity.model_fields() & fields.keys()) or "data" in fields
         if not touches_identity:
             # No identity/unique_value recompute needed, so a uniform $set is safe.
-            summary = await self._contributions.patch_many(filter, fields)
+            summary = await self._contributions.update_many(filter, fields)
             await self.update_project(project_ids=summary.projects)
             return summary
 
@@ -749,7 +767,7 @@ class ContributionService:
         async def _patch_one(index: int, oid: PydanticObjectId) -> Contribution | BulkFailure:
             async with sem:
                 try:
-                    return await self.patch_one({"id": str(oid)}, update, replace_data=replace_data)
+                    return await self.update_one({"id": str(oid)}, update, replace_data=replace_data)
                 except Exception as exc:
                     logger.info("bulk_patch_item_failed", id=str(oid))
                     return bulk_failure_from_exception(index, {"id": str(oid)}, exc)
@@ -783,8 +801,7 @@ class ContributionService:
         """
         if not self._user.can_write(contribution.project):
             raise PermissionError(f"not authorized to write to project '{contribution.project}'")
-        identifiers = self._contributions.coerce_identifiers(identifiers)
-        existing = await self._contributions.get_one(identifiers, None)
+        existing = await self._contributions.read_one(identifiers, None)
         if existing is None:
             stored = await self._unapproved_stored_count(contribution.project)
             cap = self._limits.max_unapproved_contributions_per_project
@@ -797,7 +814,7 @@ class ContributionService:
         unique_value = await self._resolve_unique_value(contribution.project, contribution.data)
         return await self._contributions.upsert_one(identifiers, contribution, unique_value)
 
-    async def patch_one(
+    async def update_one(
         self, identifiers: dict[str, Any], update: ContributionPatch, *, replace_data: bool = False
     ) -> Contribution:
         """Partially update the single scoped contribution matching ``identifiers``.
@@ -814,18 +831,23 @@ class ContributionService:
         re-validated strictly (the permissive patch validator allows leaf fragments a full doc may not).
         ``unique_value`` is resolved against the same post-write view the repository will persist.
         """
-        identifiers = self._contributions.coerce_identifiers(identifiers)
+        if not self._user.is_admin:
+            target = await self._contributions.read_one(identifiers, frozenset({"id", "project"}))
+            if target is None:
+                raise NotFoundError("contribution not found", identifiers=identifiers)
+            if target.project not in self._user.writable_projects:
+                raise PermissionError(f"not authorized to write to project '{target.project}'")
         set_fields = update.model_dump(exclude_unset=True)
         touches_unique = "data" in set_fields or "project" in set_fields
         touches_identity = bool(ContributionIdentity.HIERARCHY_FIELDS & set_fields.keys())
         if not touches_unique and not touches_identity:
-            return await self._contributions.patch_one(identifiers, update)
+            return await self._contributions.update_one(identifiers, update)
 
         if replace_data and set_fields.get("data") is not None:
             # A whole-dict overwrite must satisfy the strict insert-path rules (no leaf fragments).
             validate_contribution_data(set_fields["data"])
 
-        existing = await self._contributions.get_one(identifiers, None)
+        existing = await self._contributions.read_one(identifiers, None)
         if existing is None or existing.project is None:
             raise NotFoundError("contribution not found", identifiers=identifiers)
 
@@ -837,7 +859,7 @@ class ContributionService:
                 existing_formula=existing.formula,
             )
         if not touches_unique:
-            return await self._contributions.patch_one(identifiers, update)
+            return await self._contributions.update_one(identifiers, update)
 
         project = set_fields.get("project") or existing.project
         # Resolve unique_value against the data the write will actually leave behind: the merged view
@@ -849,7 +871,7 @@ class ContributionService:
         else:
             data = QuantityLeaf.merge_data(existing.data, set_fields["data"])
         unique_value = await self._resolve_unique_value(project, data)
-        return await self._contributions.patch_one(
+        return await self._contributions.update_one(
             identifiers,
             update,
             unique_value=unique_value,
@@ -897,6 +919,8 @@ class ContributionService:
         Returns:
             BulkDeleteSummary: a summary of how many documents and child documents were deleted
         """
+        if not self._user.is_admin:
+            filter = filter.model_copy(update={"project__in": sorted(self._user.writable_projects)})
         num_deleted_components = 0
         num_deleted_contributions = 0
         # Projects touched by this delete, so their rollup stats can be recomputed once at the end.
@@ -904,7 +928,7 @@ class ContributionService:
         # Loop through cursor rather than materialize arbitrary number of Contributions
         while True:
             # Since we are deleting everything matching filter, we can continuously get the 1st page
-            page = await self._contributions.get_many(
+            page = await self._contributions.read_many(
                 pagination=CursorParams(cursor=None, limit=100),
                 filter=filter,
             )

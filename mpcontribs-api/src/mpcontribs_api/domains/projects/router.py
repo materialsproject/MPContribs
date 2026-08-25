@@ -6,7 +6,7 @@ from starlette.status import HTTP_204_NO_CONTENT
 
 from mpcontribs_api.dependencies import require_user
 from mpcontribs_api.domains._shared.types import FieldSelector
-from mpcontribs_api.domains.projects.dependencies import ProjectDep, ProjectServiceDep
+from mpcontribs_api.domains.projects.dependencies import ProjectServiceDep
 from mpcontribs_api.domains.projects.models import (
     ProjectFilter,
     ProjectIn,
@@ -19,8 +19,8 @@ router = APIRouter()
 
 
 @router.get("")
-async def get_projects(
-    repo: ProjectDep,
+async def read_many(
+    service: ProjectServiceDep,
     pagination: Annotated[CursorParams, Depends()],
     filter: ProjectFilter = FilterDepends(ProjectFilter),
     fields: FieldSelector = None,
@@ -28,7 +28,7 @@ async def get_projects(
     """Return paginated projects matching a filter.
 
     Args:
-        repo (ProjectDep): the project repo we depend on
+        service (ProjectServiceDep): the project service we depend on
         pagination (CursorParams): arguments for cursor-based pagination
         fields (list[str] | None): optional ``_fields`` selection. Omitted -> server defaults;
             empty (``?_fields=``) -> identity fields only; ``_all`` -> the full document
@@ -37,11 +37,11 @@ async def get_projects(
         list[ProjectSummary]: a list of smaller project payloads
     """
     selected = ProjectOut.parse_fields(fields)
-    return await repo.get_many(filter=filter, pagination=pagination, fields=selected)
+    return await service.read_many(filter=filter, pagination=pagination, fields=selected)
 
 
 @router.get("/{id}")
-async def get_one(
+async def read_one(
     id: str,
     service: ProjectServiceDep,
     fields: FieldSelector = None,
@@ -58,7 +58,7 @@ async def get_one(
         ProjectOut: the requested project, actual data returned is determined by the view the user requested
     """
     selected = ProjectOut.parse_fields(fields)
-    return await service.get_one({"id": id}, fields=selected)
+    return await service.read_one({"id": id}, fields=selected)
 
 
 @router.put("/{id}", response_model=ProjectOut, dependencies=[Depends(require_user)])
@@ -84,7 +84,7 @@ async def upsert_one(
 
 
 @router.patch("/{id}", response_model=ProjectOut, dependencies=[Depends(require_user)])
-async def patch_one(
+async def update_one(
     service: ProjectServiceDep,
     id: str,
     update: ProjectPatch,
@@ -107,7 +107,7 @@ async def patch_one(
     Returns:
         ProjectOut: the full Project with updates applied
     """
-    return await service.patch_one({"id": id}, update=update)
+    return await service.update_one({"id": id}, update=update)
 
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_user)])

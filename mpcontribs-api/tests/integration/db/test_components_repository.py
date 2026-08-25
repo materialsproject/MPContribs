@@ -38,6 +38,26 @@ async def _count() -> int:
     return await Attachment.find_all().count()
 
 
+def _build(repo, inputs) -> list:
+    """Coerce inputs into stored documents the way the service layer does before inserting.
+
+    The repository's ``insert_many`` now takes fully-built documents (md5 is computed by the model on
+    validation), so tests build via ``from_input`` first.
+    """
+    return [repo.document_model.from_input(i) for i in inputs]
+
+
+async def _insert(repo, inputs) -> list:
+    """Insert and return just the resolved docs, asserting no per-item failures.
+
+    ``insert_many`` now returns ``(indexed_successes, failures)`` (per-item reporting); most tests
+    only care about the resolved documents on the success path.
+    """
+    successes, failures = await repo.insert_many(_build(repo, inputs))
+    assert failures == []
+    return [doc for _, doc in successes]
+
+
 # ---------------------------------------------------------------------------
 # insert_many: md5 dedupe
 # ---------------------------------------------------------------------------
@@ -46,27 +66,30 @@ async def _count() -> int:
 class TestInsertComponentsDedupe:
     async def test_duplicate_content_in_batch_inserted_once(self, db):
         # Two inputs share content (-> same md5); only one document should be written.
-        await _repo().insert_many([_attachment(1), _attachment(1), _attachment(2)])
+        repo = _repo()
+        await repo.insert_many(_build(repo, [_attachment(1), _attachment(1), _attachment(2)]))
         assert await _count() == 2
 
-    async def test_returns_one_doc_per_unique_md5(self, db):
-        result = await _repo().insert_many([_attachment(1), _attachment(1)])
-        assert len(result) == 1
+    async def test_returns_one_doc_per_input_deduped_to_same_doc(self, db):
+        docs = await _insert(_repo(), [_attachment(1), _attachment(1)])
+        assert len(docs) == 2
+        assert docs[0].id == docs[1].id
 
     async def test_existing_md5_not_reinserted(self, db):
-        await _repo().insert_many([_attachment(1)])
+        repo = _repo()
+        await repo.insert_many(_build(repo, [_attachment(1)]))
         # Re-submit the existing content alongside new content.
-        await _repo().insert_many([_attachment(1), _attachment(2)])
+        await repo.insert_many(_build(repo, [_attachment(1), _attachment(2)]))
         assert await _count() == 2
 
     async def test_existing_doc_returned_with_original_id(self, db):
-        first = await _repo().insert_many([_attachment(1)])
-        again = await _repo().insert_many([_attachment(1)])
+        first = await _insert(_repo(), [_attachment(1)])
+        again = await _insert(_repo(), [_attachment(1)])
         assert again[0].id == first[0].id
 
     async def test_inserted_docs_have_ids(self, db):
-        result = await _repo().insert_many([_attachment(1), _attachment(2)])
-        assert all(doc.id is not None for doc in result)
+        docs = await _insert(_repo(), [_attachment(1), _attachment(2)])
+        assert all(doc.id is not None for doc in docs)
 
 
 # ---------------------------------------------------------------------------
@@ -80,8 +103,8 @@ class TestInsertComponentsChunking:
         monkeypatch.setattr(get_settings().mongo, "component_insert_chunk_size", 2)
         # Distinct content -> distinct md5 so all five survive dedup.
         attachments = [_attachment(i) for i in range(5)]
-        result = await _repo().insert_many(attachments)
-        assert len(result) == 5
+        docs = await _insert(_repo(), attachments)
+        assert len(docs) == 5
         assert await _count() == 5
 
 
@@ -92,7 +115,9 @@ class TestInsertComponentsChunking:
 
 class TestInsertComponent:
     async def test_single_insert_persists(self, db):
-        doc = await _repo().insert_one(_attachment(3))
+        repo = _repo()
+        [built] = _build(repo, [_attachment(3)])
+        doc = await repo.insert_one(built)
         found = await Attachment.find_one(Attachment.id == doc.id)
         assert found is not None
         assert found.md5 == doc.md5
@@ -106,7 +131,7 @@ class TestInsertComponent:
 
 class TestDeleteComponents:
     async def test_filtered_delete_removes_only_matches(self, db):
-        keep, drop = await _repo().insert_many([_attachment(1), _attachment(2)])
+        keep, drop = await _insert(_repo(), [_attachment(1), _attachment(2)])
         result = await _repo().delete_many(AttachmentFilter(md5=drop.md5))
         assert result.num_deleted == 1
         remaining = {doc.md5 async for doc in Attachment.find_all()}
@@ -114,7 +139,7 @@ class TestDeleteComponents:
 
     async def test_delete_by_id_removes_one(self, db):
         """The inherited base delete_one removes a single component by its primary key."""
-        [doc] = await _repo().insert_many([_attachment(1)])
+        [doc] = await _insert(_repo(),[_attachment(1)])
         result = await _repo().delete_one({"id": doc.id})
         assert result.num_deleted == 1
         assert await _count() == 0
@@ -127,54 +152,54 @@ class TestDeleteComponents:
 
     async def test_delete_by_md5_removes_one(self, db):
         """A component is addressable by its content md5 (its declared identifier) as well as by id."""
-        [doc] = await _repo().insert_many([_attachment(1)])
+        [doc] = await _insert(_repo(),[_attachment(1)])
         result = await _repo().delete_one({"md5": doc.md5})
         assert result.num_deleted == 1
         assert await _count() == 0
 
 
 # ---------------------------------------------------------------------------
-# get_one / patch_one address a component by id or by its content md5
+# read_one / update_one address a component by id or by its content md5
 # ---------------------------------------------------------------------------
 
 
 class TestAddressComponentByMd5:
     async def test_get_one_by_md5(self, db):
-        [doc] = await _repo().insert_many([_attachment(1)])
-        by_md5 = await _repo().get_one({"md5": doc.md5}, fields=None)
-        by_id = await _repo().get_one({"id": doc.id}, fields=None)
+        [doc] = await _insert(_repo(),[_attachment(1)])
+        by_md5 = await _repo().read_one({"md5": doc.md5}, fields=None)
+        by_id = await _repo().read_one({"id": doc.id}, fields=None)
         assert by_md5 is not None
         assert by_md5.id == by_id.id == doc.id
 
     async def test_patch_one_by_md5(self, db):
-        [doc] = await _repo().insert_many([_attachment(1, name="data.csv")])
-        updated = await _repo().patch_one({"md5": doc.md5}, AttachmentPatch(name="renamed.png"))
+        [doc] = await _insert(_repo(),[_attachment(1, name="data.csv")])
+        updated = await _repo().update_one({"md5": doc.md5}, AttachmentPatch(name="renamed.png"))
         assert updated.name == "renamed.png"
 
 
 # ---------------------------------------------------------------------------
-# patch_one recomputes the derived md5
+# update_one recomputes the derived md5
 # ---------------------------------------------------------------------------
 
 
 class TestPatchComponent:
     async def test_patch_updates_field(self, db):
-        [doc] = await _repo().insert_many([_attachment(1, name="data.csv")])
-        updated = await _repo().patch_one({"id": doc.id}, AttachmentPatch(name="renamed.png"))
+        [doc] = await _insert(_repo(),[_attachment(1, name="data.csv")])
+        updated = await _repo().update_one({"id": doc.id}, AttachmentPatch(name="renamed.png"))
         assert updated.name == "renamed.png"
 
     async def test_empty_patch_returns_existing(self, db):
-        [doc] = await _repo().insert_many([_attachment(1, name="data.csv")])
-        updated = await _repo().patch_one({"id": doc.id}, AttachmentPatch())
+        [doc] = await _insert(_repo(),[_attachment(1, name="data.csv")])
+        updated = await _repo().update_one({"id": doc.id}, AttachmentPatch())
         assert updated.id == doc.id
 
     async def test_patch_content_recomputes_md5(self, db):
         # name is not a hash field, so renaming must NOT change md5.
-        [doc] = await _repo().insert_many([_attachment(1)])
-        renamed = await _repo().patch_one({"id": doc.id}, AttachmentPatch(name="renamed.png"))
+        [doc] = await _insert(_repo(),[_attachment(1)])
+        renamed = await _repo().update_one({"id": doc.id}, AttachmentPatch(name="renamed.png"))
         assert renamed.md5 == doc.md5
         # content IS a hash field, so changing it must recompute md5.
-        rehashed = await _repo().patch_one({"id": doc.id}, AttachmentPatch(content=999))
+        rehashed = await _repo().update_one({"id": doc.id}, AttachmentPatch(content=999))
         assert rehashed.md5 != doc.md5
         persisted = await Attachment.find_one(Attachment.id == doc.id)
         assert persisted.md5 == rehashed.md5
@@ -188,7 +213,8 @@ class TestPatchComponent:
 class TestComponentDownload:
     async def test_jsonl_download_round_trips(self, db):
         """Component downloads stream a decompressable gzip of all rows."""
-        await _repo().insert_many([_attachment(1), _attachment(2)])
+        repo = _repo()
+        await repo.insert_many(_build(repo, [_attachment(1), _attachment(2)]))
         stream = _repo().download(
             format=DownloadFormat.JSONL,
             short_mime=ShortMimeFormat.GZ,
@@ -231,7 +257,7 @@ class TestTableFrameRoundTrip:
             attrs={"title": "g", "labels": {"index": "T [K]", "value": "σ", "variable": "doping"}},
             data=frame,
         )
-        [doc] = await repo.insert_many([tin])
+        [doc] = await _insert(repo, [tin])
 
         # Stored in the canonical MongoDB shape: index/columns/data as strings.
         raw = await db["tables"].find_one({"_id": doc.id})
@@ -241,7 +267,7 @@ class TestTableFrameRoundTrip:
         assert raw["total_data_rows"] == 2
 
         # Read back: reassembled into the same DataFrame (index folded back as the first column).
-        out = await repo.get_one({"id": doc.id}, TableOut.parse_fields(["data"]))
+        out = await repo.read_one({"id": doc.id}, TableOut.parse_fields(["data"]))
         assert out.data.columns == ["T [K]", "1e16", "1e17"]
         assert out.data.equals(frame)
         # The raw storage keys must not leak onto the response model.
