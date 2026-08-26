@@ -3,7 +3,7 @@
 Covers the additive-merge translation of a patch's ``data`` against the *stored* shape:
 ``flatten_merge_paths`` produces the dotted ``$set`` paths Mongo receives, and ``merge_data`` produces
 the equivalent post-write view used to resolve identity. Both follow one rule — a patch onto a stored
-quantity leaf re-derives the whole leaf (so its canonical and ``input_*`` halves stay in sync, see
+quantity leaf re-derives the whole leaf (so its SI-canonical and submitted-form halves stay in sync, see
 ``patch_leaf``), a plain group is descended so unmentioned siblings survive, and any other scalar
 sets its path directly. Precise SI-conversion behavior of ``patch_leaf`` is covered in ``test_units``.
 """
@@ -38,20 +38,20 @@ class TestFlattenMergePaths:
 
     def test_leaf_patch_sets_the_whole_recomputed_leaf(self):
         # A fragment touching a stored leaf writes the whole re-derived leaf at its path (not a
-        # sub-path), so value/unit/error and input_* can be re-synced together. Changing the unit to
-        # km re-converts the magnitude (2 m -> input 2 km -> 2000 m) and updates input_unit.
-        out = flatten_merge_paths({"bandgap": LEAF}, {"bandgap": {"unit": "km"}}, prefix="data.")
-        assert set(out) == {"data.bandgap"}  # whole leaf, not data.bandgap.unit
-        assert out["data.bandgap"] == QuantityLeaf.patch_leaf(LEAF, {"unit": "km"})
-        assert out["data.bandgap"]["value"] == 2000.0
-        assert out["data.bandgap"]["input_unit"] == "km"
+        # sub-path), so si_value/si_unit/si_error and value/unit/error can be re-synced together.
+        # Changing the unit to km re-converts the magnitude (2 m -> input 2 km -> 2000 m) and updates unit.
+        out = flatten_merge_paths({"bandgap": LEAF}, {"bandgap": {"si_unit": "km"}}, prefix="data.")
+        assert set(out) == {"data.bandgap"}  # whole leaf, not data.bandgap.si_unit
+        assert out["data.bandgap"] == QuantityLeaf.patch_leaf(LEAF, {"si_unit": "km"})
+        assert out["data.bandgap"]["si_value"] == 2000.0
+        assert out["data.bandgap"]["unit"] == "km"
 
     def test_bare_scalar_onto_leaf_updates_magnitude(self):
         # A bare scalar is the new submitted magnitude; the leaf is re-derived, keeping the unit.
         out = flatten_merge_paths({"bandgap": LEAF}, {"bandgap": 5.0}, prefix="data.")
-        assert out == {"data.bandgap": QuantityLeaf.patch_leaf(LEAF, {"value": 5.0})}
-        assert out["data.bandgap"]["input_value"] == 5.0
-        assert out["data.bandgap"]["unit"] == "m"
+        assert out == {"data.bandgap": QuantityLeaf.patch_leaf(LEAF, {"si_value": 5.0})}
+        assert out["data.bandgap"]["value"] == 5.0
+        assert out["data.bandgap"]["si_unit"] == "m"
 
     def test_plain_group_descends_and_keeps_siblings(self):
         assert flatten_merge_paths({"grp": {"a": 1}}, {"grp": {"b": 2}}, prefix="data.") == {"data.grp.b": 2}
@@ -74,12 +74,12 @@ class TestFlattenMergePaths:
 class TestMergeData:
     def test_leaf_patch_matches_flatten(self):
         # merge_data is the post-write view flatten_merge_paths would produce, key by key.
-        merged = merge_data({"bandgap": LEAF}, {"bandgap": {"unit": "km"}})
-        assert merged["bandgap"] == QuantityLeaf.patch_leaf(LEAF, {"unit": "km"})
+        merged = merge_data({"bandgap": LEAF}, {"bandgap": {"si_unit": "km"}})
+        assert merged["bandgap"] == QuantityLeaf.patch_leaf(LEAF, {"si_unit": "km"})
 
     def test_bare_scalar_rederives_leaf(self):
         merged = merge_data({"bandgap": LEAF}, {"bandgap": 5.0})
-        assert merged["bandgap"] == QuantityLeaf.patch_leaf(LEAF, {"value": 5.0})
+        assert merged["bandgap"] == QuantityLeaf.patch_leaf(LEAF, {"si_value": 5.0})
 
     def test_new_key_and_sibling_survival(self):
         merged = merge_data({"x": 1, "grp": {"a": 1}}, {"y": 2, "grp": {"b": 2}})

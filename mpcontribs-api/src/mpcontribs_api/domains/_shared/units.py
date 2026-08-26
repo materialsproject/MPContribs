@@ -73,7 +73,7 @@ def _reject_non_finite(nominal: float, source: Any) -> None:
     """Reject inf/-inf/NaN magnitudes.
 
     ``float("1e999")`` overflows to ``inf`` and ``float("nan")`` parses cleanly, so a finite-looking
-    submission can slip a non-finite value into ``value``. This prevents those values from entering our storage.
+    submission can slip a non-finite value into ``si_value``. This prevents those values from entering our storage.
     """
     if not math.isfinite(nominal):
         raise UnitError(f"non-finite magnitude is not allowed: {source!r}")
@@ -150,11 +150,11 @@ def _reconcile_units(mag: str, embedded_unit: str | None, key_unit: str | None) 
 class QuantityLeaf(BaseModel):
     """The canonical shape of a ``Contribution.data`` quantity leaf, its factory, and its predicates.
 
-    ``value``/``unit`` hold the SI-canonical form (or the submitted form when the unit is
+    ``si_value``/``si_unit`` hold the SI-canonical form (or the submitted form when the unit is
         unrecognized/dimensionless)
-    ``input_value``/``input_unit`` hold the submitted form.
-    ``error`` is the (SI-propagated) standard deviation, present only when the magnitude carried an uncertainty
-    ``input_error`` is the same uncertainty in the submitted unit.
+    ``value``/``unit`` hold the submitted form.
+    ``si_error`` is the (SI-propagated) standard deviation, present only when the magnitude carried an uncertainty
+    ``error`` is the same uncertainty in the submitted unit.
     ``precision`` is the number of significant digits the submission carried (string magnitudes only); it is ``None``
         for a numeric submission, which carries no trailing-zero information. ``display`` is an optional free-form
         human-readable string (never derived; carried verbatim when supplied).
@@ -163,20 +163,20 @@ class QuantityLeaf(BaseModel):
     them as plain ``data`` keys.
     """
 
-    value: float
+    si_value: float
+    si_unit: str | None = None
+    value: float | None = None
     unit: str | None = None
-    input_value: float | None = None
-    input_unit: str | None = None
+    si_error: float | None = None
     error: float | None = None
-    input_error: float | None = None
     precision: int | None = None
     display: str | None = None
 
-    # Each canonical leaf field paired with the ``input_*`` field that records its submitted form.
+    # Each SI-canonical leaf field paired with the submitted-form field that records its submitted value.
     _INPUT_FIELD_OF: ClassVar[dict[str, str]] = {
-        "value": "input_value",
-        "unit": "input_unit",
-        "error": "input_error",
+        "si_value": "value",
+        "si_unit": "unit",
+        "si_error": "error",
     }
 
     @classmethod
@@ -189,11 +189,11 @@ class QuantityLeaf(BaseModel):
 
     @classmethod
     def is_leaf(cls, node: Any) -> bool:
-        """True when ``node`` is a stored quantity leaf (numeric ``value`` + only reserved keys)."""
+        """True when ``node`` is a stored quantity leaf (numeric ``si_value`` + only reserved keys)."""
         if not isinstance(node, dict):
             return False
-        value = node.get("value")
-        if not isinstance(value, (int, float)) or isinstance(value, bool):
+        si_value = node.get("si_value")
+        if not isinstance(si_value, (int, float)) or isinstance(si_value, bool):
             return False
         return node.keys() <= cls.reserved_keys()
 
@@ -215,9 +215,9 @@ class QuantityLeaf(BaseModel):
             value: the submitted magnitude (number, or a string possibly carrying uncertainty)
             unit: the resolved unit string, or ``None``/empty for unit-less
 
-        ``value``/``unit`` are canonical SI when convertible else the submitted form;
-        ``input_value``/``input_unit`` hold the submitted form (kept only when a unit is present or
-        canonicalization changed the magnitude); ``error`` is present only for an uncertain magnitude;
+        ``si_value``/``si_unit`` are canonical SI when convertible else the submitted form;
+        ``value``/``unit`` hold the submitted form (kept only when a unit is present or
+        canonicalization changed the magnitude); ``si_error`` is present only for an uncertain magnitude;
         ``precision`` is the submitted significant-figure count for a string magnitude (``None`` for a
         numeric submission).
 
@@ -239,10 +239,10 @@ class QuantityLeaf(BaseModel):
         """Canonicalize a pre-split ``(nominal, error, unit)`` submission into a leaf.
 
         The post-parse half of :meth:`from_submission`, shared with :meth:`patch_leaf`: SI-convert
-        (propagating the uncertainty through Pint) when the unit is recognized, keep the ``input_*``
-        provenance when a unit is present or canonicalization changed the magnitude, and carry
-        ``precision`` through. ``nominal``/``error`` are the submitted magnitude and uncertainty in
-        ``unit``.
+        (propagating the uncertainty through Pint) when the unit is recognized, keep the submitted-form
+        (``value``/``unit``/``error``) provenance when a unit is present or canonicalization changed the
+        magnitude, and carry ``precision`` through. ``nominal``/``error`` are the submitted magnitude and
+        uncertainty in ``unit``.
         """
         if unit:
             unit = nfc_normalize(unit)
@@ -263,15 +263,15 @@ class QuantityLeaf(BaseModel):
                     canon_value, canon_error = cv, ce
                     canon_unit = _format_unit(quantity.units)
 
-        # Keep the input_* if we had to coerce things
+        # Keep the submitted-form fields if we had to coerce things
         keep_input = bool(unit) or canon_value != nominal
         return cls(
-            value=canon_value,
-            unit=canon_unit,
-            input_value=nominal if keep_input else None,
-            input_unit=unit if keep_input else None,
-            error=canon_error,
-            input_error=error if keep_input else None,
+            si_value=canon_value,
+            si_unit=canon_unit,
+            value=nominal if keep_input else None,
+            unit=unit if keep_input else None,
+            si_error=canon_error,
+            error=error if keep_input else None,
             precision=precision,
         )
 
@@ -300,17 +300,17 @@ class QuantityLeaf(BaseModel):
                 return existing[input_key]
             return existing.get(canon_key)
 
-        unit = submitted("unit")
-        magnitude = _parse_magnitude(submitted("value"))
+        unit = submitted("si_unit")
+        magnitude = _parse_magnitude(submitted("si_value"))
         nominal, parsed_error = _split_ufloat(magnitude)
         # An explicit error override wins; otherwise an uncertainty embedded in the magnitude wins;
         # otherwise the existing submitted error carries over.
-        if "error" in overrides or "input_error" in overrides:
-            error = overrides.get("error", overrides.get("input_error"))
+        if "si_error" in overrides or "error" in overrides:
+            error = overrides.get("si_error", overrides.get("error"))
         elif parsed_error is not None:
             error = parsed_error
         else:
-            error = submitted("error")
+            error = submitted("si_error")
 
         precision = overrides.get("precision", existing.get("precision"))
         leaf = cls._from_parts(nominal, error, unit, precision=precision).as_dict()
@@ -423,15 +423,15 @@ class QuantityLeaf(BaseModel):
         """Render one canonical condition value for the identity string.
 
         A categorical string is returned verbatim; a leaf dict is rendered from its canonical (SI)
-        ``value`` at fixed precision (``:unit`` suffix when present) so physically-equal conditions
+        ``si_value`` at fixed precision (``:si_unit`` suffix when present) so physically-equal conditions
         collapse to the same key.
         """
         if isinstance(leaf, str):
             return leaf
-        value = leaf.get("value")
-        unit = leaf.get("unit")
-        num = _IDENTITY_FMT.format(value) if isinstance(value, (int, float)) else str(value)
-        return f"{num}:{unit}" if unit else num
+        si_value = leaf.get("si_value")
+        si_unit = leaf.get("si_unit")
+        num = _IDENTITY_FMT.format(si_value) if isinstance(si_value, (int, float)) else str(si_value)
+        return f"{num}:{si_unit}" if si_unit else num
 
     @staticmethod
     def condition_key(conditions: dict[str, dict[str, Any] | str]) -> str:
