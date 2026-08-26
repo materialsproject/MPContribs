@@ -78,14 +78,14 @@ class TestGetUser:
         assert user.is_anonymous is False
         assert user.username == "google:alice@example.com"
         assert user.consumer_id == "kong-123"
-        assert "editors" in user.groups
-        assert "mp-team" in user.groups
+        # Bare legacy tokens from either header become project grants (default owner role).
+        assert user.project_groups == {"editors": "owner", "mp-team": "owner"}
 
     def test_authenticated_user_no_groups(self):
         request = _make_request(**{"x-consumer-username": "google:alice@example.com"})
         user = get_user(request)
         assert user.is_anonymous is False
-        assert user.groups == frozenset()
+        assert user.groups == ()
 
     def test_groups_merged_from_both_headers(self):
         request = _make_request(
@@ -96,7 +96,7 @@ class TestGetUser:
             }
         )
         user = get_user(request)
-        assert user.groups == frozenset({"a", "b", "c", "d"})
+        assert user.project_groups == {"a": "owner", "b": "owner", "c": "owner", "d": "owner"}
 
     def test_missing_username_returns_anonymous(self):
         request = _make_request(**{"x-consumer-id": "kong-123"})
@@ -111,7 +111,7 @@ class TestGetUser:
 
 class TestRequireUser:
     def test_authenticated_user_passes_through(self):
-        authed = User(username="google:alice@example.com", groups=frozenset())
+        authed = User(username="google:alice@example.com", groups=[])
         result = require_user(authed)
         assert result is authed
 

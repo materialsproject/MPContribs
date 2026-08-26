@@ -26,9 +26,9 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
 
     document_model = Project
     out_model = ProjectOut
-    # Visible when public+approved, owned by the caller, or granted as a bare project role (its
-    # ``_id``). Admins bypass scope (handled by ``Scope``).
-    read_scope = Scope(Public(approved=True), Owned(), RoleIn("_id", "project_roles"))
+    # Visible when public+approved, owned by the caller, or granted any role on the project (keyed on
+    # its ``_id``). Admins bypass scope (handled by ``Scope``).
+    read_scope = Scope(Public(approved=True), Owned(), RoleIn("_id", "project_groups"))
 
     async def find_by_id_unscoped(self, id: str) -> Project | None:
         """Return the project with ``id`` regardless of user scope, or ``None`` if absent.

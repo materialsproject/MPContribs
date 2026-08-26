@@ -52,10 +52,12 @@ def get_user(request: Request) -> User:
         user = User()  # anonymous = all defaults
     else:
         groups = _split(h.get("x-authenticated-groups")) | _split(h.get("x-consumer-groups"))
-        user = User(
-            consumer_id=h.get("x-consumer-id"),
-            username=username,
-            groups=frozenset(groups),
+        user = User.model_validate(
+            {
+                "consumer_id": h.get("x-consumer-id"),
+                "username": username,
+                "groups": groups,
+            }
         )
     structlog.contextvars.bind_contextvars(
         consumer_id=user.consumer_id,

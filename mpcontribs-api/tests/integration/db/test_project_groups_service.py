@@ -36,7 +36,7 @@ def _service(user: User = ADMIN) -> ProjectGroupService:
 
 def _role_user(group_id, username: str = "google:carol@example.com") -> User:
     """A non-owner authenticated user granted access to one group via its project-group role."""
-    return User(username=username, groups=frozenset({f"project-group:{group_id}"}))
+    return User(username=username, groups=[f"mpcontribs:project-group:{group_id}=owner"])
 
 
 async def _insert_project(pid: str, owner: str = ALICE_EMAIL, **overrides):

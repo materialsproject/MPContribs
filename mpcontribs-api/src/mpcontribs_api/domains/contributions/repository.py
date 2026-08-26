@@ -58,8 +58,9 @@ class MongoDbContributionRepository(
     document_model = Contribution
     out_model = ContributionOut
     # Contributions have no owner of their own; visible when public or belonging to a project the
-    # caller may write to (keyed on ``project``). Admins bypass scope (handled by ``Scope``).
-    read_scope = Scope(Public(), RoleIn("project", "writable_projects"))
+    # caller is granted any role on, viewer included (keyed on ``project``). Writes are separately
+    # gated on ``writable_projects``. Admins bypass scope (handled by ``Scope``).
+    read_scope = Scope(Public(), RoleIn("project", "readable_projects"))
 
     async def update_one(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,

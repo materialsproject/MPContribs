@@ -53,11 +53,8 @@ class Owned:
 class RoleIn:
     """Visibility granted by the caller's roles, as a ``{field: {"$in": [...]}}`` membership test.
 
-    ``source`` names the ``User`` attribute holding the granted ids (e.g. ``"project_roles"``).
-    ``coerce`` optionally maps each raw role value to the collection's id type (e.g. ``ObjectId`` for
-    an ObjectId ``_id``); a value whose coercion fails is **dropped** — scope is fail-closed, so an
-    uncoercible (malformed) role grant is simply not honored. The clause is dropped entirely when the
-    caller holds no (usable) roles.
+    ``source`` is the ``User`` atrtribute holding the granted ids (ie. ``"project_groups"``). Any role
+    assignment grants readability.
     """
 
     field: str

@@ -10,20 +10,16 @@ Pure and DB-free. Two layers:
 
 from beanie import PydanticObjectId
 
-from mpcontribs_api.authz import (
-    INITIATIVE_ROLE_PREFIX,
-    PROJECT_GROUP_ROLE_PREFIX,
-    User,
-)
+from mpcontribs_api.authz import User
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
 from mpcontribs_api.domains.initiatives.repository import MongoDbInitiativeRepository
 from mpcontribs_api.domains.project_groups.repository import MongoDbProjectGroupRepository
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
 from mpcontribs_api.scope import Owned, Public, RoleIn, Scope
 
-ADMIN = User(username="google:admin@example.com", groups=frozenset({"admin"}))
+ADMIN = User(username="google:admin@example.com", groups=["mpcontribs=admin"])
 ANON = User()
-ALICE = User(username="google:alice@example.com", groups=frozenset())
+ALICE = User(username="google:alice@example.com", groups=[])
 
 
 def _clauses(scope: dict) -> list[dict]:
@@ -63,32 +59,32 @@ class TestOwnedClause:
 
 class TestRoleInClause:
     def test_membership_test_sorted(self):
-        user = User(username="u@x.com", groups=frozenset({"mp-b", "mp-a"}))
-        assert RoleIn("_id", "project_roles").to_query(user) == {"_id": {"$in": ["mp-a", "mp-b"]}}
+        user = User(username="u@x.com", groups=["mpcontribs:project:mp-b=owner", "mpcontribs:project:mp-a=viewer"])
+        assert RoleIn("_id", "project_groups").to_query(user) == {"_id": {"$in": ["mp-a", "mp-b"]}}
 
     def test_no_roles_is_inapplicable(self):
-        user = User(username="u@x.com", groups=frozenset())
-        assert RoleIn("_id", "project_roles").to_query(user) is None
+        user = User(username="u@x.com", groups=[])
+        assert RoleIn("_id", "project_groups").to_query(user) is None
 
     def test_coerce_maps_each_value(self):
         oid = "a" * 24
-        user = User(username="u@x.com", groups=frozenset({f"{PROJECT_GROUP_ROLE_PREFIX}{oid}"}))
-        clause = RoleIn("_id", "project_group_roles", coerce=PydanticObjectId)
+        user = User(username="u@x.com", groups=[f"mpcontribs:project-group:{oid}=viewer"])
+        clause = RoleIn("_id", "project_group_groups", coerce=PydanticObjectId)
         assert clause.to_query(user) == {"_id": {"$in": [PydanticObjectId(oid)]}}
 
     def test_coerce_drops_invalid_values(self):
         oid = "a" * 24
         user = User(
             username="u@x.com",
-            groups=frozenset({f"{PROJECT_GROUP_ROLE_PREFIX}{oid}", f"{PROJECT_GROUP_ROLE_PREFIX}not-an-oid"}),
+            groups=[f"mpcontribs:project-group:{oid}=viewer", "mpcontribs:project-group:not-an-oid=viewer"],
         )
-        clause = RoleIn("_id", "project_group_roles", coerce=PydanticObjectId)
+        clause = RoleIn("_id", "project_group_groups", coerce=PydanticObjectId)
         # The malformed hex string is fail-closed dropped; only the valid ObjectId survives.
         assert clause.to_query(user) == {"_id": {"$in": [PydanticObjectId(oid)]}}
 
     def test_coerce_all_invalid_is_inapplicable(self):
-        user = User(username="u@x.com", groups=frozenset({f"{PROJECT_GROUP_ROLE_PREFIX}nope"}))
-        clause = RoleIn("_id", "project_group_roles", coerce=PydanticObjectId)
+        user = User(username="u@x.com", groups=["mpcontribs:project-group:nope=viewer"])
+        clause = RoleIn("_id", "project_group_groups", coerce=PydanticObjectId)
         assert clause.to_query(user) is None
 
 
@@ -98,7 +94,7 @@ class TestRoleInClause:
 
 
 class TestScopeQuery:
-    scope = Scope(Public(approved=True), Owned(), RoleIn("_id", "project_roles"))
+    scope = Scope(Public(approved=True), Owned(), RoleIn("_id", "project_groups"))
 
     def test_admin_bypasses_scope(self):
         assert self.scope.query(ADMIN) == {}
@@ -113,7 +109,7 @@ class TestScopeQuery:
         assert self.scope.query(ANON) == {"$or": [{"is_public": True, "is_approved": True}]}
 
     def test_clause_order_preserved(self):
-        user = User(username="alice@x.com", groups=frozenset({"mp-a"}))
+        user = User(username="alice@x.com", groups=["mpcontribs:project:mp-a=owner"])
         assert _clauses(self.scope.query(user)) == [
             {"is_public": True, "is_approved": True},
             {"owner": "alice@x.com"},
@@ -132,18 +128,22 @@ class TestProjectScope:
     def test_admin_unfiltered(self):
         assert self.scope.query(ADMIN) == {}
 
-    def test_public_approved_owner_and_bare_project_ids(self):
-        user = User(username="alice@x.com", groups=frozenset({"mp-a", "mp-b"}))
+    def test_public_approved_owner_and_project_ids(self):
+        user = User(username="alice@x.com", groups=["mpcontribs:project:mp-a=owner", "mpcontribs:project:mp-b=viewer"])
         clauses = _clauses(self.scope.query(user))
         assert {"is_public": True, "is_approved": True} in clauses
         assert {"owner": "alice@x.com"} in clauses
         assert {"_id": {"$in": ["mp-a", "mp-b"]}} in clauses
 
-    def test_prefixed_and_admin_roles_excluded_from_id_clause(self):
-        # Only bare project ids may key the _id clause; resource-scoped/admin roles must not leak in.
+    def test_other_scopes_excluded_from_id_clause(self):
+        # Only project-scoped grants may key the _id clause; other scopes/admin must not leak in.
         user = User(
             username="alice@x.com",
-            groups=frozenset({"mp-a", f"{INITIATIVE_ROLE_PREFIX}foo", f"{PROJECT_GROUP_ROLE_PREFIX}deadbeef"}),
+            groups=[
+                "mpcontribs:project:mp-a=owner",
+                "mpcontribs:initiative:foo=owner",
+                "mpcontribs:project-group:deadbeef=owner",
+            ],
         )
         role_clause = next(c for c in _clauses(self.scope.query(user)) if "_id" in c)
         assert role_clause == {"_id": {"$in": ["mp-a"]}}
@@ -156,7 +156,7 @@ class TestInitiativeScope:
         assert self.scope.query(ADMIN) == {}
 
     def test_public_approved_owner_and_slug_roles(self):
-        user = User(username="alice@x.com", groups=frozenset({f"{INITIATIVE_ROLE_PREFIX}solar"}))
+        user = User(username="alice@x.com", groups=["mpcontribs:initiative:solar=viewer"])
         clauses = _clauses(self.scope.query(user))
         assert {"is_public": True, "is_approved": True} in clauses
         assert {"owner": "alice@x.com"} in clauses
@@ -178,7 +178,7 @@ class TestProjectGroupScope:
         oid = "a" * 24
         user = User(
             username="alice@x.com",
-            groups=frozenset({f"{PROJECT_GROUP_ROLE_PREFIX}{oid}", f"{PROJECT_GROUP_ROLE_PREFIX}not-an-oid"}),
+            groups=[f"mpcontribs:project-group:{oid}=viewer", "mpcontribs:project-group:not-an-oid=viewer"],
         )
         role_clause = next(c for c in _clauses(self.scope.query(user)) if "_id" in c)
         assert role_clause == {"_id": {"$in": [PydanticObjectId(oid)]}}
@@ -191,10 +191,16 @@ class TestContributionScope:
         assert self.scope.query(ADMIN) == {}
 
     def test_no_owner_clause_and_public_unapproved(self):
-        user = User(username="alice@x.com", groups=frozenset({"mp-a"}))
+        user = User(username="alice@x.com", groups=["mpcontribs:project:mp-a=owner"])
         clauses = _clauses(self.scope.query(user))
         assert {"is_public": True} in clauses
         assert all("owner" not in c for c in clauses)
+        assert {"project": {"$in": ["mp-a"]}} in clauses
+
+    def test_viewer_can_read_contributions(self):
+        # Read visibility is presence-based: a project viewer sees the project's contributions.
+        user = User(username="alice@x.com", groups=["mpcontribs:project:mp-a=viewer"])
+        clauses = _clauses(self.scope.query(user))
         assert {"project": {"$in": ["mp-a"]}} in clauses
 
     def test_anonymous_only_public(self):

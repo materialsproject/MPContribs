@@ -355,7 +355,7 @@ NFKCStr = Annotated[str, BeforeValidator(func=nfkc_normalize)]
 DisplayStr = Annotated[str, BeforeValidator(func=nfc_normalize)]
 
 # A URL-safe, human-readable slug
-# carried in user.groups like ``initiative:<slug>``
+# carried in a grant path like ``mpcontribs:initiative:<slug>=<role>``
 _SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 
 

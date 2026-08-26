@@ -1,7 +1,9 @@
-from typing import Any
+from dataclasses import dataclass, field
+from enum import StrEnum
+from typing import Any, Self
 
 from fastapi.security import APIKeyHeader
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, PrivateAttr, model_validator
 
 from mpcontribs_api.config import get_settings
 
@@ -31,17 +33,97 @@ authenticated_groups_scheme = APIKeyHeader(
 )
 
 
-ADMIN_GROUP = settings.mongo.admin_group
+# The top-level path segment naming this service's domain. Grants in other domains (e.g. ``core:...``)
+# are parsed and stored but ignored by this service's accessors.
+DOMAIN = "mpcontribs"
 
-# prefix to user roles to disambiguate from project roles, which are bare ids
-INITIATIVE_ROLE_PREFIX = "initiative:"
+# Role name that grants global admin. Held at the domain root (``mpcontribs=admin``).
+ADMIN_ROLE = settings.mongo.admin_group
 
-# prefix for project-group roles: a group's _id (an ObjectId hex string) is granted as ``project-group:<oid>``
-PROJECT_GROUP_ROLE_PREFIX = "project-group:"
+# Reserved sentinel role Kong forwards for the Persson group.
+PERSSON_ROLE = "persson_group"
 
-# A role carrying one of these prefixes is scoped to a non-project resource; a role with none of
-# them is a bare project id.
-_RESOURCE_ROLE_PREFIXES = (INITIATIVE_ROLE_PREFIX, PROJECT_GROUP_ROLE_PREFIX)
+# Reserved roles are only meaningful at the domain root and must never be smuggled onto an
+# anonymous caller.
+_RESERVED_ROLES = frozenset({ADMIN_ROLE, PERSSON_ROLE})
+
+# Canonical second-level path segments for the resources with flat authorization consumers today.
+PROJECT_SEGMENT = "project"
+INITIATIVE_SEGMENT = "initiative"
+PROJECT_GROUP_SEGMENT = "project-group"
+
+# Default role applied to the legacy (``=``-less) forms Kong still emits, preserving prior full access.
+_LEGACY_ROLE = "owner"
+
+
+class Role(StrEnum):
+    """Roles a caller can hold on a scoped resource, ordered most- to least-privileged."""
+
+    owner = "owner"
+    editor = "editor"
+    viewer = "viewer"
+
+
+# Read is granted by the presence of ANY grant; write and manage require these roles.
+WRITE_ROLES: frozenset[str] = frozenset({Role.owner, Role.editor})
+MANAGE_ROLES: frozenset[str] = frozenset({Role.owner})
+
+
+class UserGroup(BaseModel):
+    """A single parsed access grant: an arbitrary-depth path plus the role held on it.
+
+    The input format is ``seg1:seg2:...:segN=role`` (ie. ``mpcontribs:project:mp-a=editor``). The path
+    is hierarchical and unbounded in depth; ``path[0]`` is the domain (ie. mpcontribs).
+    """
+
+    model_config = ConfigDict(frozen=True)
+    path: tuple[str, ...]
+    role: str
+
+    @property
+    def domain(self) -> str:
+        return self.path[0]
+
+    def __str__(self) -> str:
+        return f"{':'.join(self.path)}={self.role}"
+
+    @classmethod
+    def parse(cls, raw: str) -> Self | None:
+        """Parse one wire token into a grant, or ``None`` if malformed (fail-closed, never raises).
+
+        Accepts the ARN grammar (any depth, requires a non-empty ``=role``) and the three legacy forms
+        Kong still emits: a bare project id, the admin sentinel, and the Persson sentinel.
+        """
+        token = raw.strip()
+        if not token:
+            return None
+        if "=" not in token:
+            return cls._parse_legacy(token)
+        left, role = token.rsplit("=", 1)
+        if not role:
+            return None
+        segments = left.split(":")
+        if any(not segment for segment in segments):
+            return None
+        return cls(path=tuple(segments), role=role)
+
+    @classmethod
+    def _parse_legacy(cls, token: str) -> Self | None:
+        # Only the ``=``-less forms Kong currently forwards are honored; anything else is malformed.
+        # Prefixed legacy strings (``initiative:``/``project-group:``) are gone — those are ARN-only now.
+        if token in _RESERVED_ROLES:
+            return cls(path=(DOMAIN,), role=token)
+        if ":" in token:
+            return None
+        return cls(path=(DOMAIN, PROJECT_SEGMENT, token), role=_LEGACY_ROLE)
+
+
+@dataclass
+class _Node:
+    """One node of the grant tree: the role granted at this exact path (if any) plus child segments."""
+
+    role: str | None = None
+    children: dict[str, _Node] = field(default_factory=dict)
 
 
 class User(BaseModel):
@@ -50,21 +132,82 @@ class User(BaseModel):
     Attributes:
         consumer_id (str | None): Kong id
         username (str | None): the username of the active user - if None, the user is anonymous
-        groups (frozenset[str]): the groups the user is part of - used for access control
+        groups (tuple[UserGroup, ...]): the parsed access grants the user carries
     """
 
     model_config = ConfigDict(frozen=True)
     consumer_id: str | None = None
     username: str | None = None
-    groups: frozenset[str] = frozenset()
+    groups: tuple[UserGroup, ...] = ()
+
+    # O(depth) lookup structure built once from ``groups``; excluded from the model's fields/hash.
+    _index: _Node = PrivateAttr(default_factory=_Node)
 
     @model_validator(mode="before")
     @classmethod
-    def drop_admin_on_anonymous(cls, config: dict[str, Any]) -> dict[str, Any]:
-        if not config.get("username"):
-            groups = config.get("groups", frozenset())
-            config["groups"] = frozenset(g for g in groups if g != ADMIN_GROUP)
-        return config
+    def _normalize_groups(cls, data: Any) -> Any:
+        """Parse raw group tokens into grants and drop reserved grants from anonymous callers."""
+        if not isinstance(data, dict):
+            return data
+        raw_groups = data.get("groups")
+        if raw_groups is not None:
+            parsed: list[UserGroup] = []
+            for item in raw_groups:
+                if isinstance(item, UserGroup):
+                    grant = item
+                elif isinstance(item, str):
+                    grant = UserGroup.parse(item)
+                elif isinstance(item, dict):
+                    grant = UserGroup(**item)
+                else:
+                    grant = None
+                if grant is not None:
+                    parsed.append(grant)
+            data["groups"] = tuple(parsed)
+        if not data.get("username"):
+            data["groups"] = tuple(g for g in data.get("groups", ()) if g.role not in _RESERVED_ROLES)
+        return data
+
+    @model_validator(mode="after")
+    def _build_index(self) -> Self:
+        root = _Node()
+        for grant in self.groups:
+            node = root
+            for segment in grant.path:
+                node = node.children.setdefault(segment, _Node())
+            node.role = grant.role  # last-wins on duplicate identical paths
+        self._index = root
+        return self
+
+    def role_for(self, *path: str) -> str | None:
+        """The role held at exactly ``path``, or ``None``. O(len(path)) tree walk."""
+        node = self._index
+        for segment in path:
+            child = node.children.get(segment)
+            if child is None:
+                return None
+            node = child
+        return node.role
+
+    def has_grant(self, *prefix: str) -> bool:
+        """Whether the user holds any grant at or beneath ``prefix``."""
+        node = self._index
+        for segment in prefix:
+            child = node.children.get(segment)
+            if child is None:
+                return False
+            node = child
+        return True
+
+    def _resource_roles(self, segment: str) -> dict[str, str]:
+        """``{resource_name: role}`` for direct grants under ``DOMAIN:segment`` (deeper grants excluded)."""
+        node = self._index.children.get(DOMAIN)
+        if node is None:
+            return {}
+        node = node.children.get(segment)
+        if node is None:
+            return {}
+        return {name: child.role for name, child in node.children.items() if child.role is not None}
 
     @property
     def is_anonymous(self) -> bool:
@@ -72,61 +215,40 @@ class User(BaseModel):
 
     @property
     def is_admin(self) -> bool:
-        return (not self.is_anonymous) and (ADMIN_GROUP in self.groups)
+        return (not self.is_anonymous) and (self.role_for(DOMAIN) == ADMIN_ROLE)
 
     @property
-    def project_roles(self) -> list[str]:
-        """The project ids this user carries, from their bare (unprefixed) roles.
-
-        Resource-scoped roles (``initiative:``, ``project-group:``) and the admin sentinel are
-        excluded, leaving only bare project ids.
-        """
-        return [role for role in self.groups if role != ADMIN_GROUP and not role.startswith(_RESOURCE_ROLE_PREFIXES)]
+    def project_groups(self) -> dict[str, str]:
+        """``{project_id: role}`` for the projects this user is granted on (any role)."""
+        return self._resource_roles(PROJECT_SEGMENT)
 
     @property
-    def initiative_roles(self) -> list[str]:
-        """The initiative slugs this user collaborates on, decoded from their ``initiative:<slug>`` roles."""
-        return [role[len(INITIATIVE_ROLE_PREFIX) :] for role in self.groups if role.startswith(INITIATIVE_ROLE_PREFIX)]
+    def initiative_groups(self) -> dict[str, str]:
+        """``{slug: role}`` for the initiatives this user is granted on (any role)."""
+        return self._resource_roles(INITIATIVE_SEGMENT)
 
     @property
-    def project_group_roles(self) -> list[str]:
-        """The project-group ids this user may access, decoded from their ``project-group:<oid>`` roles.
+    def project_group_groups(self) -> dict[str, str]:
+        """``{oid_hex: role}`` for the project groups this user is granted on (any role)."""
+        return self._resource_roles(PROJECT_GROUP_SEGMENT)
 
-        Values are the raw hex strings; callers that query by ``_id`` must convert them
-        """
-        return [
-            role[len(PROJECT_GROUP_ROLE_PREFIX) :] for role in self.groups if role.startswith(PROJECT_GROUP_ROLE_PREFIX)
-        ]
-
-    def has_role(self, role: str, *, resource: str | None = None) -> bool:
-        """Determine whether a user has a role assigned to them.
-
-        Specifying resource as:
-        - ``INITIATIVE_ROLE_PREFIX`` looks for roles scoped to initiatives
-        - "project" looks for bare (unprefixed) project roles
-        - None looks for roles by matching the entire string
-        """
-        if resource == INITIATIVE_ROLE_PREFIX[:-1]:
-            return role in self.initiative_roles
-        if resource == "project":
-            return role in self.project_roles
-        return role in self.groups
+    @property
+    def readable_projects(self) -> frozenset[str]:
+        """Projects this user may read: presence of any grant is enough (viewer included)."""
+        if self.is_anonymous:
+            return frozenset()
+        return frozenset(self.project_groups)
 
     @property
     def writable_projects(self) -> frozenset[str]:
-        """Projects this user may write to. Admins are unbounded (handled by can_write)"""
+        """Projects this user may write to (owner/editor). Admins are unbounded (handled by can_write)."""
         if self.is_anonymous:
             return frozenset()
-        # only bare project roles are writable projects; the admin sentinel and resource-scoped
-        # roles (initiative:/project-group:) must never leak into a $in / membership test
-        return frozenset(self.project_roles)
+        return frozenset(name for name, role in self.project_groups.items() if role in WRITE_ROLES)
 
     def can_manage(self, id: str, resource: str) -> bool:
-        """Determines whether a user can manage a resource.
-
-        If the user is known and either an admin or has a valid role assigned, they can manage
-        """
-        return (not self.is_anonymous) and (self.is_admin or self.has_role(role=id, resource=resource))
+        """Whether the user may manage ``DOMAIN:resource:id`` (admin, or an owner-role grant on it)."""
+        return (not self.is_anonymous) and (self.is_admin or (self.role_for(DOMAIN, resource, id) in MANAGE_ROLES))
 
     def can_write(self, project: str) -> bool:
         """Single source of truth for write authorization."""
