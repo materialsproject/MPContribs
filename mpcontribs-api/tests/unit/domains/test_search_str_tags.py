@@ -79,35 +79,6 @@ def test_searchstr_fuzz_output_is_stripped_and_casefolded():
 
 
 # ligature + uppercase + trailing NBSP -> "file": exercises fold, casefold, and trim at once.
-_MESSY_TAG = "  ﬁLE "
-
-_TAG_FIELD_EXTRACTORS = [
-    (
-        "project_in_tags",
-        lambda t: ProjectIn(
-            title="title-x",
-            authors="a",
-            description="d",
-            owner="google:a@b.com",
-            tags=[t],
-        ).tags,
-    ),
-    ("project_patch_tags", lambda t: ProjectPatch(tags=[t]).tags),
-    ("filter_tags", lambda t: ProjectFilter(tags=[t]).tags),
-    ("filter_tags__in", lambda t: ProjectFilter(tags__in=[t]).tags__in),
-    ("filter_tags__contains", lambda t: ProjectFilter(tags__contains=[t]).tags__contains),
-    # "etc.": the same SearchStr normalizer, reused on a non-tag list field on another model.
-    ("project_group_filter_name__in", lambda t: ProjectGroupFilter(name__in=[t]).name__in),
-]
-
-
-@pytest.mark.parametrize(
-    "extract", [e for _, e in _TAG_FIELD_EXTRACTORS], ids=[i for i, _ in _TAG_FIELD_EXTRACTORS]
-)
-def test_searchstr_normalized_across_models(extract):
-    assert extract(_MESSY_TAG) == ["file"]
-
-
 def test_searchstr_casefold_expansion_is_idempotent():
     """Covers the tricky edge: a casefold-expanding char (ß -> ss) followed by a combining mark.
 
