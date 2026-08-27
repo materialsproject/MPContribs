@@ -11,9 +11,9 @@ from mpcontribs_api.domains.contributions.stats import (
 
 def _annotated(value: float, unit: str | None = None) -> dict:
     """A minimal canonical annotated-leaf dict (see QuantityLeaf.as_dict)."""
-    leaf = {"value": value, "input_value": value, "display": str(value)}
+    leaf = {"si_value": value, "value": value, "display": str(value)}
     if unit is not None:
-        leaf["unit"] = unit
+        leaf["si_unit"] = unit
     return leaf
 
 

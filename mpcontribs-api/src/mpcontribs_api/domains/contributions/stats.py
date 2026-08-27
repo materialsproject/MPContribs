@@ -45,7 +45,7 @@ def iter_leaves(data: dict[str, Any], prefix: str = "") -> Iterator[tuple[str, f
         path = f"{prefix}.{key}" if prefix else key
         if isinstance(node, dict):
             if QuantityLeaf.is_leaf(node):
-                yield path, float(node["value"]), node.get("unit")
+                yield path, float(node["si_value"]), node.get("si_unit")
             else:
                 yield from iter_leaves(node, path)
         elif isinstance(node, bool):

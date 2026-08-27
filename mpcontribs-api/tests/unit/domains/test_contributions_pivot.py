@@ -142,14 +142,14 @@ class TestExpandContribution:
         assert len(rows) == 1
         assert rows[0].condition_key == ""
         # Every numeric scalar is promoted to a quantity leaf, at any nesting depth.
-        assert rows[0].contribution.data == {"a": {"b": {"value": 1.5}}, "plain": {"value": 3.0}}
+        assert rows[0].contribution.data == {"a": {"b": {"si_value": 1.5}}, "plain": {"si_value": 3.0}}
 
     def test_unit_only_annotates_in_place_single_row(self):
         rows = expand_contribution(_contrib_in({"bandgap (eV)": 1.1}))
         assert len(rows) == 1
         assert rows[0].condition_key == ""
         leaf = rows[0].contribution.data["bandgap"]
-        assert leaf["input_unit"] == "eV"
+        assert leaf["unit"] == "eV"
 
     def test_pivots_into_one_row_per_signature(self):
         rows = expand_contribution(
@@ -174,7 +174,7 @@ class TestExpandContribution:
         )
         assert len(rows) == 2
         for r in rows:
-            assert math.isclose(r.contribution.data["shared"]["input_value"], 9.0)
+            assert math.isclose(r.contribution.data["shared"]["value"], 9.0)
 
     def test_conditions_stored_as_columns(self):
         rows = expand_contribution(_contrib_in({"conductivity (S/cm, T=300K)": 4.2}))
@@ -182,12 +182,12 @@ class TestExpandContribution:
         data = rows[0].contribution.data
         # condition name coerced to snake_case (T -> t)
         assert "t" in data
-        assert math.isclose(data["t"]["value"], 300.0)
+        assert math.isclose(data["t"]["si_value"], 300.0)
 
     def test_dotted_path_nests(self):
         rows = expand_contribution(_contrib_in({"a.b.c (eV, T=300K)": 2.0}))
         data = rows[0].contribution.data
-        assert "value" in data["a"]["b"]["c"]
+        assert "si_value" in data["a"]["b"]["c"]
 
     def test_same_name_signature_different_unit_collision(self):
         with pytest.raises(ValidationError, match="same path"):
@@ -229,19 +229,19 @@ class TestExpandContribution:
         rows = expand_contribution(_contrib_in({"Band Gap": 1.5, "nested": {"Sub Key": 2}}))
         assert len(rows) == 1
         # keys coerced to snake_case, numeric values promoted to leaves
-        assert rows[0].contribution.data == {"band_gap": {"value": 1.5}, "nested": {"sub_key": {"value": 2.0}}}
+        assert rows[0].contribution.data == {"band_gap": {"si_value": 1.5}, "nested": {"sub_key": {"si_value": 2.0}}}
 
     def test_already_snake_case_keys_still_leafify_numbers(self):
         # Even with nothing to coerce, bare numbers are normalized to quantity leaves.
         c = _contrib_in({"band_gap": 1.5, "nested": {"sub_key": 2}})
         rows = expand_contribution(c)
-        assert rows[0].contribution.data == {"band_gap": {"value": 1.5}, "nested": {"sub_key": {"value": 2.0}}}
+        assert rows[0].contribution.data == {"band_gap": {"si_value": 1.5}, "nested": {"sub_key": {"si_value": 2.0}}}
 
     def test_annotated_path_segments_coerced(self):
         rows = expand_contribution(_contrib_in({"Band Gap (eV, T=300K)": 1.1}))
         data = rows[0].contribution.data
         assert set(data) == {"band_gap", "t"}
-        assert data["band_gap"]["input_unit"] == "eV"
+        assert data["band_gap"]["unit"] == "eV"
 
     def test_forbidden_name_chars_folded_to_underscore(self):
         # '*', '/', and '|' are allowed in the name portion but folded to '_' (not rejected). The
@@ -249,20 +249,20 @@ class TestExpandContribution:
         rows = expand_contribution(_contrib_in({"a/b*c|d (S/cm)": 5}))
         data = rows[0].contribution.data
         assert set(data) == {"a_b_c_d"}
-        assert data["a_b_c_d"]["input_unit"] == "S/cm"
+        assert data["a_b_c_d"]["unit"] == "S/cm"
 
     def test_dotted_path_segments_coerced(self):
         rows = expand_contribution(_contrib_in({"Outer.Inner Key (eV)": 1.1}))
         data = rows[0].contribution.data
-        assert "value" in data["outer"]["inner_key"]
+        assert "si_value" in data["outer"]["inner_key"]
 
     def test_unit_and_condition_value_preserved_verbatim(self):
         # unit (eV) and condition value (300K -> canonical) are never snake_cased; only names are
         rows = expand_contribution(_contrib_in({"Band Gap (eV, Temp=300K)": 1.1}))
         data = rows[0].contribution.data
-        assert data["band_gap"]["input_unit"] == "eV"
+        assert data["band_gap"]["unit"] == "eV"
         assert "temp" in data  # condition name coerced
-        assert math.isclose(data["temp"]["value"], 300.0)
+        assert math.isclose(data["temp"]["si_value"], 300.0)
 
     def test_coercion_collision_across_columns_rejected(self):
         with pytest.raises(ValidationError, match="same path"):

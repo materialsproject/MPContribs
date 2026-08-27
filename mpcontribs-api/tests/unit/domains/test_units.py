@@ -26,25 +26,25 @@ def _ckey(condition_value: str) -> str:
 class TestAnnotateValue:
     def test_recognized_unit_canonicalizes_to_si_and_keeps_original(self):
         leaf = QuantityLeaf.from_submission(4.2, "eV").as_dict()
-        assert leaf["input_value"] == 4.2
-        assert leaf["input_unit"] == "eV"
+        assert leaf["value"] == 4.2
+        assert leaf["unit"] == "eV"
         # 4.2 eV in joules
-        assert math.isclose(leaf["value"], 4.2 * 1.602176634e-19, rel_tol=1e-9)
-        assert leaf["unit"] != "eV"  # canonicalized to base units
-        assert "error" not in leaf
+        assert math.isclose(leaf["si_value"], 4.2 * 1.602176634e-19, rel_tol=1e-9)
+        assert leaf["si_unit"] != "eV"  # canonicalized to base units
+        assert "si_error" not in leaf
         # no formatted display string is ever stored; clients format from the structured fields
         assert "display" not in leaf
 
     def test_unitless_value(self):
-        # A bare, exact, unit-less number is fully described by ``value``: input_*/display are omitted.
+        # A bare, exact, unit-less number is fully described by ``si_value``: value/unit/display are omitted.
         leaf = QuantityLeaf.from_submission(5, None).as_dict()
-        assert leaf == {"value": 5.0}
+        assert leaf == {"si_value": 5.0}
 
     def test_unknown_unit_stored_as_submitted(self):
         leaf = QuantityLeaf.from_submission(1.0, "widgets").as_dict()
-        assert leaf["value"] == 1.0
+        assert leaf["si_value"] == 1.0
+        assert leaf["si_unit"] == "widgets"
         assert leaf["unit"] == "widgets"
-        assert leaf["input_unit"] == "widgets"
 
     def test_unit_nfc_normalized(self):
         # A unit spelled with the OHM SIGN (U+2126) is NFC-folded onto the Greek omega (U+03A9)
@@ -52,29 +52,29 @@ class TestAnnotateValue:
         ohm_sign, greek_omega = "Ω", "Ω"
         assert ohm_sign != greek_omega
         leaf = QuantityLeaf.from_submission(1.0, ohm_sign).as_dict()
-        assert leaf["input_unit"] == greek_omega
-        assert ohm_sign not in leaf["input_unit"]
+        assert leaf["unit"] == greek_omega
+        assert ohm_sign not in leaf["unit"]
         # Both spellings produce the identical stored/canonical leaf.
         assert leaf == QuantityLeaf.from_submission(1.0, greek_omega).as_dict()
 
     def test_offset_unit_canonicalizes_to_kelvin(self):
         # degC magnitude passed separately is convertible (unlike the string form).
         leaf = QuantityLeaf.from_submission(26.85, "degC").as_dict()
-        assert math.isclose(leaf["value"], 300.0, rel_tol=1e-6)
-        assert leaf["unit"] == "K"
-        assert leaf["input_value"] == 26.85
-        assert leaf["input_unit"] == "degC"
+        assert math.isclose(leaf["si_value"], 300.0, rel_tol=1e-6)
+        assert leaf["si_unit"] == "K"
+        assert leaf["value"] == 26.85
+        assert leaf["unit"] == "degC"
 
     def test_uncertainty_notation_parsed_and_propagated(self):
         leaf = QuantityLeaf.from_submission("4.2(3)", "eV").as_dict()
-        assert "error" in leaf
+        assert "si_error" in leaf
         # error scales with the same eV->J factor as the value
-        assert math.isclose(leaf["error"], 0.3 * 1.602176634e-19, rel_tol=1e-6)
+        assert math.isclose(leaf["si_error"], 0.3 * 1.602176634e-19, rel_tol=1e-6)
 
     def test_plain_numeric_string_has_no_implied_uncertainty(self):
         leaf = QuantityLeaf.from_submission("300", "K").as_dict()
-        assert "error" not in leaf
-        assert math.isclose(leaf["value"], 300.0)
+        assert "si_error" not in leaf
+        assert math.isclose(leaf["si_value"], 300.0)
 
     def test_unparseable_magnitude_raises(self):
         with pytest.raises(UnitError):
@@ -93,14 +93,14 @@ class TestAnnotateValue:
 class TestParseConditionValue:
     def test_numeric_with_unit(self):
         leaf = parse_condition_value("300K")
-        assert leaf["unit"] == "K"
-        assert math.isclose(leaf["value"], 300.0)
+        assert leaf["si_unit"] == "K"
+        assert math.isclose(leaf["si_value"], 300.0)
 
     def test_bare_numeric(self):
         leaf = parse_condition_value("5")
-        assert leaf["value"] == 5.0
+        assert leaf["si_value"] == 5.0
         # unit is omitted (exclude_none) for a unit-less leaf
-        assert leaf.get("unit") is None
+        assert leaf.get("si_unit") is None
 
     def test_categorical_returned_verbatim(self):
         assert parse_condition_value("cubic") == "cubic"
@@ -111,8 +111,8 @@ class TestParseConditionValue:
 
     def test_offset_unit_condition_canonicalizes(self):
         leaf = parse_condition_value("26.85degC")
-        assert leaf["unit"] == "K"
-        assert math.isclose(leaf["value"], 300.0, rel_tol=1e-6)
+        assert leaf["si_unit"] == "K"
+        assert math.isclose(leaf["si_value"], 300.0, rel_tol=1e-6)
 
 
 # ---------------------------------------------------------------------------
@@ -179,11 +179,11 @@ class TestScientificNotationEquivalence:
     def test_measurement_leaf_value_is_hundred(self):
         # The measurement-leaf path (QuantityLeaf.from_submission) normalizes too, not just conditions.
         for spelling in ("1x10^2", "1×10^2", "10²", "1x10**2"):
-            assert math.isclose(QuantityLeaf.from_submission(spelling, "m").as_dict()["input_value"], 100.0)
+            assert math.isclose(QuantityLeaf.from_submission(spelling, "m").as_dict()["value"], 100.0)
 
     def test_negative_exponent_measurement_leaf(self):
         for spelling in ("1x10^-5", "1×10⁻⁵"):
-            assert math.isclose(QuantityLeaf.from_submission(spelling, "m").as_dict()["input_value"], 1e-5)
+            assert math.isclose(QuantityLeaf.from_submission(spelling, "m").as_dict()["value"], 1e-5)
 
 
 # ---------------------------------------------------------------------------
@@ -276,9 +276,9 @@ class TestPrecisionCapture:
         assert QuantityLeaf.from_submission(zeros, "eV").precision == _FLOAT_PRECISION
 
     def test_precision_does_not_change_stored_numeric_value(self):
-        # Recording precision must not alter the stored float value/input_value.
+        # Recording precision must not alter the stored float si_value/value.
         leaf = QuantityLeaf.from_submission("1.000", "eV").as_dict()
-        assert leaf["input_value"] == 1.0
+        assert leaf["value"] == 1.0
 
     def test_identity_still_normalizes_regardless_of_trailing_zeros(self):
         # condition_key uses the canonical float, not precision: "300" and "300.0" still collapse.
@@ -294,22 +294,22 @@ class TestPrecisionCapture:
 
 class TestQuantityLeaf:
     def test_unit_and_error_optional(self):
-        leaf = QuantityLeaf(value=5.0, input_value=5.0)
+        leaf = QuantityLeaf(si_value=5.0, value=5.0)
+        assert leaf.si_unit is None
         assert leaf.unit is None
-        assert leaf.input_unit is None
-        assert leaf.error is None
+        assert leaf.si_error is None
         assert leaf.precision is None
 
     def test_unit_case_preserved(self):
         # units must never be casefolded (eV stays eV, not ev)
-        leaf = QuantityLeaf(value=1.0, unit="eV", input_value=1.0, input_unit="eV")
+        leaf = QuantityLeaf(si_value=1.0, si_unit="eV", value=1.0, unit="eV")
+        assert leaf.si_unit == "eV"
         assert leaf.unit == "eV"
-        assert leaf.input_unit == "eV"
 
     def test_display_not_stored(self):
-        # display is derived on read, never a stored field: value alone is a valid leaf.
-        leaf = QuantityLeaf(value=5.0).as_dict()
-        assert leaf == {"value": 5.0}
+        # display is derived on read, never a stored field: si_value alone is a valid leaf.
+        leaf = QuantityLeaf(si_value=5.0).as_dict()
+        assert leaf == {"si_value": 5.0}
         assert "display" not in leaf
 
 
@@ -319,14 +319,14 @@ class TestQuantityLeafFactory:
     def test_from_submission_returns_model(self):
         leaf = QuantityLeaf.from_submission("4.2", "eV")
         assert isinstance(leaf, QuantityLeaf)
-        assert leaf.input_value == 4.2
-        assert leaf.input_unit == "eV"
+        assert leaf.value == 4.2
+        assert leaf.unit == "eV"
         assert leaf.precision == 2  # "4.2" -> 2 significant figures
 
     def test_from_submission_canonicalizes_to_si(self):
         leaf = QuantityLeaf.from_submission(4.2, "eV")
-        assert leaf.unit != "eV"  # base units
-        assert math.isclose(leaf.value, 4.2 * 1.602176634e-19, rel_tol=1e-9)
+        assert leaf.si_unit != "eV"  # base units
+        assert math.isclose(leaf.si_value, 4.2 * 1.602176634e-19, rel_tol=1e-9)
 
     def test_from_submission_raises_on_unparseable(self):
         with pytest.raises(UnitError):
@@ -334,7 +334,7 @@ class TestQuantityLeafFactory:
 
     def test_as_dict_omits_none_fields(self):
         leaf = QuantityLeaf.from_submission(5, None).as_dict()
-        assert leaf == {"value": 5.0}
+        assert leaf == {"si_value": 5.0}
 
     def test_identity_scalar_categorical_verbatim(self):
         assert QuantityLeaf.identity_scalar("cubic") == "cubic"
@@ -366,26 +366,26 @@ class TestTryFromValue:
     def test_bare_number_becomes_unitless_leaf(self):
         leaf = QuantityLeaf.try_from_value(5, None)
         assert leaf is not None
-        assert leaf.as_dict() == {"value": 5.0}
+        assert leaf.as_dict() == {"si_value": 5.0}
 
     def test_number_with_key_unit(self):  # spreadsheet scenario A: "bandgap (eV)" -> 5
         leaf = QuantityLeaf.try_from_value(5, "eV")
         assert leaf is not None
-        assert leaf.input_value == 5.0
-        assert leaf.input_unit == "eV"
+        assert leaf.value == 5.0
+        assert leaf.unit == "eV"
 
     def test_string_with_embedded_unit(self):  # spreadsheet scenario B: "bandgap" -> "5 eV"
         leaf = QuantityLeaf.try_from_value("5 eV", None)
         assert leaf is not None
-        assert leaf.input_value == 5.0
-        assert leaf.input_unit == "eV"
+        assert leaf.value == 5.0
+        assert leaf.unit == "eV"
 
     def test_scenarios_a_and_b_converge(self):
         # Unit-in-key (number value) and unit-in-value (string) produce the same physical leaf.
         a = QuantityLeaf.try_from_value(5, "eV")
         b = QuantityLeaf.try_from_value("5 eV", None)
         assert a is not None and b is not None
-        for field in ("value", "unit", "input_value", "input_unit"):
+        for field in ("si_value", "si_unit", "value", "unit"):
             assert getattr(a, field) == getattr(b, field)
 
     def test_categorical_string_is_not_a_leaf(self):
@@ -397,9 +397,9 @@ class TestTryFromValue:
     def test_unrecognized_unit_in_value_kept_verbatim(self):
         leaf = QuantityLeaf.try_from_value("5 apples", None)
         assert leaf is not None
-        assert leaf.value == 5.0
+        assert leaf.si_value == 5.0
+        assert leaf.si_unit == "apples"
         assert leaf.unit == "apples"
-        assert leaf.input_unit == "apples"
 
     def test_precision_captured_from_string(self):
         leaf = QuantityLeaf.try_from_value("5.00 eV", None)
@@ -410,14 +410,14 @@ class TestTryFromValue:
         # key unit eV, value unit meV -> converted into eV (5 meV == 0.005 eV).
         leaf = QuantityLeaf.try_from_value("5 meV", "eV")
         assert leaf is not None
-        assert leaf.input_unit == "eV"
-        assert math.isclose(leaf.input_value, 0.005, rel_tol=1e-9)
+        assert leaf.unit == "eV"
+        assert math.isclose(leaf.value, 0.005, rel_tol=1e-9)
 
     def test_conflicting_units_same_dimension_ok(self):
         leaf = QuantityLeaf.try_from_value("5 eV", "eV")
         assert leaf is not None
-        assert leaf.input_unit == "eV"
-        assert leaf.input_value == 5.0
+        assert leaf.unit == "eV"
+        assert leaf.value == 5.0
 
     def test_incompatible_units_rejected(self):
         with pytest.raises(UnitError):
@@ -432,52 +432,52 @@ class TestRepatchLeaf:
 
     def test_unit_change_reconverts_value(self):
         # 2 m stored; re-submit the unit as km -> the magnitude is reinterpreted (2 km) and
-        # re-canonicalized to SI (2000 m); input_unit tracks the new unit, input_value is unchanged.
+        # re-canonicalized to SI (2000 m); unit tracks the new unit, value is unchanged.
         leaf = self._leaf(2.0, "m")
-        out = QuantityLeaf.patch_leaf(leaf, {"unit": "km"})
-        assert out["input_unit"] == "km"
-        assert out["input_value"] == 2.0
-        assert out["value"] == 2000.0
+        out = QuantityLeaf.patch_leaf(leaf, {"si_unit": "km"})
+        assert out["unit"] == "km"
+        assert out["value"] == 2.0
+        assert out["si_value"] == 2000.0
 
-    def test_input_unit_change_is_equivalent_to_unit_change(self):
-        # "vice versa": patching the input_ member drives the same re-derivation.
+    def test_unit_change_is_equivalent_to_si_unit_change(self):
+        # "vice versa": patching the submitted member drives the same re-derivation.
         leaf = self._leaf(2.0, "m")
-        assert QuantityLeaf.patch_leaf(leaf, {"input_unit": "km"}) == QuantityLeaf.patch_leaf(
-            leaf, {"unit": "km"}
+        assert QuantityLeaf.patch_leaf(leaf, {"unit": "km"}) == QuantityLeaf.patch_leaf(
+            leaf, {"si_unit": "km"}
         )
 
     def test_value_change_keeps_unit_and_reconverts(self):
         leaf = self._leaf(2.0, "km")  # canonical 2000 m
-        out = QuantityLeaf.patch_leaf(leaf, {"value": 3.0})
-        assert out["input_value"] == 3.0
-        assert out["input_unit"] == "km"
-        assert out["value"] == 3000.0
+        out = QuantityLeaf.patch_leaf(leaf, {"si_value": 3.0})
+        assert out["value"] == 3.0
+        assert out["unit"] == "km"
+        assert out["si_value"] == 3000.0
 
     def test_error_and_value_reconvert_together_on_unit_change(self):
-        # An uncertain magnitude: changing the unit re-converts both value and error; input_error
+        # An uncertain magnitude: changing the unit re-converts both value and error; error
         # stays in the submitted unit and precision is preserved.
         leaf = self._leaf("2.0+/-0.1", "km")
-        out = QuantityLeaf.patch_leaf(leaf, {"unit": "m"})
-        assert out["input_unit"] == "m"
-        assert out["input_value"] == 2.0
-        assert out["input_error"] == 0.1
-        assert out["value"] == 2.0  # 2 m
+        out = QuantityLeaf.patch_leaf(leaf, {"si_unit": "m"})
+        assert out["unit"] == "m"
+        assert out["value"] == 2.0
         assert out["error"] == 0.1
+        assert out["si_value"] == 2.0  # 2 m
+        assert out["si_error"] == 0.1
         assert out["precision"] == 2
 
     def test_explicit_error_override(self):
         leaf = self._leaf("2.0+/-0.1", "m")
-        out = QuantityLeaf.patch_leaf(leaf, {"error": 0.5})
-        assert out["input_error"] == 0.5
+        out = QuantityLeaf.patch_leaf(leaf, {"si_error": 0.5})
         assert out["error"] == 0.5
+        assert out["si_error"] == 0.5
 
     def test_unrelated_field_unchanged(self):
         # Patching only the unit leaves the submitted magnitude and its canonical value intact.
         leaf = self._leaf(2.0, "m")
-        out = QuantityLeaf.patch_leaf(leaf, {"unit": "m"})
+        out = QuantityLeaf.patch_leaf(leaf, {"si_unit": "m"})
         assert out == leaf
 
     def test_unparseable_override_raises(self):
         leaf = self._leaf(2.0, "m")
         with pytest.raises(UnitError):
-            QuantityLeaf.patch_leaf(leaf, {"value": "not-a-number"})
+            QuantityLeaf.patch_leaf(leaf, {"si_value": "not-a-number"})

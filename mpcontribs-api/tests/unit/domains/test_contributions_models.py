@@ -8,6 +8,7 @@ from mpcontribs_api.authz import User
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
 
 from mpcontribs_api.domains._shared.types import Identity
+from mpcontribs_api.domains._shared.units import QuantityLeaf
 from mpcontribs_api.domains.contributions.models import (
     Contribution,
     ContributionFilter,
@@ -43,7 +44,7 @@ def _make_contribution_in(**overrides) -> ContributionIn:
         "material_id": "mp-1234",
         "chemical_system_id": "Fe-O",
         "formula": "Fe2O3",
-        "data": {"band_gap": {"value": 2.1, "unit": "eV"}},
+        "data": {"band_gap": QuantityLeaf.from_submission(2.1, "eV").as_dict()},
     }
     defaults.update(overrides)
     return ContributionIn(**defaults)
@@ -116,7 +117,7 @@ class TestContributionBase:
         assert contrib.data == {}
 
     def test_data_accepts_nested_structure(self):
-        nested = {"band_gap": {"value": 1.5, "unit": "eV"}, "volume": 42.3}
+        nested = {"band_gap": QuantityLeaf.from_submission(1.5, "eV").as_dict(), "volume": 42.3}
         contrib = _make_contribution_in(data=nested)
         assert contrib.data["band_gap"]["value"] == 1.5
 
@@ -150,7 +151,7 @@ class TestContributionBase:
 
     def test_reserved_leaf_keys_rejected(self):
         # A data key that coerces to a reserved value-leaf name is rejected on write.
-        for bad in ("value", "unit", "error", "precision", "input_value", "display"):
+        for bad in ("value", "unit", "error", "precision", "si_unit", "display"):
             with pytest.raises(ValidationError, match="reserved"):
                 _make_contribution_in(data={bad: 1})
         # rejected when nested, too

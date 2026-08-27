@@ -43,10 +43,10 @@ class TestParseConditionValueRobustness:
         if isinstance(out, dict):
             # A numeric leaf must be finite (the inf/NaN guard) and representable in strict JSON so it
             # survives storage and canonical_md5 hashing.
-            assert math.isfinite(out["value"])
-            # input_value is omitted for a bare, exact, unit-less number (value fully describes it).
-            if "input_value" in out:
-                assert math.isfinite(out["input_value"])
+            assert math.isfinite(out["si_value"])
+            # value is omitted for a bare, exact, unit-less number (si_value fully describes it).
+            if "value" in out:
+                assert math.isfinite(out["value"])
             json.dumps(out, allow_nan=False)
 
     @settings(max_examples=200, deadline=None, suppress_health_check=[HealthCheck.too_slow])
@@ -180,11 +180,11 @@ class TestConditionEdgeCases:
     def test_negative_numeric_condition(self):
         leaf = parse_condition_value("-40degC")
         assert isinstance(leaf, dict)
-        assert leaf["input_value"] == -40.0
+        assert leaf["value"] == -40.0
 
     def test_exponent_numeric_condition(self):
         leaf = parse_condition_value("1.5e3 K")
-        assert math.isclose(leaf["value"], 1500.0)
+        assert math.isclose(leaf["si_value"], 1500.0)
 
     def test_condition_value_unit_nfc_normalized(self):
         ohm_sign, greek_omega = "\u2126", "\u03a9"  # OHM SIGN vs GREEK CAPITAL OMEGA

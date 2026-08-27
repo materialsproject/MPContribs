@@ -164,7 +164,7 @@ class TestBulkPatchPerRow:
 
     async def test_bare_scalar_updates_quantity_leaf_magnitude(self, db, mongo_client):
         # A stored quantity leaf is conceptually a scalar: a bare-scalar patch is the new submitted
-        # magnitude. The leaf is re-derived end-to-end (unit kept, input_value updated), and the
+        # magnitude. The leaf is re-derived end-to-end (unit kept, value updated), and the
         # persisted leaf matches the pure patch_leaf helper.
         leaf = QuantityLeaf.from_submission(2.0, "m").as_dict()
         c = await _insert_row(PROJ_A, formula="Fe2O3", data={"bandgap": leaf})
@@ -175,26 +175,26 @@ class TestBulkPatchPerRow:
 
         assert (summary.matched, summary.modified) == (1, 1)
         reloaded = (await _reload(c.id)).data["bandgap"]
-        assert reloaded == QuantityLeaf.patch_leaf(leaf, {"value": 5.0})
-        assert reloaded["input_value"] == 5.0
-        assert reloaded["unit"] == "m"
+        assert reloaded == QuantityLeaf.patch_leaf(leaf, {"si_value": 5.0})
+        assert reloaded["value"] == 5.0
+        assert reloaded["si_unit"] == "m"
 
     async def test_unit_change_re_syncs_and_re_converts_leaf(self, db, mongo_client):
-        # Updating the unit re-canonicalizes the whole leaf: input_unit tracks the new unit and the
-        # canonical value/error are re-converted to SI (2 m -> input 2 km -> 2000 m).
+        # Updating the unit re-canonicalizes the whole leaf: unit tracks the new unit and the
+        # canonical si_value/si_error are re-converted to SI (2 m -> input 2 km -> 2000 m).
         leaf = QuantityLeaf.from_submission(2.0, "m").as_dict()
         c = await _insert_row(PROJ_A, formula="Fe2O3", data={"bandgap": leaf})
 
         summary = await _service(mongo_client, ALICE).update_many(
-            ContributionFilter(chemical_system_id="Fe-O"), ContributionPatch(data={"bandgap": {"unit": "km"}})
+            ContributionFilter(chemical_system_id="Fe-O"), ContributionPatch(data={"bandgap": {"si_unit": "km"}})
         )
 
         assert (summary.matched, summary.modified) == (1, 1)
         reloaded = (await _reload(c.id)).data["bandgap"]
-        assert reloaded == QuantityLeaf.patch_leaf(leaf, {"unit": "km"})
-        assert reloaded["input_unit"] == "km"
-        assert reloaded["input_value"] == 2.0
-        assert reloaded["value"] == 2000.0
+        assert reloaded == QuantityLeaf.patch_leaf(leaf, {"si_unit": "km"})
+        assert reloaded["unit"] == "km"
+        assert reloaded["value"] == 2.0
+        assert reloaded["si_value"] == 2000.0
 
     async def test_identity_collision_reports_per_row_conflict(self, db, mongo_client):
         # Setting formula to a value another matched row already owns collides on the identity index:

@@ -13,7 +13,7 @@ collapses to a single underscore. So `"bandGap"`, `"Band Gap"`, and `"band-gap"`
 `"band_gap"`, and the **keys you read back may differ from the keys you submitted**. Keys must be
 ASCII and must not reduce to an empty string (e.g. `"***"` is rejected).
 
-**Reserved keys:** `value`, `unit`, `input_value`, `input_unit`, `error`, `input_error`,
+**Reserved keys:** `si_value`, `si_unit`, `value`, `unit`, `si_error`, `error`,
 `precision`, and `display` are reserved for the stored value-leaf shape and may **not** be used as
 data keys (a key that coerces to any of these is rejected).
 
@@ -41,7 +41,7 @@ see the response schema); an unrecognized unit is kept verbatim. Magnitudes may 
 magnitude such as `"1.000"`; a bare JSON number carries no trailing-zero information.
 
 The server does **not** produce a formatted `display` string — the response returns the structured
-fields (`input_value`/`input_unit`/`input_error`/`precision`) so clients render values however they
+fields (`value`/`unit`/`error`/`precision`) so clients render values however they
 prefer. (`display` remains a reserved key for backward compatibility with older stored leaves.)
 
 **Pivoting on conditions:** if any key carries conditions, the single submission is *expanded* into
@@ -63,16 +63,16 @@ coercion rules), so they may differ from the keys originally submitted.
 
 Any value that reads as a number is stored as a **quantity leaf** object:
 
-- `value` / `unit`: the SI-canonical magnitude and unit (or the submitted form when the unit is
+- `si_value` / `si_unit`: the SI-canonical magnitude and unit (or the submitted form when the unit is
   unrecognized or dimensionless)
-- `input_value` / `input_unit`: the magnitude and unit as submitted (omitted for a bare, unitless,
-  exact number that ``value`` already fully describes)
-- `error`: the (SI-propagated) standard deviation — present only when the magnitude carried an
-  uncertainty; `input_error` is the same in the submitted unit
+- `value` / `unit`: the magnitude and unit as submitted (omitted for a bare, unitless,
+  exact number that ``si_value`` already fully describes)
+- `si_error`: the (SI-propagated) standard deviation — present only when the magnitude carried an
+  uncertainty; `error` is the same in the submitted unit
 - `precision`: the number of significant figures the submission carried — present only when it is
   derivable (a string magnitude such as `"1.000"`)
 
-There is no server-rendered `display` string: `input_value`, `input_unit`, `input_error`, and
+There is no server-rendered `display` string: `value`, `unit`, `error`, and
 `precision` reproduce the submitted form exactly, so a client can format the value however it likes.
 
 Values that are not numeric (words, booleans, lists) keep whatever JSON shape they were submitted
