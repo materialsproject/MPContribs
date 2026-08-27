@@ -1,3 +1,4 @@
+from enum import StrEnum
 from typing import Any, Literal
 
 from beanie import Link
@@ -58,6 +59,44 @@ class Reference(BaseModel):
     url: HttpUrl
 
 
+class ProjectTag(StrEnum):
+    """Controlled vocabulary for tagging projects"""
+
+    catalysis = "catalysis"
+    batteries = "batteries"
+    photovoltaics = "photovoltaics"
+    thermoelectrics = "thermoelectrics"
+    carbon_capture = "carbon_capture"
+    superconductors = "superconductors"
+    hydrogen_storage = "hydrogen_storage"
+    fuel_cells = "fuel_cells"
+    magnets = "magnets"
+    coatings = "coatings"
+    perovskites = "perovskites"
+    mofs = "mofs"
+    alloys = "alloys"
+    two_d_materials = "two_d_materials"
+    oxides = "oxides"
+    polymers = "polymers"
+    zeolites = "zeolites"
+    high_entropy_alloys = "high_entropy_alloys"
+    electronic_structure = "electronic_structure"
+    thermodynamics = "thermodynamics"
+    mechanical = "mechanical"
+    magnetism = "magentism"
+    dielectric = "dielectric"
+    optical = "optical"
+    phonons = "phonons"
+    defects = "defects"
+    surfaces = "surfaces"
+    transport = "transport"
+    dft = "dft"
+    machine_learning = "machine_learning"
+    experimental = "experimental"
+    high_throughput = "high_throughput"
+    spectroscopy = "spectroscopy"
+
+
 class ProjectBase(BaseModel):
     title: ShortStr
     authors: str
@@ -71,7 +110,7 @@ class ProjectBase(BaseModel):
 
     # Optional
     stats: Stats = Field(default_factory=Stats)
-    tags: list[SearchStr] | None = None
+    tags: list[ProjectTag] | None = None
     mp_category: str | None = None
     references: list[Reference] = Field(default_factory=list)
     long_title: str | None = None

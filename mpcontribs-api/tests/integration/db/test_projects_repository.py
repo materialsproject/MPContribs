@@ -215,11 +215,11 @@ class TestGetProjectsTagsFilter:
     async def test_contains_requires_all_tags_as_subset(self, db):
         from mpcontribs_api.domains.projects.models import ProjectFilter
 
-        await _insert("tags-superset", tags=["alpha", "beta", "gamma"])
-        await _insert("tags-partial", tags=["alpha", "beta"])
-        await _insert("tags-none", tags=["delta"])
+        await _insert("tags-superset", tags=["catalysis", "batteries", "photovoltaics"])
+        await _insert("tags-partial", tags=["catalysis", "batteries"])
+        await _insert("tags-none", tags=["alloys"])
         page = await _repo(ADMIN).read_many(
-            filter=ProjectFilter(tags__contains=["alpha", "gamma"]),
+            filter=ProjectFilter(tags__contains=["catalysis", "batteries", "photovoltaics"]),
             pagination=CursorParams(),
             fields=None,
         )
@@ -228,10 +228,10 @@ class TestGetProjectsTagsFilter:
     async def test_contains_single_tag(self, db):
         from mpcontribs_api.domains.projects.models import ProjectFilter
 
-        await _insert("tags-single-hit", tags=["alpha", "beta"])
-        await _insert("tags-single-miss", tags=["beta", "gamma"])
+        await _insert("tags-single-hit", tags=["catalysis", "batteries", "photovoltaics"])
+        await _insert("tags-single-miss", tags=["catalysis", "batteries"])
         page = await _repo(ADMIN).read_many(
-            filter=ProjectFilter(tags__contains=["alpha"]),
+            filter=ProjectFilter(tags__contains=["photovoltaics"]),
             pagination=CursorParams(),
             fields=None,
         )
@@ -240,12 +240,12 @@ class TestGetProjectsTagsFilter:
     async def test_contains_parses_comma_string(self, db):
         from mpcontribs_api.domains.projects.models import ProjectFilter
 
-        await _insert("tags-csv-hit", tags=["alpha", "beta", "gamma"])
-        await _insert("tags-csv-miss", tags=["alpha"])
+        await _insert("tags-csv-hit", tags=["catalysis", "batteries", "photovoltaics"])
+        await _insert("tags-csv-miss", tags=["catalysis"])
         # FilterDepends collapses the list query param to a comma string; the
         # BaseFilter validator must re-expand it.
         page = await _repo(ADMIN).read_many(
-            filter=ProjectFilter(tags__contains="alpha,beta"),
+            filter=ProjectFilter(tags__contains="catalysis,batteries"),
             pagination=CursorParams(),
             fields=None,
         )
