@@ -13,7 +13,7 @@ from pymongo.asynchronous.client_session import AsyncClientSession
 from pymongo.errors import BulkWriteError
 from types_aiobotocore_s3 import S3Client
 
-from mpcontribs_api.authz import User
+from mpcontribs_api.authz import PROJECT_PATH, ROOT_PATH, User
 from mpcontribs_api.config import MongoSettings, get_settings
 from mpcontribs_api.domains._shared.bulk import (
     BulkDeleteSummary,
@@ -244,7 +244,7 @@ class ContributionService:
         remaining: list[PreparedWrite] = []
         for item in items:
             contrib = item.contribution
-            if self._user.can_write(contrib.project):
+            if self._user.can_write(*PROJECT_PATH, contrib.project):
                 remaining.append(item)
             else:
                 unauthorized.append(
@@ -734,8 +734,8 @@ class ContributionService:
             return BulkUpdateSummary(matched=0, modified=0, projects=[])
         filter = (
             filter
-            if self._user.is_admin
-            else filter.model_copy(update={"project__in": sorted(self._user.writable_projects)})
+            if self._user.is_admin(*ROOT_PATH)
+            else filter.model_copy(update={"project__in": sorted(self._user.writable(*PROJECT_PATH))})
         )
 
         touches_identity = bool(ContributionIdentity.model_fields() & fields.keys()) or "data" in fields
@@ -799,8 +799,7 @@ class ContributionService:
         ``unique_column``) is resolved and stamped so the identity index stays correct, and an
         unapproved project's contribution cap is enforced when the upsert would insert a new document.
         """
-        if not self._user.can_write(contribution.project):
-            raise PermissionError(f"not authorized to write to project '{contribution.project}'")
+        self._user.require_write(*PROJECT_PATH, contribution.project)
         existing = await self._contributions.read_one(identifiers, None)
         if existing is None:
             stored = await self._unapproved_stored_count(contribution.project)
@@ -831,12 +830,11 @@ class ContributionService:
         re-validated strictly (the permissive patch validator allows leaf fragments a full doc may not).
         ``unique_value`` is resolved against the same post-write view the repository will persist.
         """
-        if not self._user.is_admin:
+        if not self._user.is_admin(*ROOT_PATH):
             target = await self._contributions.read_one(identifiers, frozenset({"id", "project"}))
             if target is None:
                 raise NotFoundError("contribution not found", identifiers=identifiers)
-            if target.project not in self._user.writable_projects:
-                raise PermissionError(f"not authorized to write to project '{target.project}'")
+            self._user.require_write(*PROJECT_PATH, target.project)
         set_fields = update.model_dump(exclude_unset=True)
         touches_unique = "data" in set_fields or "project" in set_fields
         touches_identity = bool(ContributionIdentity.HIERARCHY_FIELDS & set_fields.keys())
@@ -919,8 +917,8 @@ class ContributionService:
         Returns:
             BulkDeleteSummary: a summary of how many documents and child documents were deleted
         """
-        if not self._user.is_admin:
-            filter = filter.model_copy(update={"project__in": sorted(self._user.writable_projects)})
+        if not self._user.is_admin(*ROOT_PATH):
+            filter = filter.model_copy(update={"project__in": sorted(self._user.writable(*PROJECT_PATH))})
         num_deleted_components = 0
         num_deleted_contributions = 0
         # Projects touched by this delete, so their rollup stats can be recomputed once at the end.

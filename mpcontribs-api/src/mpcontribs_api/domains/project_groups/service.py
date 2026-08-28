@@ -2,7 +2,7 @@ from typing import Any
 
 from beanie import Link
 
-from mpcontribs_api.authz import User
+from mpcontribs_api.authz import ROOT_PATH, User
 from mpcontribs_api.domains._shared.bulk import BulkFailure, BulkWriteSummary
 from mpcontribs_api.domains._shared.models import DeleteResponse
 from mpcontribs_api.domains._shared.types import ShortStr
@@ -54,7 +54,7 @@ class ProjectGroupService:
 
         Non-admins are set as owner automatically, while admins can specify owners.
         """
-        if not self._user.is_admin:
+        if not self._user.is_admin(*ROOT_PATH):
             project_group = project_group.model_copy(update={"owner": self._user.username})
         existing = await self._projects.existing_ids(list(project_group.projects), scoped=True)
         missing = [pid for pid in project_group.projects if pid not in existing]
@@ -79,7 +79,7 @@ class ProjectGroupService:
         A non-admin's bulk delete is scoped to their own groups (overriding any ``owner`` in the
         filter) so it can never remove public groups belonging to others.
         """
-        if not self._user.is_admin:
+        if not self._user.is_admin(*ROOT_PATH):
             filter.owner = self._user.username
         return await self._groups.delete_many(filter=filter)
 
@@ -88,7 +88,7 @@ class ProjectGroupService:
         group = await self._groups.read_one(identifiers, fields=frozenset({"id", "owner"}))
         if group is None:
             raise NotFoundError("ProjectGroup not found", **identifiers)
-        if not (self._user.is_admin or group.owner == self._user.username):
+        if not (self._user.is_admin(*ROOT_PATH) or group.owner == self._user.username):
             raise PermissionError(required_role="owner-or-admin")
         return await self._groups.update_one(identifiers, update)
 
@@ -102,7 +102,7 @@ class ProjectGroupService:
         group = await self._groups.read_one(identifiers, fields=frozenset({"id", "owner"}))
         if group is None:
             raise NotFoundError("ProjectGroup not found", **identifiers)
-        if not (self._user.is_admin or group.owner == self._user.username):
+        if not (self._user.is_admin(*ROOT_PATH) or group.owner == self._user.username):
             raise PermissionError(required_role="owner-or-admin")
         return await self._groups.delete_one(identifiers)
 
@@ -116,7 +116,7 @@ class ProjectGroupService:
         group = await self._groups.read_one(identifiers, fields=_GROUP_FIELDS)
         if group is None:
             raise NotFoundError("ProjectGroup not found", **identifiers)
-        if not (self._user.is_admin or group.owner == self._user.username):
+        if not (self._user.is_admin(*ROOT_PATH) or group.owner == self._user.username):
             raise PermissionError(required_role="owner-or-admin")
         return group  # pyright: ignore[reportReturnType]  # projected reads return the out model
 

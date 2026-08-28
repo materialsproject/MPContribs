@@ -14,5 +14,7 @@ os.environ.setdefault("MPCONTRIBS_REDIS__ADDRESS", "redis://localhost:6379")
 os.environ.setdefault("MPCONTRIBS_REDIS__URL", "redis://localhost:6379")
 os.environ.setdefault("MPCONTRIBS_MAIL_DEFAULT_SENDER", "test@example.com")
 os.environ.setdefault("MPCONTRIBS_VERSION", "0.0.0-test")
+# Authz domain is required (no default) — each server declares the domain it enforces.
+os.environ.setdefault("MPCONTRIBS_AUTHZ__DOMAIN", "mpcontribs")
 # No OTLP collector in tests: keep telemetry off so the suite doesn't register providers or export.
 os.environ.setdefault("MPCONTRIBS_OTEL__ENABLED", "false")

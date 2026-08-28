@@ -74,13 +74,13 @@ class TestGetOne:
 
 
 # ---------------------------------------------------------------------------
-# mpcontribs:project-group:<oid>=<role> scoping
+# mpcontribs:project-groups/<oid>=<role> scoping
 # ---------------------------------------------------------------------------
 
 
 def _role_user(group_id, username: str = "google:carol@example.com") -> User:
     """A non-owner authenticated user granted access to one group via a project-group grant."""
-    return User(username=username, groups=[f"mpcontribs:project-group:{group_id}=owner"])
+    return User(username=username, groups=[f"mpcontribs:project-groups/{group_id}=owner"])
 
 
 class TestGroupRoleScope:
@@ -97,7 +97,7 @@ class TestGroupRoleScope:
 
     async def test_malformed_role_is_ignored(self, db):
         await _insert("role-bad")
-        member = User(username="google:carol@example.com", groups=["mpcontribs:project-group:not-an-oid=owner"])
+        member = User(username="google:carol@example.com", groups=["mpcontribs:project-groups/not-an-oid=owner"])
         # A malformed role id must not raise; it simply grants nothing.
         found = await _repo(member).read_one({"name": "role-bad", "owner": ALICE_EMAIL}, fields=None)
         assert found is None

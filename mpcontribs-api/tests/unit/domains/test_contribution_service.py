@@ -7,7 +7,8 @@ from beanie import PydanticObjectId
 from pymatgen.core import Element
 from pymongo.errors import BulkWriteError
 
-from mpcontribs_api.authz import ADMIN_ROLE, User
+from mpcontribs_api.authz import User
+from mpcontribs_api.authz_core import ADMIN_ROLE
 from mpcontribs_api.config import MongoSettings, get_settings
 from mpcontribs_api.domains.attachments.models import Attachment, AttachmentIn
 from mpcontribs_api.domains.contributions.models import (

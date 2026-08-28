@@ -3,6 +3,7 @@ from typing import Any
 from beanie import PydanticObjectId
 from pymongo import UpdateOne
 
+from mpcontribs_api.authz import PROJECT_PATH
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
 from mpcontribs_api.domains.projects.models import (
     Column,
@@ -13,7 +14,7 @@ from mpcontribs_api.domains.projects.models import (
     ProjectPatch,
     Stats,
 )
-from mpcontribs_api.scope import Owned, Public, RoleIn, Scope
+from mpcontribs_api.scope import Granted, Owned, Public, Scope
 
 
 class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut, ProjectFilter, ProjectPatch]):
@@ -28,7 +29,7 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
     out_model = ProjectOut
     # Visible when public+approved, owned by the caller, or granted any role on the project (keyed on
     # its ``_id``). Admins bypass scope (handled by ``Scope``).
-    read_scope = Scope(Public(approved=True), Owned(), RoleIn("_id", "project_groups"))
+    read_scope = Scope(Public(approved=True), Owned(), Granted("_id", PROJECT_PATH))
 
     async def find_by_id_unscoped(self, id: str) -> Project | None:
         """Return the project with ``id`` regardless of user scope, or ``None`` if absent.

@@ -2,7 +2,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from mpcontribs_api.authz import User
+from mpcontribs_api.authz import PROJECT_PATH, User
 from mpcontribs_api.dependencies import _split, get_user, require_user
 from mpcontribs_api.exceptions import AuthenticationError
 
@@ -79,7 +79,20 @@ class TestGetUser:
         assert user.username == "google:alice@example.com"
         assert user.consumer_id == "kong-123"
         # Bare legacy tokens from either header become project grants (default owner role).
-        assert user.project_groups == {"editors": "owner", "mp-team": "owner"}
+        assert user.grants_in(*PROJECT_PATH) == {"editors": "owner", "mp-team": "owner"}
+
+    def test_full_arn_grant_from_header(self):
+        # A full new-format ARN string (not a bare legacy token) arriving via Kong headers parses
+        # end-to-end through the comma-split and grant parser, keeping its own role.
+        request = _make_request(
+            **{
+                "x-consumer-username": "google:alice@example.com",
+                "x-authenticated-groups": "mpcontribs:projects/mp-a=editor",
+            }
+        )
+        user = get_user(request)
+        assert user.grants_in(*PROJECT_PATH) == {"mp-a": "editor"}
+        assert user.can_write(*PROJECT_PATH, "mp-a") is True
 
     def test_authenticated_user_no_groups(self):
         request = _make_request(**{"x-consumer-username": "google:alice@example.com"})
@@ -96,7 +109,7 @@ class TestGetUser:
             }
         )
         user = get_user(request)
-        assert user.project_groups == {"a": "owner", "b": "owner", "c": "owner", "d": "owner"}
+        assert user.grants_in(*PROJECT_PATH) == {"a": "owner", "b": "owner", "c": "owner", "d": "owner"}
 
     def test_missing_username_returns_anonymous(self):
         request = _make_request(**{"x-consumer-id": "kong-123"})
