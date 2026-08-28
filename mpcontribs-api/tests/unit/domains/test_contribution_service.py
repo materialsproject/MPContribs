@@ -8,7 +8,7 @@ from pymatgen.core import Element
 from pymongo.errors import BulkWriteError
 
 from mpcontribs_api.authz import User
-from mpcontribs_api.authz_core import ADMIN_ROLE
+from mpcontribs_api.authz_core import ReservedRole
 from mpcontribs_api.config import MongoSettings, get_settings
 from mpcontribs_api.domains.attachments.models import Attachment, AttachmentIn
 from mpcontribs_api.domains.contributions.models import (
@@ -181,7 +181,7 @@ def _make_fake_client() -> tuple[AsyncMock, MagicMock]:
 def _admin_user() -> User:
     """An admin user — bypasses project write authorization, so tests not exercising authz
     keep their previous behavior."""
-    return User(username="admin", groups=[ADMIN_ROLE])
+    return User(username="admin", groups=[ReservedRole.admin])
 
 
 def _make_service(

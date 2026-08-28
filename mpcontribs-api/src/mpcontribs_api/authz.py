@@ -1,6 +1,6 @@
 from fastapi.security import APIKeyHeader
 
-from mpcontribs_api.authz_core import ADMIN_ROLE, PERSSON_ROLE, ReservedRole, Role, UserGroup
+from mpcontribs_api.authz_core import ReservedRole, Role, UserGroup
 from mpcontribs_api.authz_core import User as _CoreUser
 from mpcontribs_api.config import get_settings
 
@@ -33,10 +33,6 @@ authenticated_groups_scheme = APIKeyHeader(
 # The top-level path segment naming this service's authz domain
 DOMAIN = settings.authz.domain
 
-# Reserved roles are only meaningful at the domain root and must never be put on an anonymous caller.
-# Re-exported here (imported by test/other modules) as well as consumed by the legacy parser below.
-_RESERVED_ROLES = frozenset({ADMIN_ROLE, PERSSON_ROLE})
-
 # Canonical second-level path segments (plural collection identifiers, per GCP AIP-122) for the
 # resources with flat authorization consumers today.
 PROJECT_SEGMENT = "projects"
@@ -58,9 +54,9 @@ _LEGACY_ROLE = Role.owner
 def _parse_legacy(token: str) -> UserGroup | None:
     # Only the ``=``-less forms Kong currently forwards are honored; anything else is malformed.
     # Prefixed legacy strings (``initiative:``/``project-group:``) are gone — those are ARN-only now.
-    if token in _RESERVED_ROLES:
-        # Guard guarantees ``token`` is a reserved keyword, so this coercion never raises.
-        return UserGroup(path=(DOMAIN,), role=ReservedRole(token))
+    reserved = ReservedRole.parse(token)
+    if reserved is not None:
+        return UserGroup(path=(DOMAIN,), role=reserved)
     if ":" in token or "/" in token:
         return None
     return UserGroup(path=(DOMAIN, PROJECT_SEGMENT, token), role=_LEGACY_ROLE)

@@ -1,12 +1,11 @@
 import pytest
 
 from mpcontribs_api.authz import (
-    ADMIN_ROLE,
     INITIATIVE_PATH,
-    PERSSON_ROLE,
     PROJECT_GROUP_PATH,
     PROJECT_PATH,
     ROOT_PATH,
+    ReservedRole,
     User,
     UserGroup,
     parse_grant,
@@ -64,8 +63,8 @@ class TestUserGroupParse:
         # The domain-neutral grammar (UserGroup.parse) understands ARN tokens only; the `=`-less
         # legacy forms are a server concern handled by ``parse_grant``, not the core.
         assert UserGroup.parse("mp-team") is None
-        assert UserGroup.parse(ADMIN_ROLE) is None
-        assert UserGroup.parse(PERSSON_ROLE) is None
+        assert UserGroup.parse(ReservedRole.admin) is None
+        assert UserGroup.parse(ReservedRole.persson_group) is None
 
     def test_legacy_bare_id_becomes_project_owner(self):
         grant = parse_grant("mp-team")
@@ -74,15 +73,15 @@ class TestUserGroupParse:
         assert grant.role == "owner"
 
     def test_legacy_admin_sentinel(self):
-        grant = parse_grant(ADMIN_ROLE)
+        grant = parse_grant(ReservedRole.admin)
         assert grant is not None
         assert grant.path == ("mpcontribs",)
-        assert grant.role == ADMIN_ROLE
+        assert grant.role == ReservedRole.admin
 
     def test_legacy_persson_sentinel(self):
-        grant = parse_grant(PERSSON_ROLE)
+        grant = parse_grant(ReservedRole.persson_group)
         assert grant is not None
-        assert grant.role == PERSSON_ROLE
+        assert grant.role == ReservedRole.persson_group
 
     def test_str_round_trips_through_parse(self):
         grant = UserGroup.parse("mpcontribs:projects/mp-a=viewer")
@@ -104,7 +103,7 @@ class TestUserIsAdmin:
         assert User(username=ALICE, groups=["mpcontribs=admin"]).is_admin(*ROOT_PATH) is True
 
     def test_legacy_admin_sentinel_is_admin(self):
-        assert User(username=ALICE, groups=[ADMIN_ROLE]).is_admin(*ROOT_PATH) is True
+        assert User(username=ALICE, groups=[ReservedRole.admin]).is_admin(*ROOT_PATH) is True
 
     def test_project_role_is_not_admin(self):
         assert User(username=ALICE, groups=["mpcontribs:projects/mp-a=owner"]).is_admin(*ROOT_PATH) is False
@@ -121,7 +120,7 @@ class TestUserIsAdmin:
         assert user.groups == ()
 
     def test_anonymous_persson_grant_is_stripped(self):
-        user = User(groups=[PERSSON_ROLE])
+        user = User(groups=[ReservedRole.persson_group])
         assert user.groups == ()
 
 

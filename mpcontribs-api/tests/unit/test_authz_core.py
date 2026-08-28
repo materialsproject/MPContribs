@@ -3,7 +3,7 @@
 This is the shared grant-validation contract both API servers rely on: pure ARN grammar, the role
 hierarchy, and a :class:`User` whose accessors are **path-based** — they take a generic ``*path`` of
 ARN segments and give the first segment ("the domain") no special meaning beyond being where an admin
-grant sits. ``ADMIN_ROLE``/``PERSSON_ROLE`` are the globally reserved keywords bound as the core's
+grant sits. ``ReservedRole.admin``/``ReservedRole.persson_group`` are the globally reserved keywords bound as the core's
 defaults; a local subclass shows those hooks can be re-bound.
 """
 
@@ -11,7 +11,7 @@ from typing import ClassVar
 
 import pytest
 
-from mpcontribs_api.authz_core import ADMIN_ROLE, PERSSON_ROLE, ReservedRole, Role, User, UserGroup
+from mpcontribs_api.authz_core import ReservedRole, Role, User, UserGroup
 from mpcontribs_api.exceptions import PermissionError
 
 ALICE = "google:alice@example.com"
@@ -102,7 +102,7 @@ class TestPathBasedAccessors:
         assert user.is_admin("other") is False
 
     def test_bare_core_uses_global_admin_role(self):
-        # The core binds ADMIN_ROLE ("admin") as the default admin role; another valid role is not admin.
+        # The core binds ReservedRole.admin ("admin") as the default admin role; another valid role is not admin.
         assert User(username=ALICE, groups=["d=admin"]).is_admin("d") is True
         assert User(username=ALICE, groups=["d=owner"]).is_admin("d") is False
 
@@ -177,8 +177,8 @@ class TestReservedRoleStripping:
         assert user.is_admin("d") is True
 
     def test_globally_reserved_roles_are_stripped_from_anonymous(self):
-        # The core reserves ADMIN_ROLE/PERSSON_ROLE globally: neither survives on an anonymous caller.
-        assert User(groups=[f"d={ADMIN_ROLE}"]).groups == ()
-        assert User(groups=[f"d={PERSSON_ROLE}"]).groups == ()
+        # The core reserves every ReservedRole globally: none survives on an anonymous caller.
+        assert User(groups=[f"d={ReservedRole.admin}"]).groups == ()
+        assert User(groups=[f"d={ReservedRole.persson_group}"]).groups == ()
         # A non-reserved role is kept even when anonymous.
         assert User(groups=["d:proj/x=owner"]).groups != ()
