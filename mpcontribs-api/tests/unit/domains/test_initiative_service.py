@@ -29,7 +29,7 @@ ALICE_EMAIL = "google:alice@example.com"
 
 
 def _collaborator(slug: str, username: str = "google:bob@example.com") -> User:
-    return User(username=username, groups=frozenset({f"initiative:{slug}"}))
+    return User(username=username, groups=[f"mpcontribs:initiatives/{slug}=owner"])
 
 
 def _existing(owner: str = ALICE_EMAIL, *, is_public: bool = False, is_approved: bool = False):

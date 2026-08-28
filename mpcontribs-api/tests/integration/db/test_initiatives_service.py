@@ -37,7 +37,7 @@ def _service(user: User) -> ProjectService:
 
 
 def _collaborator(slug: str, username: str = BOB_EMAIL) -> User:
-    return User(username=username, groups=frozenset({f"initiative:{slug}"}))
+    return User(username=username, groups=[f"mpcontribs:initiatives/{slug}=owner"])
 
 
 async def _insert_project(pid: str, owner: str = ALICE_EMAIL) -> Project:

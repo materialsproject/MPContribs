@@ -2,7 +2,8 @@ from collections.abc import Callable, Collection
 from dataclasses import dataclass
 from typing import Any, Protocol, runtime_checkable
 
-from mpcontribs_api.authz import User
+from mpcontribs_api.authz import ROOT_PATH, User
+from mpcontribs_api.authz_core import Role
 
 
 @runtime_checkable
@@ -50,24 +51,28 @@ class Owned:
 
 
 @dataclass(frozen=True)
-class RoleIn:
-    """Visibility granted by the caller's roles, as a ``{field: {"$in": [...]}}`` membership test.
+class Granted:
+    """Visibility granted by the caller's role grants, as a ``{field: {"$in": [...]}}`` membership test.
 
-    ``source`` names the ``User`` attribute holding the granted ids (e.g. ``"project_roles"``).
-    ``coerce`` optionally maps each raw role value to the collection's id type (e.g. ``ObjectId`` for
-    an ObjectId ``_id``); a value whose coercion fails is **dropped** — scope is fail-closed, so an
-    uncoercible (malformed) role grant is simply not honored. The clause is dropped entirely when the
-    caller holds no (usable) roles.
+    ``path`` is the full ARN prefix whose direct grants apply (e.g. ``("mpcontribs", "projects")``); the
+    clause reads them straight off the user's grant trie. ``min_role`` is the least-privileged role that
+    still grants read visibility — the default ``viewer`` means any grant counts (read is
+    presence-based); raise it to restrict visibility to writers/owners. ``coerce`` optionally maps each
+    granted id to the collection's id type (e.g. ``ObjectId``); a value whose coercion fails is
+    **dropped** (fail-closed). The clause drops out entirely when no grant qualifies.
     """
 
     field: str
-    source: str
+    path: tuple[str, ...]
+    min_role: Role = Role.viewer
     # TODO: Remove once _id -> PydanticObjectId coercion handling is improved
     coerce: Callable[[Any], Any] | None = None
 
     def to_query(self, user: User) -> dict[str, Any] | None:
-        raw: Collection[Any] = getattr(user, self.source)
-        values = self._coerce(raw)
+        ids = [
+            rid for rid, role in user.grants_in(*self.path).items() if isinstance(role, Role) and role >= self.min_role
+        ]
+        values = self._coerce(ids)
         if not values:
             return None
         return {self.field: {"$in": sorted(values)}}
@@ -89,16 +94,16 @@ class Scope:
     """A collection's read-visibility rule as a composition of :class:`ScopeClause` terms.
 
     :meth:`query` turns a ``User`` into the MongoDB filter injected into every scoped read. Admins
-    bypass read scope everywhere (a global rule, matching ``User.is_admin``). A ``Scope`` with no
-    clauses filters nothing — the explicit "unscoped collection" case (components, consumers), whose
-    visibility is gated elsewhere or not at all.
+    bypass read scope everywhere (a global rule, matching ``User.is_admin(*ROOT_PATH)``). A ``Scope``
+    with no clauses filters nothing — the explicit "unscoped collection" case (components, consumers),
+    whose visibility is gated elsewhere or not at all.
     """
 
     def __init__(self, *clauses: ScopeClause) -> None:
         self.clauses: tuple[ScopeClause, ...] = clauses
 
     def query(self, user: User) -> dict[str, Any]:
-        if user.is_admin:
+        if user.is_admin(*ROOT_PATH):
             return {}
         ors = [fragment for clause in self.clauses if (fragment := clause.to_query(user)) is not None]
         return {"$or": ors} if ors else {}

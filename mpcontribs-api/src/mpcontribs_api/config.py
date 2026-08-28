@@ -192,6 +192,15 @@ class DomainSettings(BaseModel):
     initiatives: InitiativeSettings = Field(default_factory=InitiativeSettings)
 
 
+class AuthzSettings(BaseModel):
+    """Authorization settings for the grant-validation layer."""
+
+    domain: str = Field(
+        description="Top-level ARN segment naming this service's authz domain (the grant-tree root). "
+        "Required; each server must declare the domain it enforces. Env: MPCONTRIBS_AUTHZ__DOMAIN.",
+    )
+
+
 class MPContribsSettings(BaseModel):
     max_contrib_data_depth: int = Field(
         default=7, description="The max number of levels allowed in a Contribution's data dictionary."
@@ -240,6 +249,9 @@ class Settings(BaseSettings):
 
     # MPContribs_domain_*
     domain: DomainSettings = Field(default_factory=DomainSettings)
+
+    # MPContribs_authz__* (requires domain)
+    authz: AuthzSettings
 
     # MPContribs_consumer__*
     consumer: QuotaLimits = Field(default_factory=QuotaLimits)

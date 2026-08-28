@@ -3,6 +3,7 @@ from beanie.operators import AddToSet, Pull
 from bson import DBRef
 from pymongo.asynchronous.client_session import AsyncClientSession
 
+from mpcontribs_api.authz import PROJECT_GROUP_PATH
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
 from mpcontribs_api.domains._shared.types import ShortStr
 from mpcontribs_api.domains.project_groups.models import (
@@ -12,7 +13,7 @@ from mpcontribs_api.domains.project_groups.models import (
     ProjectGroupOut,
     ProjectGroupPatch,
 )
-from mpcontribs_api.scope import Owned, Public, RoleIn, Scope
+from mpcontribs_api.scope import Granted, Owned, Public, Scope
 
 
 class MongoDbProjectGroupRepository(
@@ -22,11 +23,11 @@ class MongoDbProjectGroupRepository(
 
     document_model = ProjectGroup
     out_model = ProjectGroupOut
-    # Visible when public, owned by the caller, or granted via a ``project-group:<oid>`` role (keyed
-    # on ``_id``). Project groups have no approval flag. Roles arrive as raw hex strings, so the id
-    # clause coerces each to ``PydanticObjectId`` (malformed values are dropped by ``RoleIn``). Admins
-    # bypass scope (handled by ``Scope``).
-    read_scope = Scope(Public(), Owned(), RoleIn("_id", "project_group_roles", coerce=PydanticObjectId))
+    # Visible when public, owned by the caller, or granted any role via a
+    # ``mpcontribs:project-groups/<oid>=<role>`` grant (keyed on ``_id``). Project groups have no
+    # approval flag. Grant ids arrive as raw hex strings, so the id clause coerces each to
+    # ``PydanticObjectId`` (malformed values are dropped by ``Granted``). Admins bypass scope.
+    read_scope = Scope(Public(), Owned(), Granted("_id", PROJECT_GROUP_PATH, coerce=PydanticObjectId))
 
     async def add_project_refs(
         self,

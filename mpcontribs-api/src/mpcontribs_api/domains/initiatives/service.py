@@ -1,6 +1,6 @@
 from typing import Any
 
-from mpcontribs_api.authz import User
+from mpcontribs_api.authz import INITIATIVE_PATH, ROOT_PATH, User
 from mpcontribs_api.config import get_settings
 from mpcontribs_api.domains._shared.models import DeleteResponse
 from mpcontribs_api.domains.initiatives.models import (
@@ -63,7 +63,7 @@ class InitiativeService:
         if self._user.username is None:
             raise PermissionError(required_role="authenticated")
 
-        if not self._user.is_admin:
+        if not self._user.is_admin(*ROOT_PATH):
             # Unscoped: the per-owner unapproved cap counts every one of the owner's unapproved
             # initiatives, regardless of what the current caller can see.
             unapproved = await self._initiatives.count_matching(
@@ -92,11 +92,10 @@ class InitiativeService:
         existing = await self._initiatives.read_one(identifiers)
         if existing is None:
             raise NotFoundError("Initiative not found", slug=slug)
-        if not (self._user.can_manage(id=slug, resource="initiative") or self._user.username == existing.owner):
-            raise PermissionError(required_role="initiative-owner-collaborator-or-admin")
+        self._user.require_manage(*INITIATIVE_PATH, slug, doc_owner=existing.owner)
 
         data = update.model_dump(exclude_unset=True)
-        if "is_approved" in data and not self._user.is_admin:
+        if "is_approved" in data and not self._user.is_admin(*ROOT_PATH):
             raise PermissionError("only admins can set `is_approved`", required_role="admin")
 
         resulting_approved = data.get("is_approved", existing.is_approved)
@@ -116,7 +115,7 @@ class InitiativeService:
         existing = await self._initiatives.read_one(identifiers)
         if existing is None:
             raise NotFoundError("Initiative not found", **identifiers)
-        if not (self._user.is_admin or existing.owner == self._user.username):
+        if not (self._user.is_admin(*ROOT_PATH) or existing.owner == self._user.username):
             raise PermissionError(required_role="owner-or-admin")
         response = await self._initiatives.delete_one(identifiers)
         if existing.id is not None:

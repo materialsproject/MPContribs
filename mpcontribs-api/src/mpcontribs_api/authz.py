@@ -1,8 +1,7 @@
-from typing import Any
-
 from fastapi.security import APIKeyHeader
-from pydantic import BaseModel, ConfigDict, model_validator
 
+from mpcontribs_api.authz_core import ReservedRole, Role, UserGroup
+from mpcontribs_api.authz_core import User as _CoreUser
 from mpcontribs_api.config import get_settings
 
 settings = get_settings()
@@ -31,103 +30,58 @@ authenticated_groups_scheme = APIKeyHeader(
 )
 
 
-ADMIN_GROUP = settings.mongo.admin_group
+# The top-level path segment naming this service's authz domain
+DOMAIN = settings.authz.domain
 
-# prefix to user roles to disambiguate from project roles, which are bare ids
-INITIATIVE_ROLE_PREFIX = "initiative:"
+# Canonical second-level path segments (plural collection identifiers, per GCP AIP-122) for the
+# resources with flat authorization consumers today.
+PROJECT_SEGMENT = "projects"
+INITIATIVE_SEGMENT = "initiatives"
+PROJECT_GROUP_SEGMENT = "project-groups"
 
-# prefix for project-group roles: a group's _id (an ObjectId hex string) is granted as ``project-group:<oid>``
-PROJECT_GROUP_ROLE_PREFIX = "project-group:"
+# Full ARN-prefix paths with the domain baked in. These are the only handles the rest of the app uses
+# to talk to the domain-agnostic ``User`` accessors — callers just spread a constant
+# (``user.can_write(*PROJECT_PATH, project_id)``) and never name the domain themselves.
+ROOT_PATH = (DOMAIN,)
+PROJECT_PATH = (DOMAIN, PROJECT_SEGMENT)
+INITIATIVE_PATH = (DOMAIN, INITIATIVE_SEGMENT)
+PROJECT_GROUP_PATH = (DOMAIN, PROJECT_GROUP_SEGMENT)
 
-# A role carrying one of these prefixes is scoped to a non-project resource; a role with none of
-# them is a bare project id.
-_RESOURCE_ROLE_PREFIXES = (INITIATIVE_ROLE_PREFIX, PROJECT_GROUP_ROLE_PREFIX)
+# Default role applied to the legacy (``=``-less) forms Kong still emits, preserving prior full access.
+_LEGACY_ROLE = Role.owner
 
 
-class User(BaseModel):
-    """User definition derived from request headers.
+def _parse_legacy(token: str) -> UserGroup | None:
+    # Only the ``=``-less forms Kong currently forwards are honored; anything else is malformed.
+    # Prefixed legacy strings (``initiative:``/``project-group:``) are gone — those are ARN-only now.
+    reserved = ReservedRole.parse(token)
+    if reserved is not None:
+        return UserGroup(path=(DOMAIN,), role=reserved)
+    if ":" in token or "/" in token:
+        return None
+    return UserGroup(path=(DOMAIN, PROJECT_SEGMENT, token), role=_LEGACY_ROLE)
 
-    Attributes:
-        consumer_id (str | None): Kong id
-        username (str | None): the username of the active user - if None, the user is anonymous
-        groups (frozenset[str]): the groups the user is part of - used for access control
+
+def parse_grant(raw: str) -> UserGroup | None:
+    """Parse one wire token into a grant, or ``None`` if malformed (fail-closed, never raises).
+
+    Accepts the ARN grammar (delegated to the core) plus the three legacy forms Kong still emits: a
+    bare project id, the admin sentinel, and the Persson sentinel.
+    """
+    token = raw.strip()
+    if not token:
+        return None
+    if "=" not in token:
+        return _parse_legacy(token)
+    return UserGroup.parse(token)
+
+
+class User(_CoreUser):
+    """This server's :class:`User`: the domain-agnostic core plus the temporary legacy token parser.
+
+    Only used to handle the legacy format (each grant is just the project name and forces "owner" role)
     """
 
-    model_config = ConfigDict(frozen=True)
-    consumer_id: str | None = None
-    username: str | None = None
-    groups: frozenset[str] = frozenset()
-
-    @model_validator(mode="before")
     @classmethod
-    def drop_admin_on_anonymous(cls, config: dict[str, Any]) -> dict[str, Any]:
-        if not config.get("username"):
-            groups = config.get("groups", frozenset())
-            config["groups"] = frozenset(g for g in groups if g != ADMIN_GROUP)
-        return config
-
-    @property
-    def is_anonymous(self) -> bool:
-        return self.username is None
-
-    @property
-    def is_admin(self) -> bool:
-        return (not self.is_anonymous) and (ADMIN_GROUP in self.groups)
-
-    @property
-    def project_roles(self) -> list[str]:
-        """The project ids this user carries, from their bare (unprefixed) roles.
-
-        Resource-scoped roles (``initiative:``, ``project-group:``) and the admin sentinel are
-        excluded, leaving only bare project ids.
-        """
-        return [role for role in self.groups if role != ADMIN_GROUP and not role.startswith(_RESOURCE_ROLE_PREFIXES)]
-
-    @property
-    def initiative_roles(self) -> list[str]:
-        """The initiative slugs this user collaborates on, decoded from their ``initiative:<slug>`` roles."""
-        return [role[len(INITIATIVE_ROLE_PREFIX) :] for role in self.groups if role.startswith(INITIATIVE_ROLE_PREFIX)]
-
-    @property
-    def project_group_roles(self) -> list[str]:
-        """The project-group ids this user may access, decoded from their ``project-group:<oid>`` roles.
-
-        Values are the raw hex strings; callers that query by ``_id`` must convert them
-        """
-        return [
-            role[len(PROJECT_GROUP_ROLE_PREFIX) :] for role in self.groups if role.startswith(PROJECT_GROUP_ROLE_PREFIX)
-        ]
-
-    def has_role(self, role: str, *, resource: str | None = None) -> bool:
-        """Determine whether a user has a role assigned to them.
-
-        Specifying resource as:
-        - ``INITIATIVE_ROLE_PREFIX`` looks for roles scoped to initiatives
-        - "project" looks for bare (unprefixed) project roles
-        - None looks for roles by matching the entire string
-        """
-        if resource == INITIATIVE_ROLE_PREFIX[:-1]:
-            return role in self.initiative_roles
-        if resource == "project":
-            return role in self.project_roles
-        return role in self.groups
-
-    @property
-    def writable_projects(self) -> frozenset[str]:
-        """Projects this user may write to. Admins are unbounded (handled by can_write)"""
-        if self.is_anonymous:
-            return frozenset()
-        # only bare project roles are writable projects; the admin sentinel and resource-scoped
-        # roles (initiative:/project-group:) must never leak into a $in / membership test
-        return frozenset(self.project_roles)
-
-    def can_manage(self, id: str, resource: str) -> bool:
-        """Determines whether a user can manage a resource.
-
-        If the user is known and either an admin or has a valid role assigned, they can manage
-        """
-        return (not self.is_anonymous) and (self.is_admin or self.has_role(role=id, resource=resource))
-
-    def can_write(self, project: str) -> bool:
-        """Single source of truth for write authorization."""
-        return self.is_admin or project in self.writable_projects
+    def _parse_token(cls, raw: str) -> UserGroup | None:
+        return parse_grant(raw)

@@ -2,7 +2,7 @@ from typing import Any
 
 from bson import DBRef
 
-from mpcontribs_api.authz import User
+from mpcontribs_api.authz import INITIATIVE_PATH, ROOT_PATH, User
 from mpcontribs_api.config import get_settings
 from mpcontribs_api.domains._shared.models import DeleteResponse
 from mpcontribs_api.domains.consumers.models import ConsumerSettings
@@ -64,7 +64,7 @@ class ProjectService:
         project = self._projects.document_model.from_input_model(data, id=id)
 
         if existing is not None:
-            if not (self._user.is_admin or existing.owner == self._user.username):
+            if not (self._user.is_admin(*ROOT_PATH) or existing.owner == self._user.username):
                 raise PermissionError(required_role="owner-or-admin")
             # Ownership is immutable via upsert; keep the original owner.
             project.owner = existing.owner
@@ -75,13 +75,13 @@ class ProjectService:
             project.stats = existing.stats
             project.columns = existing.columns
             # Approval is an admin-only flag
-            if not self._user.is_admin:
+            if not self._user.is_admin(*ROOT_PATH):
                 project.is_approved = existing.is_approved
         else:
             # New project: the caller owns it, regardless of the submitted owner.
             project.owner = self._user.username
             # Approval is admin-only; a non-admin's new project always starts unapproved.
-            if not self._user.is_admin:
+            if not self._user.is_admin(*ROOT_PATH):
                 project.is_approved = False
             await self._enforce_project_cap(self._user.username)
 
@@ -119,7 +119,7 @@ class ProjectService:
         existing = await self._projects.read_one(identifiers)
         if existing is None:
             raise NotFoundError("Project not found", **identifiers)
-        if not (self._user.is_admin or existing.owner == self._user.username):
+        if not (self._user.is_admin(*ROOT_PATH) or existing.owner == self._user.username):
             raise PermissionError(required_role="owner-or-admin")
         return await self._projects.delete_one(identifiers)
 
@@ -152,13 +152,13 @@ class ProjectService:
         can see the project but does not own it gets a ``PermissionError`` (403).
         """
         data = update.model_dump(exclude_unset=True)
-        if "is_approved" in data and not self._user.is_admin:
+        if "is_approved" in data and not self._user.is_admin(*ROOT_PATH):
             raise PermissionError(required_role="admin")
 
         existing = await self._projects.read_one({"id": id})
         if existing is None:
             raise NotFoundError("Project not found", id=id)
-        if not (self._user.is_admin or existing.owner == self._user.username):
+        if not (self._user.is_admin(*ROOT_PATH) or existing.owner == self._user.username):
             raise PermissionError(required_role="owner-or-admin")
 
         resulting_approved = data.get("is_approved", existing.is_approved)
@@ -180,12 +180,7 @@ class ProjectService:
         if initiative is None or initiative.id is None:
             raise NotFoundError("Initiative not found or not visible", slug=slug)
 
-        if not (self._user.can_manage(id=slug, resource="initiative") or initiative.owner == self._user.username):
-            raise PermissionError(
-                message="user does not have adequate acceess to this resource",
-                required_role="initiative-owner-collaborator-or-admin",
-                resource_id=slug,
-            )
+        self._user.require_manage(*INITIATIVE_PATH, slug, doc_owner=initiative.owner)
 
         if not initiative.is_approved:
             # Unscoped integrity count: the member cap must see every project assigned to the

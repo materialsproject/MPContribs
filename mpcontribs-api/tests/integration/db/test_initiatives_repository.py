@@ -44,7 +44,7 @@ def _repo(user: User) -> MongoDbInitiativeRepository:
 
 def _collaborator(slug: str, username: str = BOB_EMAIL) -> User:
     """A user whose role grants them collaborator rights on ``slug``."""
-    return User(username=username, groups=frozenset({f"initiative:{slug}"}))
+    return User(username=username, groups=[f"mpcontribs:initiatives/{slug}=owner"])
 
 
 async def _insert(slug: str, owner_user: User = ALICE, name: str = "An Initiative") -> Initiative:

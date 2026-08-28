@@ -5,6 +5,7 @@ from beanie.operators import Set
 from pymongo.asynchronous.client_session import AsyncClientSession
 from pymongo.errors import DuplicateKeyError
 
+from mpcontribs_api.authz import PROJECT_PATH
 from mpcontribs_api.domains._shared.bulk import BulkUpdateSummary
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
 from mpcontribs_api.domains._shared.units import QuantityLeaf
@@ -24,7 +25,7 @@ from mpcontribs_api.domains.contributions.stats import (
     merge_contribution_columns,
 )
 from mpcontribs_api.exceptions import ConflictError, NotFoundError
-from mpcontribs_api.scope import Public, RoleIn, Scope
+from mpcontribs_api.scope import Granted, Public, Scope
 
 # Sentinel for "leave unique_value untouched" on patch (distinct from a real None value).
 _UNSET: Any = object()
@@ -58,8 +59,9 @@ class MongoDbContributionRepository(
     document_model = Contribution
     out_model = ContributionOut
     # Contributions have no owner of their own; visible when public or belonging to a project the
-    # caller may write to (keyed on ``project``). Admins bypass scope (handled by ``Scope``).
-    read_scope = Scope(Public(), RoleIn("project", "writable_projects"))
+    # caller is granted any role on, viewer included (keyed on ``project``). Writes are separately
+    # gated on ``User.writable(*PROJECT_PATH)``. Admins bypass scope (handled by ``Scope``).
+    read_scope = Scope(Public(), Granted("project", PROJECT_PATH))
 
     async def update_one(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,

@@ -2,7 +2,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from mpcontribs_api.authz import User
+from mpcontribs_api.authz import PROJECT_PATH, User
 from mpcontribs_api.dependencies import _split, get_user, require_user
 from mpcontribs_api.exceptions import AuthenticationError
 
@@ -78,14 +78,27 @@ class TestGetUser:
         assert user.is_anonymous is False
         assert user.username == "google:alice@example.com"
         assert user.consumer_id == "kong-123"
-        assert "editors" in user.groups
-        assert "mp-team" in user.groups
+        # Bare legacy tokens from either header become project grants (default owner role).
+        assert user.grants_in(*PROJECT_PATH) == {"editors": "owner", "mp-team": "owner"}
+
+    def test_full_arn_grant_from_header(self):
+        # A full new-format ARN string (not a bare legacy token) arriving via Kong headers parses
+        # end-to-end through the comma-split and grant parser, keeping its own role.
+        request = _make_request(
+            **{
+                "x-consumer-username": "google:alice@example.com",
+                "x-authenticated-groups": "mpcontribs:projects/mp-a=editor",
+            }
+        )
+        user = get_user(request)
+        assert user.grants_in(*PROJECT_PATH) == {"mp-a": "editor"}
+        assert user.can_write(*PROJECT_PATH, "mp-a") is True
 
     def test_authenticated_user_no_groups(self):
         request = _make_request(**{"x-consumer-username": "google:alice@example.com"})
         user = get_user(request)
         assert user.is_anonymous is False
-        assert user.groups == frozenset()
+        assert user.groups == ()
 
     def test_groups_merged_from_both_headers(self):
         request = _make_request(
@@ -96,7 +109,7 @@ class TestGetUser:
             }
         )
         user = get_user(request)
-        assert user.groups == frozenset({"a", "b", "c", "d"})
+        assert user.grants_in(*PROJECT_PATH) == {"a": "owner", "b": "owner", "c": "owner", "d": "owner"}
 
     def test_missing_username_returns_anonymous(self):
         request = _make_request(**{"x-consumer-id": "kong-123"})
@@ -111,7 +124,7 @@ class TestGetUser:
 
 class TestRequireUser:
     def test_authenticated_user_passes_through(self):
-        authed = User(username="google:alice@example.com", groups=frozenset())
+        authed = User(username="google:alice@example.com", groups=[])
         result = require_user(authed)
         assert result is authed
 

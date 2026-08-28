@@ -7,7 +7,7 @@ from pymongo import AsyncMongoClient
 from pymongo.asynchronous.database import AsyncDatabase
 from types_aiobotocore_s3 import S3Client
 
-from mpcontribs_api.authz import User
+from mpcontribs_api.authz import PROJECT_PATH, ROOT_PATH, User
 from mpcontribs_api.exceptions import AuthenticationError, PermissionError
 
 
@@ -52,14 +52,16 @@ def get_user(request: Request) -> User:
         user = User()  # anonymous = all defaults
     else:
         groups = _split(h.get("x-authenticated-groups")) | _split(h.get("x-consumer-groups"))
-        user = User(
-            consumer_id=h.get("x-consumer-id"),
-            username=username,
-            groups=frozenset(groups),
+        user = User.model_validate(
+            {
+                "consumer_id": h.get("x-consumer-id"),
+                "username": username,
+                "groups": groups,
+            }
         )
     structlog.contextvars.bind_contextvars(
         consumer_id=user.consumer_id,
-        is_admin=user.is_admin,
+        is_admin=user.is_admin(*ROOT_PATH),
     )
     return user
 
@@ -81,8 +83,9 @@ def require_writer(user: UserDep) -> User:
     """
     if user.is_anonymous:
         raise AuthenticationError("authentication required")
-    if not (user.is_admin or user.writable_projects):
+    if not (user.is_admin(*ROOT_PATH) or user.writable(*PROJECT_PATH)):
         raise PermissionError("write access to at least one project is required")
+    return user
 
 
 def require_admin(user: UserDep) -> User:
@@ -94,6 +97,6 @@ def require_admin(user: UserDep) -> User:
     """
     if user.is_anonymous:
         raise AuthenticationError("authentication required")
-    if not user.is_admin:
+    if not user.is_admin(*ROOT_PATH):
         raise PermissionError(required_role="admin")
     return user
