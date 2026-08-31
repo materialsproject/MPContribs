@@ -7,11 +7,11 @@ CONTRIBUTION_DATA_INPUT_DESCRIPTION = """\
 Hierarchical, JSON-object data for the contribution. Nesting deeper than 7 levels is rejected. Lists
 are allowed; any dictionaries inside them have their keys coerced and validated like every other key.
 
-**Key coercion (important):** every dictionary key is coerced to `snake_case` on write. Casing is
-lowercased, `camelCase`/`PascalCase` boundaries are split, and any run of spaces/hyphens/punctuation
-collapses to a single underscore. So `"bandGap"`, `"Band Gap"`, and `"band-gap"` are all stored as
-`"band_gap"`, and the **keys you read back may differ from the keys you submitted**. Keys must be
-ASCII and must not reduce to an empty string (e.g. `"***"` is rejected).
+**Key coercion (important):** every dictionary key is coerced to `camelCase` on write. Word
+boundaries are detected from casing, acronyms, and any run of spaces/hyphens/punctuation, then joined
+so the first word is lowercase and each subsequent word is capitalized. So `"band_gap"`, `"Band Gap"`,
+and `"band-gap"` are all stored as `"bandGap"`, and the **keys you read back may differ from the keys
+you submitted**. Keys must be ASCII and must not reduce to an empty string (e.g. `"***"` is rejected).
 
 **Reserved keys:** `si_value`, `si_unit`, `value`, `unit`, `si_error`, `error`,
 `precision`, and `display` are reserved for the stored value-leaf shape and may **not** be used as
@@ -31,7 +31,7 @@ as-is (a list is treated as array data, not a column of measurements).
 
 Annotation rules: the single token without an `=` is the **unit** (e.g. `eV`, `S/cm`, `K`), left
 verbatim so it round-trips through Pint; each `k=v` token is a **condition** (names coerced to
-`snake_case`); `name` may be a dotted path (`"transport.conductivity (S/cm)"`) to nest the value; a
+`camelCase`); `name` may be a dotted path (`"transport.conductivity (S/cm)"`) to nest the value; a
 key with no parentheses is a plain key. If a unit is given in **both** the key and the value and they
 differ, the **key's unit wins** — the value is converted into it (a dimensional mismatch is rejected).
 
@@ -58,7 +58,7 @@ changes a row's `condition_key`), so a signature with no matching stored row is 
 """
 
 CONTRIBUTION_DATA_OUTPUT_DESCRIPTION = """\
-Hierarchical contribution data. Keys are stored in `snake_case` (see the write schema for the
+Hierarchical contribution data. Keys are stored in `camelCase` (see the write schema for the
 coercion rules), so they may differ from the keys originally submitted.
 
 Any value that reads as a number is stored as a **quantity leaf** object:
@@ -76,7 +76,7 @@ There is no server-rendered `display` string: `value`, `unit`, `error`, and
 `precision` reproduce the submitted form exactly, so a client can format the value however it likes.
 
 Values that are not numeric (words, booleans, lists) keep whatever JSON shape they were submitted
-with (after `snake_case` key coercion).
+with (after `camelCase` key coercion).
 """
 
 openapi_tags = [
@@ -96,7 +96,7 @@ openapi_tags = [
         "Each contribution uses `mp-id` or composition as identifier to associate its data with the according entries "
         "on MP. Only admins or users on the project can create, update or delete contributions, and while unpublished, "
         "retrieve its data or view it on the Portal. Contribution components (tables, structures, and attachments) are "
-        "deleted along with a contribution. **Note:** `data` keys are coerced to `snake_case` on write and may carry "
+        "deleted along with a contribution. **Note:** `data` keys are coerced to `camelCase` on write and may carry "
         "unit/condition annotations of the form `name (unit, cond=value, ...)`; keys with conditions cause the "
         "submission to pivot into one contribution per condition signature. See the `data` field on the request and "
         "response schemas for the full grammar and the annotated-value shape.",

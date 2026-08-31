@@ -884,7 +884,7 @@ class TestContributionIdentity:
         assert docs[0].unique_value is None
 
     async def test_insert_unique_column_promotes_value_to_unique_value(self):
-        svc, contrib_repo, *_ = _make_service(unique_column="sample_id")
+        svc, contrib_repo, *_ = _make_service(unique_column="sampleId")
         contrib_repo.insert_many.return_value = None
 
         summary = await svc.insert_many([_contrib_in(data={"sample_id": "A"})])
@@ -894,7 +894,7 @@ class TestContributionIdentity:
         assert docs[0].unique_value == "A"
 
     async def test_insert_same_triple_distinct_unique_value_both_succeed(self):
-        svc, contrib_repo, *_ = _make_service(unique_column="sample_id")
+        svc, contrib_repo, *_ = _make_service(unique_column="sampleId")
         contrib_repo.insert_many.return_value = None
 
         contribs = [_contrib_in(data={"sample_id": "A"}), _contrib_in(data={"sample_id": "B"})]
@@ -905,7 +905,7 @@ class TestContributionIdentity:
         assert sorted(d.unique_value for d in docs) == ["A", "B"]
 
     async def test_insert_missing_unique_column_value_is_validation_failure(self):
-        svc, contrib_repo, *_ = _make_service(unique_column="sample_id")
+        svc, contrib_repo, *_ = _make_service(unique_column="sampleId")
         contrib_repo.insert_many.return_value = None
 
         summary = await svc.insert_many([_contrib_in(data={"other": 1})])
@@ -915,7 +915,7 @@ class TestContributionIdentity:
         contrib_repo.insert_many.assert_not_called()
 
     async def test_insert_non_scalar_unique_column_value_is_validation_failure(self):
-        svc, contrib_repo, *_ = _make_service(unique_column="sample_id")
+        svc, contrib_repo, *_ = _make_service(unique_column="sampleId")
         contrib_repo.insert_many.return_value = None
 
         summary = await svc.insert_many([_contrib_in(data={"sample_id": {"nested": 1}})])
@@ -955,7 +955,7 @@ class TestContributionIdentity:
         contrib_repo.upsert_one.assert_called_once()
 
     async def test_upsert_passes_resolved_unique_value_in_identifiers(self):
-        svc, contrib_repo, *_ = _make_service(unique_column="sample_id")
+        svc, contrib_repo, *_ = _make_service(unique_column="sampleId")
         contrib_repo.upsert_one.return_value = MagicMock(spec=Contribution, project="proj")
 
         await svc.upsert_many([_contrib_in(data={"sample_id": "A"})])
@@ -964,7 +964,7 @@ class TestContributionIdentity:
         assert identifiers["unique_value"] == "A"
 
     async def test_upsert_missing_unique_column_value_is_validation_failure(self):
-        svc, contrib_repo, *_ = _make_service(unique_column="sample_id")
+        svc, contrib_repo, *_ = _make_service(unique_column="sampleId")
 
         summary = await svc.upsert_many([_contrib_in(data={"other": 1})])
 
@@ -1581,23 +1581,23 @@ class TestPatchDataMergeReplace:
     async def test_merge_resolves_unique_value_from_merged_state(self):
         # The unique_column value lives in the stored data and is NOT in the patch. A merge preserves
         # it, so unique_value must resolve against the merged view rather than raising "missing".
-        svc, contrib_repo, *_ = _make_service(unique_column="sample_id")
+        svc, contrib_repo, *_ = _make_service(unique_column="sampleId")
         existing = _existing_doc(material_id=None, chemical_system_id="Fe-O", formula="Fe2O3")
-        existing.data = {"sample_id": 42, "x": 1.0}
+        existing.data = {"sampleId": 42, "x": 1.0}
         contrib_repo.read_one.return_value = existing
         contrib_repo.update_one.return_value = MagicMock(spec=Contribution)
 
         await svc.update_one(str(existing.id), ContributionPatch(data={"y": 9.0}))
 
-        # Resolved from {sample_id:42, x:1, y:9}, so the untouched unique_value survives the merge.
+        # Resolved from {sampleId:42, x:1, y:9}, so the untouched unique_value survives the merge.
         assert contrib_repo.update_one.call_args.kwargs["unique_value"] == 42
 
     async def test_replace_resolves_unique_value_from_patch_data_only(self):
         # On replace the stored data is discarded, so a unique_column absent from the patch is a
         # genuine validation failure (the resulting document would lack it).
-        svc, contrib_repo, *_ = _make_service(unique_column="sample_id")
+        svc, contrib_repo, *_ = _make_service(unique_column="sampleId")
         existing = _existing_doc(material_id=None, chemical_system_id="Fe-O", formula="Fe2O3")
-        existing.data = {"sample_id": 42}
+        existing.data = {"sampleId": 42}
         contrib_repo.read_one.return_value = existing
 
         with pytest.raises(ValidationError, match="unique_column"):

@@ -18,6 +18,7 @@ from mpcontribs_api.domains.contributions.models import (
     ContributionPatch,
     extract_unique_value,
 )
+from mpcontribs_api.domains.contributions.pivot import expand_contribution
 from mpcontribs_api.exceptions import ValidationError
 
 # The identity/index column order, declared once here so the tests fail loudly if the field order
@@ -130,7 +131,7 @@ class TestContributionBase:
             _make_contribution_in(data=invalid_nesting)
 
     def test_data_key_validation(self):
-        # Input keys are coerced to snake_case on write, so punctuation is folded (not rejected) and
+        # Input keys are coerced to camelCase on write, so punctuation is folded (not rejected) and
         # the annotation grammar is allowed. Only keys that can't be coerced are rejected on input.
         _make_contribution_in(data={"test*/|": "pass"})  # folds to "test", accepted
         _make_contribution_in(data={"a.b (eV, T=300K)": 1})  # annotated key + dotted path, accepted
@@ -150,8 +151,11 @@ class TestContributionBase:
             Contribution(_id=PydanticObjectId(), project="p", chemical_system_id="Fe-O", data={"ΔE": 1})
 
     def test_reserved_leaf_keys_rejected(self):
-        # A data key that coerces to a reserved value-leaf name is rejected on write.
-        for bad in ("value", "unit", "error", "precision", "si_unit", "display"):
+        # A data key that coerces to a reserved value-leaf name is rejected on write. Only the
+        # single-word leaf keys are reachable by camelCase coercion; the SI spellings (si_value,
+        # si_unit, si_error) can never be produced (camelCase has no underscore) so they are not
+        # rejected as plain keys — see ``test_si_prefixed_keys_coerced_not_reserved``.
+        for bad in ("value", "unit", "error", "precision", "display"):
             with pytest.raises(ValidationError, match="reserved"):
                 _make_contribution_in(data={bad: 1})
         # rejected when nested, too
@@ -160,6 +164,14 @@ class TestContributionBase:
         # and when used as a condition name in an annotated key
         with pytest.raises(ValidationError, match="reserved"):
             _make_contribution_in(data={"x (eV, value=3)": 1})
+
+    def test_si_prefixed_keys_coerced_not_reserved(self):
+        # The SI leaf field names hold underscores, so camelCase coercion folds them to plain
+        # (non-reserved) columns rather than colliding with a stored leaf: ``si_value`` -> ``siValue``.
+        contrib = _make_contribution_in(data={"si_value": 1, "si_unit": "x", "si_error": 2})
+        assert set(contrib.data) == {"si_value", "si_unit", "si_error"}  # model keeps raw keys
+        rows = expand_contribution(contrib)
+        assert set(rows[0].contribution.data) == {"siValue", "siUnit", "siError"}
 
     # There isn't currently value validation. This is to check that that is true
     def test_data_value_validation(self):
@@ -432,7 +444,7 @@ class TestContributionPatch:
         assert patch.data == {"new_key": 42}
 
     def test_data_keys_validated_not_coerced(self):
-        # ContributionPatch only *validates* keys; it no longer rewrites them. snake_case coercion
+        # ContributionPatch only *validates* keys; it no longer rewrites them. camelCase coercion
         # and unit annotation happen in the service (expand_data), not at the model layer.
         patch = ContributionPatch(data={"Band Gap": 1, "nested": {"pH-Value": 7}})
         assert patch.data == {"Band Gap": 1, "nested": {"pH-Value": 7}}
@@ -444,7 +456,7 @@ class TestContributionPatch:
 
     def test_data_uncoercible_key_rejected(self):
         # A key that reduces to an empty string after coercion is still rejected at validation time.
-        with pytest.raises(ValidationError, match="empty string after snake_case coercion"):
+        with pytest.raises(ValidationError, match="empty string after camelCase coercion"):
             ContributionPatch(data={"***": 1})
 
 

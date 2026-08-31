@@ -99,19 +99,6 @@ def _validate_data_depth(data: dict[str, Any] | None) -> dict[str, Any] | None:
     return data
 
 
-def _validate_plain_key(key: Any) -> None:
-    """Validate a single plain key token (a path segment or a condition name).
-
-    Punctuation, spaces, and casing are no longer rejected: keys are coerced to ``snake_case`` on the
-    write path (see :func:`to_snake_case`), which folds ``*``/``/``/``|`` and any other non-alphanumeric
-    run to ``_``. This only rejects keys that cannot be coerced into a usable token: non-ASCII, empty,
-    or ones that reduce to an empty string after coercion (e.g. ``"***"``).
-    """
-    if key == "":
-        raise ValidationError("Empty key found in Contribution.data. Keys must be non-empty.")
-    coerce_key(key, require_ascii=True, reserved=QuantityLeaf.reserved_keys())
-
-
 def _validate_nested_keys(value: Any, *, allow_leaf_fragments: bool = False) -> None:
     if isinstance(value, dict):
         _validate_keys(value, allow_leaf_fragments=allow_leaf_fragments)
@@ -136,7 +123,7 @@ def _validate_keys(data: dict[str, Any] | None, *, allow_leaf_fragments: bool = 
     if allow_leaf_fragments and QuantityLeaf.is_fragment(data):
         return data
     for key in data:
-        _validate_plain_key(key)
+        coerce_key(key=key, require_ascii=True, reserved=QuantityLeaf.reserved_keys())
     # Recurse into nested dicts, including dicts nested inside lists.
     for v in data.values():
         _validate_nested_keys(v, allow_leaf_fragments=allow_leaf_fragments)
@@ -146,11 +133,11 @@ def _validate_keys(data: dict[str, Any] | None, *, allow_leaf_fragments: bool = 
 def _validate_data_keys(data: dict[str, Any] | None, *, allow_leaf_fragments: bool = False) -> dict[str, Any] | None:
     """Top-level ``data`` key validation, allowing the annotated pattern.
 
-    Each top-level key may be either a plain key or the annotated form
-    ``name (unit, cond1=..., cond2=...)``. The name's dotted segments and every condition name are
-    held to the same plain-key rules (units are unconstrained); nested levels stay strictly plain.
-    Expansion (see :mod:`mpcontribs_api.domains.contributions.pivot`) later rewrites annotated keys
-    into plain ones, so stored keys always satisfy :func:`_validate_keys`.
+    Each top-level key may be either a plain key or the annotated for ``name (unit, cond1=..., cond2=...)``.
+    The name's dotted segments and every condition name are held to the same plain-key rules (units are unconstrained);
+    nested levels stay strictly plain. Expansion (see :mod:`mpcontribs_api.domains.contributions.pivot`) later rewrites
+    annotated keys into plain ones and coerces every key to canonical form, so stored keys always satisfy
+    :func:`_validate_keys`.
 
     ``allow_leaf_fragments`` is threaded to nested levels only (the patch/merge path); top-level keys
     stay strict, since a reserved key at the root addresses no leaf.
@@ -167,12 +154,12 @@ def _validate_data_keys(data: dict[str, Any] | None, *, allow_leaf_fragments: bo
         if not parsed.is_annotated:
             # A plain key keeps the original strict rule (no '.' nesting); only annotated keys may
             # use dotted paths, whose segments are validated individually below.
-            _validate_plain_key(raw_key)
+            coerce_key(key=raw_key, require_ascii=True, reserved=QuantityLeaf.reserved_keys())
             continue
         for segment in parsed.segments:
-            _validate_plain_key(segment)
+            coerce_key(key=segment, require_ascii=True, reserved=QuantityLeaf.reserved_keys())
         for condition_name in parsed.conditions:
-            _validate_plain_key(condition_name)
+            coerce_key(key=condition_name, require_ascii=True, reserved=QuantityLeaf.reserved_keys())
     for v in data.values():
         _validate_nested_keys(v, allow_leaf_fragments=allow_leaf_fragments)
     return data
@@ -198,7 +185,7 @@ def validate_stored_contribution_data(data: dict[str, Any] | None) -> dict[str, 
 
     This is the stored-document counterpart to :func:`validate_contribution_data`. By the time a
     :class:`~mpcontribs_api.domains.contributions.models.Contribution` is built, pivot/expansion has
-    already coerced every key to canonical snake_case, so the stored payload must satisfy the plain-key
+    already coerced every key to canonical form, so the stored payload must satisfy the plain-key
     rules at *every* level — the annotated-key grammar (``name (unit, cond=...)``) is no longer allowed
     even at the top level. The depth bound is the same settings-driven limit as the input path, so the
     two cannot drift.

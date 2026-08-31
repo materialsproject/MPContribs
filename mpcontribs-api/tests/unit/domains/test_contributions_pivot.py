@@ -3,12 +3,12 @@ from functools import partial
 
 import pytest
 
-from mpcontribs_api.domains._shared.types import coerce_key, map_keys, to_snake_case
+from mpcontribs_api.domains._shared.types import coerce_key, map_keys, to_camel_case, to_snake_case
 from mpcontribs_api.domains.contributions.data import (
     parse_annotated_key,
 )
 
-# The recursive snake_case key walk formerly exposed as ``data.coerce_keys`` — now the shared
+# The recursive camelCase key walk formerly exposed as ``data.coerce_keys`` — now the shared
 # ``map_keys`` driven by ``coerce_key`` with the strict (ASCII-checking) key guard.
 _coerce_keys = partial(map_keys, coerce=partial(coerce_key, require_ascii=True))
 from mpcontribs_api.domains.contributions.models import ContributionIn
@@ -28,7 +28,7 @@ def _contrib_in(data, **overrides) -> ContributionIn:
 
 
 # ---------------------------------------------------------------------------
-# to_snake_case / map_keys + coerce_key
+# to_snake_case / to_camel_case / map_keys + coerce_key
 # ---------------------------------------------------------------------------
 
 
@@ -55,10 +55,35 @@ class TestToSnakeCase:
         assert to_snake_case("***") == ""
 
 
+class TestToCamelCase:
+    @pytest.mark.parametrize(
+        ("raw", "expected"),
+        [
+            ("band_gap", "bandGap"),
+            ("Band Gap", "bandGap"),
+            ("BandGap", "bandGap"),
+            ("pH-Value", "phValue"),
+            ("Seebeck coef", "seebeckCoef"),
+            ("T", "t"),
+            ("carrier_transport", "carrierTransport"),
+            ("bandGap", "bandGap"),  # already camelCase -> no-op
+            ("  spaced  key  ", "spacedKey"),
+            ("multiple___underscores", "multipleUnderscores"),
+            ("2theta", "2theta"),
+            ("HTTPServer", "httpServer"),
+        ],
+    )
+    def test_coercion(self, raw, expected):
+        assert to_camel_case(raw) == expected
+
+    def test_only_separators_reduces_to_empty(self):
+        assert to_camel_case("***") == ""
+
+
 class TestMapKeys:
     def test_recurses_dicts_and_lists(self):
         out = _coerce_keys({"Band Gap": {"pH-Value": 1}, "List": [{"Inner Key": 2}]})
-        assert out == {"band_gap": {"ph_value": 1}, "list": [{"inner_key": 2}]}
+        assert out == {"bandGap": {"phValue": 1}, "list": [{"innerKey": 2}]}
 
     def test_leaves_values_untouched(self):
         # only keys are coerced; string/number values pass through verbatim
@@ -165,7 +190,7 @@ class TestExpandContribution:
         assert len({r.condition_key for r in rows}) == 2
         for r in rows:
             # conditions + measurement + broadcast column all present; condition names are
-            # snake_case-coerced (T -> t, P -> p) like every other data key.
+            # camelCase-coerced (T -> t, P -> p) like every other data key.
             assert set(r.contribution.data) == {"t", "p", "conductivity", "bandgap"}
 
     def test_condition_less_column_broadcasts(self):
@@ -180,7 +205,7 @@ class TestExpandContribution:
         rows = expand_contribution(_contrib_in({"conductivity (S/cm, T=300K)": 4.2}))
         assert len(rows) == 1
         data = rows[0].contribution.data
-        # condition name coerced to snake_case (T -> t)
+        # condition name coerced to camelCase (T -> t)
         assert "t" in data
         assert math.isclose(data["t"]["si_value"], 300.0)
 
@@ -228,39 +253,39 @@ class TestExpandContribution:
     def test_plain_keys_coerced_when_no_annotations(self):
         rows = expand_contribution(_contrib_in({"Band Gap": 1.5, "nested": {"Sub Key": 2}}))
         assert len(rows) == 1
-        # keys coerced to snake_case, numeric values promoted to leaves
-        assert rows[0].contribution.data == {"band_gap": {"si_value": 1.5}, "nested": {"sub_key": {"si_value": 2.0}}}
+        # keys coerced to camelCase, numeric values promoted to leaves
+        assert rows[0].contribution.data == {"bandGap": {"si_value": 1.5}, "nested": {"subKey": {"si_value": 2.0}}}
 
-    def test_already_snake_case_keys_still_leafify_numbers(self):
+    def test_already_camel_case_keys_still_leafify_numbers(self):
         # Even with nothing to coerce, bare numbers are normalized to quantity leaves.
-        c = _contrib_in({"band_gap": 1.5, "nested": {"sub_key": 2}})
+        c = _contrib_in({"bandGap": 1.5, "nested": {"subKey": 2}})
         rows = expand_contribution(c)
-        assert rows[0].contribution.data == {"band_gap": {"si_value": 1.5}, "nested": {"sub_key": {"si_value": 2.0}}}
+        assert rows[0].contribution.data == {"bandGap": {"si_value": 1.5}, "nested": {"subKey": {"si_value": 2.0}}}
 
     def test_annotated_path_segments_coerced(self):
         rows = expand_contribution(_contrib_in({"Band Gap (eV, T=300K)": 1.1}))
         data = rows[0].contribution.data
-        assert set(data) == {"band_gap", "t"}
-        assert data["band_gap"]["unit"] == "eV"
+        assert set(data) == {"bandGap", "t"}
+        assert data["bandGap"]["unit"] == "eV"
 
-    def test_forbidden_name_chars_folded_to_underscore(self):
-        # '*', '/', and '|' are allowed in the name portion but folded to '_' (not rejected). The
-        # same characters stay verbatim inside a unit (S/cm), which is never snake_cased.
+    def test_forbidden_name_chars_folded_to_word_boundary(self):
+        # '*', '/', and '|' are allowed in the name portion but folded to word boundaries (not
+        # rejected). The same characters stay verbatim inside a unit (S/cm), which is never coerced.
         rows = expand_contribution(_contrib_in({"a/b*c|d (S/cm)": 5}))
         data = rows[0].contribution.data
-        assert set(data) == {"a_b_c_d"}
-        assert data["a_b_c_d"]["unit"] == "S/cm"
+        assert set(data) == {"aBCD"}
+        assert data["aBCD"]["unit"] == "S/cm"
 
     def test_dotted_path_segments_coerced(self):
         rows = expand_contribution(_contrib_in({"Outer.Inner Key (eV)": 1.1}))
         data = rows[0].contribution.data
-        assert "si_value" in data["outer"]["inner_key"]
+        assert "si_value" in data["outer"]["innerKey"]
 
     def test_unit_and_condition_value_preserved_verbatim(self):
-        # unit (eV) and condition value (300K -> canonical) are never snake_cased; only names are
+        # unit (eV) and condition value (300K -> canonical) are never coerced; only names are
         rows = expand_contribution(_contrib_in({"Band Gap (eV, Temp=300K)": 1.1}))
         data = rows[0].contribution.data
-        assert data["band_gap"]["unit"] == "eV"
+        assert data["bandGap"]["unit"] == "eV"
         assert "temp" in data  # condition name coerced
         assert math.isclose(data["temp"]["si_value"], 300.0)
 
