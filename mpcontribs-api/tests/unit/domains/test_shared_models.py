@@ -8,14 +8,14 @@ from mpcontribs_api.domains._shared.models import (
     DeleteResponse,
     DocumentOut,
 )
-from mpcontribs_api.domains.attachments.models import Attachment, AttachmentIdentity, AttachmentIn
+from mpcontribs_api.domains.attachments.models import Attachment, ComponentIdentity, AttachmentIn
 from mpcontribs_api.domains.consumers.models import Consumer, ConsumerIdentity
 from mpcontribs_api.domains.contributions.models import Contribution, ContributionIdentity
 from mpcontribs_api.domains.initiatives.models import Initiative, InitiativeIdentity
 from mpcontribs_api.domains.project_groups.models import ProjectGroup, ProjectGroupIdentity
 from mpcontribs_api.domains.projects.models import Project, ProjectIdentity, ProjectIn
-from mpcontribs_api.domains.structures.models import Structure, StructureIdentity
-from mpcontribs_api.domains.tables.models import Table, TableIdentity
+from mpcontribs_api.domains.structures.models import Structure, ComponentIdentity
+from mpcontribs_api.domains.tables.models import Table, ComponentIdentity
 from mpcontribs_api.pagination import encode_cursor
 
 # ---------------------------------------------------------------------------
@@ -114,9 +114,9 @@ _DOMAIN_IDENTITIES = [
     (Initiative, InitiativeIdentity, {"slug"}),
     (ProjectGroup, ProjectGroupIdentity, {"name", "owner"}),
     (Consumer, ConsumerIdentity, {"consumer_id"}),
-    (Structure, StructureIdentity, {"md5"}),
-    (Table, TableIdentity, {"md5"}),
-    (Attachment, AttachmentIdentity, {"md5"}),
+    (Structure, ComponentIdentity, {"md5"}),
+    (Table, ComponentIdentity, {"md5"}),
+    (Attachment, ComponentIdentity, {"md5"}),
     (
         Contribution,
         ContributionIdentity,
@@ -139,7 +139,7 @@ class TestIdentityContract:
     def test_component_identity_shared_shape_is_md5(self):
         # The three component identities all share ComponentIdentity's single-``md5`` shape.
         assert ComponentIdentity.model_fields() == {"md5"}
-        for identity in (StructureIdentity, TableIdentity, AttachmentIdentity):
+        for identity in (ComponentIdentity, ComponentIdentity, ComponentIdentity):
             assert issubclass(identity, ComponentIdentity)
             assert identity.model_fields() == {"md5"}
 
@@ -157,7 +157,7 @@ class TestDocumentIdentityRoundTrips:
     def test_content_addressed_component_identity_is_its_md5(self):
         # A component's identity is its server-computed content md5.
         doc = Attachment.from_input(_attachment_in())
-        assert doc.identity() == AttachmentIdentity(md5=doc.md5)
+        assert doc.identity() == ComponentIdentity(md5=doc.md5)
         assert doc.identity().as_dict() == {"md5": doc.md5}
 
     def test_compound_identity_reads_all_fields_and_tolerates_nulls(self):
