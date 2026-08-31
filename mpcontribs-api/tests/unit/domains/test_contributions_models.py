@@ -456,7 +456,7 @@ class TestContributionPatch:
 
     def test_data_uncoercible_key_rejected(self):
         # A key that reduces to an empty string after coercion is still rejected at validation time.
-        with pytest.raises(ValidationError, match="empty string after camelCase coercion"):
+        with pytest.raises(ValidationError, match="empty string after key coercion"):
             ContributionPatch(data={"***": 1})
 
 

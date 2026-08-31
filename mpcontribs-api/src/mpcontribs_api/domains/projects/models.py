@@ -7,7 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
 from mpcontribs_api import pagination
 from mpcontribs_api.domains._shared.filters import BaseFilter
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
-from mpcontribs_api.domains._shared.types import PrefixedEmail, SearchStr, ShortStr, to_camel_case
+from mpcontribs_api.domains._shared.types import CANONICAL_KEY_COERCION, PrefixedEmail, SearchStr, ShortStr
 from mpcontribs_api.domains.initiatives.models import Initiative
 from mpcontribs_api.exceptions import ValidationError
 
@@ -15,20 +15,18 @@ from mpcontribs_api.exceptions import ValidationError
 def _validate_unique_column(value: str | None) -> str | None:
     """Validate and canonicalize ``unique_column``: a non-empty, non-blank dotted path.
 
-    ``unique_column`` is a path *into* ``Contribution.data``, so each segment is coerced to the same
-    canonical form as data keys. This keeps the stored path aligned with stored (coerced) data regardless of
-    how the caller cased it — ``"sample_id"`` and ``"Sample Id"`` both canonicalize to ``"sampleId"`` — so
-    identity resolution always resolves.
+    ``unique_column`` is a path *into* ``Contribution.data``, so each segment is coerced through the
+    same :data:`CANONICAL_KEY_COERCION` symbol as data keys.
     """
     if value is None:
         return None
     segments = value.split(".")
     if not value.strip() or any(not segment for segment in segments):
         raise ValidationError("unique_column must be a non-empty dotted path (no blank segments).", value=value)
-    coerced = [to_camel_case(segment) for segment in segments]
+    coerced = [CANONICAL_KEY_COERCION(segment) for segment in segments]
     if any(not segment for segment in coerced):
         raise ValidationError(
-            "unique_column segments must not reduce to an empty string after camelCase coercion.", value=value
+            "unique_column segments must not reduce to an empty string after canonical key coercion.", value=value
         )
     return ".".join(coerced)
 

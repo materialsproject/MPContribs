@@ -4,11 +4,15 @@ from pydantic import ValidationError as PydanticValidationError
 
 from mpcontribs_api.exceptions import ValidationError as AppValidationError
 from mpcontribs_api.domains._shared.types import (
+    CANONICAL_KEY_COERCION,
     DisplayStr,
     NFKCStr,
     PrefixedEmail,
-    SearchStr,
     ShortStr,
+    SearchStr,
+    coerce_key,
+    to_camel_case,
+    to_snake_case,
     _validate_prefixed_email,
     nfc_normalize,
     nfkc_normalize,
@@ -184,3 +188,19 @@ class TestPrefixedEmailModel:
     def test_whitespace_stripped(self):
         m = PrefixedEmailModel(email="  orcid:12345@orcid.org  ")
         assert m.email == "orcid:12345@orcid.org"
+
+
+class TestCanonicalKeyCoercion:
+    """The single source of truth every data-key call site shares, so they can't drift."""
+
+    def test_points_at_the_current_choice(self):
+        # Documents that camelCase is today's canonical form. Swapping this one symbol re-points every
+        # site (data keys via coerce_key, Project.unique_column) at once.
+        assert CANONICAL_KEY_COERCION is to_camel_case
+
+    def test_coerce_key_defaults_to_the_canonical_symbol(self):
+        assert coerce_key("band_gap") == CANONICAL_KEY_COERCION("band_gap") == "bandGap"
+
+    def test_coercion_method_override_is_honored(self):
+        # The parameterization still works: an explicit method overrides the canonical default.
+        assert coerce_key("bandGap", coercion_method=to_snake_case) == "band_gap"

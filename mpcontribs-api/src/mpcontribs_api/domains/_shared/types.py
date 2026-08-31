@@ -358,6 +358,8 @@ def to_camel_case(name: str) -> str:
     return head + "".join(word[:1].upper() + word[1:] for word in tail)
 
 
+CANONICAL_KEY_COERCION: Callable[[str], str] = to_camel_case
+
 # Converts strs to snake case
 SnakeCaseStr = Annotated[str, BeforeValidator(func=to_snake_case)]
 
@@ -396,7 +398,7 @@ def coerce_key(
     *,
     require_ascii: bool = False,
     reserved: frozenset[str] | None = None,
-    coercion_method: Callable[[str], str] = to_camel_case,
+    coercion_method: Callable[[str], str] = CANONICAL_KEY_COERCION,
 ) -> str:
     """Coerce one dict key to canonical case using ``coercion_method``, enforcing the shared write-path key guards.
 
@@ -418,7 +420,7 @@ def coerce_key(
         raise DataKeyError("Non-ASCII key found in Contribution.data. All dict keys must be only ASCII")
     coerced = coercion_method(key)
     if not coerced:
-        raise DataKeyError(f"data key '{key}' reduces to an empty string after camelCase coercion")
+        raise DataKeyError(f"data key '{key}' reduces to an empty string after key coercion")
     if reserved is not None and coerced in reserved:
         raise DataKeyError(
             f"data key '{key}' is reserved for annotated-value leaves and may not be used",
