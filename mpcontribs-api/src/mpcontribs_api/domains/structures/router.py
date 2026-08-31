@@ -33,7 +33,7 @@ async def read_many(
 
 
 @router.get("/item")
-async def read_one_by_md5(
+async def read_one_by_identity(
     service: StructureServiceDep,
     md5: MD5Hash,
     fields: FieldSelector = None,
@@ -44,13 +44,13 @@ async def read_one_by_md5(
 
 
 @router.delete("/item", response_model=ComponentDeleteResponse, dependencies=[Depends(require_user)])
-async def delete_one_by_md5(service: StructureServiceDep, md5: MD5Hash):
+async def delete_one_by_identity(service: StructureServiceDep, md5: MD5Hash):
     """Delete a single structure addressed by its content ``md5`` (its natural key)."""
     return await service.delete_one(identifiers={"md5": md5})
 
 
 @router.patch("/item", dependencies=[Depends(require_user)])
-async def update_one_by_md5(
+async def update_one_by_identity(
     service: StructureServiceDep,
     md5: MD5Hash,
     update: StructurePatch,

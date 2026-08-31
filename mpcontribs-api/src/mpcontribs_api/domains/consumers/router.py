@@ -33,7 +33,7 @@ async def read_many(
 
 
 @router.get("/item")
-async def read_one_by_consumer_id(
+async def read_one_by_identity(
     consumer_id: str,
     service: ConsumerServiceDep,
     fields: FieldSelector = None,
@@ -44,7 +44,7 @@ async def read_one_by_consumer_id(
 
 
 @router.patch("/item", response_model=ConsumerOut)
-async def update_one_by_consumer_id(
+async def update_one_by_identity(
     service: ConsumerServiceDep,
     consumer_id: str,
     update: ConsumerPatch,
@@ -54,7 +54,7 @@ async def update_one_by_consumer_id(
 
 
 @router.delete("/item", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_one_by_consumer_id(
+async def delete_one_by_identity(
     service: ConsumerServiceDep,
     consumer_id: str,
 ):

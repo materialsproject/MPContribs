@@ -30,7 +30,7 @@ async def read_many(
 
 
 @router.get("/item")
-async def read_one_by_slug(
+async def read_one_by_identity(
     service: InitiativeServiceDep,
     slug: str,
     fields: FieldSelector = None,
@@ -41,7 +41,7 @@ async def read_one_by_slug(
 
 
 @router.patch("/item", response_model=InitiativeOut, dependencies=[Depends(require_user)])
-async def update_one_by_slug(
+async def update_one_by_identity(
     service: InitiativeServiceDep,
     slug: str,
     update: InitiativePatch,
@@ -51,7 +51,7 @@ async def update_one_by_slug(
 
 
 @router.delete("/item", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_user)])
-async def delete_one_by_slug(
+async def delete_one_by_identity(
     service: InitiativeServiceDep,
     slug: str,
 ):

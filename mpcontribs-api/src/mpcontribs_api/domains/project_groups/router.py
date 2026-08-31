@@ -180,7 +180,7 @@ async def delete_projects_by_id(
 # Primary-key CRUD, symmetric to the ``/item`` (name+owner) routes above. Declared after ``/item`` so
 # the literal path is never captured as an ``{id}``.
 @router.get("/{id}")
-async def read_one_by_id(
+async def read_one_by_identity(
     service: ProjectGroupServiceDep,
     id: str,
     fields: FieldSelector = None,
@@ -191,7 +191,7 @@ async def read_one_by_id(
 
 
 @router.patch("/{id}", response_model=ProjectGroupOut, dependencies=[Depends(require_user)])
-async def update_one_by_id(
+async def update_one_by_identity(
     service: ProjectGroupServiceDep,
     id: str,
     update: ProjectGroupPatch,
@@ -201,7 +201,7 @@ async def update_one_by_id(
 
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_user)])
-async def delete_one_by_id(
+async def delete_one_by_identity(
     service: ProjectGroupServiceDep,
     id: str,
 ):
