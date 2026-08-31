@@ -533,7 +533,7 @@ class TestUpsertContributionById:
     async def test_insert_when_id_absent_persists_document(self, db):
         new_id = PydanticObjectId()
         payload = _contrib_in(identifier="mp-4002", _id=new_id)
-        result = await _repo(ADMIN).upsert_one({"id": str(new_id)}, payload)
+        result = await _repo(ADMIN).upsert_by_id(str(new_id), payload)
         # Must be the resolved document, not an un-awaited query object.
         assert isinstance(result, Contribution)
         stored = await Contribution.find_one(Contribution.id == new_id)
@@ -543,7 +543,7 @@ class TestUpsertContributionById:
     async def test_update_when_id_present_applies_change(self, db):
         existing = await _insert(identifier="mp-4001")
         payload = _contrib_in(identifier="mp-4001", formula="Li2O", _id=existing.id)
-        result = await _repo(ADMIN).upsert_one({"id": str(existing.id)}, payload)
+        result = await _repo(ADMIN).upsert_by_id(str(existing.id), payload)
         assert isinstance(result, Contribution)
         stored = await Contribution.find_one(Contribution.id == existing.id)
         assert stored is not None
@@ -554,7 +554,8 @@ class TestUpsertContributionById:
         # updates the matching document in place rather than creating a duplicate.
         await _insert(project="ups-sem", identifier="mp-5001", formula="Fe2O3")
         payload = _contrib_in(project="ups-sem", identifier="mp-5001", formula="Fe2O3")
-        result = await _repo(ADMIN).upsert_one(_identity(project="ups-sem", material_id="mp-5001"), payload)
+        doc = _repo(ADMIN).document_model.from_input_model(payload)
+        result = await _repo(ADMIN).upsert_one(doc)
         assert isinstance(result, Contribution)
         count = await Contribution.find(Contribution.project == "ups-sem").count()
         assert count == 1
@@ -565,7 +566,7 @@ class TestUpsertContributionById:
         existing = await _insert(identifier="mp-4004", unique_value="batch-A")
         assert existing.unique_value == "batch-A"
         payload = _contrib_in(identifier="mp-4004", _id=existing.id)
-        await _repo(ADMIN).upsert_one({"id": str(existing.id)}, payload, unique_value=None)
+        await _repo(ADMIN).upsert_by_id(str(existing.id), payload, unique_value=None)
         stored = await Contribution.find_one(Contribution.id == existing.id)
         assert stored is not None
         assert stored.unique_value is None
@@ -577,7 +578,7 @@ class TestUpsertContributionById:
         victim = await _insert(project="uid-dup", identifier="mp-200")
         payload = _contrib_in(project="uid-dup", identifier="mp-100", _id=victim.id)
         with pytest.raises(ConflictError):
-            await _repo(ADMIN).upsert_one({"id": str(victim.id)}, payload)
+            await _repo(ADMIN).upsert_by_id(str(victim.id), payload)
 
 
 class TestDeleteByIdsScope:

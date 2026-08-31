@@ -4,7 +4,7 @@ from beanie import PydanticObjectId
 from mpcontribs_api.domains._shared.bulk import BulkDeleteSummary, BulkUpdateSummary, BulkWriteSummary
 from mpcontribs_api.domains.contributions.dependencies import get_contribution_service
 from mpcontribs_api.domains.contributions.models import ContributionOut
-from mpcontribs_api.exceptions import NotFoundError
+from mpcontribs_api.exceptions import ConflictError, NotFoundError
 from tests.integration.conftest import AUTHED_HEADERS, FORCE_ANON_HEADERS
 
 # ---------------------------------------------------------------------------
@@ -148,6 +148,58 @@ class TestContributionByIdRouting:
     def test_download_route_conventional_path(self, client, contribution_service):
         contribution_service.download.return_value = iter([b"x"])
         assert client.get("/api/v1/contributions/download/gz").status_code == 200
+
+
+class TestContributionByIdentityRouting:
+    """The ``/item`` path addresses a contribution by its user-suppliable natural identity; the server
+    resolves the rest and 409s when the supplied subset is ambiguous."""
+
+    def test_get_by_identity_defaults_unsupplied_subset(self, client, contribution_service):
+        contribution_service.read_one_by_identity.return_value = SAMPLE_OUT
+        r = client.get("/api/v1/contributions/item?project=p&chemical_system_id=Fe-O")
+        assert r.status_code == 200
+        kwargs = contribution_service.read_one_by_identity.await_args.kwargs
+        assert kwargs["project"] == "p"
+        # Unsupplied hierarchy/tiebreaker fields default to None; the service pins/relaxes them.
+        assert kwargs["material_id"] is None
+        assert kwargs["formula"] is None
+        assert kwargs["unique_value"] is None
+        # The literal ``item`` must not be captured by the ``/{id}`` handler.
+        contribution_service.read_one.assert_not_called()
+
+    def test_get_by_identity_forwards_full_subset(self, client, contribution_service):
+        contribution_service.read_one_by_identity.return_value = SAMPLE_OUT
+        client.get(
+            "/api/v1/contributions/item?project=p&chemical_system_id=Fe-O&material_id=mp-1&formula=Fe2O3&unique_value=A"
+        )
+        kwargs = contribution_service.read_one_by_identity.await_args.kwargs
+        assert kwargs["material_id"] == "mp-1"
+        assert kwargs["unique_value"] == "A"
+
+    def test_missing_required_chemical_system_returns_422(self, client, contribution_service):
+        assert client.get("/api/v1/contributions/item?project=p").status_code == 422
+
+    def test_ambiguous_identity_returns_409(self, client, contribution_service):
+        contribution_service.read_one_by_identity.side_effect = ConflictError("ambiguous")
+        r = client.get("/api/v1/contributions/item?project=p&chemical_system_id=Fe-O")
+        assert r.status_code == 409
+
+    def test_delete_by_identity_forwards_to_service(self, client, contribution_service):
+        contribution_service.delete_one_by_identity.return_value = BulkDeleteSummary(
+            num_deleted=1, num_children_deleted=0
+        )
+        r = client.delete("/api/v1/contributions/item?project=p&chemical_system_id=Fe-O&material_id=mp-1&formula=Fe2O3")
+        assert r.status_code == 200
+        assert contribution_service.delete_one_by_identity.await_args.kwargs["project"] == "p"
+
+    def test_patch_by_identity_forwards_to_service(self, client, contribution_service):
+        contribution_service.update_one_by_identity.return_value = SAMPLE_OUT
+        r = client.patch(
+            "/api/v1/contributions/item?project=p&chemical_system_id=Fe-O&material_id=mp-1&formula=Fe2O3",
+            json={"is_public": True},
+        )
+        assert r.status_code == 200
+        assert contribution_service.update_one_by_identity.await_args.kwargs["project"] == "p"
 
 
 # ===========================================================================

@@ -144,6 +144,41 @@ class TestStructuresByIdRouting:
         assert client.get("/api/v1/structures/download/gz?format=csv").status_code == 200
 
 
+class TestStructuresByMd5Routing:
+    """The ``/item?md5=`` path addresses a component by its content hash — previously advertised in
+    docstrings but unreachable (a 32-hex md5 was rejected as a bad ObjectId on ``/{id}``)."""
+
+    MD5 = "a" * 32
+
+    def test_get_by_md5_forwards_identifiers(self, client, structure_service):
+        structure_service.read_one.return_value = SAMPLE_STRUCTURE
+        r = client.get(f"/api/v1/structures/item?md5={self.MD5}")
+        assert r.status_code == 200
+        assert structure_service.read_one.await_args.kwargs["identifiers"] == {"md5": self.MD5}
+
+    def test_delete_by_md5_forwards_identifiers(self, client, structure_service):
+        structure_service.delete_one.return_value = ComponentDeleteResponse(num_deleted=1)
+        r = client.delete(f"/api/v1/structures/item?md5={self.MD5}")
+        assert r.status_code == 200
+        assert structure_service.delete_one.await_args.kwargs["identifiers"] == {"md5": self.MD5}
+
+    def test_patch_by_md5_forwards_identifiers(self, client, structure_service):
+        structure_service.update_one.return_value = SAMPLE_STRUCTURE
+        r = client.patch(f"/api/v1/structures/item?md5={self.MD5}", json={"name": "renamed"})
+        assert r.status_code == 200
+        assert structure_service.update_one.await_args.kwargs["identifiers"] == {"md5": self.MD5}
+
+    def test_malformed_md5_returns_422(self, client, structure_service):
+        # Typed with MD5Hash, so a non-32-hex value is rejected before reaching the service.
+        assert client.get("/api/v1/structures/item?md5=nothex").status_code == 422
+
+    def test_item_is_not_captured_as_an_id(self, client, structure_service):
+        # ``/item`` must be routed to the md5 handler, not matched as ``/{id}`` with id="item".
+        structure_service.read_one.return_value = SAMPLE_STRUCTURE
+        client.get(f"/api/v1/structures/item?md5={self.MD5}")
+        assert structure_service.read_one.await_args.kwargs["identifiers"] == {"md5": self.MD5}
+
+
 # ===========================================================================
 # TABLES
 # ===========================================================================
