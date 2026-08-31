@@ -1,9 +1,11 @@
+from typing import ClassVar
+
 from beanie import PydanticObjectId
 from pydantic import field_validator
 
 from mpcontribs_api.domains._shared.filters import BaseFilter
-from mpcontribs_api.domains._shared.models import Component, ComponentIn, DocumentOut
-from mpcontribs_api.domains._shared.types import FileLike, MD5Hash, MimeFormat, NFKCStr
+from mpcontribs_api.domains._shared.models import Component, ComponentIdentity, ComponentIn, DocumentOut
+from mpcontribs_api.domains._shared.types import FileLike, Identity, MD5Hash, MimeFormat, NFKCStr
 from mpcontribs_api.exceptions import ValidationError
 from mpcontribs_api.projection import SparseFieldsModel
 
@@ -21,12 +23,14 @@ def _validate_attachment_name(v: str) -> str:
 
 
 class Attachment(Component):
+    identity_model: ClassVar[type[Identity]] = ComponentIdentity
     hash_fields = frozenset({"mime", "content"})
     mime: MimeFormat
     content: int
 
     class Settings:
         name = "attachments"
+        indexes = [ComponentIdentity.index_model(name="md5")]
 
     @field_validator("name", mode="before")
     @classmethod

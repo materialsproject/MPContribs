@@ -2,6 +2,7 @@ import hashlib
 import json
 import unicodedata
 from collections.abc import Mapping
+from dataclasses import dataclass
 from typing import Annotated, Any, ClassVar, Self
 
 from beanie import Document, PydanticObjectId
@@ -9,7 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from pymongo.results import DeleteResult
 
 from mpcontribs_api import pagination
-from mpcontribs_api.domains._shared.types import MD5Hash, NFKCStr
+from mpcontribs_api.domains._shared.types import Identity, MD5Hash, NFKCStr
 from mpcontribs_api.projection import SparseFieldsModel
 
 
@@ -25,6 +26,8 @@ class BaseDocumentWithInput[TId](Document):
     """
 
     HAS_DERIVED_FIELDS: ClassVar[bool] = False
+    # The domain's ``Identity`` subclass. Describes how documents are uniquely addressed
+    identity_model: ClassVar[type[Identity]] = Identity
     # Required, non-null, resource-specific id. Overrides Document's optional ``PydanticObjectId`` id.
     id: TId = Field(alias="_id")  # pyright: ignore[reportGeneralTypeIssues, reportIncompatibleVariableOverride]
 
@@ -35,14 +38,19 @@ class BaseDocumentWithInput[TId](Document):
         This is the natural/unique key a caller can supply without first knowing the Mongo ``_id``
         (e.g. ``{"name", "owner"}`` for a project group). The repository pairs these names with
         caller-supplied values to locate a single resource, and rejects any value dict whose keys
-        don't match this set. Defaults to the primary key; subclasses with a meaningful compound key
-        override it.
+        don't match this set. Derived from :attr:`identity_model` so each domain declares its key once.
         """
-        return frozenset({"id"})
+        return cls.identity_model.model_fields()
 
     def identifiers(self) -> dict[str, Any]:
         """This document's identifier field values, keyed by :meth:`identifier_fields`."""
         return {field: getattr(self, field) for field in self.identifier_fields()}
+
+    def identity(self) -> Identity:
+        """This document's identity as a concrete :class:`Identity`, built from its own fields."""
+        return self.identity_model.from_document(
+            {name: getattr(self, name) for name in self.identity_model.model_fields()}
+        )
 
     def derived_field_updates(self) -> dict[str, Any]:
         """Server-derived fields to persist alongside a patch.
@@ -103,6 +111,17 @@ def canonical_md5(payload: Mapping[str, Any]) -> str:
     return hashlib.md5(normalized.encode("utf-8")).hexdigest()
 
 
+@dataclass(frozen=True, slots=True)
+class ComponentIdentity(Identity):
+    """Identity of a content-addressed component: its ``md5`` content hash.
+
+    Shared by every component domain (structures/tables/attachments); each subclasses it so the
+    identity type is domain-specific while the single-``md5`` shape is declared once.
+    """
+
+    md5: str
+
+
 class ComponentIn(BaseModel):
     """Base for component input payloads.
 
@@ -124,16 +143,12 @@ class Component(BaseDocumentWithInput[PydanticObjectId]):
     """
 
     HAS_DERIVED_FIELDS: ClassVar[bool] = True
+    identity_model: ClassVar[type[Identity]] = ComponentIdentity
     name: NFKCStr
     # Server-computed; the placeholder default is overwritten by ``_recompute_md5`` on validation.
     md5: MD5Hash = Field(default="0" * 32)
 
     hash_fields: ClassVar[frozenset[str]]
-
-    @classmethod
-    def identifier_fields(cls) -> frozenset[str]:
-        """A component is content-addressed: its ``md5`` uniquely identifies its content."""
-        return frozenset({"md5"})
 
     def derived_field_updates(self) -> dict[str, Any]:
         """Recompute ``md5`` from the (patched-in-memory) content so the write stays authoritative."""

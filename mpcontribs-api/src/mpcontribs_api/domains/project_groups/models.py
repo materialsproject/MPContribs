@@ -1,3 +1,6 @@
+from dataclasses import dataclass
+from typing import ClassVar
+
 from beanie import Link, PydanticObjectId
 from bson import DBRef
 from bson.errors import InvalidId
@@ -6,13 +9,22 @@ from pymongo import ASCENDING, IndexModel
 
 from mpcontribs_api.domains._shared.filters import BaseFilter
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
-from mpcontribs_api.domains._shared.types import PrefixedEmail, SearchStr, ShortStr
+from mpcontribs_api.domains._shared.types import Identity, PrefixedEmail, SearchStr, ShortStr
 from mpcontribs_api.domains.projects.models import Project
 from mpcontribs_api.exceptions import ValidationError
 from mpcontribs_api.projection import SparseFieldsModel
 
 
+@dataclass(frozen=True, slots=True)
+class ProjectGroupIdentity(Identity):
+    """A project group's identity: its ``name`` scoped to its ``owner`` (declaration order = index order)."""
+
+    name: str
+    owner: str
+
+
 class ProjectGroup(BaseDocumentWithInput[PydanticObjectId]):
+    identity_model: ClassVar[type[Identity]] = ProjectGroupIdentity
     name: SearchStr = Field(max_length=50)
     owner: PrefixedEmail
     description: str = Field(max_length=100)
@@ -22,22 +34,13 @@ class ProjectGroup(BaseDocumentWithInput[PydanticObjectId]):
     class Settings:
         name = "project_groups"
         indexes = [
-            IndexModel(
-                keys=[("name", ASCENDING), ("owner", ASCENDING)],
-                name="name_owner",
-                unique=True,
-            ),
+            ProjectGroupIdentity.index_model(name="name_owner"),
             IndexModel(
                 keys=[("name", ASCENDING), ("owner", ASCENDING), ("is_public", ASCENDING)],
                 name="name_owner_is_public",
             ),
         ]
         validate_on_save = True
-
-    @classmethod
-    def identifier_fields(cls) -> frozenset[str]:
-        """A ``ProjectGroup`` is uniquely identified by its ``name`` + ``owner``."""
-        return frozenset({"name", "owner"})
 
     @classmethod
     def from_input_model(cls, data: ProjectGroupIn) -> ProjectGroup:

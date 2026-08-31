@@ -475,8 +475,12 @@ class Identity(ABC):  # noqa: B024  # base kept abstract as a marker; from_docum
         return cls(**kwargs)
 
     @classmethod
-    def index_model(cls, name: str = "project_identity", *, unique: bool = True) -> IndexModel:
-        """The unique index enforcing identity — keys follow the field order so they can't drift."""
+    def index_model(cls, name: str = "identity", *, unique: bool = True) -> IndexModel:
+        """The unique index enforcing identity — keys follow the field order so they can't drift.
+
+        ``name`` should be passed explicitly to match the collection's deployed index name; renaming
+        a live index forces a drop/recreate migration.
+        """
         return IndexModel(keys=[(f.name, ASCENDING) for f in fields(cls)], name=name, unique=unique)
 
     @classmethod

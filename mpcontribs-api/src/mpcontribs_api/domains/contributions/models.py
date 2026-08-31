@@ -129,7 +129,8 @@ class ContributionBase(BaseModel):
         name = "contributions"
         keep_nulls = False
         indexes = [
-            ContributionIdentity.index_model(),
+            # Keep the deployed index name — renaming forces a drop/recreate on a large collection.
+            ContributionIdentity.index_model(name="project_identity"),
             # Multikey indexes over each Link field's DBRef id so the component-delete
             # reference check (referenced_component_ids) is index-served, not a COLLSCAN.
             IndexModel(keys=[("structures.$id", ASCENDING)], name="ref_structures"),
@@ -137,15 +138,11 @@ class ContributionBase(BaseModel):
             IndexModel(keys=[("attachments.$id", ASCENDING)], name="ref_attachments"),
         ]
 
-    @classmethod
-    def identifier_fields(cls) -> frozenset[str]:
-        """A contribution's natural key is its full :class:`ContributionIdentity` composite."""
-        return frozenset({"project", "material_id", "chemical_system_id", "formula", "unique_value", "condition_key"})
-
 
 class Contribution(ContributionBase, BaseDocumentWithInput[PydanticObjectId]):
     """Models what is actually stored in the database."""
 
+    identity_model: ClassVar[type[Identity]] = ContributionIdentity
     # Strict validation over stored data rather than coercsion
     data: ContributionStoredData
 
@@ -170,18 +167,6 @@ class Contribution(ContributionBase, BaseDocumentWithInput[PydanticObjectId]):
     @before_event(Insert, Replace, Update, Save, SaveChanges)
     def set_last_modified(self):
         self.last_modified = datetime.now(UTC)
-
-    @property
-    def identity(self) -> ContributionIdentity:
-        """This document's identity, read straight off its own stored fields."""
-        return ContributionIdentity(
-            project=self.project,
-            material_id=self.material_id,
-            chemical_system_id=self.chemical_system_id,
-            formula=self.formula,
-            unique_value=self.unique_value,
-            condition_key=self.condition_key,
-        )
 
 
 class ContributionIn(ContributionBase):

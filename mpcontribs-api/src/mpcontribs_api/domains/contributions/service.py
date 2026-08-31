@@ -159,6 +159,81 @@ class ContributionService:
             filter = ContributionFilter(id=existing.id)
         return await self.delete_many(filter)
 
+    @staticmethod
+    def _identity_partial(
+        project: str,
+        chemical_system_id: str,
+        material_id: str | None,
+        formula: str | None,
+        unique_value: Scalar | None,
+        condition_key: str,
+    ) -> dict[str, Any]:
+        """Build the scoped-match partial for a caller-suppliable contribution identity."""
+        partial: dict[str, Any] = {
+            "project": project,
+            "material_id": material_id,
+            "chemical_system_id": chemical_system_id,
+            "formula": formula,
+            "condition_key": condition_key,
+        }
+        if unique_value is not None:
+            partial["unique_value"] = unique_value
+        return partial
+
+    async def read_one_by_identity(
+        self,
+        *,
+        project: str,
+        chemical_system_id: str,
+        material_id: str | None = None,
+        formula: str | None = None,
+        unique_value: Scalar | None = None,
+        condition_key: str = "",
+        fields: frozenset[str] | None,
+    ) -> Contribution | ContributionOut | None:
+        """Read the single scoped contribution addressed by its natural identity (``/item``).
+
+        Resolves the user-suppliable identity subset, enforcing single-match (409 on ambiguity).
+        """
+        partial = self._identity_partial(project, chemical_system_id, material_id, formula, unique_value, condition_key)
+        return await self._contributions.read_one_by_identity(partial, fields)
+
+    async def delete_one_by_identity(
+        self,
+        *,
+        project: str,
+        chemical_system_id: str,
+        material_id: str | None = None,
+        formula: str | None = None,
+        unique_value: Scalar | None = None,
+        condition_key: str = "",
+    ) -> BulkDeleteSummary:
+        """Delete the single contribution addressed by its natural identity, cascading to its components."""
+        partial = self._identity_partial(project, chemical_system_id, material_id, formula, unique_value, condition_key)
+        existing = await self._contributions.read_one_by_identity(partial, frozenset({"id"}))
+        if existing is None:
+            return BulkDeleteSummary(num_deleted=0, num_children_deleted=0)
+        return await self.delete_many(ContributionFilter(id=existing.id))
+
+    async def update_one_by_identity(
+        self,
+        *,
+        project: str,
+        chemical_system_id: str,
+        material_id: str | None = None,
+        formula: str | None = None,
+        unique_value: Scalar | None = None,
+        condition_key: str = "",
+        update: ContributionPatch,
+        replace_data: bool = False,
+    ) -> Contribution:
+        """Patch the single contribution addressed by its natural identity (delegates to the by-id patch)."""
+        partial = self._identity_partial(project, chemical_system_id, material_id, formula, unique_value, condition_key)
+        existing = await self._contributions.read_one_by_identity(partial, frozenset({"id"}))
+        if existing is None:
+            raise NotFoundError("contribution not found", **partial)
+        return await self.update_one({"id": str(existing.id)}, update=update, replace_data=replace_data)
+
     async def _unapproved_stored_count(self, project_id: str) -> int | None:
         """Contributions already stored for an unapproved ``project_id``, else ``None``.
 
@@ -685,9 +760,14 @@ class ContributionService:
         async def _bounded_upsert(item: PreparedWrite) -> Contribution | BulkFailure:
             contrib = item.contribution
             identifiers = contrib.identity_dict(item.unique_value, item.condition_key)
+            # Build the full document with its server-resolved identity parts stamped on, then upsert
+            # keyed on that identity (the repository reads it off ``document.identity()``).
+            doc = self._contributions.document_model.from_input_model(contrib)
+            doc.unique_value = item.unique_value
+            doc.condition_key = item.condition_key
             async with sem:
                 try:
-                    return await self._contributions.upsert_one(identifiers, contrib)
+                    return await self._contributions.upsert_one(doc)
                 except Exception as exc:
                     logger.error("upsert_contribution_failed", index=item.index, identifier=identifiers, exc_info=True)
                     return bulk_failure_from_exception(item.index, identifiers, exc)
@@ -811,7 +891,7 @@ class ContributionService:
                     max_allowed=cap,
                 )
         unique_value = await self._resolve_unique_value(contribution.project, contribution.data)
-        return await self._contributions.upsert_one(identifiers, contribution, unique_value)
+        return await self._contributions.upsert_by_id(identifiers["id"], contribution, unique_value)
 
     async def update_one(
         self, identifiers: dict[str, Any], update: ContributionPatch, *, replace_data: bool = False

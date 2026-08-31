@@ -1,5 +1,6 @@
+from dataclasses import dataclass
 from enum import StrEnum
-from typing import Any, Literal
+from typing import Any, ClassVar, Literal
 
 from beanie import Link
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
@@ -7,9 +8,21 @@ from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
 from mpcontribs_api import pagination
 from mpcontribs_api.domains._shared.filters import BaseFilter
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
-from mpcontribs_api.domains._shared.types import PrefixedEmail, SearchStr, ShortStr
+from mpcontribs_api.domains._shared.types import Identity, PrefixedEmail, SearchStr, ShortStr
 from mpcontribs_api.domains.initiatives.models import Initiative
 from mpcontribs_api.exceptions import ValidationError
+
+
+@dataclass(frozen=True, slots=True)
+class ProjectIdentity(Identity):
+    """A project's identity: its human-chosen short name, which is also its Mongo ``_id``.
+
+    Because the identity is the primary key, no separate unique index is declared — Mongo's implicit
+    ``_id`` index enforces it. (``index_model`` must not be added to ``Settings``: it would key on a
+    literal ``"id"`` field that does not exist in the stored document.)
+    """
+
+    id: str
 
 
 def _validate_unique_column(value: str | None) -> str | None:
@@ -136,6 +149,7 @@ class ProjectBase(BaseModel):
 class Project(ProjectBase, BaseDocumentWithInput[ShortStr]):
     """Document model of what is actually stored."""
 
+    identity_model: ClassVar[type[Identity]] = ProjectIdentity
     # Server-owned: derived from the project's contributions
     stats: Stats = Field(default_factory=Stats)
     columns: list[Column] = Field(default_factory=list)

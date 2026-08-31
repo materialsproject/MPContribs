@@ -1,4 +1,4 @@
-from typing import Any, cast
+from typing import Any
 
 from beanie import PydanticObjectId, UpdateResponse
 from beanie.operators import Set
@@ -259,51 +259,58 @@ class MongoDbContributionRepository(
         agg.columns = finalize_columns(acc)
         return agg
 
-    async def upsert_one(  # pyright: ignore[reportIncompatibleMethodOverride]
+    async def read_one_by_identity(
         self,
-        identifiers: dict[str, Any],
-        contribution: ContributionIn,
-        unique_value: Scalar | None = _UNSET,
-        session: AsyncClientSession | None = None,
-    ) -> Contribution:
-        """Atomically upsert a single Contribution, keyed by the shape of ``identifiers``.
+        partial: dict[str, Any],
+        fields: frozenset[str] | None = None,
+    ) -> Contribution | ContributionOut | None:
+        """Resolve a single contribution from a *partial* (user-suppliable) identity, enforcing uniqueness.
 
-        Relies on the unique index over the identity fields as the concurrency tiebreaker.
-        On insert a fresh document is written with ``is_public=False``.
+        The full :class:`ContributionIdentity` has six fields, but only the four user-suppliable ones
+        (``project``, ``material_id``, ``chemical_system_id``, ``formula``) — plus an optional
+        ``unique_value`` — can be addressed over HTTP; ``condition_key`` is server-owned. That subset
+        is not covered by the unique index, so this builds its own scoped match (it must *not* go
+        through :meth:`_identifier_query`, which requires the exact key set) and rejects an ambiguous
+        match rather than silently returning the first document.
+
+        Args:
+            partial: identity field values (a subset of ``ContributionIdentity``); ``None`` values
+                match null-or-absent stored fields (``keep_nulls=False``)
+            fields: fields to project; if None the full document is returned
+
+        Raises:
+            ConflictError: if more than one in-scope contribution matches ``partial``
         """
-        identifiers = self.coerce_identifiers(identifiers)
-        if identifiers.keys() == {"id"}:
-            return await self._upsert_by_id(
-                identifiers["id"], contribution, None if unique_value is _UNSET else unique_value
-            )
-
-        doc = self.document_model.from_input_model(contribution)
-        doc.unique_value = identifiers["unique_value"]
-        doc.condition_key = identifiers["condition_key"]
-        update_data = doc.model_dump(exclude={"id"}, exclude_none=True)
-        query = self.document_model.find_one(
-            self._scope,
-            self.document_model.project == identifiers["project"],
-            self.document_model.material_id == identifiers["material_id"],
-            self.document_model.chemical_system_id == identifiers["chemical_system_id"],
-            self.document_model.formula == identifiers["formula"],
-            self.document_model.unique_value == identifiers["unique_value"],
-            self.document_model.condition_key == identifiers["condition_key"],
-        ).upsert(
-            Set(update_data),
-            on_insert=doc,
-            response_type=UpdateResponse.NEW_DOCUMENT,
+        ContributionIdentity.check_hierarchy(
+            partial.get("material_id"), partial.get("chemical_system_id"), partial.get("formula")
         )
-        result = await query  # pyright: ignore[reportGeneralTypeIssues] # beanie UpdateQuery is awaitable, but pyright doesn't see it
-        return cast(Contribution, result)  # upsert always returns the resulting document
+        match: dict[str, Any] = dict(partial)
+        if self._scope:
+            match = {"$and": [self._scope, match]}
+        projection = self.out_model.projection(fields)
+        # Fetch up to two so an ambiguous key is detected without scanning the whole match.
+        docs = await self.document_model.find(match).limit(2).project(projection).to_list()  # pyright: ignore[reportArgumentType]
+        if len(docs) > 1:
+            raise ConflictError(
+                "identifiers match more than one contribution; supply unique_value to disambiguate",
+                identifiers=partial,
+            )
+        return docs[0] if docs else None
 
-    async def _upsert_by_id(
+    async def upsert_by_id(
         self,
         id: str,
         contribution: ContributionIn,
         unique_value: Scalar | None = None,
     ) -> Contribution:
-        """Upsert a single Contribution keyed on its Mongo ``_id`` (see :meth:`upsert_one`)."""
+        """Upsert a single Contribution keyed on its Mongo ``_id``.
+
+        Distinct from the base identity-keyed :meth:`upsert_one`: a PUT addresses a specific existing
+        document by ``_id`` and may *change* its identity fields, so the match must stay on ``_id``.
+        Non-null fields merge into the stored document (so component links absent from the payload
+        survive), while the server-owned ``unique_value`` is written explicitly — even when ``None`` —
+        so the identity index tracks the new data. A resulting duplicate identity surfaces as a 409.
+        """
         oid = self._convert_object_id(id)
         doc = self.document_model.from_input_model(contribution)
         # from_input_model mints a fresh id; upsert-by-id must key on the caller-supplied id so the

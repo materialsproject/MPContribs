@@ -1,4 +1,5 @@
-from typing import Self
+from dataclasses import dataclass
+from typing import ClassVar, Self
 
 from beanie import PydanticObjectId
 from bson.errors import InvalidId
@@ -7,9 +8,16 @@ from pymongo import ASCENDING, IndexModel
 
 from mpcontribs_api.domains._shared.filters import BaseFilter
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
-from mpcontribs_api.domains._shared.types import NFKCStr, PrefixedEmail, Slug
+from mpcontribs_api.domains._shared.types import Identity, NFKCStr, PrefixedEmail, Slug
 from mpcontribs_api.exceptions import ValidationError
 from mpcontribs_api.projection import SparseFieldsModel
+
+
+@dataclass(frozen=True, slots=True)
+class InitiativeIdentity(Identity):
+    """An initiative's identity: its globally-unique ``slug``."""
+
+    slug: str
 
 
 class Initiative(BaseDocumentWithInput[PydanticObjectId]):
@@ -25,6 +33,7 @@ class Initiative(BaseDocumentWithInput[PydanticObjectId]):
     the ``initiative:<slug>`` role.
     """
 
+    identity_model: ClassVar[type[Identity]] = InitiativeIdentity
     slug: Slug
     name: NFKCStr = Field(max_length=100)
     owner: PrefixedEmail
@@ -35,7 +44,7 @@ class Initiative(BaseDocumentWithInput[PydanticObjectId]):
         name = "initiatives"
         keep_nulls = False
         indexes = [
-            IndexModel(keys=[("slug", ASCENDING)], name="slug", unique=True),
+            InitiativeIdentity.index_model(name="slug"),
             IndexModel(
                 keys=[("owner", ASCENDING), ("is_approved", ASCENDING), ("is_public", ASCENDING)],
                 name="owner_is_approved_is_public",
@@ -46,11 +55,6 @@ class Initiative(BaseDocumentWithInput[PydanticObjectId]):
     @classmethod
     def from_input_model(cls, data: InitiativeIn, owner: PrefixedEmail) -> Self:  # pyright: ignore[reportIncompatibleMethodOverride]
         return cls(_id=PydanticObjectId(), **data.model_dump(), owner=owner)
-
-    @classmethod
-    def identifier_fields(cls) -> frozenset[str]:
-        """An ``Initiative`` is uniquely identified by its globally-unique ``slug``."""
-        return frozenset({"slug"})
 
     @model_validator(mode="after")
     def _public_requires_approved(self) -> Self:

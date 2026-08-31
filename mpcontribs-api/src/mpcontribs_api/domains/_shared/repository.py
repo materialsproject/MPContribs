@@ -7,7 +7,7 @@ import zlib
 from abc import ABC
 from collections.abc import AsyncIterable, AsyncIterator, Callable, Iterable, Mapping
 from contextlib import AbstractAsyncContextManager
-from typing import Any, ClassVar
+from typing import Any, ClassVar, cast
 
 import structlog
 from beanie import PydanticObjectId, UpdateResponse
@@ -23,7 +23,7 @@ from mpcontribs_api.authz import User
 from mpcontribs_api.config import get_settings
 from mpcontribs_api.domains._shared.bulk import BulkFailure, BulkWriteSummary, bulk_failure_from_exception
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DeleteResponse, DocumentOut
-from mpcontribs_api.domains._shared.types import DownloadFormat, ShortMimeFormat
+from mpcontribs_api.domains._shared.types import DownloadFormat, Identity, ShortMimeFormat
 from mpcontribs_api.exceptions import ConflictError, DownloadError, NotFoundError, ValidationError
 from mpcontribs_api.pagination import CursorParams, Page, encode_cursor
 from mpcontribs_api.scope import Scope
@@ -217,15 +217,49 @@ class MongoDbRepository[
         """
         return await self.document_model.insert_many(documents, ordered=False, session=session)
 
-    async def upsert_one(self, document: TDoc, session: AsyncClientSession | None = None) -> TDoc:
-        """Insert ``document`` or replace the existing one with the same ``_id`` (PUT semantics).
+    def _scoped_identity_match(self, identity: Identity) -> dict[str, Any]:
+        """Scoped Mongo match locating the single document with ``identity`` (its full natural key)."""
+        match = {("_id" if key == "id" else key): value for key, value in identity.as_dict().items()}
+        return {"$and": [self._scope, match]} if self._scope else match
 
-        Domains whose upsert key is a compound identity rather than ``_id`` (e.g. contributions) override this.
+    async def upsert_one(self, document: TDoc, session: AsyncClientSession | None = None) -> TDoc:
+        """Insert ``document`` or merge it into the existing one with the same identity (natural key).
+
+        Null fields are dropped from the ``$set`` (``keep_nulls`` parity); on insert the full ``document`` is written.
+        For PUT-by-``_id`` replace semantics use :meth:`replace_one`.
 
         Args:
             document (TDoc): the fully-built document to persist
             session (AsyncClientSession | None): optional client session for transactions
         """
+        match = self._scoped_identity_match(document.identity())
+        update_data = document.model_dump(exclude={"id"}, exclude_none=True)
+        try:
+            result = await self.document_model.find_one(match, session=session).upsert(  # pyright: ignore[reportGeneralTypeIssues] # beanie UpdateQuery is awaitable
+                Set(update_data),
+                on_insert=document,
+                response_type=UpdateResponse.NEW_DOCUMENT,
+                session=session,
+            )
+        except DuplicateKeyError as exc:
+            raise ConflictError(
+                f"Cannot upsert {self.document_model.__name__}: a conflicting document already exists",
+                identifiers=document.identifiers(),
+            ) from exc
+        return cast(TDoc, result)  # upsert always returns the resulting document
+
+    async def replace_one(self, id: Any, document: TDoc, session: AsyncClientSession | None = None) -> TDoc:
+        """Insert ``document`` under ``id`` or fully replace the existing one at that ``_id`` (PUT).
+
+        This replaces the whole document at a primary key — omitted/null fields are cleared — matching HTTP PUT.
+        ``document.id`` is set to ``id`` so the write always lands under the caller's key.
+
+        Args:
+            id (Any): the primary key to write under
+            document (TDoc): the fully-built replacement document
+            session (AsyncClientSession | None): optional client session for transactions
+        """
+        document.id = id
         try:
             return await document.save(session=session)
         except DuplicateKeyError as exc:

@@ -1,11 +1,21 @@
+from dataclasses import dataclass
+from typing import ClassVar
+
 from beanie import PydanticObjectId
 from fastapi_filter import FilterDepends, with_prefix
 from pydantic import BaseModel, Field
-from pymongo import ASCENDING, IndexModel
 
 from mpcontribs_api.config import get_settings
 from mpcontribs_api.domains._shared.filters import BaseFilter
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
+from mpcontribs_api.domains._shared.types import Identity
+
+
+@dataclass(frozen=True, slots=True)
+class ConsumerIdentity(Identity):
+    """A consumer override's identity: Kong's unique ``consumer_id``."""
+
+    consumer_id: str
 
 
 class ConsumerSettings(BaseModel):
@@ -49,13 +59,9 @@ class Consumer(BaseDocumentWithInput[PydanticObjectId]):
     they leave unset inherits the env-backed default, snapshotted onto the document at insert time.
     """
 
+    identity_model: ClassVar[type[Identity]] = ConsumerIdentity
     consumer_id: str
     settings: ConsumerSettings = Field(default_factory=ConsumerSettings)
-
-    @classmethod
-    def identifier_fields(cls) -> frozenset[str]:
-        """A consumer override is keyed by Kong's ``consumer_id`` (its unique natural key)."""
-        return frozenset({"consumer_id"})
 
     @classmethod
     def with_defaults(cls, consumer_id: str = "") -> Consumer:
@@ -78,7 +84,7 @@ class Consumer(BaseDocumentWithInput[PydanticObjectId]):
     class Settings:
         name = "mp_consumers"
         keep_nulls = False
-        indexes = [IndexModel([("consumer_id", ASCENDING)], name="consumer_id", unique=True)]
+        indexes = [ConsumerIdentity.index_model(name="consumer_id")]
 
 
 class ConsumerIn(BaseModel):
