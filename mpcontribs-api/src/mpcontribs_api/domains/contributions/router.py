@@ -9,8 +9,11 @@ from mpcontribs_api.dependencies import S3Dep, require_user
 from mpcontribs_api.domains._shared.bulk import BulkDeleteSummary, BulkUpdateSummary, BulkWriteSummary
 from mpcontribs_api.domains._shared.models import DeleteResponse
 from mpcontribs_api.domains._shared.types import (
+    ChemicalSystemId,
     DownloadFormat,
     FieldSelector,
+    Formula,
+    MaterialId,
     ShortMimeFormat,
     download_filename,
 )
@@ -130,6 +133,71 @@ async def download_contributions(
         body,
         media_type="application/gzip",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+# Declared before the ``/{id}`` routes so the literal ``item`` is never captured as an id.
+@router.get("/item")
+async def read_one_by_identity(
+    service: ContributionServiceDep,
+    project: str,
+    chemical_system_id: ChemicalSystemId,
+    material_id: MaterialId | None = None,
+    formula: Formula | None = None,
+    unique_value: str | None = None,
+    fields: FieldSelector = None,
+):
+    """Return the single contribution addressed by its natural identity (409 if ambiguous)."""
+    selected = ContributionOut.parse_fields(fields)
+    return await service.read_one_by_identity(
+        project=project,
+        chemical_system_id=chemical_system_id,
+        material_id=material_id,
+        formula=formula,
+        unique_value=unique_value,
+        fields=selected,
+    )
+
+
+@router.delete("/item", dependencies=[Depends(require_user)])
+async def delete_one_by_identity(
+    service: ContributionServiceDep,
+    project: str,
+    chemical_system_id: ChemicalSystemId,
+    material_id: MaterialId | None = None,
+    formula: Formula | None = None,
+    unique_value: str | None = None,
+) -> BulkDeleteSummary:
+    """Delete the single contribution addressed by its natural identity, cascading to components."""
+    return await service.delete_one_by_identity(
+        project=project,
+        chemical_system_id=chemical_system_id,
+        material_id=material_id,
+        formula=formula,
+        unique_value=unique_value,
+    )
+
+
+@router.patch("/item", dependencies=[Depends(require_user)])
+async def update_one_by_identity(
+    service: ContributionServiceDep,
+    update: ContributionPatch,
+    project: str,
+    chemical_system_id: ChemicalSystemId,
+    material_id: MaterialId | None = None,
+    formula: Formula | None = None,
+    unique_value: str | None = None,
+    replace_data: bool = False,
+):
+    """Patch the single contribution addressed by its natural identity (409 if ambiguous)."""
+    return await service.update_one_by_identity(
+        project=project,
+        chemical_system_id=chemical_system_id,
+        material_id=material_id,
+        formula=formula,
+        unique_value=unique_value,
+        update=update,
+        replace_data=replace_data,
     )
 
 

@@ -175,3 +175,36 @@ async def delete_projects_by_id(
 ):
     """Delete projects from the group identified by ``id``. See ``delete_projects``."""
     return await service.delete_projects({"id": id}, body.project_ids)
+
+
+# Primary-key CRUD, symmetric to the ``/item`` (name+owner) routes above. Declared after ``/item`` so
+# the literal path is never captured as an ``{id}``.
+@router.get("/{id}")
+async def read_one_by_id(
+    service: ProjectGroupServiceDep,
+    id: str,
+    fields: FieldSelector = None,
+):
+    """Return the single project group identified by its ``_id``."""
+    selected = ProjectGroupOut.parse_fields(fields)
+    return await service.read_one({"id": id}, fields=selected)
+
+
+@router.patch("/{id}", response_model=ProjectGroupOut, dependencies=[Depends(require_user)])
+async def update_one_by_id(
+    service: ProjectGroupServiceDep,
+    id: str,
+    update: ProjectGroupPatch,
+):
+    """Partially update the project group identified by its ``_id``."""
+    return await service.update_one({"id": id}, update=update)
+
+
+@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_user)])
+async def delete_one_by_id(
+    service: ProjectGroupServiceDep,
+    id: str,
+):
+    """Delete the project group identified by its ``_id``. Restricted to its owner or an admin."""
+    await service.delete_one({"id": id})
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

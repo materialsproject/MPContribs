@@ -29,6 +29,37 @@ async def read_many(
     return await service.read_many(pagination=pagination, filter=filter, fields=selected)
 
 
+@router.get("/item")
+async def read_one_by_slug(
+    service: InitiativeServiceDep,
+    slug: str,
+    fields: FieldSelector = None,
+):
+    """Return the single initiative by its natural key ``slug`` (the uniform ``/item`` entrypoint)."""
+    selected = InitiativeOut.parse_fields(fields)
+    return await service.read_one({"slug": slug}, fields=selected)
+
+
+@router.patch("/item", response_model=InitiativeOut, dependencies=[Depends(require_user)])
+async def update_one_by_slug(
+    service: InitiativeServiceDep,
+    slug: str,
+    update: InitiativePatch,
+):
+    """Partially update the initiative by its natural key ``slug`` (the uniform ``/item`` entrypoint)."""
+    return await service.update_one({"slug": slug}, update=update)
+
+
+@router.delete("/item", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_user)])
+async def delete_one_by_slug(
+    service: InitiativeServiceDep,
+    slug: str,
+):
+    """Delete the initiative by its natural key ``slug`` (the uniform ``/item`` entrypoint)."""
+    await service.delete_one({"slug": slug})
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
 @router.get("/{slug}")
 async def read_one(
     service: InitiativeServiceDep,

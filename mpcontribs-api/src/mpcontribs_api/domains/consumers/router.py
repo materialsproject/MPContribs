@@ -32,6 +32,37 @@ async def read_many(
     return await service.read_many(filter=filter, pagination=pagination, fields=selected)
 
 
+@router.get("/item")
+async def read_one_by_consumer_id(
+    consumer_id: str,
+    service: ConsumerServiceDep,
+    fields: FieldSelector = None,
+):
+    """Get a single consumer override by its natural key, Kong's ``consumer_id`` (admin only)."""
+    selected = ConsumerOut.parse_fields(fields)
+    return await service.read_one({"consumer_id": consumer_id}, fields=selected)
+
+
+@router.patch("/item", response_model=ConsumerOut)
+async def update_one_by_consumer_id(
+    service: ConsumerServiceDep,
+    consumer_id: str,
+    update: ConsumerPatch,
+):
+    """Partially update a consumer override by its ``consumer_id`` natural key (admin only)."""
+    return await service.update_one({"consumer_id": consumer_id}, update)
+
+
+@router.delete("/item", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_one_by_consumer_id(
+    service: ConsumerServiceDep,
+    consumer_id: str,
+):
+    """Delete a consumer override by its ``consumer_id`` natural key (admin only)."""
+    await service.delete_one({"consumer_id": consumer_id})
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
 @router.get("/{id}")
 async def read_one(
     id: str,
@@ -40,7 +71,7 @@ async def read_one(
 ):
     """Get a single consumer override by document id (admin only)."""
     selected = ConsumerOut.parse_fields(fields)
-    return await service.read_one(id, fields=selected)
+    return await service.read_one({"id": id}, fields=selected)
 
 
 @router.post("", response_model=ConsumerOut, status_code=status.HTTP_201_CREATED)
@@ -59,7 +90,7 @@ async def update_one(
     update: ConsumerPatch,
 ):
     """Partially update a consumer override by document id (admin only)."""
-    return await service.update_one(id, update)
+    return await service.update_one({"id": id}, update)
 
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -68,5 +99,5 @@ async def delete_one(
     id: str,
 ):
     """Delete a consumer override by document id (admin only)."""
-    await service.delete_one(id)
+    await service.delete_one({"id": id})
     return Response(status_code=status.HTTP_204_NO_CONTENT)

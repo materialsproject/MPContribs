@@ -10,6 +10,7 @@ from mpcontribs_api.domains._shared.models import ComponentDeleteResponse
 from mpcontribs_api.domains._shared.types import (
     DownloadFormat,
     FieldSelector,
+    MD5Hash,
     ShortMimeFormat,
     download_filename,
 )
@@ -31,13 +32,40 @@ async def read_many(
     return await service.read_many(filter=filter, fields=selected, pagination=pagination)
 
 
+@router.get("/item")
+async def read_one_by_md5(
+    service: StructureServiceDep,
+    md5: MD5Hash,
+    fields: FieldSelector = None,
+):
+    """Return a single structure addressed by its content ``md5`` (its natural key)."""
+    selected = StructureOut.parse_fields(fields)
+    return await service.read_one(identifiers={"md5": md5}, fields=selected)
+
+
+@router.delete("/item", response_model=ComponentDeleteResponse, dependencies=[Depends(require_user)])
+async def delete_one_by_md5(service: StructureServiceDep, md5: MD5Hash):
+    """Delete a single structure addressed by its content ``md5`` (its natural key)."""
+    return await service.delete_one(identifiers={"md5": md5})
+
+
+@router.patch("/item", dependencies=[Depends(require_user)])
+async def update_one_by_md5(
+    service: StructureServiceDep,
+    md5: MD5Hash,
+    update: StructurePatch,
+):
+    """Patch a single structure addressed by its content ``md5`` (its natural key)."""
+    return await service.update_one(identifiers={"md5": md5}, update=update)
+
+
 @router.get("/{id}")
 async def read_one(
     service: StructureServiceDep,
     id: str,
     fields: FieldSelector = None,
 ):
-    """Return a single structure addressed by its ``_id`` or its content ``md5``."""
+    """Return a single structure addressed by its ``_id``."""
     selected = StructureOut.parse_fields(fields)
     return await service.read_one(identifiers={"id": id}, fields=selected)
 
@@ -84,7 +112,7 @@ async def delete_many(service: StructureServiceDep, filter: StructureFilter = Fi
 
 @router.delete("/{id}", response_model=ComponentDeleteResponse, dependencies=[Depends(require_user)])
 async def delete_one(service: StructureServiceDep, id: str):
-    """Delete a single structure addressed by its ``_id`` or its content ``md5``."""
+    """Delete a single structure addressed by its ``_id``."""
     return await service.delete_one(identifiers={"id": id})
 
 
@@ -94,5 +122,5 @@ async def update_one(
     id: str,
     update: StructurePatch,
 ):
-    """Patch a single structure addressed by its ``_id`` or its content ``md5``."""
+    """Patch a single structure addressed by its ``_id``."""
     return await service.update_one(identifiers={"id": id}, update=update)
