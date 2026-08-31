@@ -1,4 +1,5 @@
 from collections.abc import Mapping
+from dataclasses import dataclass
 from typing import Any, ClassVar, Self
 
 import polars as pl
@@ -58,10 +59,15 @@ def _index_label(attrs: Any) -> str:
     return getattr(getattr(attrs, "labels", None), "index", "index")
 
 
+@dataclass(frozen=True, slots=True)
+class TableIdentity(ComponentIdentity):
+    """A table's identity: its content ``md5`` (see :class:`ComponentIdentity`)."""
+
+
 class Table(Component):
     """Stored table document — matches the existing MongoDB shape (index/columns/data as strings)."""
 
-    identity_model: ClassVar[type[Identity]] = ComponentIdentity
+    identity_model: ClassVar[type[Identity]] = TableIdentity
     hash_fields = frozenset({"attrs", "index", "columns", "data"})
 
     attrs: Attributes
@@ -72,7 +78,7 @@ class Table(Component):
 
     class Settings:
         name = "tables"
-        indexes = [ComponentIdentity.index_model(name="md5")]
+        indexes = [TableIdentity.index_model(name="md5")]
 
     @classmethod
     def from_input(cls, input: TableIn) -> Self:  # pyright: ignore[reportIncompatibleMethodOverride]

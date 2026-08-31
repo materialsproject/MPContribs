@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import ClassVar
 
 from beanie import PydanticObjectId
@@ -12,6 +13,11 @@ from mpcontribs_api.projection import SparseFieldsModel
 ACCEPTED_FORMATS = ["jpg", "jpeg", "png", "csv", "parquet", "gz"]
 
 
+@dataclass(frozen=True, slots=True)
+class AttachmentIdentity(ComponentIdentity):
+    """An attachment's identity: its content ``md5`` (see :class:`ComponentIdentity`)."""
+
+
 def _validate_attachment_name(v: str) -> str:
     parts = v.strip().split(".")
     if parts[-1].lower() not in ACCEPTED_FORMATS:
@@ -23,14 +29,14 @@ def _validate_attachment_name(v: str) -> str:
 
 
 class Attachment(Component):
-    identity_model: ClassVar[type[Identity]] = ComponentIdentity
+    identity_model: ClassVar[type[Identity]] = AttachmentIdentity
     hash_fields = frozenset({"mime", "content"})
     mime: MimeFormat
     content: int
 
     class Settings:
         name = "attachments"
-        indexes = [ComponentIdentity.index_model(name="md5")]
+        indexes = [AttachmentIdentity.index_model(name="md5")]
 
     @field_validator("name", mode="before")
     @classmethod

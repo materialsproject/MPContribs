@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Annotated, ClassVar, Self
 
 from beanie import PydanticObjectId
@@ -90,8 +91,13 @@ class Cif(BaseModel):
     pass
 
 
+@dataclass(frozen=True, slots=True)
+class StructureIdentity(ComponentIdentity):
+    """A structure's identity: its content ``md5`` (see :class:`ComponentIdentity`)."""
+
+
 class Structure(Component):
-    identity_model: ClassVar[type[Identity]] = ComponentIdentity
+    identity_model: ClassVar[type[Identity]] = StructureIdentity
     hash_fields = frozenset({"lattice", "sites", "charge"})
     lattice: Lattice
     sites: list[Site]
@@ -100,7 +106,7 @@ class Structure(Component):
 
     class Settings:
         name = "structures"
-        indexes = [ComponentIdentity.index_model(name="md5")]
+        indexes = [StructureIdentity.index_model(name="md5")]
 
 
 class StructureIn(ComponentIn):
