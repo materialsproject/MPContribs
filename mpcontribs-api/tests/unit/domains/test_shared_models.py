@@ -103,8 +103,8 @@ class TestDocumentOut:
 
 # ---------------------------------------------------------------------------
 # Identity abstraction: every domain declares its natural key once, via ``identity_model``.
-# ``identifier_fields`` and ``identity`` derive from it so repository/service methods stay agnostic
-# to how a given domain is identified (``_id`` vs a compound business key).
+# The repository reads ``identity_model.model_fields`` directly (and ``identity()`` derives from it)
+# so methods stay agnostic to how a given domain is identified (``_id`` vs a compound business key).
 # ---------------------------------------------------------------------------
 
 
@@ -131,17 +131,17 @@ class TestIdentityContract:
         assert document.identity_model is identity
 
     @pytest.mark.parametrize(("document", "identity", "fields"), _DOMAIN_IDENTITIES)
-    def test_identifier_fields_derive_from_identity_model(self, document, identity, fields):
-        # Single source of truth: the natural key comes from the Identity class, not a hand-written override.
-        assert document.identifier_fields() == fields
-        assert document.identifier_fields() == identity.field_names()
+    def test_natural_key_derives_from_identity_model(self, document, identity, fields):
+        # Single source of truth: the natural key comes from the Identity class's fields directly.
+        assert identity.model_fields.keys() == fields
+        assert document.identity_model.model_fields.keys() == fields
 
     def test_component_identity_shared_shape_is_md5(self):
         # The three component identities all share ComponentIdentity's single-``md5`` shape.
-        assert ComponentIdentity.field_names() == {"md5"}
+        assert ComponentIdentity.model_fields.keys() == {"md5"}
         for identity in (ComponentIdentity, ComponentIdentity, ComponentIdentity):
             assert issubclass(identity, ComponentIdentity)
-            assert identity.field_names() == {"md5"}
+            assert identity.model_fields.keys() == {"md5"}
 
 
 class TestDocumentIdentityRoundTrips:

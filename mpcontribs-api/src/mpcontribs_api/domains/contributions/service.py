@@ -743,7 +743,7 @@ class ContributionService:
             else filter.model_copy(update={"project__in": sorted(self._user.writable(*PROJECT_PATH))})
         )
 
-        touches_identity = bool(ContributionIdentity.field_names() & fields.keys()) or "data" in fields
+        touches_identity = bool(ContributionIdentity.model_fields.keys() & fields.keys()) or "data" in fields
         if not touches_identity:
             # No identity/unique_value recompute needed, so a uniform $set is safe.
             summary = await self._contributions.update_many(filter, fields)

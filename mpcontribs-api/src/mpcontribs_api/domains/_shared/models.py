@@ -30,25 +30,19 @@ class BaseDocumentWithInput[TId](Document):
     # Required, non-null, resource-specific id. Overrides Document's optional ``PydanticObjectId`` id.
     id: TId = Field(alias="_id")  # pyright: ignore[reportGeneralTypeIssues, reportIncompatibleVariableOverride]
 
-    @classmethod
-    def identifier_fields(cls) -> frozenset[str]:
-        """Field names that uniquely identify a document in this collection.
-
-        This is the natural/unique key a caller can supply without first knowing the Mongo ``_id``
-        (e.g. ``{"name", "owner"}`` for a project group). The repository pairs these names with
-        caller-supplied values to locate a single resource, and rejects any value dict whose keys
-        don't match this set. Derived from :attr:`identity_model` so each domain declares its key once.
-        """
-        return cls.identity_model.field_names()
-
     def identifiers(self) -> dict[str, Any]:
-        """This document's identifier field values, keyed by :meth:`identifier_fields`."""
-        return {field: getattr(self, field) for field in self.identifier_fields()}
+        """This document's natural-key field values, keyed by ``identity_model.model_fields``.
+
+        The natural/unique key is a caller-suppliable alternative to the Mongo ``_id`` (e.g.
+        ``{"name", "owner"}`` for a project group); it comes straight from the domain's ``Identity``
+        subclass so each domain declares its key exactly once.
+        """
+        return {field: getattr(self, field) for field in self.identity_model.model_fields}
 
     def identity(self) -> Identity:
         """This document's identity as a concrete :class:`Identity`, built from its own fields."""
         return self.identity_model.from_document(
-            {name: getattr(self, name) for name in self.identity_model.field_names()}
+            {name: getattr(self, name) for name in self.identity_model.model_fields}
         )
 
     def derived_field_updates(self) -> dict[str, Any]:

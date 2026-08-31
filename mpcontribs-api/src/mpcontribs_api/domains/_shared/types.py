@@ -438,11 +438,6 @@ class Identity(BaseModel):
         return {name: getattr(self, name) for name in type(self).model_fields}
 
     @classmethod
-    def field_names(cls) -> frozenset[str]:
-        """Returns the field names as a frozenset"""
-        return frozenset(cls.model_fields)
-
-    @classmethod
     def from_document(cls, doc: Mapping[str, Any]) -> Self:
         """Build from a raw Mongo document/projection, tolerating null-stripped fields.
 

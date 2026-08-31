@@ -86,7 +86,7 @@ def _identity(
     unique_value=None,
     condition_key="",
 ) -> dict:
-    """The full composite natural key (see ``Contribution.identifier_fields``) for a semantic lookup.
+    """The full composite natural key (see ``ContributionIdentity.model_fields``) for a semantic lookup.
 
     Mirrors the defaults ``_insert``/``_contrib_in`` seed, so ``_identity(material_id=...)`` addresses
     a document created with the matching ``identifier=...``.

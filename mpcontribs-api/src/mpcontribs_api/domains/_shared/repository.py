@@ -124,18 +124,18 @@ class MongoDbRepository[
     def _identifier_query(self, identifiers: dict[str, Any]) -> dict[str, Any]:
         """Turn a ``{field: value}`` identifier dict into a scoped Mongo query fragment.
 
-        The keys must be either the model's :meth:`identifier_fields` exactly, or the bare
-        primary-key form ``{"id": ...}`` (which addresses any document by its ``_id`` regardless of
-        its semantic identifier). ``id`` is remapped to Mongo's ``_id`` (mirroring
+        The keys must be either the model's natural key (``identity_model.model_fields``) exactly, or
+        the bare primary-key form ``{"id": ...}`` (which addresses any document by its ``_id``
+        regardless of its semantic identifier). ``id`` is remapped to Mongo's ``_id`` (mirroring
         ``BaseFilter._get_filter_conditions``) since a raw dict query does not go through Beanie's
         alias resolution.
 
         Args:
-            identifiers (dict[str, Any]): identifier field values keyed by ``identifier_fields``,
+            identifiers (dict[str, Any]): identifier field values keyed by the model's natural key,
                 or ``{"id": <primary key>}``
         """
         identifiers = self.coerce_identifiers(identifiers)
-        expected = self.document_model.identifier_fields()
+        expected = self.document_model.identity_model.model_fields.keys()
         if identifiers.keys() != expected and identifiers.keys() != {"id"}:
             raise ValidationError(
                 "identifiers must match the model's identifier fields, or be a bare {'id': ...}",
@@ -153,7 +153,8 @@ class MongoDbRepository[
         """Return the single scoped document matching ``identifiers``, projected to ``fields``.
 
         Args:
-            identifiers (dict[str, Any]): identifier field values keyed by ``identifier_fields``
+            identifiers (dict[str, Any]): identifier field values keyed by the model's natural key, or the bare
+                primary-key form ``{"id": <primary key>}``
             fields (frozenset[str] | None): fields to project; if None the full document is returned
             session (AsyncClientSession | None): optional client session for transactions
         """
@@ -325,7 +326,8 @@ class MongoDbRepository[
         """Delete the single scoped document matching ``identifiers``.
 
         Args:
-            identifiers (dict[str, Any]): identifier field values keyed by ``identifier_fields``
+            identifiers (dict[str, Any]): identifier field values keyed by the model's natural key, or the bare
+                primary-key form ``{"id": <primary key>}``
             session (AsyncClientSession | None): optional client session for transactions
         """
         query = self._identifier_query(identifiers)
@@ -401,7 +403,8 @@ class MongoDbRepository[
         """Partially update the single scoped document matching ``identifiers``.
 
         Args:
-            identifiers (dict[str, Any]): identifier field values keyed by ``identifier_fields``
+            identifiers (dict[str, Any]): identifier field values keyed by the model's natural key, or the bare
+                primary-key form ``{"id": <primary key>}``
             update (TPatch): the partial update to apply; unset fields are dropped
             session (AsyncClientSession | None): optional client session for transactions
             extra_set (dict[str, Any] | None): server-resolved fields to merge into the ``$set``
