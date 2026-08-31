@@ -400,11 +400,29 @@ class TestGetContributionBySemanticIdentifiers:
         assert result is not None
         assert result.material_id == "id-a"
 
-    async def test_partial_identifier_set_is_rejected(self, db):
-        # The semantic set must be the complete composite key, not a subset.
-        await _insert(project="partial-proj", identifier="partial-id")
+    async def test_partial_identity_resolves_matching_doc(self, db):
+        # A partial identity (a subset of the composite key) is accepted, as long as it satisfies the
+        # hierarchy, and resolves the single matching row.
+        await _insert(project="partial-proj", identifier="partial-id", chemical_system_id="Fe-O")
+        result = await _repo(ADMIN).read_one(
+            {"project": "partial-proj", "chemical_system_id": "Fe-O"}, fields=None
+        )
+        assert result is not None
+        assert result.material_id == "partial-id"
+
+    async def test_partial_identity_ambiguous_raises_conflict(self, db):
+        # A partial identity that matches more than one in-scope row is rejected rather than silently
+        # returning the first — the caller must disambiguate (e.g. supply material_id/formula).
+        await _insert(project="ambig-proj", identifier="mp-1", chemical_system_id="Fe-O")
+        await _insert(project="ambig-proj", identifier="mp-2", chemical_system_id="Fe-O")
+        with pytest.raises(ConflictError):
+            await _repo(ADMIN).read_one({"project": "ambig-proj", "chemical_system_id": "Fe-O"}, fields=None)
+
+    async def test_identity_without_chemical_system_is_rejected(self, db):
+        # The identifier hierarchy requires chemical_system_id; a partial lacking it is invalid.
+        await _insert(project="no-chemsys", identifier="mp-1")
         with pytest.raises(ValidationError):
-            await _repo(ADMIN).read_one({"project": "partial-proj", "material_id": "partial-id"}, fields=None)
+            await _repo(ADMIN).read_one({"project": "no-chemsys", "material_id": "mp-1"}, fields=None)
 
 
 # ---------------------------------------------------------------------------

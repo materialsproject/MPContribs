@@ -1522,7 +1522,7 @@ class TestPatchIdentifierHierarchy:
         contrib_repo.read_one.return_value = existing
 
         with pytest.raises(ValidationError, match="formula is required when material_id"):
-            await svc.update_one(str(existing.id), ContributionPatch(material_id="mp-1"))
+            await svc.update_one({"id": str(existing.id)}, ContributionPatch(material_id="mp-1"))
 
         # Rejected before any write.
         contrib_repo.update_one.assert_not_called()
@@ -1533,7 +1533,7 @@ class TestPatchIdentifierHierarchy:
         contrib_repo.read_one.return_value = existing
         contrib_repo.update_one.return_value = MagicMock(spec=Contribution)
 
-        await svc.update_one(str(existing.id), ContributionPatch(material_id="mp-1"))
+        await svc.update_one({"id": str(existing.id)}, ContributionPatch(material_id="mp-1"))
 
         contrib_repo.update_one.assert_called_once()
 
@@ -1541,7 +1541,7 @@ class TestPatchIdentifierHierarchy:
         svc, contrib_repo, *_ = _make_service()
         contrib_repo.update_one.return_value = MagicMock(spec=Contribution)
 
-        await svc.update_one("some-id", ContributionPatch(is_public=True))
+        await svc.update_one({"id": "some-id"}, ContributionPatch(is_public=True))
 
         # No identity/unique inputs touched -> no re-read, straight to the plain patch.
         contrib_repo.read_one.assert_not_called()
@@ -1561,7 +1561,7 @@ class TestPatchDataMergeReplace:
         contrib_repo.read_one.return_value = existing
         contrib_repo.update_one.return_value = MagicMock(spec=Contribution)
 
-        await svc.update_one(str(existing.id), ContributionPatch(data={"y": 9.0}))
+        await svc.update_one({"id": str(existing.id)}, ContributionPatch(data={"y": 9.0}))
 
         # The repo performs the actual dotted-$set merge; the service just forwards replace_data=False.
         assert contrib_repo.update_one.call_args.kwargs["replace_data"] is False
@@ -1574,7 +1574,7 @@ class TestPatchDataMergeReplace:
         contrib_repo.update_one.return_value = MagicMock(spec=Contribution)
 
         await svc.update_one(
-            str(existing.id), ContributionPatch(data={"y": 9.0}), replace_data=True
+            {"id": str(existing.id)}, ContributionPatch(data={"y": 9.0}), replace_data=True
         )
 
         assert contrib_repo.update_one.call_args.kwargs["replace_data"] is True
@@ -1588,7 +1588,7 @@ class TestPatchDataMergeReplace:
         contrib_repo.read_one.return_value = existing
         contrib_repo.update_one.return_value = MagicMock(spec=Contribution)
 
-        await svc.update_one(str(existing.id), ContributionPatch(data={"y": 9.0}))
+        await svc.update_one({"id": str(existing.id)}, ContributionPatch(data={"y": 9.0}))
 
         # Resolved from {sample_id:42, x:1, y:9}, so the untouched unique_value survives the merge.
         assert contrib_repo.update_one.call_args.kwargs["unique_value"] == 42
@@ -1603,6 +1603,6 @@ class TestPatchDataMergeReplace:
 
         with pytest.raises(ValidationError, match="unique_column"):
             await svc.update_one(
-                str(existing.id), ContributionPatch(data={"y": 9.0}), replace_data=True
+                {"id": str(existing.id)}, ContributionPatch(data={"y": 9.0}), replace_data=True
             )
         contrib_repo.update_one.assert_not_called()

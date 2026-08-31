@@ -259,32 +259,38 @@ class MongoDbContributionRepository(
         agg.columns = finalize_columns(acc)
         return agg
 
-    async def read_one_by_identity(
+    async def read_one(
         self,
-        partial: dict[str, Any],
+        identifiers: dict[str, Any],
         fields: frozenset[str] | None = None,
-    ) -> Contribution | ContributionOut | None:
-        """Resolve a single contribution from a *partial* (user-suppliable) identity, enforcing uniqueness.
+        session: AsyncClientSession | None = None,
+    ) -> ContributionOut | None:
+        """Read one contribution by its Mongo ``_id`` or by a (possibly partial) natural identity.
 
-        The full :class:`ContributionIdentity` has six fields, but only the four user-suppliable ones
-        (``project``, ``material_id``, ``chemical_system_id``, ``formula``) — plus an optional
-        ``unique_value`` — can be addressed over HTTP; ``condition_key`` is server-owned. That subset
-        is not covered by the unique index, so this builds its own scoped match (it must *not* go
-        through :meth:`_identifier_query`, which requires the exact key set) and rejects an ambiguous
-        match rather than silently returning the first document.
+        Prefers the id: a bare ``{"id": ...}`` takes the exact, index-covered base path. Any other
+        key set is treated as a natural identity — only part of :class:`ContributionIdentity` is
+        user-suppliable over HTTP (``project``, ``material_id``, ``chemical_system_id``, ``formula``,
+        and optional ``unique_value``; ``condition_key`` is server-owned), so that subset is not
+        covered by the unique index. It builds its own scoped match (deliberately bypassing
+        :meth:`_identifier_query`, which requires the exact key set), validates the hierarchy, and
+        rejects an ambiguous match rather than silently returning the first document.
 
         Args:
-            partial: identity field values (a subset of ``ContributionIdentity``); ``None`` values
-                match null-or-absent stored fields (``keep_nulls=False``)
+            identifiers: ``{"id": ...}`` for the exact key, or identity field values (a subset of
+                ``ContributionIdentity``); ``None`` values match null-or-absent stored fields
+                (``keep_nulls=False``)
             fields: fields to project; if None the full document is returned
+            session: optional client session for transactions
 
         Raises:
-            ConflictError: if more than one in-scope contribution matches ``partial``
+            ConflictError: if more than one in-scope contribution matches a partial identity
         """
+        if identifiers.keys() == {"id"}:
+            return await super().read_one(identifiers, fields, session=session)
         ContributionIdentity.check_hierarchy(
-            partial.get("material_id"), partial.get("chemical_system_id"), partial.get("formula")
+            identifiers.get("material_id"), identifiers.get("chemical_system_id"), identifiers.get("formula")
         )
-        match: dict[str, Any] = dict(partial)
+        match: dict[str, Any] = dict(identifiers)
         if self._scope:
             match = {"$and": [self._scope, match]}
         projection = self.out_model.projection(fields)
@@ -293,7 +299,7 @@ class MongoDbContributionRepository(
         if len(docs) > 1:
             raise ConflictError(
                 "identifiers match more than one contribution; supply unique_value to disambiguate",
-                identifiers=partial,
+                identifiers=identifiers,
             )
         return docs[0] if docs else None
 

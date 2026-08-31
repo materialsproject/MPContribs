@@ -159,81 +159,6 @@ class ContributionService:
             filter = ContributionFilter(id=existing.id)
         return await self.delete_many(filter)
 
-    @staticmethod
-    def _identity_partial(
-        project: str,
-        chemical_system_id: str,
-        material_id: str | None,
-        formula: str | None,
-        unique_value: Scalar | None,
-        condition_key: str,
-    ) -> dict[str, Any]:
-        """Build the scoped-match partial for a caller-suppliable contribution identity."""
-        partial: dict[str, Any] = {
-            "project": project,
-            "material_id": material_id,
-            "chemical_system_id": chemical_system_id,
-            "formula": formula,
-            "condition_key": condition_key,
-        }
-        if unique_value is not None:
-            partial["unique_value"] = unique_value
-        return partial
-
-    async def read_one_by_identity(
-        self,
-        *,
-        project: str,
-        chemical_system_id: str,
-        material_id: str | None = None,
-        formula: str | None = None,
-        unique_value: Scalar | None = None,
-        condition_key: str = "",
-        fields: frozenset[str] | None,
-    ) -> Contribution | ContributionOut | None:
-        """Read the single scoped contribution addressed by its natural identity (``/item``).
-
-        Resolves the user-suppliable identity subset, enforcing single-match (409 on ambiguity).
-        """
-        partial = self._identity_partial(project, chemical_system_id, material_id, formula, unique_value, condition_key)
-        return await self._contributions.read_one_by_identity(partial, fields)
-
-    async def delete_one_by_identity(
-        self,
-        *,
-        project: str,
-        chemical_system_id: str,
-        material_id: str | None = None,
-        formula: str | None = None,
-        unique_value: Scalar | None = None,
-        condition_key: str = "",
-    ) -> BulkDeleteSummary:
-        """Delete the single contribution addressed by its natural identity, cascading to its components."""
-        partial = self._identity_partial(project, chemical_system_id, material_id, formula, unique_value, condition_key)
-        existing = await self._contributions.read_one_by_identity(partial, frozenset({"id"}))
-        if existing is None:
-            return BulkDeleteSummary(num_deleted=0, num_children_deleted=0)
-        return await self.delete_many(ContributionFilter(id=existing.id))
-
-    async def update_one_by_identity(
-        self,
-        *,
-        project: str,
-        chemical_system_id: str,
-        material_id: str | None = None,
-        formula: str | None = None,
-        unique_value: Scalar | None = None,
-        condition_key: str = "",
-        update: ContributionPatch,
-        replace_data: bool = False,
-    ) -> Contribution:
-        """Patch the single contribution addressed by its natural identity (delegates to the by-id patch)."""
-        partial = self._identity_partial(project, chemical_system_id, material_id, formula, unique_value, condition_key)
-        existing = await self._contributions.read_one_by_identity(partial, frozenset({"id"}))
-        if existing is None:
-            raise NotFoundError("contribution not found", **partial)
-        return await self.update_one({"id": str(existing.id)}, update=update, replace_data=replace_data)
-
     async def _unapproved_stored_count(self, project_id: str) -> int | None:
         """Contributions already stored for an unapproved ``project_id``, else ``None``.
 
@@ -910,6 +835,11 @@ class ContributionService:
         re-validated strictly (the permissive patch validator allows leaf fragments a full doc may not).
         ``unique_value`` is resolved against the same post-write view the repository will persist.
         """
+        if identifiers.keys() != {"id"}:
+            existing = await self._contributions.read_one(identifiers, frozenset({"id"}))
+            if existing is None:
+                raise NotFoundError("contribution not found", identifiers=identifiers)
+            identifiers = {"id": str(existing.id)}
         if not self._user.is_admin(*ROOT_PATH):
             target = await self._contributions.read_one(identifiers, frozenset({"id", "project"}))
             if target is None:

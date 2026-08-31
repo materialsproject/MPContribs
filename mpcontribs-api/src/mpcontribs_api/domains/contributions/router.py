@@ -136,6 +136,30 @@ async def download_contributions(
     )
 
 
+def _identity_identifiers(
+    project: str,
+    chemical_system_id: str,
+    material_id: str | None,
+    formula: str | None,
+    unique_value: str | None,
+) -> dict[str, object]:
+    """Assemble the natural-identity ``identifiers`` dict from the ``/item`` query params.
+
+    ``condition_key`` is server-owned and always ``""`` for HTTP callers; ``unique_value`` is omitted
+    when absent so it Mongo-matches null-or-absent stored values (``keep_nulls=False``).
+    """
+    identifiers: dict[str, object] = {
+        "project": project,
+        "material_id": material_id,
+        "chemical_system_id": chemical_system_id,
+        "formula": formula,
+        "condition_key": "",
+    }
+    if unique_value is not None:
+        identifiers["unique_value"] = unique_value
+    return identifiers
+
+
 # Declared before the ``/{id}`` routes so the literal ``item`` is never captured as an id.
 @router.get("/item")
 async def read_one_by_identity(
@@ -149,14 +173,8 @@ async def read_one_by_identity(
 ):
     """Return the single contribution addressed by its natural identity (409 if ambiguous)."""
     selected = ContributionOut.parse_fields(fields)
-    return await service.read_one_by_identity(
-        project=project,
-        chemical_system_id=chemical_system_id,
-        material_id=material_id,
-        formula=formula,
-        unique_value=unique_value,
-        fields=selected,
-    )
+    identifiers = _identity_identifiers(project, chemical_system_id, material_id, formula, unique_value)
+    return await service.read_one(identifiers, fields=selected)
 
 
 @router.delete("/item", dependencies=[Depends(require_user)])
@@ -169,13 +187,8 @@ async def delete_one_by_identity(
     unique_value: str | None = None,
 ) -> BulkDeleteSummary:
     """Delete the single contribution addressed by its natural identity, cascading to components."""
-    return await service.delete_one_by_identity(
-        project=project,
-        chemical_system_id=chemical_system_id,
-        material_id=material_id,
-        formula=formula,
-        unique_value=unique_value,
-    )
+    identifiers = _identity_identifiers(project, chemical_system_id, material_id, formula, unique_value)
+    return await service.delete_one(identifiers)
 
 
 @router.patch("/item", dependencies=[Depends(require_user)])
@@ -190,15 +203,8 @@ async def update_one_by_identity(
     replace_data: bool = False,
 ):
     """Patch the single contribution addressed by its natural identity (409 if ambiguous)."""
-    return await service.update_one_by_identity(
-        project=project,
-        chemical_system_id=chemical_system_id,
-        material_id=material_id,
-        formula=formula,
-        unique_value=unique_value,
-        update=update,
-        replace_data=replace_data,
-    )
+    identifiers = _identity_identifiers(project, chemical_system_id, material_id, formula, unique_value)
+    return await service.update_one(identifiers, update=update, replace_data=replace_data)
 
 
 @router.delete("/{id}", dependencies=[Depends(require_user)])

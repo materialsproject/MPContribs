@@ -151,55 +151,59 @@ class TestContributionByIdRouting:
 
 
 class TestContributionByIdentityRouting:
-    """The ``/item`` path addresses a contribution by its user-suppliable natural identity; the server
-    resolves the rest and 409s when the supplied subset is ambiguous."""
+    """The ``/item`` path addresses a contribution by its user-suppliable natural identity; both it and
+    ``/{id}`` funnel through the unified ``read_one``/``delete_one``/``update_one`` (which take an
+    identity or an id, preferring the id). The server resolves the rest and 409s on an ambiguous subset."""
 
     def test_get_by_identity_defaults_unsupplied_subset(self, client, contribution_service):
-        contribution_service.read_one_by_identity.return_value = SAMPLE_OUT
+        contribution_service.read_one.return_value = SAMPLE_OUT
         r = client.get("/api/v1/contributions/item?project=p&chemical_system_id=Fe-O")
         assert r.status_code == 200
-        kwargs = contribution_service.read_one_by_identity.await_args.kwargs
-        assert kwargs["project"] == "p"
+        identifiers = contribution_service.read_one.await_args.args[0]
+        # The literal ``item`` must reach ``read_one`` as an identity dict, not ``{"id": "item"}``.
+        assert identifiers["project"] == "p"
+        assert "id" not in identifiers
         # Unsupplied hierarchy/tiebreaker fields default to None; the service pins/relaxes them.
-        assert kwargs["material_id"] is None
-        assert kwargs["formula"] is None
-        assert kwargs["unique_value"] is None
-        # The literal ``item`` must not be captured by the ``/{id}`` handler.
-        contribution_service.read_one.assert_not_called()
+        assert identifiers["material_id"] is None
+        assert identifiers["formula"] is None
+        # unique_value is omitted when absent so it matches null-or-absent stored values.
+        assert "unique_value" not in identifiers
 
     def test_get_by_identity_forwards_full_subset(self, client, contribution_service):
-        contribution_service.read_one_by_identity.return_value = SAMPLE_OUT
+        contribution_service.read_one.return_value = SAMPLE_OUT
         client.get(
             "/api/v1/contributions/item?project=p&chemical_system_id=Fe-O&material_id=mp-1&formula=Fe2O3&unique_value=A"
         )
-        kwargs = contribution_service.read_one_by_identity.await_args.kwargs
-        assert kwargs["material_id"] == "mp-1"
-        assert kwargs["unique_value"] == "A"
+        identifiers = contribution_service.read_one.await_args.args[0]
+        assert identifiers["material_id"] == "mp-1"
+        assert identifiers["unique_value"] == "A"
 
     def test_missing_required_chemical_system_returns_422(self, client, contribution_service):
         assert client.get("/api/v1/contributions/item?project=p").status_code == 422
 
     def test_ambiguous_identity_returns_409(self, client, contribution_service):
-        contribution_service.read_one_by_identity.side_effect = ConflictError("ambiguous")
+        contribution_service.read_one.side_effect = ConflictError("ambiguous")
         r = client.get("/api/v1/contributions/item?project=p&chemical_system_id=Fe-O")
         assert r.status_code == 409
 
     def test_delete_by_identity_forwards_to_service(self, client, contribution_service):
-        contribution_service.delete_one_by_identity.return_value = BulkDeleteSummary(
-            num_deleted=1, num_children_deleted=0
-        )
+        contribution_service.delete_one.return_value = BulkDeleteSummary(num_deleted=1, num_children_deleted=0)
         r = client.delete("/api/v1/contributions/item?project=p&chemical_system_id=Fe-O&material_id=mp-1&formula=Fe2O3")
         assert r.status_code == 200
-        assert contribution_service.delete_one_by_identity.await_args.kwargs["project"] == "p"
+        identifiers = contribution_service.delete_one.await_args.args[0]
+        assert identifiers["project"] == "p"
+        assert "id" not in identifiers
 
     def test_patch_by_identity_forwards_to_service(self, client, contribution_service):
-        contribution_service.update_one_by_identity.return_value = SAMPLE_OUT
+        contribution_service.update_one.return_value = SAMPLE_OUT
         r = client.patch(
             "/api/v1/contributions/item?project=p&chemical_system_id=Fe-O&material_id=mp-1&formula=Fe2O3",
             json={"is_public": True},
         )
         assert r.status_code == 200
-        assert contribution_service.update_one_by_identity.await_args.kwargs["project"] == "p"
+        identifiers = contribution_service.update_one.await_args.args[0]
+        assert identifiers["project"] == "p"
+        assert "id" not in identifiers
 
 
 # ===========================================================================
