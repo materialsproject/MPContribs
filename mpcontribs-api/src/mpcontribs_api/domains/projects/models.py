@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from enum import StrEnum
 from typing import Any, ClassVar, Literal
 
@@ -13,7 +12,6 @@ from mpcontribs_api.domains.initiatives.models import Initiative
 from mpcontribs_api.exceptions import ValidationError
 
 
-@dataclass(frozen=True, slots=True)
 class ProjectIdentity(Identity):
     """A project's identity: its human-chosen short name, which is also its Mongo ``_id``.
 
@@ -22,7 +20,7 @@ class ProjectIdentity(Identity):
     literal ``"id"`` field that does not exist in the stored document.)
     """
 
-    id: str
+    id: ShortStr
 
 
 def _validate_unique_column(value: str | None) -> str | None:

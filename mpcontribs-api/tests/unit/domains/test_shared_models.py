@@ -134,14 +134,14 @@ class TestIdentityContract:
     def test_identifier_fields_derive_from_identity_model(self, document, identity, fields):
         # Single source of truth: the natural key comes from the Identity class, not a hand-written override.
         assert document.identifier_fields() == fields
-        assert document.identifier_fields() == identity.model_fields()
+        assert document.identifier_fields() == identity.field_names()
 
     def test_component_identity_shared_shape_is_md5(self):
         # The three component identities all share ComponentIdentity's single-``md5`` shape.
-        assert ComponentIdentity.model_fields() == {"md5"}
+        assert ComponentIdentity.field_names() == {"md5"}
         for identity in (ComponentIdentity, ComponentIdentity, ComponentIdentity):
             assert issubclass(identity, ComponentIdentity)
-            assert identity.model_fields() == {"md5"}
+            assert identity.field_names() == {"md5"}
 
 
 class TestDocumentIdentityRoundTrips:

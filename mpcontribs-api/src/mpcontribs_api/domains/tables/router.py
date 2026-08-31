@@ -6,11 +6,10 @@ from fastapi_filter import FilterDepends
 
 from mpcontribs_api.dependencies import S3Dep, require_user, require_writer
 from mpcontribs_api.domains._shared.bulk import BulkWriteSummary
-from mpcontribs_api.domains._shared.models import ComponentDeleteResponse
+from mpcontribs_api.domains._shared.models import ComponentDeleteResponse, ComponentIdentity
 from mpcontribs_api.domains._shared.types import (
     DownloadFormat,
     FieldSelector,
-    MD5Hash,
     ShortMimeFormat,
     download_filename,
 )
@@ -35,28 +34,28 @@ async def read_many(
 @router.get("/item")
 async def read_one_by_identity(
     service: TableServiceDep,
-    md5: MD5Hash,
+    identity: Annotated[ComponentIdentity, Depends()],
     fields: FieldSelector = None,
 ):
     """Return a single table addressed by its content ``md5`` (its natural key)."""
     selected = TableOut.parse_fields(fields)
-    return await service.read_one(identifiers={"md5": md5}, fields=selected)
+    return await service.read_one(identifiers=identity.as_dict(), fields=selected)
 
 
 @router.delete("/item", response_model=ComponentDeleteResponse, dependencies=[Depends(require_user)])
-async def delete_one_by_identity(service: TableServiceDep, md5: MD5Hash):
+async def delete_one_by_identity(service: TableServiceDep, identity: Annotated[ComponentIdentity, Depends()]):
     """Delete a single table addressed by its content ``md5`` (its natural key)."""
-    return await service.delete_one(identifiers={"md5": md5})
+    return await service.delete_one(identifiers=identity.as_dict())
 
 
 @router.patch("/item", dependencies=[Depends(require_user)])
 async def update_one_by_identity(
     service: TableServiceDep,
-    md5: MD5Hash,
+    identity: Annotated[ComponentIdentity, Depends()],
     update: TablePatch,
 ):
     """Patch a single table addressed by its content ``md5`` (its natural key)."""
-    return await service.update_one(identifiers={"md5": md5}, update=update)
+    return await service.update_one(identifiers=identity.as_dict(), update=update)
 
 
 @router.get("/{id}")

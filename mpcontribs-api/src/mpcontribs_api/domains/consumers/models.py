@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from typing import ClassVar
 
 from beanie import PydanticObjectId
@@ -11,7 +10,6 @@ from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, Documen
 from mpcontribs_api.domains._shared.types import Identity
 
 
-@dataclass(frozen=True, slots=True)
 class ConsumerIdentity(Identity):
     """A consumer override's identity: Kong's unique ``consumer_id``."""
 

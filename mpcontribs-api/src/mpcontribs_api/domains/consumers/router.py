@@ -8,6 +8,7 @@ from mpcontribs_api.domains._shared.types import FieldSelector
 from mpcontribs_api.domains.consumers.dependencies import ConsumerServiceDep
 from mpcontribs_api.domains.consumers.models import (
     ConsumerFilter,
+    ConsumerIdentity,
     ConsumerIn,
     ConsumerOut,
     ConsumerPatch,
@@ -34,32 +35,32 @@ async def read_many(
 
 @router.get("/item")
 async def read_one_by_identity(
-    consumer_id: str,
+    identity: Annotated[ConsumerIdentity, Depends()],
     service: ConsumerServiceDep,
     fields: FieldSelector = None,
 ):
     """Get a single consumer override by its natural key, Kong's ``consumer_id`` (admin only)."""
     selected = ConsumerOut.parse_fields(fields)
-    return await service.read_one({"consumer_id": consumer_id}, fields=selected)
+    return await service.read_one(identity.as_dict(), fields=selected)
 
 
 @router.patch("/item", response_model=ConsumerOut)
 async def update_one_by_identity(
     service: ConsumerServiceDep,
-    consumer_id: str,
+    identity: Annotated[ConsumerIdentity, Depends()],
     update: ConsumerPatch,
 ):
     """Partially update a consumer override by its ``consumer_id`` natural key (admin only)."""
-    return await service.update_one({"consumer_id": consumer_id}, update)
+    return await service.update_one(identity.as_dict(), update)
 
 
 @router.delete("/item", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_one_by_identity(
     service: ConsumerServiceDep,
-    consumer_id: str,
+    identity: Annotated[ConsumerIdentity, Depends()],
 ):
     """Delete a consumer override by its ``consumer_id`` natural key (admin only)."""
-    await service.delete_one({"consumer_id": consumer_id})
+    await service.delete_one(identity.as_dict())
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 

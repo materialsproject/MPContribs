@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from typing import ClassVar
 
 from beanie import Link, PydanticObjectId
@@ -15,12 +14,11 @@ from mpcontribs_api.exceptions import ValidationError
 from mpcontribs_api.projection import SparseFieldsModel
 
 
-@dataclass(frozen=True, slots=True)
 class ProjectGroupIdentity(Identity):
     """A project group's identity: its ``name`` scoped to its ``owner`` (declaration order = index order)."""
 
-    name: str
-    owner: str
+    name: SearchStr
+    owner: PrefixedEmail
 
 
 class ProjectGroup(BaseDocumentWithInput[PydanticObjectId]):

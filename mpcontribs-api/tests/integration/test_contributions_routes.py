@@ -166,8 +166,11 @@ class TestContributionByIdentityRouting:
         # Unsupplied hierarchy/tiebreaker fields default to None; the service pins/relaxes them.
         assert identifiers["material_id"] is None
         assert identifiers["formula"] is None
-        # unique_value is omitted when absent so it matches null-or-absent stored values.
-        assert "unique_value" not in identifiers
+        # The identity dict always carries the full natural key (server-owned condition_key injected as
+        # ""); an unsupplied unique_value is present as None, which Mongo-matches null-or-absent stored
+        # values (keep_nulls=False) and satisfies the repository's exact-identifier-key check.
+        assert identifiers["unique_value"] is None
+        assert identifiers["condition_key"] == ""
 
     def test_get_by_identity_forwards_full_subset(self, client, contribution_service):
         contribution_service.read_one.return_value = SAMPLE_OUT

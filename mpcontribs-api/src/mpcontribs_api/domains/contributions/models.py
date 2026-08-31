@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any, ClassVar
 
@@ -68,20 +67,19 @@ def extract_unique_value(data: dict[str, Any] | None, unique_column: str) -> Sca
     return value
 
 
-@dataclass(frozen=True, slots=True)
 class ContributionIdentity(Identity):
     """The full identity of a Contribution.
 
     Field declaration order IS the identity/index column order: ``index_model`` and ``projection``
-    iterate ``dataclasses.fields`` in that order, so the order is declared exactly once (below).
+    iterate ``model_fields`` in that order, so the order is declared exactly once (below).
     """
 
     # WARNING: the order the fields are specified in reflects their ordering for indices. Changing the order
     # creates index migration. Only change intentionally
     project: str
-    material_id: str | None
-    chemical_system_id: str
-    formula: str | None
+    material_id: MaterialId | None = None
+    chemical_system_id: ChemicalSystemId
+    formula: Formula | None = None
     unique_value: Scalar | None = None
     condition_key: str = ""
 
@@ -102,6 +100,29 @@ class ContributionIdentity(Identity):
                 "(identifier hierarchy: chemical_system_id > formula > material_id).",
                 material_id=material_id,
             )
+
+
+# Temp while working on condition_key
+class ContributionIdentityQuery(BaseModel):
+    """The caller-supplied half of a Contribution's natural key, bound as ``/item`` query params.
+
+    Deliberately not the full :class:`ContributionIdentity`: it omits the server-owned ``condition_key``
+    (always ``""`` for HTTP callers, never caller-settable) and types ``unique_value`` as a plain
+    ``str`` — the query-string form — rather than the stored ``Scalar``. :meth:`to_identifiers`
+    completes it into the full identity's flat match dict, injecting ``condition_key``.
+    """
+
+    project: str
+    chemical_system_id: ChemicalSystemId
+    material_id: MaterialId | None = None
+    formula: Formula | None = None
+    unique_value: str | None = None
+
+    def to_identifiers(self) -> dict[str, Any]:
+        """The full-identity match dict — all identity fields present (``unique_value=None`` matches
+        null-or-absent stored values under ``keep_nulls=False``), so it satisfies the repository's
+        exact-key identifier check."""
+        return ContributionIdentity(**self.model_dump(), condition_key="").as_dict()
 
 
 class ContributionBase(BaseModel):

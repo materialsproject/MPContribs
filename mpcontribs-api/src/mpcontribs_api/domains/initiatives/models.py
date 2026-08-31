@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from typing import ClassVar, Self
 
 from beanie import PydanticObjectId
@@ -13,11 +12,10 @@ from mpcontribs_api.exceptions import ValidationError
 from mpcontribs_api.projection import SparseFieldsModel
 
 
-@dataclass(frozen=True, slots=True)
 class InitiativeIdentity(Identity):
     """An initiative's identity: its globally-unique ``slug``."""
 
-    slug: str
+    slug: Slug
 
 
 class Initiative(BaseDocumentWithInput[PydanticObjectId]):

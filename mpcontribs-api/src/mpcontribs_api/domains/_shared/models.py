@@ -2,7 +2,6 @@ import hashlib
 import json
 import unicodedata
 from collections.abc import Mapping
-from dataclasses import dataclass
 from typing import Annotated, Any, ClassVar, Self
 
 from beanie import Document, PydanticObjectId
@@ -40,7 +39,7 @@ class BaseDocumentWithInput[TId](Document):
         caller-supplied values to locate a single resource, and rejects any value dict whose keys
         don't match this set. Derived from :attr:`identity_model` so each domain declares its key once.
         """
-        return cls.identity_model.model_fields()
+        return cls.identity_model.field_names()
 
     def identifiers(self) -> dict[str, Any]:
         """This document's identifier field values, keyed by :meth:`identifier_fields`."""
@@ -49,7 +48,7 @@ class BaseDocumentWithInput[TId](Document):
     def identity(self) -> Identity:
         """This document's identity as a concrete :class:`Identity`, built from its own fields."""
         return self.identity_model.from_document(
-            {name: getattr(self, name) for name in self.identity_model.model_fields()}
+            {name: getattr(self, name) for name in self.identity_model.field_names()}
         )
 
     def derived_field_updates(self) -> dict[str, Any]:
@@ -111,7 +110,6 @@ def canonical_md5(payload: Mapping[str, Any]) -> str:
     return hashlib.md5(normalized.encode("utf-8")).hexdigest()
 
 
-@dataclass(frozen=True, slots=True)
 class ComponentIdentity(Identity):
     """Identity of a content-addressed component: its ``md5`` content hash.
 
@@ -119,7 +117,7 @@ class ComponentIdentity(Identity):
     identity type is domain-specific while the single-``md5`` shape is declared once.
     """
 
-    md5: str
+    md5: MD5Hash
 
 
 class ComponentIn(BaseModel):

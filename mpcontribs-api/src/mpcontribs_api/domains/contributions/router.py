@@ -9,11 +9,8 @@ from mpcontribs_api.dependencies import S3Dep, require_user
 from mpcontribs_api.domains._shared.bulk import BulkDeleteSummary, BulkUpdateSummary, BulkWriteSummary
 from mpcontribs_api.domains._shared.models import DeleteResponse
 from mpcontribs_api.domains._shared.types import (
-    ChemicalSystemId,
     DownloadFormat,
     FieldSelector,
-    Formula,
-    MaterialId,
     ShortMimeFormat,
     download_filename,
 )
@@ -21,6 +18,7 @@ from mpcontribs_api.domains.contributions.dependencies import ContributionServic
 from mpcontribs_api.domains.contributions.models import (
     Contribution,
     ContributionFilter,
+    ContributionIdentityQuery,
     ContributionIn,
     ContributionOut,
     ContributionPatch,
@@ -136,75 +134,36 @@ async def download_contributions(
     )
 
 
-def _identity_identifiers(
-    project: str,
-    chemical_system_id: str,
-    material_id: str | None,
-    formula: str | None,
-    unique_value: str | None,
-) -> dict[str, object]:
-    """Assemble the natural-identity ``identifiers`` dict from the ``/item`` query params.
-
-    ``condition_key`` is server-owned and always ``""`` for HTTP callers; ``unique_value`` is omitted
-    when absent so it Mongo-matches null-or-absent stored values (``keep_nulls=False``).
-    """
-    identifiers: dict[str, object] = {
-        "project": project,
-        "material_id": material_id,
-        "chemical_system_id": chemical_system_id,
-        "formula": formula,
-        "condition_key": "",
-    }
-    if unique_value is not None:
-        identifiers["unique_value"] = unique_value
-    return identifiers
-
-
 # Declared before the ``/{id}`` routes so the literal ``item`` is never captured as an id.
 @router.get("/item")
 async def read_one_by_identity(
     service: ContributionServiceDep,
-    project: str,
-    chemical_system_id: ChemicalSystemId,
-    material_id: MaterialId | None = None,
-    formula: Formula | None = None,
-    unique_value: str | None = None,
+    identity: Annotated[ContributionIdentityQuery, Depends()],
     fields: FieldSelector = None,
 ):
     """Return the single contribution addressed by its natural identity (409 if ambiguous)."""
     selected = ContributionOut.parse_fields(fields)
-    identifiers = _identity_identifiers(project, chemical_system_id, material_id, formula, unique_value)
-    return await service.read_one(identifiers, fields=selected)
+    return await service.read_one(identity.to_identifiers(), fields=selected)
 
 
 @router.delete("/item", dependencies=[Depends(require_user)])
 async def delete_one_by_identity(
     service: ContributionServiceDep,
-    project: str,
-    chemical_system_id: ChemicalSystemId,
-    material_id: MaterialId | None = None,
-    formula: Formula | None = None,
-    unique_value: str | None = None,
+    identity: Annotated[ContributionIdentityQuery, Depends()],
 ) -> BulkDeleteSummary:
     """Delete the single contribution addressed by its natural identity, cascading to components."""
-    identifiers = _identity_identifiers(project, chemical_system_id, material_id, formula, unique_value)
-    return await service.delete_one(identifiers)
+    return await service.delete_one(identity.to_identifiers())
 
 
 @router.patch("/item", dependencies=[Depends(require_user)])
 async def update_one_by_identity(
     service: ContributionServiceDep,
     update: ContributionPatch,
-    project: str,
-    chemical_system_id: ChemicalSystemId,
-    material_id: MaterialId | None = None,
-    formula: Formula | None = None,
-    unique_value: str | None = None,
+    identity: Annotated[ContributionIdentityQuery, Depends()],
     replace_data: bool = False,
 ):
     """Patch the single contribution addressed by its natural identity (409 if ambiguous)."""
-    identifiers = _identity_identifiers(project, chemical_system_id, material_id, formula, unique_value)
-    return await service.update_one(identifiers, update=update, replace_data=replace_data)
+    return await service.update_one(identity.to_identifiers(), update=update, replace_data=replace_data)
 
 
 @router.delete("/{id}", dependencies=[Depends(require_user)])
