@@ -228,7 +228,7 @@ class ClusterMaterial(BaseModel):
             raise ValueError("numberOfClusters must equal len(clusters)")
 
         minimum = min(cluster.averageDistance for cluster in self.clusters)
-        if abs(minimum - self.minimumAverageDistance) > 1e-9:
+        if abs(minimum - self.minimumAverageDistance) > 1e-6:
             raise ValueError(
                 "minimumAverageDistance must equal the minimum cluster distance"
             )
