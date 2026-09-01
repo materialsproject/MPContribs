@@ -2,30 +2,51 @@
 
 from __future__ import annotations
 
+from math import isclose
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
+from emmet.core.mpid import MPID
+from pydantic import (
+    BaseModel,
+    BeforeValidator,
+    ConfigDict,
+    Field,
+    StringConstraints,
+    model_validator,
+)
+from pymatgen.core import Element
 
 
-ElementSymbol = Annotated[
-    str,
-    StringConstraints(pattern=r"^[A-Z][a-z]?$"),
-]
-MaterialId = Annotated[
-    str,
-    StringConstraints(pattern=r"^mp-\d+$"),
-]
+def _validate_compound_system(value: object) -> str:
+    """Validate both element symbols while preserving the upload string."""
+    if not isinstance(value, str):
+        raise ValueError("compoundSystem must be a string")
+
+    symbols = value.split("-")
+    if len(symbols) != 2:
+        raise ValueError("compoundSystem must contain exactly two element symbols")
+
+    try:
+        for symbol in symbols:
+            Element(symbol)
+    except ValueError as exc:
+        raise ValueError("compoundSystem contains an invalid element symbol") from exc
+
+    return value
+
+
 CompoundSystem = Annotated[
     str,
-    StringConstraints(pattern=r"^[A-Z][a-z]?-[A-Z][a-z]?$"),
+    BeforeValidator(_validate_compound_system),
+    StringConstraints(max_length=5),
 ]
 ClusterLabel = Annotated[
     str,
-    StringConstraints(pattern=r"^X\d+$"),
+    StringConstraints(pattern=r"^X\d+$", max_length=16),
 ]
 FlatBandLatticeId = Annotated[
     str,
-    StringConstraints(pattern=r"^(?:LI|SK)-\d+$"),
+    StringConstraints(pattern=r"^(?:LI|SK)-\d+$", max_length=16),
 ]
 
 _MODEL_CONFIG = ConfigDict(extra="forbid", allow_inf_nan=False)
@@ -43,11 +64,11 @@ class ClusterDescriptor(BaseModel):
     averageDistance: float = Field(
         gt=0,
         description=(
-            "Mean Cartesian distance, in angstrom, over the connected site pairs "
+            "Mean Cartesian distance, in angstroms, over the connected site pairs "
             "used by Cluster Finder for this cluster instance."
         ),
     )
-    elements: list[ElementSymbol] = Field(
+    elements: list[Element] = Field(
         min_length=2,
         description="Element symbol at each site in this cluster instance.",
     )
@@ -84,6 +105,7 @@ class ClusterPointGroup(BaseModel):
     )
     symbol: str = Field(
         min_length=1,
+        max_length=16,
         description="Schoenflies point-group symbol of the unique cluster type.",
     )
 
@@ -93,7 +115,7 @@ class FlatBandProperties(BaseModel):
 
     model_config = _MODEL_CONFIG
 
-    sublatticeElement: ElementSymbol = Field(
+    sublatticeElement: Element = Field(
         description="Elemental sublattice hosting the selected flat-band model."
     )
     numberOfFlatBands: int = Field(
@@ -138,7 +160,7 @@ class ClusterMaterial(BaseModel):
 
     model_config = _MODEL_CONFIG
 
-    materialId: MaterialId = Field(
+    materialId: MPID = Field(
         description=(
             "Materials Project identifier used only as the external linkage key "
             "for this contribution."
@@ -147,7 +169,7 @@ class ClusterMaterial(BaseModel):
     compoundSystem: CompoundSystem = Field(
         description=(
             "Transition-metal and anion pair used for the Cluster Finder search, "
-            "formatted as primary-transition-metal-anion."
+            "formatted as <primary-transition-metal>-<anion>."
         )
     )
     numberOfClusters: int = Field(
@@ -160,6 +182,7 @@ class ClusterMaterial(BaseModel):
     )
     clusterLatticeSpaceGroup: str = Field(
         min_length=1,
+        max_length=32,
         description=(
             "Space-group symbol of the derived lattice whose sites are unique "
             "cluster centroids; this is not the parent material space group."
@@ -181,7 +204,7 @@ class ClusterMaterial(BaseModel):
     minimumAverageDistance: float = Field(
         gt=0,
         description=(
-            "Minimum, in angstrom, of averageDistance over all reported cluster "
+            "Minimum, in angstroms, of averageDistance over all reported cluster "
             "instances."
         ),
     )
@@ -228,9 +251,19 @@ class ClusterMaterial(BaseModel):
             raise ValueError("numberOfClusters must equal len(clusters)")
 
         minimum = min(cluster.averageDistance for cluster in self.clusters)
-        if abs(minimum - self.minimumAverageDistance) > 1e-6:
+        if not isclose(
+            minimum,
+            self.minimumAverageDistance,
+            rel_tol=1e-9,
+            abs_tol=1e-6,
+        ):
             raise ValueError(
                 "minimumAverageDistance must equal the minimum cluster distance"
+            )
+
+        if len(self.clusterPointGroups) > self.numberOfClusters:
+            raise ValueError(
+                "clusterPointGroups cannot contain more entries than clusters"
             )
 
         labels = [point_group.label for point_group in self.clusterPointGroups]
