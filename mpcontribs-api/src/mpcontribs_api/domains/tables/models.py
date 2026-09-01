@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import Any, ClassVar, Self
+from typing import Any, Self
 
 import polars as pl
 from beanie import PydanticObjectId
@@ -12,7 +12,7 @@ from pydantic import (
 
 from mpcontribs_api.domains._shared.filters import BaseFilter
 from mpcontribs_api.domains._shared.models import Component, ComponentIdentity, ComponentIn, DocumentOut
-from mpcontribs_api.domains._shared.types import DisplayStr, Identity, MD5Hash, NFKCStr, PolarsFrame, nfc_normalize
+from mpcontribs_api.domains._shared.types import DisplayStr, MD5Hash, NFKCStr, PolarsFrame, nfc_normalize
 from mpcontribs_api.projection import SparseFieldsModel
 
 
@@ -61,7 +61,6 @@ def _index_label(attrs: Any) -> str:
 class Table(Component):
     """Stored table document — matches the existing MongoDB shape (index/columns/data as strings)."""
 
-    identity_model: ClassVar[type[Identity]] = ComponentIdentity
     hash_fields = frozenset({"attrs", "index", "columns", "data"})
 
     attrs: Attributes

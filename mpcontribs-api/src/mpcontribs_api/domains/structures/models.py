@@ -1,4 +1,4 @@
-from typing import Annotated, ClassVar, Self
+from typing import Annotated, Self
 
 from beanie import PydanticObjectId
 from pydantic import BaseModel, BeforeValidator, ConfigDict, model_validator
@@ -6,7 +6,7 @@ from pymatgen.core import Element
 
 from mpcontribs_api.domains._shared.filters import BaseFilter
 from mpcontribs_api.domains._shared.models import Component, ComponentIdentity, ComponentIn, DocumentOut
-from mpcontribs_api.domains._shared.types import Identity, MD5Hash, NFKCStr
+from mpcontribs_api.domains._shared.types import MD5Hash, NFKCStr
 from mpcontribs_api.exceptions import ValidationError
 from mpcontribs_api.projection import SparseFieldsModel
 
@@ -91,7 +91,6 @@ class Cif(BaseModel):
 
 
 class Structure(Component):
-    identity_model: ClassVar[type[Identity]] = ComponentIdentity
     hash_fields = frozenset({"lattice", "sites", "charge"})
     lattice: Lattice
     sites: list[Site]

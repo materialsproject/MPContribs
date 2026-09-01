@@ -107,8 +107,7 @@ def canonical_md5(payload: Mapping[str, Any]) -> str:
 class ComponentIdentity(Identity):
     """Identity of a content-addressed component: its ``md5`` content hash.
 
-    Shared by every component domain (structures/tables/attachments); each subclasses it so the
-    identity type is domain-specific while the single-``md5`` shape is declared once.
+    Shared by every component domain (structures/tables/attachments).
     """
 
     md5: MD5Hash
