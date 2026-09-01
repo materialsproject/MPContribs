@@ -41,7 +41,7 @@ async def read_many(
 
 
 @router.get("/item")
-async def read_one(
+async def read_one_by_identity(
     service: ProjectGroupServiceDep,
     identity: Annotated[ProjectGroupIdentity, Depends()],
     fields: FieldSelector = None,
@@ -77,7 +77,7 @@ async def insert_one(
 
 
 @router.patch("/item", response_model=ProjectGroupOut, dependencies=[Depends(require_user)])
-async def update_one(
+async def update_one_by_identity(
     service: ProjectGroupServiceDep,
     identity: Annotated[ProjectGroupIdentity, Depends()],
     update: ProjectGroupPatch,
@@ -93,7 +93,7 @@ async def update_one(
 
 
 @router.delete("/item", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_user)])
-async def delete_one(
+async def delete_one_by_identity(
     service: ProjectGroupServiceDep,
     identity: Annotated[ProjectGroupIdentity, Depends()],
 ):
@@ -124,7 +124,7 @@ async def delete_many(
 
 
 @router.post("/item/projects", response_model=BulkWriteSummary[str], dependencies=[Depends(require_user)])
-async def add_projects_by_identifiers(
+async def add_projects_by_identity(
     service: ProjectGroupServiceDep,
     identity: Annotated[ProjectGroupIdentity, Depends()],
     body: ProjectRefs,
@@ -138,7 +138,7 @@ async def add_projects_by_identifiers(
 
 
 @router.delete("/item/projects", response_model=BulkWriteSummary[str], dependencies=[Depends(require_user)])
-async def delete_projects_by_identifiers(
+async def delete_projects_by_identity(
     service: ProjectGroupServiceDep,
     identity: Annotated[ProjectGroupIdentity, Depends()],
     body: ProjectRefs,
@@ -173,7 +173,7 @@ async def delete_projects_by_id(
 # Primary-key CRUD, symmetric to the ``/item`` (name+owner) routes above. Declared after ``/item`` so
 # the literal path is never captured as an ``{id}``.
 @router.get("/{id}")
-async def read_one_by_identity(
+async def read_one(
     service: ProjectGroupServiceDep,
     id: str,
     fields: FieldSelector = None,
@@ -184,7 +184,7 @@ async def read_one_by_identity(
 
 
 @router.patch("/{id}", response_model=ProjectGroupOut, dependencies=[Depends(require_user)])
-async def update_one_by_identity(
+async def update_one(
     service: ProjectGroupServiceDep,
     id: str,
     update: ProjectGroupPatch,
@@ -194,7 +194,7 @@ async def update_one_by_identity(
 
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_user)])
-async def delete_one_by_identity(
+async def delete_one(
     service: ProjectGroupServiceDep,
     id: str,
 ):
