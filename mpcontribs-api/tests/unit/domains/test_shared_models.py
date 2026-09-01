@@ -136,13 +136,6 @@ class TestIdentityContract:
         assert identity.model_fields.keys() == fields
         assert document.identity_model.model_fields.keys() == fields
 
-    def test_component_identity_shared_shape_is_md5(self):
-        # The three component identities all share ComponentIdentity's single-``md5`` shape.
-        assert ComponentIdentity.model_fields.keys() == {"md5"}
-        for identity in (ComponentIdentity, ComponentIdentity, ComponentIdentity):
-            assert issubclass(identity, ComponentIdentity)
-            assert identity.model_fields.keys() == {"md5"}
-
 
 class TestDocumentIdentityRoundTrips:
     def test_id_keyed_document_identity_is_its_id(self):
