@@ -6,6 +6,7 @@ from mpcontribs_api.domains.consumers.models import (
     Consumer,
     ConsumerIn,
     ConsumerPatch,
+    ConsumerProjectSettings,
     ConsumerSettings,
 )
 from mpcontribs_api.domains.consumers.repository import MongoDbConsumerRepository
@@ -57,13 +58,13 @@ class TestInsertAndLookup:
         # Admin overrides only max_projects; the stored document must carry a fully-resolved
         # settings block, with untouched limits snapshotted from the global defaults.
         await _insert(
-            ConsumerIn(consumer_id="kong-partial", settings=ConsumerSettings(max_projects=1))
+            ConsumerIn(consumer_id="kong-partial", settings=ConsumerSettings(project=ConsumerProjectSettings(max_projects=1)))
         )
         stored = await _repo().read_one({"consumer_id": "kong-partial"})
         assert stored is not None
         assert stored.settings is not None
-        assert stored.settings.max_projects == 1
-        assert stored.settings.max_columns == get_settings().consumer.max_columns
+        assert stored.settings.project.max_projects == 1
+        assert stored.settings.project.max_columns == get_settings().consumer.project.max_columns
 
 
 # ---------------------------------------------------------------------------
@@ -93,21 +94,21 @@ class TestGetByDocumentId:
 class TestPatchConsumer:
     async def test_patch_changes_only_named_limit(self, db):
         created = await _insert(ConsumerIn(consumer_id="kong-patch"))
-        original_columns = created.settings.max_columns
+        original_columns = created.settings.project.max_columns
 
         updated = await _repo().update_one(
             {"id": created.id},
-            update=ConsumerPatch(settings=ConsumerSettings(max_projects=1)),
+            update=ConsumerPatch(settings=ConsumerSettings(project=ConsumerProjectSettings(max_projects=1))),
         )
-        assert updated.settings.max_projects == 1
+        assert updated.settings.project.max_projects == 1
         # Sibling limit untouched: a nested-key $set, not a whole-subdocument replace.
-        assert updated.settings.max_columns == original_columns
+        assert updated.settings.project.max_columns == original_columns
 
     async def test_empty_patch_returns_existing_unchanged(self, db):
         created = await _insert(ConsumerIn(consumer_id="kong-noop"))
         result = await _repo().update_one({"id": created.id}, update=ConsumerPatch())
         assert result.consumer_id == "kong-noop"
-        assert result.settings.max_projects == created.settings.max_projects
+        assert result.settings.project.max_projects == created.settings.project.max_projects
 
     async def test_patch_missing_raises_not_found(self, db):
         from beanie import PydanticObjectId
@@ -115,7 +116,7 @@ class TestPatchConsumer:
         with pytest.raises(NotFoundError):
             await _repo().update_one(
                 {"id": PydanticObjectId()},
-                update=ConsumerPatch(settings=ConsumerSettings(max_projects=1)),
+                update=ConsumerPatch(settings=ConsumerSettings(project=ConsumerProjectSettings(max_projects=1))),
             )
 
 
@@ -199,17 +200,17 @@ class TestEffectiveLimits:
         # A caller with no Kong consumer_id (anonymous/dev) never touches the override collection.
         user = User(username="google:alice@example.com", groups=frozenset())
         limits = await _service(user).effective_limits(user.consumer_id)
-        assert limits.max_projects == get_settings().consumer.max_projects
+        assert limits.project.max_projects == get_settings().consumer.project.max_projects
 
     async def test_stored_override_is_returned(self, db):
         await _insert(
-            ConsumerIn(consumer_id="kong-eff", settings=ConsumerSettings(max_projects=42))
+            ConsumerIn(consumer_id="kong-eff", settings=ConsumerSettings(project=ConsumerProjectSettings(max_projects=42)))
         )
         user = User(consumer_id="kong-eff", username="google:alice@example.com", groups=frozenset())
         limits = await _service(user).effective_limits(user.consumer_id)
-        assert limits.max_projects == 42
+        assert limits.project.max_projects == 42
 
     async def test_consumer_id_without_override_falls_back_to_defaults(self, db):
         user = User(consumer_id="kong-unknown", username="google:alice@example.com", groups=frozenset())
         limits = await _service(user).effective_limits(user.consumer_id)
-        assert limits.max_projects == get_settings().consumer.max_projects
+        assert limits.project.max_projects == get_settings().consumer.project.max_projects

@@ -4,12 +4,9 @@ from typing import Annotated, Any
 
 from pydantic import BeforeValidator
 
-from mpcontribs_api.config import get_settings
 from mpcontribs_api.domains._shared.types import coerce_key
 from mpcontribs_api.domains._shared.units import QuantityLeaf
 from mpcontribs_api.exceptions import DataKeyError, ValidationError
-
-settings = get_settings()
 
 
 @dataclass(frozen=True, slots=True)
@@ -89,11 +86,16 @@ def _get_dict_depth(x: Any) -> int:
     return 0
 
 
-def _validate_data_depth(data: dict[str, Any] | None) -> dict[str, Any] | None:
+def validate_data_depth(data: dict[str, Any] | None, max_depth: int) -> dict[str, Any] | None:
+    """Reject ``data`` nested deeper than ``max_depth`` levels.
+
+    Depth is a per-consumer quota (``consumer.contribution.max_data_depth``), so the limit is passed
+    in by the service rather than read from global settings here — the model-level key validators have
+    no consumer context. Enforced on the write path against the final (post-pivot/merge) ``data``.
+    """
     if data is None:
         return None
     depth = _get_dict_depth(data)
-    max_depth = settings.mpcontribs.max_contrib_data_depth
     if depth > max_depth:
         raise ValidationError(f"Depth of Contribution.data must be <= {max_depth}.", depth=depth, max_depth=max_depth)
     return data
@@ -181,37 +183,39 @@ def _validate_data_keys(data: dict[str, Any] | None, *, allow_leaf_fragments: bo
 def validate_contribution_data(
     data: dict[str, Any] | None, *, allow_leaf_fragments: bool = False
 ) -> dict[str, Any] | None:
-    """Run the write-path ``data`` validation (depth + annotated/plain keys).
+    """Run the model-level ``data`` key validation (annotated/plain keys).
+
+    Depth is *not* checked here: it is a per-consumer quota enforced in ``ContributionService`` against
+    the final (post-pivot/merge) ``data`` via :func:`validate_data_depth`, since a model validator has
+    no consumer context.
 
     ``allow_leaf_fragments`` (the merge-patch path) additionally accepts a nested dict of only reserved
     leaf keys as a terminal fragment addressing a field inside a stored quantity leaf (e.g. ``{'bandgap':
     {'unit': 'kg'}}``). The strict insert path rejects reserved keys as plain keys; a whole-dict
     overwrite (``replace_data=True``) re-runs this strictly, since the payload becomes a full document.
     """
-    _validate_data_depth(data)
     _validate_data_keys(data, allow_leaf_fragments=allow_leaf_fragments)
     return data
 
 
 def validate_stored_contribution_data(data: dict[str, Any] | None) -> dict[str, Any] | None:
-    """Validate the persisted ``Contribution.data`` (depth + strict *plain* keys at every level).
+    """Validate the persisted ``Contribution.data`` (strict *plain* keys at every level).
 
     This is the stored-document counterpart to :func:`validate_contribution_data`. By the time a
     :class:`~mpcontribs_api.domains.contributions.models.Contribution` is built, pivot/expansion has
     already coerced every key to canonical snake_case, so the stored payload must satisfy the plain-key
     rules at *every* level — the annotated-key grammar (``name (unit, cond=...)``) is no longer allowed
-    even at the top level. The depth bound is the same settings-driven limit as the input path, so the
-    two cannot drift.
+    even at the top level. Depth is enforced on the write path by the service (see
+    :func:`validate_data_depth`), so a legacy over-depth document stays readable.
     """
-    _validate_data_depth(data)
     _validate_keys(data)
     return data
 
 
 # Three field types over one shared validation core, so the input, patch, and stored paths cannot
-# drift on depth or key rules: inserts/whole-document writes are strict; a merge patch additionally
-# permits leaf fragments (see ``allow_leaf_fragments`` above); the stored document requires fully
-# coerced plain keys (no annotated-key grammar).
+# drift on key rules: inserts/whole-document writes are strict; a merge patch additionally permits
+# leaf fragments (see ``allow_leaf_fragments`` above); the stored document requires fully coerced
+# plain keys (no annotated-key grammar). Depth is enforced separately in the service (per-consumer).
 ContributionData = Annotated[dict[str, Any] | None, BeforeValidator(validate_contribution_data)]
 ContributionPatchData = Annotated[
     dict[str, Any] | None,

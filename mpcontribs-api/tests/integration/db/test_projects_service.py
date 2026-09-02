@@ -1,7 +1,7 @@
 import pytest
 
 from mpcontribs_api.authz import User
-from mpcontribs_api.domains.consumers.models import ConsumerSettings
+from mpcontribs_api.domains.consumers.models import ConsumerProjectSettings, ConsumerSettings
 from mpcontribs_api.domains.initiatives.repository import MongoDbInitiativeRepository
 from mpcontribs_api.domains.projects.models import Column, Project, ProjectFilter, ProjectIn, ProjectPatch, Stats
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
@@ -327,7 +327,7 @@ class TestProjectCountQuota:
     async def test_upsert_new_project_over_cap_rejected(self, db, monkeypatch):
         from mpcontribs_api.config import get_settings
 
-        monkeypatch.setattr(get_settings().consumer, "max_projects", 1)
+        monkeypatch.setattr(get_settings().consumer.project, "max_projects", 1)
         await _insert("svc-owned-1", owner=ALICE_EMAIL)
         with pytest.raises(AppPermissionError):
             await _service(ALICE).upsert_one({"id": "svc-new-proj"}, _project_in("svc-new-proj", owner=ALICE_EMAIL))
@@ -336,7 +336,7 @@ class TestProjectCountQuota:
         # Updating a project you already own must never be blocked by the cap. Only new ones count.
         from mpcontribs_api.config import get_settings
 
-        monkeypatch.setattr(get_settings().consumer, "max_projects", 1)
+        monkeypatch.setattr(get_settings().consumer.project, "max_projects", 1)
         await _insert("svc-owned-only", owner=ALICE_EMAIL)
         result = await _service(ALICE).upsert_one(
             {"id": "svc-owned-only"}, _project_in("svc-owned-only", owner=ALICE_EMAIL, title="Updated Title")
@@ -346,7 +346,7 @@ class TestProjectCountQuota:
     async def test_injected_consumer_override_lowers_cap(self, db):
         # A per-consumer override injected into the service tightens the cap to 1, without touching config.
         await _insert("svc-override-1", owner=ALICE_EMAIL)
-        service = _service(ALICE, limits=ConsumerSettings(max_projects=1))
+        service = _service(ALICE, limits=ConsumerSettings(project=ConsumerProjectSettings(max_projects=1)))
         with pytest.raises(AppPermissionError):
             await service.upsert_one({"id": "svc-override-2"}, _project_in("svc-override-2", owner=ALICE_EMAIL))
 

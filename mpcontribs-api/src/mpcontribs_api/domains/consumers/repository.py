@@ -1,3 +1,4 @@
+from collections.abc import Iterator
 from typing import Any
 
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
@@ -9,6 +10,21 @@ from mpcontribs_api.domains.consumers.models import (
     ConsumerPatch,
 )
 from mpcontribs_api.scope import Scope
+
+
+def _flatten(prefix: str, value: dict[str, Any]) -> Iterator[tuple[str, Any]]:
+    """Yield ``(dotted_key, leaf_value)`` for every leaf in a nested settings dict.
+
+    Recurses into nested dicts so a patch of ``{"contribution": {"max_components": 1}}`` under the
+    ``settings`` prefix becomes ``settings.contribution.max_components``, leaving sibling leaves and
+    sibling domains untouched.
+    """
+    for key, sub in value.items():
+        dotted = f"{prefix}.{key}"
+        if isinstance(sub, dict):
+            yield from _flatten(dotted, sub)
+        else:
+            yield dotted, sub
 
 
 class MongoDbConsumerRepository(MongoDbRepository[Consumer, ConsumerIn, ConsumerOut, ConsumerFilter, ConsumerPatch]):
@@ -25,11 +41,12 @@ class MongoDbConsumerRepository(MongoDbRepository[Consumer, ConsumerIn, Consumer
     read_scope = Scope()
 
     def _update_fields(self, update: ConsumerPatch) -> dict[str, Any]:
-        """Flatten the patch to dotted ``settings.<field>`` keys.
+        """Flatten the patch to dotted ``settings.<domain>.<leaf>`` keys.
 
-        The limits live under a nested ``settings`` sub-document; dotting the update makes a partial
-        patch change only the named limits and leave the siblings intact (a plain ``$set`` of
-        ``settings`` would replace the whole sub-document).
+        The limits live under a nested, domain-grouped ``settings`` sub-document; dotting the update
+        down to each leaf makes a partial patch change only the named limits and leave the siblings
+        intact (a plain ``$set`` of ``settings`` — or of ``settings.<domain>`` — would replace the
+        whole sub-document).
         """
         overrides = update.settings.model_dump(exclude_unset=True) if update.settings else {}
-        return {f"settings.{field}": value for field, value in overrides.items()}
+        return dict(_flatten("settings", overrides))

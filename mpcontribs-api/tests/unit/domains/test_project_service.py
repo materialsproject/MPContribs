@@ -6,7 +6,7 @@ from bson import DBRef
 
 from mpcontribs_api.authz import User
 from mpcontribs_api.domains._shared.models import DeleteResponse
-from mpcontribs_api.domains.consumers.models import ConsumerSettings
+from mpcontribs_api.domains.consumers.models import ConsumerProjectSettings, ConsumerSettings
 from mpcontribs_api.domains.projects.models import Column, Project, ProjectIn, ProjectPatch, Stats
 from mpcontribs_api.domains.projects.service import ProjectService
 from mpcontribs_api.exceptions import NotFoundError, ValidationError
@@ -146,7 +146,9 @@ class TestUpsert:
         assert saved.is_approved is False
 
     async def test_new_over_cap_raises_permission(self):
-        svc, projects, _ = _service(ALICE, existing=None, count=5, limits=ConsumerSettings(max_projects=2))
+        svc, projects, _ = _service(
+            ALICE, existing=None, count=5, limits=ConsumerSettings(project=ConsumerProjectSettings(max_projects=2))
+        )
         with pytest.raises(AppPermissionError):
             await svc.upsert_one({"id": "proj-1"}, _project_in("p1", owner=ALICE_EMAIL))
         projects.replace_one.assert_not_called()

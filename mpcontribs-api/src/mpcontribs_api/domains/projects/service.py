@@ -3,7 +3,6 @@ from typing import Any
 from bson import DBRef
 
 from mpcontribs_api.authz import INITIATIVE_PATH, ROOT_PATH, User
-from mpcontribs_api.config import get_settings
 from mpcontribs_api.domains._shared.models import DeleteResponse
 from mpcontribs_api.domains.consumers.models import ConsumerSettings
 from mpcontribs_api.domains.initiatives.repository import MongoDbInitiativeRepository
@@ -26,8 +25,7 @@ class ProjectService:
         self._user = user
         self._projects = projects
         self._initiatives = initiatives
-        self._initiative_limits = get_settings().domain.initiatives
-        self._consumer_limits = limits or ConsumerSettings()
+        self._limits = limits or ConsumerSettings()
 
     async def read_many(
         self, filter: ProjectFilter, pagination: CursorParams, fields: frozenset[str] | None
@@ -129,7 +127,7 @@ class ProjectService:
         Soft limit: the count-then-insert is not atomic, so concurrent creates by the same owner can
         overshoot the cap slightly.
         """
-        max_projects = self._consumer_limits.max_projects
+        max_projects = self._limits.project.max_projects
         # Unscoped: the per-owner cap is a property of the owner, independent of who is asking.
         count = await self._projects.count_matching({"owner": owner}, scoped=False)
         if count >= max_projects:
@@ -190,11 +188,11 @@ class ProjectService:
             if project_id is not None:
                 members_query["_id"] = {"$ne": project_id}
             members = await self._projects.count_matching(members_query, scoped=False)
-            if members >= self._initiative_limits.max_projects_per_unapproved:
+            if members >= self._limits.initiative.max_projects_per_unapproved:
                 raise ConflictError(
                     message="unapproved initiative already has the maximum number of assigned projects",
                     slug=slug,
-                    limit=self._initiative_limits.max_projects_per_unapproved,
+                    limit=self._limits.initiative.max_projects_per_unapproved,
                 )
 
         return DBRef("initiatives", initiative.id)

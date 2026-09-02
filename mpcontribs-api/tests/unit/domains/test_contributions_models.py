@@ -121,13 +121,13 @@ class TestContributionBase:
         contrib = _make_contribution_in(data=nested)
         assert contrib.data["band_gap"]["value"] == 1.5
 
-    def test_data_depth_validation(self):
-        max_nesting = {"lvl_1": {"lvl_2": {"lvl_3": {"lvl_4": {"lvl_5": {"lvl_6": {"lvl_7": "pass"}}}}}}}
-        invalid_nesting = {"lvl_1": {"lvl_2": {"lvl_3": {"lvl_4": {"lvl_5": {"lvl_6": {"lvl_7": {"lvl_8": "fail"}}}}}}}}
-        _make_contribution_in(data=max_nesting)
-        assert True
-        with pytest.raises(ValidationError, match="Depth of Contribution.data"):
-            _make_contribution_in(data=invalid_nesting)
+    def test_deep_data_accepted_by_model(self):
+        # Depth is no longer a model-level constraint: it is a per-consumer quota enforced in
+        # ``ContributionService`` (see tests/unit/domains/test_contribution_service.py). The model
+        # accepts arbitrarily deep data so a legacy over-depth document stays readable.
+        deep = {"lvl_1": {"lvl_2": {"lvl_3": {"lvl_4": {"lvl_5": {"lvl_6": {"lvl_7": {"lvl_8": "ok"}}}}}}}}
+        contrib = _make_contribution_in(data=deep)
+        assert contrib.data is not None
 
     def test_data_key_validation(self):
         # Input keys are coerced to snake_case on write, so punctuation is folded (not rejected) and

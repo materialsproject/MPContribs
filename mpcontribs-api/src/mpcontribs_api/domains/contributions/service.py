@@ -28,7 +28,7 @@ from mpcontribs_api.domains._shared.units import QuantityLeaf
 from mpcontribs_api.domains.attachments.models import AttachmentFilter
 from mpcontribs_api.domains.attachments.repository import MongoDbAttachmentRepository
 from mpcontribs_api.domains.consumers.models import ConsumerSettings
-from mpcontribs_api.domains.contributions.data import validate_contribution_data
+from mpcontribs_api.domains.contributions.data import validate_contribution_data, validate_data_depth
 from mpcontribs_api.domains.contributions.models import (
     Contribution,
     ContributionFilter,
@@ -216,12 +216,20 @@ class ContributionService:
         self,
         contributions: list[ContributionIn],
     ) -> tuple[list[BulkFailure], list[PreparedWrite]]:
-        """Annotate units and pivot each submission on its conditions, keeping the original index."""
+        """Annotate units and pivot each submission on its conditions, keeping the original index.
+
+        Data-depth is enforced here, per-consumer, against each *expanded* row (pivoting dotted keys
+        can deepen the stored dict), so an over-depth submission is a per-item failure rather than a
+        whole-request rejection.
+        """
+        max_depth = self._limits.contribution.max_data_depth
         failures: list[BulkFailure] = []
         prepared: list[PreparedWrite] = []
         for i, contrib in enumerate(contributions):
             try:
                 rows = expand_contribution(contrib)
+                for row in rows:
+                    validate_data_depth(row.contribution.data, max_depth)
             except AppError as exc:
                 failures.append(bulk_failure_from_exception(i, contrib.identity_dict(), exc))
                 logger.info("contribution expansion rejected", index=i, identifiers=contrib.identity_dict())
@@ -390,7 +398,7 @@ class ContributionService:
         should proceed to Mongo. Doing this upfront avoids burning a transaction slot on a request
         guaranteed to exceed transactionLifetimeLimitSeconds.
         """
-        cap = self._settings.max_components_per_contribution
+        cap = self._limits.contribution.max_components
         oversize: list[BulkFailure] = []
         remaining: list[PreparedWrite] = []
         for item in items:
@@ -422,7 +430,7 @@ class ContributionService:
         for item in plan:
             by_project[item.contribution.project].append(item)
 
-        cap = self._limits.max_unapproved_contributions_per_project
+        cap = self._limits.contribution.max_per_unapproved_project
         failures: list[BulkFailure] = []
         survivors: list[PreparedWrite] = []
         for project_id, items in by_project.items():
@@ -460,7 +468,7 @@ class ContributionService:
                     rejected_identifiers_truncated=len(rejected) > _QUOTA_LOG_IDENTIFIER_CAP,
                 )
             exc = PermissionError(
-                "Attempted to add more than the allowed number of unapproved contributions",
+                "Attempted to add more than the allowed number of contributions to an unapproved project",
                 project=project_id,
                 max_allowed=cap,
             )
@@ -509,7 +517,10 @@ class ContributionService:
         identity_failures, plan = await self._resolve_identity(sized, is_upsert=is_upsert)
         # Reject writes that would push an unapproved project past its contribution cap.
         quota_failures, plan = await self._split_quota_exceeded(plan, is_upsert=is_upsert)
-        return (unauthorized_failures + oversize_failures + identity_failures + quota_failures, plan)
+        return (
+            expand_failures + unauthorized_failures + oversize_failures + identity_failures + quota_failures,
+            plan,
+        )
 
     async def _insert_no_components(
         self,
@@ -805,13 +816,14 @@ class ContributionService:
         unapproved project's contribution cap is enforced when the upsert would insert a new document.
         """
         self._user.require_write(*PROJECT_PATH, contribution.project)
+        validate_data_depth(contribution.data, self._limits.contribution.max_data_depth)
         existing = await self._contributions.read_one(identifiers, None)
         if existing is None:
             stored = await self._unapproved_stored_count(contribution.project)
-            cap = self._limits.max_unapproved_contributions_per_project
+            cap = self._limits.contribution.max_per_unapproved_project
             if stored is not None and stored >= cap:
                 raise PermissionError(
-                    "Attempted to add more than the allowed number of unapproved contributions",
+                    "Attempted to add more than the allowed number of contributions to an unapproved project",
                     project=contribution.project,
                     max_allowed=cap,
                 )
@@ -878,6 +890,11 @@ class ContributionService:
             data = set_fields["data"]
         else:
             data = QuantityLeaf.merge_data(existing.data, set_fields["data"])
+        # Enforce the per-consumer depth quota against the data the write will actually persist (the
+        # merged view when merging, the patch's data on replace). Skipped when the patch leaves data
+        # untouched, so a legacy over-depth document can still receive metadata-only patches.
+        if "data" in set_fields:
+            validate_data_depth(data, self._limits.contribution.max_data_depth)
         unique_value = await self._resolve_unique_value(project, data)
         return await self._contributions.update_one(
             identifiers,

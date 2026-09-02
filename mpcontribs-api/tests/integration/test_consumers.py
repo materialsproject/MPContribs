@@ -3,7 +3,12 @@ from unittest.mock import AsyncMock
 import pytest
 
 from mpcontribs_api.domains.consumers.dependencies import get_consumer_service
-from mpcontribs_api.domains.consumers.models import ConsumerOut, ConsumerSettings
+from mpcontribs_api.domains.consumers.models import (
+    ConsumerContributionSettings,
+    ConsumerOut,
+    ConsumerProjectSettings,
+    ConsumerSettings,
+)
 from mpcontribs_api.pagination import Page
 from tests.integration.conftest import ADMIN_HEADERS, ANON_HEADERS, AUTHED_HEADERS
 
@@ -18,7 +23,10 @@ from tests.integration.conftest import ADMIN_HEADERS, ANON_HEADERS, AUTHED_HEADE
 SAMPLE_CONSUMER = ConsumerOut(
     id="507f1f77bcf86cd799439011",
     consumer_id="test-consumer-id",
-    settings=ConsumerSettings(max_projects=3, max_unapproved_contributions_per_project=10, max_columns=20),
+    settings=ConsumerSettings(
+        project=ConsumerProjectSettings(max_projects=3, max_columns=20),
+        contribution=ConsumerContributionSettings(max_per_unapproved_project=10),
+    ),
 )
 
 
@@ -45,7 +53,7 @@ def _requests(client):
             "update_one",
             lambda h: client.patch(
                 "/api/v1/admin/consumers/507f1f77bcf86cd799439011",
-                json={"settings": {"max_projects": 5}},
+                json={"settings": {"project": {"max_projects": 5}}},
                 headers=h,
             ),
         ),
@@ -103,7 +111,7 @@ class TestConsumerRoutesAdminAllowed:
         consumer_service.update_one.return_value = SAMPLE_CONSUMER
         r = client.patch(
             "/api/v1/admin/consumers/507f1f77bcf86cd799439011",
-            json={"settings": {"max_projects": 5}},
+            json={"settings": {"project": {"max_projects": 5}}},
             headers=ADMIN_HEADERS,
         )
         assert r.status_code == 200

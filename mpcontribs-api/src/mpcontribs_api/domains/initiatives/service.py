@@ -1,8 +1,8 @@
 from typing import Any
 
 from mpcontribs_api.authz import INITIATIVE_PATH, ROOT_PATH, User
-from mpcontribs_api.config import get_settings
 from mpcontribs_api.domains._shared.models import DeleteResponse
+from mpcontribs_api.domains.consumers.models import ConsumerSettings
 from mpcontribs_api.domains.initiatives.models import (
     Initiative,
     InitiativeFilter,
@@ -33,12 +33,16 @@ class InitiativeService:
     """
 
     def __init__(
-        self, user: User, initiatives: MongoDbInitiativeRepository, projects: MongoDbProjectRepository
+        self,
+        user: User,
+        initiatives: MongoDbInitiativeRepository,
+        projects: MongoDbProjectRepository,
+        limits: ConsumerSettings | None = None,
     ) -> None:
         self._user = user
         self._initiatives = initiatives
         self._projects = projects
-        self._limits = get_settings().domain.initiatives
+        self._limits = limits or ConsumerSettings()
 
     async def read_many(
         self, pagination: CursorParams, filter: InitiativeFilter, fields: frozenset[str] | None
@@ -69,10 +73,10 @@ class InitiativeService:
             unapproved = await self._initiatives.count_matching(
                 {"owner": self._user.username, "is_approved": False}, scoped=False
             )
-            if unapproved >= self._limits.max_unapproved_per_owner:
+            if unapproved >= self._limits.initiative.max_unapproved_per_owner:
                 raise ConflictError(
                     "owner already has the maximum number of unapproved initiatives",
-                    limit=self._limits.max_unapproved_per_owner,
+                    limit=self._limits.initiative.max_unapproved_per_owner,
                 )
 
         # The repository translates the unique-slug DuplicateKeyError into a ConflictError whose

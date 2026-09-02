@@ -54,7 +54,7 @@ def _service(user: User, *, existing=None, unapproved: int = 0):
 
 
 def _limit() -> int:
-    return get_settings().domain.initiatives.max_unapproved_per_owner
+    return get_settings().consumer.initiative.max_unapproved_per_owner
 
 
 # ---------------------------------------------------------------------------

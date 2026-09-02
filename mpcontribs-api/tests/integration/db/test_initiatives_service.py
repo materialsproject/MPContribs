@@ -146,7 +146,7 @@ class TestBothRights:
 
 class TestMemberCap:
     async def test_unapproved_capped_at_configured_members(self, db):
-        cap = get_settings().domain.initiatives.max_projects_per_unapproved
+        cap = get_settings().consumer.initiative.max_projects_per_unapproved
         await _insert_initiative("init-cap", ALICE)
         for i in range(cap):
             await _insert_project(f"cap-proj-{i}", owner=ALICE_EMAIL)
@@ -156,7 +156,7 @@ class TestMemberCap:
             await _service(ALICE).update_one({"id": "cap-proj-over"}, ProjectPatch(initiative="init-cap"))
 
     async def test_reassigning_existing_member_is_idempotent(self, db):
-        cap = get_settings().domain.initiatives.max_projects_per_unapproved
+        cap = get_settings().consumer.initiative.max_projects_per_unapproved
         await _insert_initiative("init-idem", ALICE)
         for i in range(cap):
             await _insert_project(f"idem-proj-{i}", owner=ALICE_EMAIL)
@@ -166,10 +166,10 @@ class TestMemberCap:
         assert again.initiative is not None
 
     async def test_approved_initiative_has_no_member_cap(self, db, monkeypatch):
-        cap = get_settings().domain.initiatives.max_projects_per_unapproved
+        cap = get_settings().consumer.initiative.max_projects_per_unapproved
         # Lift the orthogonal per-user project quota so seeding cap+2 owned projects doesn't trip it;
         # this test isolates the *initiative member* cap, not the project-count cap.
-        monkeypatch.setattr(get_settings().consumer, "max_projects", cap + 5)
+        monkeypatch.setattr(get_settings().consumer.project, "max_projects", cap + 5)
         await _insert_initiative("init-approved", ALICE)
         await MongoDbInitiativeRepository(ADMIN).update_one({"slug": "init-approved"}, InitiativePatch(is_approved=True))
         for i in range(cap + 2):  # comfortably past the unapproved cap
@@ -246,21 +246,21 @@ class TestInitiativeCreate:
             await _initiative_service(bob).insert_one(InitiativeIn(slug="svc-dup", name="X"))
 
     async def test_owner_capped_at_configured_unapproved(self, db):
-        limit = get_settings().domain.initiatives.max_unapproved_per_owner
+        limit = get_settings().consumer.initiative.max_unapproved_per_owner
         for i in range(limit):
             await _initiative_service(ALICE).insert_one(InitiativeIn(slug=f"svc-cap-{i}", name="X"))
         with pytest.raises(ConflictError):
             await _initiative_service(ALICE).insert_one(InitiativeIn(slug="svc-cap-over", name="X"))
 
     async def test_approved_frees_a_quota_slot(self, db):
-        limit = get_settings().domain.initiatives.max_unapproved_per_owner
+        limit = get_settings().consumer.initiative.max_unapproved_per_owner
         for i in range(limit):
             await _initiative_service(ALICE).insert_one(InitiativeIn(slug=f"svc-quota-{i}", name="X"))
         await _approve("svc-quota-0")
         assert await _initiative_service(ALICE).insert_one(InitiativeIn(slug="svc-quota-extra", name="X")) is not None
 
     async def test_admin_is_exempt_from_quota(self, db):
-        limit = get_settings().domain.initiatives.max_unapproved_per_owner
+        limit = get_settings().consumer.initiative.max_unapproved_per_owner
         for i in range(limit + 2):
             await _initiative_service(ADMIN).insert_one(InitiativeIn(slug=f"svc-admin-{i}", name="X"))
 

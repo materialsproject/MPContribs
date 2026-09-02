@@ -57,8 +57,9 @@ class TestMongoSettingsDefaults:
         assert _mongo().admin_group == "admin"
 
     def test_default_component_limits(self):
+        # The per-contribution component *count* cap is now a per-consumer quota
+        # (consumer.contribution.max_components); mongo keeps only the insert-chunk size.
         settings = _mongo()
-        assert settings.max_components_per_contribution == 500
         assert settings.component_insert_chunk_size == 100
 
     def test_invalid_datetime_conversion_raises(self):
@@ -151,6 +152,29 @@ class TestSettingsEnvLoading:
         monkeypatch.setenv("MPCONTRIBS_ENVIRONMENT", "staging")
         with pytest.raises(PydanticValidationError):
             Settings()
+
+
+# ---------------------------------------------------------------------------
+# Consumer quota limits — domain-grouped defaults and env nesting
+# ---------------------------------------------------------------------------
+
+
+class TestConsumerQuotaDefaults:
+    def test_domain_grouped_defaults(self, monkeypatch):
+        _set_required_env(monkeypatch)
+        consumer = Settings().consumer
+        assert consumer.project.max_projects == 3
+        assert consumer.project.max_columns == 160
+        assert consumer.contribution.max_per_unapproved_project == 500
+        assert consumer.contribution.max_components == 500
+        assert consumer.contribution.max_data_depth == 7
+        assert consumer.initiative.max_unapproved_per_owner == 3
+        assert consumer.initiative.max_projects_per_unapproved == 2
+
+    def test_nested_env_override_reaches_leaf(self, monkeypatch):
+        _set_required_env(monkeypatch)
+        monkeypatch.setenv("MPCONTRIBS_CONSUMER__CONTRIBUTION__MAX_COMPONENTS", "42")
+        assert Settings().consumer.contribution.max_components == 42
 
 
 # ---------------------------------------------------------------------------
