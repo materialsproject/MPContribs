@@ -93,7 +93,7 @@ def _validate_data_depth(data: dict[str, Any] | None) -> dict[str, Any] | None:
     if data is None:
         return None
     depth = _get_dict_depth(data)
-    max_depth = settings.mpcontribs.max_contrib_data_depth
+    max_depth = settings.domain.contributions.max_data_depth
     if depth > max_depth:
         raise ValidationError(f"Depth of Contribution.data must be <= {max_depth}.", depth=depth, max_depth=max_depth)
     return data

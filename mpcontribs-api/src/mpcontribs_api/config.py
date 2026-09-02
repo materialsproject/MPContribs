@@ -172,26 +172,6 @@ class MongoSettings(BaseModel):
         return self
 
 
-class InitiativeSettings(BaseModel):
-    """Limits governing user-owned initiatives."""
-
-    max_unapproved_per_owner: int = Field(
-        default=3,
-        description="Maximum number of unapproved initiatives a single owner may have at once. Enforced on create.",
-    )
-    max_projects_per_unapproved: int = Field(
-        default=2,
-        description="Maximum number of projects that may be assigned to an unapproved initiative. Enforced when a "
-        "project's initiative is set via PATCH.",
-    )
-
-
-class DomainSettings(BaseModel):
-    """Settings to configure the domain logic of MPContribs"""
-
-    initiatives: InitiativeSettings = Field(default_factory=InitiativeSettings)
-
-
 class AuthzSettings(BaseModel):
     """Authorization settings for the grant-validation layer."""
 
@@ -201,20 +181,52 @@ class AuthzSettings(BaseModel):
     )
 
 
-class MPContribsSettings(BaseModel):
-    max_contrib_data_depth: int = Field(
-        default=7, description="The max number of levels allowed in a Contribution's data dictionary."
+class InitiativeSettings(BaseModel):
+    """Limits governing user-owned initiatives."""
+
+    max_unapproved_per_owner: int = Field(
+        default=3,
+        description="Maximum number of unapproved initiatives a single owner may have at once. Enforced on create.",
     )
+    max_projects_per_unapproved: int = Field(
+        default=3,
+        description="Maximum number of projects that may be assigned to an unapproved initiative. Enforced when a "
+        "project's initiative is set via PATCH.",
+    )
+
+
+class ProjectSettings(BaseModel):
+    """Limits governing user-owned projects"""
+
     max_columns: int = Field(
         default=160,
         description="The maximum allowed number of columns for a contribution (len(Contribution.data)), "
         "which also gets reflected in Project.columns",
+    )
+
+
+class ContributionSettings(BaseModel):
+    """Limits governing user-owned contributions"""
+
+    max_data_depth: int = Field(
+        default=7, description="The max number of levels allowed in a Contribution's data dictionary."
     )
     max_components: int = Field(
         default=10,
         description="The maximum allowed number of a single Component type (Structure, Table, Attachment) on a single "
         "Contribution",
     )
+
+
+class DomainSettings(BaseModel):
+    """Settings to configure the domain logic of MPContribs"""
+
+    initiatives: InitiativeSettings = Field(default_factory=InitiativeSettings)
+    projects: ProjectSettings = Field(default_factory=ProjectSettings)
+    contributions: ContributionSettings = Field(default_factory=ContributionSettings)
+
+
+class MPContribsSettings(BaseModel):
     float_precision: int = Field(
         default=6,
         description="The precision with which to store floats in MongoDB. "
