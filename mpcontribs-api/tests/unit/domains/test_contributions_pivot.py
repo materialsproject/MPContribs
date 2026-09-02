@@ -180,8 +180,8 @@ class TestExpandContribution:
         rows = expand_contribution(
             _contrib_in(
                 {
-                    "conductivity (S/cm, T=300K, P=1atm)": 4.2,
-                    "conductivity (S/cm, T=400K, P=1atm)": 5.1,
+                    "conductivity (S/cm, t=300K, p=1atm)": 4.2,
+                    "conductivity (S/cm, t=400K, p=1atm)": 5.1,
                     "bandgap (eV)": 1.1,
                 }
             )
@@ -189,38 +189,38 @@ class TestExpandContribution:
         assert len(rows) == 2
         assert len({r.condition_key for r in rows}) == 2
         for r in rows:
-            # conditions + measurement + broadcast column all present; condition names are
-            # camelCase-coerced (T -> t, P -> p) like every other data key.
+            # conditions + measurement + broadcast column all present. Condition names must already be
+            # canonical (the model rejects non-canonical keys), so they become columns verbatim.
             assert set(r.contribution.data) == {"t", "p", "conductivity", "bandgap"}
 
     def test_condition_less_column_broadcasts(self):
         rows = expand_contribution(
-            _contrib_in({"x (eV, T=300K)": 1.0, "x (eV, T=400K)": 2.0, "shared (eV)": 9.0})
+            _contrib_in({"x (eV, t=300K)": 1.0, "x (eV, t=400K)": 2.0, "shared (eV)": 9.0})
         )
         assert len(rows) == 2
         for r in rows:
             assert math.isclose(r.contribution.data["shared"]["value"], 9.0)
 
     def test_conditions_stored_as_columns(self):
-        rows = expand_contribution(_contrib_in({"conductivity (S/cm, T=300K)": 4.2}))
+        rows = expand_contribution(_contrib_in({"conductivity (S/cm, t=300K)": 4.2}))
         assert len(rows) == 1
         data = rows[0].contribution.data
-        # condition name coerced to camelCase (T -> t)
+        # the (already-canonical) condition name becomes a column
         assert "t" in data
         assert math.isclose(data["t"]["si_value"], 300.0)
 
     def test_dotted_path_nests(self):
-        rows = expand_contribution(_contrib_in({"a.b.c (eV, T=300K)": 2.0}))
+        rows = expand_contribution(_contrib_in({"a.b.c (eV, t=300K)": 2.0}))
         data = rows[0].contribution.data
         assert "si_value" in data["a"]["b"]["c"]
 
     def test_same_name_signature_different_unit_collision(self):
         with pytest.raises(ValidationError, match="same path"):
-            expand_contribution(_contrib_in({"x (S/cm, T=300K)": 1, "x (mS/cm, T=300K)": 2}))
+            expand_contribution(_contrib_in({"x (S/cm, t=300K)": 1, "x (mS/cm, t=300K)": 2}))
 
     def test_condition_name_collides_with_measurement(self):
         with pytest.raises(ValidationError, match="same path"):
-            expand_contribution(_contrib_in({"T (K, T=300K)": 1}))
+            expand_contribution(_contrib_in({"t (K, t=300K)": 1}))
 
     def test_malformed_annotation_raises_validation_error(self):
         # ContributionIn validation already rejects most malformed keys; expand raises on any that
@@ -235,7 +235,7 @@ class TestExpandContribution:
         # same components, so every pivoted row keeps the full component set (the insert path stores
         # them once, deduplicated by hash, and links every row to the shared ids).
         struct = _structure_in()
-        c = _contrib_in({"x (eV, T=300K)": 1, "x (eV, T=400K)": 2}, structures=[struct])
+        c = _contrib_in({"x (eV, t=300K)": 1, "x (eV, t=400K)": 2}, structures=[struct])
         rows = expand_contribution(c)
         assert len(rows) == 2
         assert len({r.condition_key for r in rows}) == 2
@@ -250,45 +250,31 @@ class TestExpandContribution:
         rows = expand_contribution(c)
         assert len(rows) == 1
 
-    def test_plain_keys_coerced_when_no_annotations(self):
-        rows = expand_contribution(_contrib_in({"Band Gap": 1.5, "nested": {"Sub Key": 2}}))
-        assert len(rows) == 1
-        # keys coerced to camelCase, numeric values promoted to leaves
-        assert rows[0].contribution.data == {"bandGap": {"si_value": 1.5}, "nested": {"subKey": {"si_value": 2.0}}}
-
     def test_already_camel_case_keys_still_leafify_numbers(self):
         # Even with nothing to coerce, bare numbers are normalized to quantity leaves.
         c = _contrib_in({"bandGap": 1.5, "nested": {"subKey": 2}})
         rows = expand_contribution(c)
         assert rows[0].contribution.data == {"bandGap": {"si_value": 1.5}, "nested": {"subKey": {"si_value": 2.0}}}
 
-    def test_annotated_path_segments_coerced(self):
-        rows = expand_contribution(_contrib_in({"Band Gap (eV, T=300K)": 1.1}))
+    def test_annotated_key_produces_name_and_condition_columns(self):
+        # An annotated key with an already-canonical name and condition pivots into a measurement
+        # column plus a condition column; the unit annotates the measurement leaf.
+        rows = expand_contribution(_contrib_in({"bandGap (eV, t=300K)": 1.1}))
         data = rows[0].contribution.data
         assert set(data) == {"bandGap", "t"}
         assert data["bandGap"]["unit"] == "eV"
 
-    def test_forbidden_name_chars_folded_to_word_boundary(self):
-        # '*', '/', and '|' are allowed in the name portion but folded to word boundaries (not
-        # rejected). The same characters stay verbatim inside a unit (S/cm), which is never coerced.
-        rows = expand_contribution(_contrib_in({"a/b*c|d (S/cm)": 5}))
-        data = rows[0].contribution.data
-        assert set(data) == {"aBCD"}
-        assert data["aBCD"]["unit"] == "S/cm"
-
-    def test_dotted_path_segments_coerced(self):
-        rows = expand_contribution(_contrib_in({"Outer.Inner Key (eV)": 1.1}))
+    def test_dotted_path_nests_unit_only(self):
+        # A canonical dotted path nests, and its scalar is promoted to a leaf.
+        rows = expand_contribution(_contrib_in({"outer.innerKey (eV)": 1.1}))
         data = rows[0].contribution.data
         assert "si_value" in data["outer"]["innerKey"]
 
     def test_unit_and_condition_value_preserved_verbatim(self):
-        # unit (eV) and condition value (300K -> canonical) are never coerced; only names are
-        rows = expand_contribution(_contrib_in({"Band Gap (eV, Temp=300K)": 1.1}))
+        # unit (eV) and condition value (300K -> canonical magnitude) are never coerced; names are
+        # required to be canonical already, so they pass through as the stored columns.
+        rows = expand_contribution(_contrib_in({"bandGap (eV, temp=300K)": 1.1}))
         data = rows[0].contribution.data
         assert data["bandGap"]["unit"] == "eV"
-        assert "temp" in data  # condition name coerced
+        assert "temp" in data
         assert math.isclose(data["temp"]["si_value"], 300.0)
-
-    def test_coercion_collision_across_columns_rejected(self):
-        with pytest.raises(ValidationError, match="same path"):
-            expand_contribution(_contrib_in({"Band Gap (eV)": 1, "band_gap (eV)": 2}))

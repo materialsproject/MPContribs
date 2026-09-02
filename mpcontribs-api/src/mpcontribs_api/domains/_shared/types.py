@@ -5,7 +5,7 @@ from collections.abc import Callable, Mapping
 from dataclasses import MISSING, dataclass, fields
 from enum import StrEnum
 from functools import cache
-from typing import Annotated, Any, Self, get_args, get_type_hints
+from typing import Annotated, Any, Literal, Self, get_args, get_type_hints
 
 import polars as pl
 from fastapi import Query
@@ -428,6 +428,46 @@ def coerce_key(
             reserved=sorted(reserved),
         )
     return coerced
+
+
+@dataclass(frozen=True, slots=True)
+class KeyOffense:
+    """One ``data`` key that is not already in the expected canonical form.
+
+    ``suggestion`` is the canonical spelling the caller should use, or ``None`` when there is no
+    clean suggestion (a non-ASCII key, a key that reduces to an empty string, or a reserved leaf
+    name that is already canonical). ``reason`` is a stable, machine-readable tag.
+    """
+
+    key: Any
+    suggestion: str | None
+    reason: Literal["not_camel_case", "non_ascii", "empty_after_coercion", "reserved"]
+
+
+def canonical_key_offense(
+    key: Any,
+    *,
+    reserved: frozenset[str] | None = None,
+    coercion_method: Callable[[str], str] = CANONICAL_KEY_COERCION,
+) -> KeyOffense | None:
+    """Return a :class:`KeyOffense` when ``key`` is not already an acceptable canonical data key, else ``None``.
+
+    A key is acceptable iff it is a non-empty ASCII string that equals its own canonical form
+    (``coercion_method(key) == key``) and is not a reserved leaf name.
+    """
+    if not isinstance(key, str) or not key.isascii():
+        return KeyOffense(key=key, suggestion=None, reason="non_ascii")
+    canonical = coercion_method(key)
+    if not canonical:
+        return KeyOffense(key=key, suggestion=None, reason="empty_after_coercion")
+    # Check reserved against the canonical form (not the raw key), so a non-canonical key whose
+    # canonical spelling is reserved (e.g. "Value" -> "value") is reported as reserved rather than
+    # suggesting a reserved name the caller could never use.
+    if reserved is not None and canonical in reserved:
+        return KeyOffense(key=key, suggestion=None, reason="reserved")
+    if canonical != key:
+        return KeyOffense(key=key, suggestion=canonical, reason="not_camel_case")
+    return None
 
 
 def map_keys(value: Any, *, coerce: Callable[[Any], str], on_scalar: Callable[[Any], Any] = lambda x: x) -> Any:

@@ -785,7 +785,7 @@ class TestInsertContributionsTransactionPath:
         # One submission that pivots into two rows (T=300K / T=400K) and carries a structure.
         contrib = _contrib_in(
             identifier="mp-1",
-            data={"x (eV, T=300K)": 1, "x (eV, T=400K)": 2},
+            data={"x (eV, t=300K)": 1, "x (eV, t=400K)": 2},
             structures=[_structure_in()],
         )
         summary = await svc.insert_many([contrib])
@@ -887,7 +887,7 @@ class TestContributionIdentity:
         svc, contrib_repo, *_ = _make_service(unique_column="sampleId")
         contrib_repo.insert_many.return_value = None
 
-        summary = await svc.insert_many([_contrib_in(data={"sample_id": "A"})])
+        summary = await svc.insert_many([_contrib_in(data={"sampleId": "A"})])
 
         assert len(summary.succeeded) == 1
         docs = contrib_repo.insert_many.call_args[0][0]
@@ -897,7 +897,7 @@ class TestContributionIdentity:
         svc, contrib_repo, *_ = _make_service(unique_column="sampleId")
         contrib_repo.insert_many.return_value = None
 
-        contribs = [_contrib_in(data={"sample_id": "A"}), _contrib_in(data={"sample_id": "B"})]
+        contribs = [_contrib_in(data={"sampleId": "A"}), _contrib_in(data={"sampleId": "B"})]
         summary = await svc.insert_many(contribs)
 
         assert len(summary.succeeded) == 2
@@ -918,7 +918,7 @@ class TestContributionIdentity:
         svc, contrib_repo, *_ = _make_service(unique_column="sampleId")
         contrib_repo.insert_many.return_value = None
 
-        summary = await svc.insert_many([_contrib_in(data={"sample_id": {"nested": 1}})])
+        summary = await svc.insert_many([_contrib_in(data={"sampleId": {"nested": 1}})])
 
         assert summary.succeeded == []
         assert [f.error_code for f in summary.failed] == ["validation_error"]
@@ -958,7 +958,7 @@ class TestContributionIdentity:
         svc, contrib_repo, *_ = _make_service(unique_column="sampleId")
         contrib_repo.upsert_one.return_value = MagicMock(spec=Contribution, project="proj")
 
-        await svc.upsert_many([_contrib_in(data={"sample_id": "A"})])
+        await svc.upsert_many([_contrib_in(data={"sampleId": "A"})])
 
         identifiers = contrib_repo.upsert_one.call_args.args[0]
         assert identifiers["unique_value"] == "A"
