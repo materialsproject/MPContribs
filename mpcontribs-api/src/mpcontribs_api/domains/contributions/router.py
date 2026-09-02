@@ -18,6 +18,7 @@ from mpcontribs_api.domains.contributions.dependencies import ContributionServic
 from mpcontribs_api.domains.contributions.models import (
     Contribution,
     ContributionFilter,
+    ContributionIdentity,
     ContributionIn,
     ContributionOut,
     ContributionPatch,
@@ -131,6 +132,38 @@ async def download_contributions(
         media_type="application/gzip",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+# Declared before the ``/{id}`` routes so the literal ``item`` is never captured as an id.
+@router.get("/item")
+async def read_one_by_identity(
+    service: ContributionServiceDep,
+    identity: Annotated[ContributionIdentity, Depends()],
+    fields: FieldSelector = None,
+):
+    """Return the single contribution addressed by its natural identity (409 if ambiguous)."""
+    selected = ContributionOut.parse_fields(fields)
+    return await service.read_one(identity.as_dict(), fields=selected)
+
+
+@router.delete("/item", dependencies=[Depends(require_user)])
+async def delete_one_by_identity(
+    service: ContributionServiceDep,
+    identity: Annotated[ContributionIdentity, Depends()],
+) -> BulkDeleteSummary:
+    """Delete the single contribution addressed by its natural identity, cascading to components."""
+    return await service.delete_one(identity.as_dict())
+
+
+@router.patch("/item", dependencies=[Depends(require_user)])
+async def update_one_by_identity(
+    service: ContributionServiceDep,
+    update: ContributionPatch,
+    identity: Annotated[ContributionIdentity, Depends()],
+    replace_data: bool = False,
+):
+    """Patch the single contribution addressed by its natural identity (409 if ambiguous)."""
+    return await service.update_one(identity.as_dict(), update=update, replace_data=replace_data)
 
 
 @router.delete("/{id}", dependencies=[Depends(require_user)])

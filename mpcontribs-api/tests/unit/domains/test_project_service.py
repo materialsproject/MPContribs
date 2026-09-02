@@ -64,7 +64,8 @@ def _service(user: User, *, existing=None, scoped=None, count: int = 0, limits: 
     projects.find_by_id_unscoped.return_value = existing
     projects.read_one.return_value = scoped
     projects.count_matching.return_value = count
-    projects.upsert_one.side_effect = lambda doc, **kw: doc
+    # PUT does a full-replace-by-id (repo.replace_one(id, doc)); return the doc it was handed.
+    projects.replace_one.side_effect = lambda id, doc, **kw: doc
     projects.update_one.return_value = _project()
     projects.delete_one.return_value = DeleteResponse(num_deleted=1)
     initiatives = AsyncMock()
@@ -111,13 +112,13 @@ class TestUpsert:
         svc, projects, _ = _service(ANON)
         with pytest.raises(AppPermissionError):
             await svc.upsert_one({"id": "proj-1"}, _project_in("p1"))
-        projects.upsert_one.assert_not_called()
+        projects.replace_one.assert_not_called()
 
     async def test_existing_non_owner_raises_permission(self):
         svc, projects, _ = _service(BOB, existing=_project(owner=ALICE_EMAIL))
         with pytest.raises(AppPermissionError):
             await svc.upsert_one({"id": "proj-1"}, _project_in("p1"))
-        projects.upsert_one.assert_not_called()
+        projects.replace_one.assert_not_called()
 
     async def test_update_preserves_owner_and_server_fields(self):
         existing = _project(
@@ -130,7 +131,7 @@ class TestUpsert:
         svc, projects, _ = _service(ALICE, existing=existing)
         # Body tries to reassign owner and drop publication; both must be ignored/preserved.
         await svc.upsert_one({"id": "proj-1"}, _project_in("p1", owner=BOB_EMAIL, is_public=False))
-        saved = projects.upsert_one.call_args.args[0]
+        saved = projects.replace_one.call_args.args[1]
         assert saved.owner == ALICE_EMAIL
         assert saved.is_public is True
         assert saved.is_approved is True
@@ -140,7 +141,7 @@ class TestUpsert:
     async def test_new_forces_owner_and_unapproves(self):
         svc, projects, _ = _service(BOB, existing=None, count=0)
         await svc.upsert_one({"id": "proj-1"}, _project_in("p1", owner=ALICE_EMAIL, is_approved=True))
-        saved = projects.upsert_one.call_args.args[0]
+        saved = projects.replace_one.call_args.args[1]
         assert saved.owner == BOB_EMAIL
         assert saved.is_approved is False
 
@@ -148,14 +149,14 @@ class TestUpsert:
         svc, projects, _ = _service(ALICE, existing=None, count=5, limits=ConsumerSettings(max_projects=2))
         with pytest.raises(AppPermissionError):
             await svc.upsert_one({"id": "proj-1"}, _project_in("p1", owner=ALICE_EMAIL))
-        projects.upsert_one.assert_not_called()
+        projects.replace_one.assert_not_called()
 
     async def test_public_unapproved_raises_validation(self):
         # Admin new project: approval is not forced off, so a public+unapproved body trips the invariant.
         svc, projects, _ = _service(ADMIN, existing=None, count=0)
         with pytest.raises(ValidationError):
             await svc.upsert_one({"id": "proj-1"}, _project_in("p1", is_public=True, is_approved=False))
-        projects.upsert_one.assert_not_called()
+        projects.replace_one.assert_not_called()
 
 
 # ---------------------------------------------------------------------------

@@ -11,7 +11,7 @@ from pydantic import (
 )
 
 from mpcontribs_api.domains._shared.filters import BaseFilter
-from mpcontribs_api.domains._shared.models import Component, ComponentIn, DocumentOut
+from mpcontribs_api.domains._shared.models import Component, ComponentIdentity, ComponentIn, DocumentOut
 from mpcontribs_api.domains._shared.types import DisplayStr, MD5Hash, NFKCStr, PolarsFrame, nfc_normalize
 from mpcontribs_api.projection import SparseFieldsModel
 
@@ -71,6 +71,7 @@ class Table(Component):
 
     class Settings:
         name = "tables"
+        indexes = [ComponentIdentity.index_model(name="md5")]
 
     @classmethod
     def from_input(cls, input: TableIn) -> Self:  # pyright: ignore[reportIncompatibleMethodOverride]

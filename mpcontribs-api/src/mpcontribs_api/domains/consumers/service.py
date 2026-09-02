@@ -1,3 +1,5 @@
+from typing import Any
+
 from mpcontribs_api.domains.consumers.models import (
     Consumer,
     ConsumerFilter,
@@ -31,15 +33,16 @@ class ConsumerService:
     ) -> Page[ConsumerOut]:
         return await self._consumer.read_many(filter=filter, pagination=pagination, fields=fields)
 
-    async def read_one(self, id: str, fields: frozenset[str] | None) -> ConsumerOut | None:
-        return await self._consumer.read_one(identifiers={"id": id}, fields=fields)
+    async def read_one(self, identifiers: dict[str, Any], fields: frozenset[str] | None) -> ConsumerOut | None:
+        """Read one override by its identity — the bare ``{"id": ...}`` or ``{"consumer_id": ...}``."""
+        return await self._consumer.read_one(identifiers=identifiers, fields=fields)
 
     async def insert_one(self, consumer: ConsumerIn) -> Consumer:
         document = self._consumer.document_model.from_input_model(consumer)
         return await self._consumer.insert_one(document)
 
-    async def update_one(self, id: str, update: ConsumerPatch) -> Consumer:
-        return await self._consumer.update_one(identifiers={"id": id}, update=update)
+    async def update_one(self, identifiers: dict[str, Any], update: ConsumerPatch) -> Consumer:
+        return await self._consumer.update_one(identifiers=identifiers, update=update)
 
-    async def delete_one(self, id: str) -> None:
-        await self._consumer.delete_one(identifiers={"id": id})
+    async def delete_one(self, identifiers: dict[str, Any]) -> None:
+        await self._consumer.delete_one(identifiers=identifiers)

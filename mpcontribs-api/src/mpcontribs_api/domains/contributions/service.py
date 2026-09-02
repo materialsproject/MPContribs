@@ -685,9 +685,14 @@ class ContributionService:
         async def _bounded_upsert(item: PreparedWrite) -> Contribution | BulkFailure:
             contrib = item.contribution
             identifiers = contrib.identity_dict(item.unique_value, item.condition_key)
+            # Build the full document with its server-resolved identity parts stamped on, then upsert
+            # keyed on that identity (the repository reads it off ``document.identity()``).
+            doc = self._contributions.document_model.from_input_model(contrib)
+            doc.unique_value = item.unique_value
+            doc.condition_key = item.condition_key
             async with sem:
                 try:
-                    return await self._contributions.upsert_one(identifiers, contrib)
+                    return await self._contributions.upsert_one(doc)
                 except Exception as exc:
                     logger.error("upsert_contribution_failed", index=item.index, identifier=identifiers, exc_info=True)
                     return bulk_failure_from_exception(item.index, identifiers, exc)
@@ -738,7 +743,7 @@ class ContributionService:
             else filter.model_copy(update={"project__in": sorted(self._user.writable(*PROJECT_PATH))})
         )
 
-        touches_identity = bool(ContributionIdentity.model_fields() & fields.keys()) or "data" in fields
+        touches_identity = bool(ContributionIdentity.model_fields.keys() & fields.keys()) or "data" in fields
         if not touches_identity:
             # No identity/unique_value recompute needed, so a uniform $set is safe.
             summary = await self._contributions.update_many(filter, fields)
@@ -811,7 +816,7 @@ class ContributionService:
                     max_allowed=cap,
                 )
         unique_value = await self._resolve_unique_value(contribution.project, contribution.data)
-        return await self._contributions.upsert_one(identifiers, contribution, unique_value)
+        return await self._contributions.upsert_by_id(identifiers["id"], contribution, unique_value)
 
     async def update_one(
         self, identifiers: dict[str, Any], update: ContributionPatch, *, replace_data: bool = False
@@ -830,6 +835,11 @@ class ContributionService:
         re-validated strictly (the permissive patch validator allows leaf fragments a full doc may not).
         ``unique_value`` is resolved against the same post-write view the repository will persist.
         """
+        if identifiers.keys() != {"id"}:
+            existing = await self._contributions.read_one(identifiers, frozenset({"id"}))
+            if existing is None:
+                raise NotFoundError("contribution not found", identifiers=identifiers)
+            identifiers = {"id": str(existing.id)}
         if not self._user.is_admin(*ROOT_PATH):
             target = await self._contributions.read_one(identifiers, frozenset({"id", "project"}))
             if target is None:

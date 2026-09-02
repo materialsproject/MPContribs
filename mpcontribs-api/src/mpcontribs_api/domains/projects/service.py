@@ -87,7 +87,7 @@ class ProjectService:
 
         if project.is_public and not project.is_approved:
             raise ValidationError("a project cannot be public until it is approved", id=id)
-        return await self._projects.upsert_one(project)
+        return await self._projects.replace_one(id, project)
 
     async def update_one(self, identifiers: dict[str, Any], update: ProjectPatch) -> Project:
         """Apply a project patch, enforcing approval rules and routing ``initiative`` changes.

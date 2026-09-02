@@ -86,7 +86,7 @@ def _identity(
     unique_value=None,
     condition_key="",
 ) -> dict:
-    """The full composite natural key (see ``Contribution.identifier_fields``) for a semantic lookup.
+    """The full composite natural key (see ``ContributionIdentity.model_fields``) for a semantic lookup.
 
     Mirrors the defaults ``_insert``/``_contrib_in`` seed, so ``_identity(material_id=...)`` addresses
     a document created with the matching ``identifier=...``.
@@ -400,11 +400,29 @@ class TestGetContributionBySemanticIdentifiers:
         assert result is not None
         assert result.material_id == "id-a"
 
-    async def test_partial_identifier_set_is_rejected(self, db):
-        # The semantic set must be the complete composite key, not a subset.
-        await _insert(project="partial-proj", identifier="partial-id")
+    async def test_partial_identity_resolves_matching_doc(self, db):
+        # A partial identity (a subset of the composite key) is accepted, as long as it satisfies the
+        # hierarchy, and resolves the single matching row.
+        await _insert(project="partial-proj", identifier="partial-id", chemical_system_id="Fe-O")
+        result = await _repo(ADMIN).read_one(
+            {"project": "partial-proj", "chemical_system_id": "Fe-O"}, fields=None
+        )
+        assert result is not None
+        assert result.material_id == "partial-id"
+
+    async def test_partial_identity_ambiguous_raises_conflict(self, db):
+        # A partial identity that matches more than one in-scope row is rejected rather than silently
+        # returning the first — the caller must disambiguate (e.g. supply material_id/formula).
+        await _insert(project="ambig-proj", identifier="mp-1", chemical_system_id="Fe-O")
+        await _insert(project="ambig-proj", identifier="mp-2", chemical_system_id="Fe-O")
+        with pytest.raises(ConflictError):
+            await _repo(ADMIN).read_one({"project": "ambig-proj", "chemical_system_id": "Fe-O"}, fields=None)
+
+    async def test_identity_without_chemical_system_is_rejected(self, db):
+        # The identifier hierarchy requires chemical_system_id; a partial lacking it is invalid.
+        await _insert(project="no-chemsys", identifier="mp-1")
         with pytest.raises(ValidationError):
-            await _repo(ADMIN).read_one({"project": "partial-proj", "material_id": "partial-id"}, fields=None)
+            await _repo(ADMIN).read_one({"project": "no-chemsys", "material_id": "mp-1"}, fields=None)
 
 
 # ---------------------------------------------------------------------------
@@ -533,7 +551,7 @@ class TestUpsertContributionById:
     async def test_insert_when_id_absent_persists_document(self, db):
         new_id = PydanticObjectId()
         payload = _contrib_in(identifier="mp-4002", _id=new_id)
-        result = await _repo(ADMIN).upsert_one({"id": str(new_id)}, payload)
+        result = await _repo(ADMIN).upsert_by_id(str(new_id), payload)
         # Must be the resolved document, not an un-awaited query object.
         assert isinstance(result, Contribution)
         stored = await Contribution.find_one(Contribution.id == new_id)
@@ -543,7 +561,7 @@ class TestUpsertContributionById:
     async def test_update_when_id_present_applies_change(self, db):
         existing = await _insert(identifier="mp-4001")
         payload = _contrib_in(identifier="mp-4001", formula="Li2O", _id=existing.id)
-        result = await _repo(ADMIN).upsert_one({"id": str(existing.id)}, payload)
+        result = await _repo(ADMIN).upsert_by_id(str(existing.id), payload)
         assert isinstance(result, Contribution)
         stored = await Contribution.find_one(Contribution.id == existing.id)
         assert stored is not None
@@ -554,7 +572,8 @@ class TestUpsertContributionById:
         # updates the matching document in place rather than creating a duplicate.
         await _insert(project="ups-sem", identifier="mp-5001", formula="Fe2O3")
         payload = _contrib_in(project="ups-sem", identifier="mp-5001", formula="Fe2O3")
-        result = await _repo(ADMIN).upsert_one(_identity(project="ups-sem", material_id="mp-5001"), payload)
+        doc = _repo(ADMIN).document_model.from_input_model(payload)
+        result = await _repo(ADMIN).upsert_one(doc)
         assert isinstance(result, Contribution)
         count = await Contribution.find(Contribution.project == "ups-sem").count()
         assert count == 1
@@ -565,7 +584,7 @@ class TestUpsertContributionById:
         existing = await _insert(identifier="mp-4004", unique_value="batch-A")
         assert existing.unique_value == "batch-A"
         payload = _contrib_in(identifier="mp-4004", _id=existing.id)
-        await _repo(ADMIN).upsert_one({"id": str(existing.id)}, payload, unique_value=None)
+        await _repo(ADMIN).upsert_by_id(str(existing.id), payload, unique_value=None)
         stored = await Contribution.find_one(Contribution.id == existing.id)
         assert stored is not None
         assert stored.unique_value is None
@@ -577,7 +596,7 @@ class TestUpsertContributionById:
         victim = await _insert(project="uid-dup", identifier="mp-200")
         payload = _contrib_in(project="uid-dup", identifier="mp-100", _id=victim.id)
         with pytest.raises(ConflictError):
-            await _repo(ADMIN).upsert_one({"id": str(victim.id)}, payload)
+            await _repo(ADMIN).upsert_by_id(str(victim.id), payload)
 
 
 class TestDeleteByIdsScope:

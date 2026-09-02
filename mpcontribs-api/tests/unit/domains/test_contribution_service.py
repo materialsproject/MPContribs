@@ -505,7 +505,7 @@ class TestUpsertContributionsUnapprovedQuota:
         assert len(summary.succeeded) == 2
         assert [f.index for f in summary.failed] == [2]
         assert summary.failed[0].error_code == "permission_denied"
-        upserted = {c.args[1].material_id for c in contrib_repo.upsert_one.call_args_list}
+        upserted = {c.args[0].material_id for c in contrib_repo.upsert_one.call_args_list}
         assert upserted == {_mp_id_for("a"), _mp_id_for("b")}
 
     async def test_pure_updates_are_never_capped(self, monkeypatch):
@@ -553,12 +553,12 @@ class TestUpsertContributionByIdQuota:
         contrib_repo = AsyncMock()
         contrib_repo.read_one.return_value = MagicMock(spec=Contribution)  # id exists -> update
         contrib_repo.count_matching.return_value = 99
-        contrib_repo.upsert_one.return_value = MagicMock(spec=Contribution)
+        contrib_repo.upsert_by_id.return_value = MagicMock(spec=Contribution)
         svc, *_ = _make_service(contributions=contrib_repo, projects=_unapproved_projects_repo())
 
-        await svc.upsert_one("someid", _contrib_in())
+        await svc.upsert_one({"id": "someid"}, _contrib_in())
 
-        contrib_repo.upsert_one.assert_called_once()
+        contrib_repo.upsert_by_id.assert_called_once()
         contrib_repo.count_matching.assert_not_called()
 
     async def test_new_insert_over_cap_rejected(self, monkeypatch):
@@ -569,21 +569,21 @@ class TestUpsertContributionByIdQuota:
         svc, *_ = _make_service(contributions=contrib_repo, projects=_unapproved_projects_repo())
 
         with pytest.raises(PermissionError):
-            await svc.upsert_one("someid", _contrib_in())
+            await svc.upsert_one({"id": "someid"}, _contrib_in())
 
-        contrib_repo.upsert_one.assert_not_called()
+        contrib_repo.upsert_by_id.assert_not_called()
 
     async def test_new_insert_under_cap_allowed(self, monkeypatch):
         monkeypatch.setattr(get_settings().consumer, "max_unapproved_contributions_per_project", 5)
         contrib_repo = AsyncMock()
         contrib_repo.read_one.return_value = None
         contrib_repo.count_matching.return_value = 1
-        contrib_repo.upsert_one.return_value = MagicMock(spec=Contribution)
+        contrib_repo.upsert_by_id.return_value = MagicMock(spec=Contribution)
         svc, *_ = _make_service(contributions=contrib_repo, projects=_unapproved_projects_repo())
 
-        await svc.upsert_one("someid", _contrib_in())
+        await svc.upsert_one({"id": "someid"}, _contrib_in())
 
-        contrib_repo.upsert_one.assert_called_once()
+        contrib_repo.upsert_by_id.assert_called_once()
 
     async def test_new_insert_at_exactly_cap_rejected(self, monkeypatch):
         # stored == cap: the project is full, so a brand-new document is rejected (no cap+1 slack).
@@ -594,20 +594,20 @@ class TestUpsertContributionByIdQuota:
         svc, *_ = _make_service(contributions=contrib_repo, projects=_unapproved_projects_repo())
 
         with pytest.raises(PermissionError):
-            await svc.upsert_one("someid", _contrib_in())
+            await svc.upsert_one({"id": "someid"}, _contrib_in())
 
-        contrib_repo.upsert_one.assert_not_called()
+        contrib_repo.upsert_by_id.assert_not_called()
 
     async def test_new_insert_approved_project_unlimited(self, monkeypatch):
         monkeypatch.setattr(get_settings().consumer, "max_unapproved_contributions_per_project", 1)
         contrib_repo = AsyncMock()
         contrib_repo.read_one.return_value = None
-        contrib_repo.upsert_one.return_value = MagicMock(spec=Contribution)
+        contrib_repo.upsert_by_id.return_value = MagicMock(spec=Contribution)
         svc, *_ = _make_service(contributions=contrib_repo, projects=_approved_projects_repo())
 
-        await svc.upsert_one("someid", _contrib_in())
+        await svc.upsert_one({"id": "someid"}, _contrib_in())
 
-        contrib_repo.upsert_one.assert_called_once()
+        contrib_repo.upsert_by_id.assert_called_once()
         contrib_repo.count_matching.assert_not_called()
 
 
@@ -960,8 +960,9 @@ class TestContributionIdentity:
 
         await svc.upsert_many([_contrib_in(data={"sample_id": "A"})])
 
-        identifiers = contrib_repo.upsert_one.call_args.args[0]
-        assert identifiers["unique_value"] == "A"
+        # The batch path builds the document and stamps the server-resolved unique_value onto it.
+        doc = contrib_repo.upsert_one.call_args.args[0]
+        assert doc.unique_value == "A"
 
     async def test_upsert_missing_unique_column_value_is_validation_failure(self):
         svc, contrib_repo, *_ = _make_service(unique_column="sample_id")
@@ -1046,15 +1047,16 @@ class TestUpsertContributionsAtomic:
         # The atomic upsert path is used, not the bulk insert path.
         contrib_repo.insert_one.assert_not_called()
 
-    async def test_passes_identifiers_dict_and_input_to_repo(self):
+    async def test_passes_identity_stamped_document_to_repo(self):
         svc, contrib_repo, *_ = _make_service()
         contrib_repo.upsert_one.return_value = MagicMock(spec=Contribution, project="proj")
 
         contrib = _contrib_in(project="my-proj", material_id="mp-99")
         await svc.upsert_many([contrib])
 
-        call = contrib_repo.upsert_one.call_args
-        assert call.args[0] == {
+        # The repo is handed a fully-built document; its identity carries the write's natural key.
+        doc = contrib_repo.upsert_one.call_args.args[0]
+        assert doc.identity().as_dict() == {
             "project": "my-proj",
             "material_id": "mp-99",
             "chemical_system_id": "Fe-O",
@@ -1062,7 +1064,6 @@ class TestUpsertContributionsAtomic:
             "unique_value": None,
             "condition_key": "",
         }
-        assert call.args[1] is contrib
 
     async def test_returns_repo_results_in_input_order(self):
         svc, contrib_repo, *_ = _make_service()
@@ -1071,9 +1072,9 @@ class TestUpsertContributionsAtomic:
             doc.project = "proj"  # real project so update_project can aggregate the affected set
         returned = {}
 
-        async def _upsert(identifiers, contrib):
-            doc = docs[int(contrib.material_id.split("-")[1])]
-            returned[contrib.material_id] = doc
+        async def _upsert(document):
+            doc = docs[int(document.material_id.split("-")[1])]
+            returned[document.material_id] = doc
             return doc
 
         contrib_repo.upsert_one.side_effect = _upsert
@@ -1111,8 +1112,8 @@ class TestUpsertContributionsAtomic:
     async def test_one_failure_is_reported_not_raised(self):
         svc, contrib_repo, *_ = _make_service()
 
-        async def _upsert(identifiers, contrib):
-            if contrib.material_id == "mp-1":
+        async def _upsert(document):
+            if document.material_id == "mp-1":
                 raise ConflictError("boom")
             return MagicMock(spec=Contribution, project="proj")
 
@@ -1248,24 +1249,24 @@ class TestWriteAuthorization:
         # not gated by the quota, so the write goes through.
         contrib_repo = AsyncMock()
         contrib_repo.read_one.return_value = MagicMock(spec=Contribution)  # exists -> update
-        contrib_repo.upsert_one.return_value = MagicMock(spec=Contribution)
+        contrib_repo.upsert_by_id.return_value = MagicMock(spec=Contribution)
         svc, *_ = _make_service(
             contributions=contrib_repo, projects=_unapproved_projects_repo(), user=_member_user("allowed")
         )
 
-        await svc.upsert_one("someid", _contrib_in(project="allowed"))
+        await svc.upsert_one({"id": "someid"}, _contrib_in(project="allowed"))
 
-        contrib_repo.upsert_one.assert_called_once()
+        contrib_repo.upsert_by_id.assert_called_once()
 
     async def test_upsert_admin_bypasses_authorization(self):
         contrib_repo = AsyncMock()
         contrib_repo.read_one.return_value = MagicMock(spec=Contribution)
-        contrib_repo.upsert_one.return_value = MagicMock(spec=Contribution)
+        contrib_repo.upsert_by_id.return_value = MagicMock(spec=Contribution)
         svc, *_ = _make_service(contributions=contrib_repo, projects=_approved_projects_repo())  # admin default
 
-        await svc.upsert_one("someid", _contrib_in(project="anything"))
+        await svc.upsert_one({"id": "someid"}, _contrib_in(project="anything"))
 
-        contrib_repo.upsert_one.assert_called_once()
+        contrib_repo.upsert_by_id.assert_called_once()
 
 
 # ---------------------------------------------------------------------------
@@ -1521,7 +1522,7 @@ class TestPatchIdentifierHierarchy:
         contrib_repo.read_one.return_value = existing
 
         with pytest.raises(ValidationError, match="formula is required when material_id"):
-            await svc.update_one(str(existing.id), ContributionPatch(material_id="mp-1"))
+            await svc.update_one({"id": str(existing.id)}, ContributionPatch(material_id="mp-1"))
 
         # Rejected before any write.
         contrib_repo.update_one.assert_not_called()
@@ -1532,7 +1533,7 @@ class TestPatchIdentifierHierarchy:
         contrib_repo.read_one.return_value = existing
         contrib_repo.update_one.return_value = MagicMock(spec=Contribution)
 
-        await svc.update_one(str(existing.id), ContributionPatch(material_id="mp-1"))
+        await svc.update_one({"id": str(existing.id)}, ContributionPatch(material_id="mp-1"))
 
         contrib_repo.update_one.assert_called_once()
 
@@ -1540,7 +1541,7 @@ class TestPatchIdentifierHierarchy:
         svc, contrib_repo, *_ = _make_service()
         contrib_repo.update_one.return_value = MagicMock(spec=Contribution)
 
-        await svc.update_one("some-id", ContributionPatch(is_public=True))
+        await svc.update_one({"id": "some-id"}, ContributionPatch(is_public=True))
 
         # No identity/unique inputs touched -> no re-read, straight to the plain patch.
         contrib_repo.read_one.assert_not_called()
@@ -1560,7 +1561,7 @@ class TestPatchDataMergeReplace:
         contrib_repo.read_one.return_value = existing
         contrib_repo.update_one.return_value = MagicMock(spec=Contribution)
 
-        await svc.update_one(str(existing.id), ContributionPatch(data={"y": 9.0}))
+        await svc.update_one({"id": str(existing.id)}, ContributionPatch(data={"y": 9.0}))
 
         # The repo performs the actual dotted-$set merge; the service just forwards replace_data=False.
         assert contrib_repo.update_one.call_args.kwargs["replace_data"] is False
@@ -1573,7 +1574,7 @@ class TestPatchDataMergeReplace:
         contrib_repo.update_one.return_value = MagicMock(spec=Contribution)
 
         await svc.update_one(
-            str(existing.id), ContributionPatch(data={"y": 9.0}), replace_data=True
+            {"id": str(existing.id)}, ContributionPatch(data={"y": 9.0}), replace_data=True
         )
 
         assert contrib_repo.update_one.call_args.kwargs["replace_data"] is True
@@ -1587,7 +1588,7 @@ class TestPatchDataMergeReplace:
         contrib_repo.read_one.return_value = existing
         contrib_repo.update_one.return_value = MagicMock(spec=Contribution)
 
-        await svc.update_one(str(existing.id), ContributionPatch(data={"y": 9.0}))
+        await svc.update_one({"id": str(existing.id)}, ContributionPatch(data={"y": 9.0}))
 
         # Resolved from {sample_id:42, x:1, y:9}, so the untouched unique_value survives the merge.
         assert contrib_repo.update_one.call_args.kwargs["unique_value"] == 42
@@ -1602,6 +1603,6 @@ class TestPatchDataMergeReplace:
 
         with pytest.raises(ValidationError, match="unique_column"):
             await svc.update_one(
-                str(existing.id), ContributionPatch(data={"y": 9.0}), replace_data=True
+                {"id": str(existing.id)}, ContributionPatch(data={"y": 9.0}), replace_data=True
             )
         contrib_repo.update_one.assert_not_called()

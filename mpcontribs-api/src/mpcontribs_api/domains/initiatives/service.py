@@ -76,7 +76,7 @@ class InitiativeService:
                 )
 
         # The repository translates the unique-slug DuplicateKeyError into a ConflictError whose
-        # context carries the slug (Initiative.identifier_fields() == {"slug"}).
+        # context carries the slug (Initiative.identity_model.model_fields == {"slug"}).
         initiative = self._initiatives.document_model.from_input_model(data, owner=self._user.username)
         return await self._initiatives.insert_one(initiative)
 

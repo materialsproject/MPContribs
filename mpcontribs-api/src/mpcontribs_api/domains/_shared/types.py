@@ -1,15 +1,12 @@
 import re
 import unicodedata
-from abc import ABC
 from collections.abc import Callable, Mapping
-from dataclasses import MISSING, dataclass, fields
 from enum import StrEnum
-from functools import cache
-from typing import Annotated, Any, Self, get_args, get_type_hints
+from typing import Annotated, Any, Self
 
 import polars as pl
 from fastapi import Query
-from pydantic import BeforeValidator, Field, PlainSerializer, WithJsonSchema
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, PlainSerializer, WithJsonSchema
 from pymatgen.core import Element
 from pymongo import ASCENDING, IndexModel
 
@@ -424,62 +421,45 @@ def map_keys(value: Any, *, coerce: Callable[[Any], str], on_scalar: Callable[[A
     return on_scalar(value)
 
 
-@cache
-def _optional_field_names(cls: type) -> frozenset[str]:
-    """Names of ``cls``'s dataclass fields whose type admits ``None`` (resolved through string annotations)."""
-    hints = get_type_hints(cls)
-    return frozenset(f.name for f in fields(cls) if type(None) in get_args(hints.get(f.name)))
-
-
-# dataclass construction is cheaper than Pydantic.BaseModel
-@dataclass(frozen=True, slots=True)
-class Identity(ABC):  # noqa: B024  # base kept abstract as a marker; from_document is a shared concrete helper
+class Identity(BaseModel):
     """The full identity of a document model.
 
     Field declaration order IS the identity/index column order: ``index_model`` and ``projection``
-    iterate ``dataclasses.fields`` in that order, so the order is declared exactly once (below).
+    iterate ``model_fields`` (which preserves definition order) so the order is declared exactly once
+    on each subclass.
     """
 
     # WARNING: the order the fields are specified in reflects their ordering for indices. Changing the order
     # creates index migration. Only change intentionally
+    model_config = ConfigDict(frozen=True)
 
     def as_dict(self) -> dict[str, Any]:
         """Identity as a flat dict keyed by field name (for Mongo match clauses and upsert)."""
-        return {f.name: getattr(self, f.name) for f in fields(self)}
-
-    @classmethod
-    def model_fields(cls) -> frozenset[str]:
-        """Returns the field names as a frozenset"""
-        return frozenset(f.name for f in fields(cls))
+        return {name: getattr(self, name) for name in type(self).model_fields}
 
     @classmethod
     def from_document(cls, doc: Mapping[str, Any]) -> Self:
         """Build from a raw Mongo document/projection, tolerating null-stripped fields.
 
-        Generic over any ``@dataclass`` subclass: iterates the concrete class's own fields,
-        falling back to each field's default (or ``None`` for a defaultless Optional field) when the
-        document omits it, since Mongo strips nulls (``keep_nulls=False``). Required non-null fields
-        that are absent surface as a ``TypeError`` from the constructor.
+        Uses `model_construct` to avoid having to revalidate data that is already valid (stored), and to avoid
+        errors on legacy documents.
         """
-        optional = _optional_field_names(cls)
-        kwargs: dict[str, Any] = {}
-        for f in fields(cls):
-            if doc.get(f.name) is not None:
-                kwargs[f.name] = doc[f.name]
-            elif f.default is not MISSING:
-                kwargs[f.name] = f.default
-            elif f.default_factory is not MISSING:
-                kwargs[f.name] = f.default_factory()
-            elif f.name in optional:
-                kwargs[f.name] = None
-        return cls(**kwargs)
+        present = {name: doc[name] for name in cls.model_fields if doc.get(name) is not None}
+        missing = [name for name, field in cls.model_fields.items() if field.is_required() and name not in present]
+        if missing:
+            raise TypeError(f"{cls.__name__}.from_document missing required field(s): {sorted(missing)}")
+        return cls.model_construct(**present)
 
     @classmethod
-    def index_model(cls, name: str = "project_identity", *, unique: bool = True) -> IndexModel:
-        """The unique index enforcing identity — keys follow the field order so they can't drift."""
-        return IndexModel(keys=[(f.name, ASCENDING) for f in fields(cls)], name=name, unique=unique)
+    def index_model(cls, name: str = "identity", *, unique: bool = True) -> IndexModel:
+        """The unique index enforcing identity — keys follow the field order so they can't drift.
+
+        ``name`` should be passed explicitly to match the collection's deployed index name; renaming
+        a live index forces a drop/recreate migration.
+        """
+        return IndexModel(keys=[(name_, ASCENDING) for name_ in cls.model_fields], name=name, unique=unique)
 
     @classmethod
     def projection(cls) -> dict[str, int]:
         """A Mongo projection selecting exactly the identity fields."""
-        return {f.name: 1 for f in fields(cls)}
+        return {name: 1 for name in cls.model_fields}

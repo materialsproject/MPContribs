@@ -6,7 +6,7 @@ from fastapi_filter import FilterDepends
 
 from mpcontribs_api.dependencies import S3Dep, require_user, require_writer
 from mpcontribs_api.domains._shared.bulk import BulkWriteSummary
-from mpcontribs_api.domains._shared.models import ComponentDeleteResponse
+from mpcontribs_api.domains._shared.models import ComponentDeleteResponse, ComponentIdentity
 from mpcontribs_api.domains._shared.types import (
     DownloadFormat,
     FieldSelector,
@@ -31,13 +31,40 @@ async def read_many(
     return await service.read_many(filter=filter, fields=selected, pagination=pagination)
 
 
+@router.get("/item")
+async def read_one_by_identity(
+    service: TableServiceDep,
+    identity: Annotated[ComponentIdentity, Depends()],
+    fields: FieldSelector = None,
+):
+    """Return a single table addressed by its content ``md5`` (its natural key)."""
+    selected = TableOut.parse_fields(fields)
+    return await service.read_one(identifiers=identity.as_dict(), fields=selected)
+
+
+@router.delete("/item", response_model=ComponentDeleteResponse, dependencies=[Depends(require_user)])
+async def delete_one_by_identity(service: TableServiceDep, identity: Annotated[ComponentIdentity, Depends()]):
+    """Delete a single table addressed by its content ``md5`` (its natural key)."""
+    return await service.delete_one(identifiers=identity.as_dict())
+
+
+@router.patch("/item", dependencies=[Depends(require_user)])
+async def update_one_by_identity(
+    service: TableServiceDep,
+    identity: Annotated[ComponentIdentity, Depends()],
+    update: TablePatch,
+):
+    """Patch a single table addressed by its content ``md5`` (its natural key)."""
+    return await service.update_one(identifiers=identity.as_dict(), update=update)
+
+
 @router.get("/{id}")
 async def read_one(
     service: TableServiceDep,
     id: str,
     fields: FieldSelector = None,
 ):
-    """Return a single table addressed by its ``_id`` or its content ``md5``."""
+    """Return a single table addressed by its ``_id``."""
     selected = TableOut.parse_fields(fields)
     return await service.read_one(identifiers={"id": id}, fields=selected)
 

@@ -5,7 +5,7 @@ from pydantic import BaseModel, BeforeValidator, ConfigDict, model_validator
 from pymatgen.core import Element
 
 from mpcontribs_api.domains._shared.filters import BaseFilter
-from mpcontribs_api.domains._shared.models import Component, ComponentIn, DocumentOut
+from mpcontribs_api.domains._shared.models import Component, ComponentIdentity, ComponentIn, DocumentOut
 from mpcontribs_api.domains._shared.types import MD5Hash, NFKCStr
 from mpcontribs_api.exceptions import ValidationError
 from mpcontribs_api.projection import SparseFieldsModel
@@ -99,6 +99,7 @@ class Structure(Component):
 
     class Settings:
         name = "structures"
+        indexes = [ComponentIdentity.index_model(name="md5")]
 
 
 class StructureIn(ComponentIn):
