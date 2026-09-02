@@ -1,7 +1,7 @@
 import pytest
 
 from mpcontribs_api.authz import User
-from mpcontribs_api.domains.consumers.models import ConsumerProjectSettings, ConsumerSettings
+from mpcontribs_api.config import ConsumerLimits, ConsumerProjectLimits
 from mpcontribs_api.domains.initiatives.repository import MongoDbInitiativeRepository
 from mpcontribs_api.domains.projects.models import Column, Project, ProjectFilter, ProjectIn, ProjectPatch, Stats
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
@@ -25,7 +25,7 @@ ALICE_EMAIL = "google:alice@example.com"
 BOB_EMAIL = "google:bob@example.com"
 
 
-def _service(user: User, limits: ConsumerSettings | None = None) -> ProjectService:
+def _service(user: User, limits: ConsumerLimits | None = None) -> ProjectService:
     return ProjectService(
         user=user,
         projects=MongoDbProjectRepository(user),
@@ -346,7 +346,7 @@ class TestProjectCountQuota:
     async def test_injected_consumer_override_lowers_cap(self, db):
         # A per-consumer override injected into the service tightens the cap to 1, without touching config.
         await _insert("svc-override-1", owner=ALICE_EMAIL)
-        service = _service(ALICE, limits=ConsumerSettings(project=ConsumerProjectSettings(max_projects=1)))
+        service = _service(ALICE, limits=ConsumerLimits(project=ConsumerProjectLimits(max_projects=1)))
         with pytest.raises(AppPermissionError):
             await service.upsert_one({"id": "svc-override-2"}, _project_in("svc-override-2", owner=ALICE_EMAIL))
 

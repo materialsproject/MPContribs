@@ -1,8 +1,8 @@
 from typing import Any
 
 from mpcontribs_api.authz import INITIATIVE_PATH, ROOT_PATH, User
+from mpcontribs_api.config import ConsumerLimits, get_settings
 from mpcontribs_api.domains._shared.models import DeleteResponse
-from mpcontribs_api.domains.consumers.models import ConsumerSettings
 from mpcontribs_api.domains.initiatives.models import (
     Initiative,
     InitiativeFilter,
@@ -37,12 +37,12 @@ class InitiativeService:
         user: User,
         initiatives: MongoDbInitiativeRepository,
         projects: MongoDbProjectRepository,
-        limits: ConsumerSettings | None = None,
+        limits: ConsumerLimits | None = None,
     ) -> None:
         self._user = user
         self._initiatives = initiatives
         self._projects = projects
-        self._limits = limits or ConsumerSettings()
+        self._limits = limits or get_settings().consumer
 
     async def read_many(
         self, pagination: CursorParams, filter: InitiativeFilter, fields: frozenset[str] | None

@@ -4,8 +4,8 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+from mpcontribs_api.config import get_settings
 from mpcontribs_api.domains.consumers.dependencies import get_consumer_service
-from mpcontribs_api.domains.consumers.models import ConsumerSettings
 from mpcontribs_api.exceptions import (
     AuthenticationError,
     ConflictError,
@@ -65,7 +65,7 @@ class TestRequestValidation:
         # Mongo; these mock-based route tests have no DB, so stub it so request-body validation (the
         # behaviour under test) is what surfaces rather than a collection-not-initialised 500.
         service = AsyncMock()
-        service.effective_limits.return_value = ConsumerSettings()
+        service.effective_limits.return_value = get_settings().consumer
         test_app.dependency_overrides[get_consumer_service] = lambda: service
         yield
         test_app.dependency_overrides.pop(get_consumer_service, None)

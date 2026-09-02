@@ -8,7 +8,6 @@ from beanie import PydanticObjectId
 from mpcontribs_api.config import get_settings
 from mpcontribs_api.domains._shared.bulk import BulkWriteSummary
 from mpcontribs_api.domains.consumers.dependencies import get_consumer_service
-from mpcontribs_api.domains.consumers.models import ConsumerSettings
 from mpcontribs_api.domains.contributions.dependencies import get_contribution_service
 from tests.integration.conftest import AUTHED_HEADERS
 
@@ -71,7 +70,7 @@ class TestLimitsEndpoint:
         # GET /limits resolves the caller's effective per-consumer max_components via ConsumerService,
         # which needs Mongo; these route tests run without a DB, so stub it to return global defaults.
         service = AsyncMock()
-        service.effective_limits.return_value = ConsumerSettings()
+        service.effective_limits.return_value = get_settings().consumer
         test_app.dependency_overrides[get_consumer_service] = lambda: service
         yield
         test_app.dependency_overrides.pop(get_consumer_service, None)

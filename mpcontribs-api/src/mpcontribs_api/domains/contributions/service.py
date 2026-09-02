@@ -14,7 +14,7 @@ from pymongo.errors import BulkWriteError
 from types_aiobotocore_s3 import S3Client
 
 from mpcontribs_api.authz import PROJECT_PATH, ROOT_PATH, User
-from mpcontribs_api.config import MongoSettings, get_settings
+from mpcontribs_api.config import ConsumerLimits, MongoSettings, get_settings
 from mpcontribs_api.domains._shared.bulk import (
     BulkDeleteSummary,
     BulkFailure,
@@ -27,7 +27,6 @@ from mpcontribs_api.domains._shared.types import DownloadFormat, ShortMimeFormat
 from mpcontribs_api.domains._shared.units import QuantityLeaf
 from mpcontribs_api.domains.attachments.models import AttachmentFilter
 from mpcontribs_api.domains.attachments.repository import MongoDbAttachmentRepository
-from mpcontribs_api.domains.consumers.models import ConsumerSettings
 from mpcontribs_api.domains.contributions.data import validate_contribution_data, validate_data_depth
 from mpcontribs_api.domains.contributions.models import (
     Contribution,
@@ -86,7 +85,7 @@ class ContributionService:
         attachments: MongoDbAttachmentRepository,
         tables: MongoDbTableRepository,
         settings: MongoSettings | None = None,
-        limits: ConsumerSettings | None = None,
+        limits: ConsumerLimits | None = None,
     ):
         self._client = client
         self._user = user
@@ -96,7 +95,7 @@ class ContributionService:
         self._attachments = attachments
         self._tables = tables
         self._settings = settings or get_settings().mongo
-        self._limits = limits or ConsumerSettings()
+        self._limits = limits or get_settings().consumer
 
     @property
     def _children(self) -> dict[str, MongoDbRepository]:

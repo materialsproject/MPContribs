@@ -9,9 +9,8 @@ from pymongo.errors import BulkWriteError
 
 from mpcontribs_api.authz import User
 from mpcontribs_api.authz_core import ReservedRole
-from mpcontribs_api.config import MongoSettings, get_settings
+from mpcontribs_api.config import ConsumerContributionLimits, ConsumerLimits, MongoSettings, get_settings
 from mpcontribs_api.domains.attachments.models import Attachment, AttachmentIn
-from mpcontribs_api.domains.consumers.models import ConsumerContributionSettings, ConsumerSettings
 from mpcontribs_api.domains.contributions.models import (
     Contribution,
     ContributionFilter,
@@ -191,7 +190,7 @@ def _make_service(
     client=None,
     projects=None,
     settings: MongoSettings | None = None,
-    limits: ConsumerSettings | None = None,
+    limits: ConsumerLimits | None = None,
     write_slots: asyncio.Semaphore | None = None,
     user: User | None = None,
     unique_column: str | None = None,
@@ -312,7 +311,7 @@ class TestInsertContributionsPreChecks:
         assert len(contrib_repo.insert_many.call_args[0][0]) == 1
 
     async def test_oversize_contribution_goes_to_failures_without_db(self):
-        limits = ConsumerSettings(contribution=ConsumerContributionSettings(max_components=1))
+        limits = ConsumerLimits(contribution=ConsumerContributionLimits(max_components=1))
         svc, contrib_repo, struct_repo, _, _, client = _make_service(limits=limits)
         contrib_repo.insert_many.return_value = None
 
@@ -333,7 +332,7 @@ class TestInsertContributionsPreChecks:
     async def test_over_depth_contribution_goes_to_failures_per_item(self):
         # Data-depth is a per-consumer quota enforced in the service (no longer a model validator), so
         # an over-depth submission is a per-item failure while its shallow sibling still inserts.
-        limits = ConsumerSettings(contribution=ConsumerContributionSettings(max_data_depth=2))
+        limits = ConsumerLimits(contribution=ConsumerContributionLimits(max_data_depth=2))
         svc, contrib_repo, _, _, _, _ = _make_service(limits=limits)
         contrib_repo.insert_many.return_value = None
 
@@ -1191,7 +1190,7 @@ class TestWriteAuthorization:
     async def test_insert_unauthorized_and_oversize_yield_single_failure(self):
         """An item that is both unauthorized and oversize must produce exactly one BulkFailure
         (authorization runs first), preserving total == len(contributions)."""
-        limits = ConsumerSettings(contribution=ConsumerContributionSettings(max_components=1))
+        limits = ConsumerLimits(contribution=ConsumerContributionLimits(max_components=1))
         svc, contrib_repo, struct_repo, _, _, _ = _make_service(user=_member_user("allowed"), limits=limits)
 
         bad = _contrib_in(project="forbidden", identifier="big", structures=[_structure_in(), _structure_in()])

@@ -5,8 +5,8 @@ from beanie import PydanticObjectId
 from bson import DBRef
 
 from mpcontribs_api.authz import User
+from mpcontribs_api.config import ConsumerLimits, ConsumerProjectLimits
 from mpcontribs_api.domains._shared.models import DeleteResponse
-from mpcontribs_api.domains.consumers.models import ConsumerProjectSettings, ConsumerSettings
 from mpcontribs_api.domains.projects.models import Column, Project, ProjectIn, ProjectPatch, Stats
 from mpcontribs_api.domains.projects.service import ProjectService
 from mpcontribs_api.exceptions import NotFoundError, ValidationError
@@ -56,7 +56,7 @@ def _project_in(id: str = "p1", **overrides) -> ProjectIn:
     return ProjectIn(**defaults)
 
 
-def _service(user: User, *, existing=None, scoped=None, count: int = 0, limits: ConsumerSettings | None = None):
+def _service(user: User, *, existing=None, scoped=None, count: int = 0, limits: ConsumerLimits | None = None):
     projects = AsyncMock()
     # The service builds documents via ``repo.document_model.from_input_model`` — keep that the real
     # class (an AsyncMock child would turn the classmethod call into a coroutine).
@@ -147,7 +147,7 @@ class TestUpsert:
 
     async def test_new_over_cap_raises_permission(self):
         svc, projects, _ = _service(
-            ALICE, existing=None, count=5, limits=ConsumerSettings(project=ConsumerProjectSettings(max_projects=2))
+            ALICE, existing=None, count=5, limits=ConsumerLimits(project=ConsumerProjectLimits(max_projects=2))
         )
         with pytest.raises(AppPermissionError):
             await svc.upsert_one({"id": "proj-1"}, _project_in("p1", owner=ALICE_EMAIL))

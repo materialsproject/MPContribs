@@ -54,17 +54,20 @@ class TestInsertAndLookup:
     async def test_lookup_missing_returns_none(self, db):
         assert await _repo().read_one({"consumer_id": "kong-absent"}) is None
 
-    async def test_partial_override_snapshots_defaults_for_siblings(self, db):
-        # Admin overrides only max_projects; the stored document must carry a fully-resolved
-        # settings block, with untouched limits snapshotted from the global defaults.
+    async def test_partial_override_stores_only_set_leaves(self, db):
+        # Admin overrides only max_projects; the stored override is sparse — untouched limits are NOT
+        # snapshotted, they stay unset and inherit the global at resolve time.
         await _insert(
-            ConsumerIn(consumer_id="kong-partial", settings=ConsumerSettings(project=ConsumerProjectSettings(max_projects=1)))
+            ConsumerIn(
+                consumer_id="kong-partial", settings=ConsumerSettings(project=ConsumerProjectSettings(max_projects=1))
+            )
         )
         stored = await _repo().read_one({"consumer_id": "kong-partial"})
         assert stored is not None
         assert stored.settings is not None
+        assert stored.settings.project is not None
         assert stored.settings.project.max_projects == 1
-        assert stored.settings.project.max_columns == get_settings().consumer.project.max_columns
+        assert stored.settings.project.max_columns is None  # sibling leaf not snapshotted
 
 
 # ---------------------------------------------------------------------------
@@ -92,23 +95,29 @@ class TestGetByDocumentId:
 
 
 class TestPatchConsumer:
-    async def test_patch_changes_only_named_limit(self, db):
-        created = await _insert(ConsumerIn(consumer_id="kong-patch"))
-        original_columns = created.settings.project.max_columns
-
+    async def test_patch_changes_only_named_leaf(self, db):
+        # Seed two project leaves, patch one, and confirm the other survives: the repo dots the update
+        # to settings.<domain>.<leaf>, not a whole-subdocument replace.
+        created = await _insert(
+            ConsumerIn(
+                consumer_id="kong-patch",
+                settings=ConsumerSettings(project=ConsumerProjectSettings(max_projects=3, max_columns=20)),
+            )
+        )
         updated = await _repo().update_one(
             {"id": created.id},
             update=ConsumerPatch(settings=ConsumerSettings(project=ConsumerProjectSettings(max_projects=1))),
         )
         assert updated.settings.project.max_projects == 1
-        # Sibling limit untouched: a nested-key $set, not a whole-subdocument replace.
-        assert updated.settings.project.max_columns == original_columns
+        assert updated.settings.project.max_columns == 20  # sibling leaf untouched
 
     async def test_empty_patch_returns_existing_unchanged(self, db):
-        created = await _insert(ConsumerIn(consumer_id="kong-noop"))
+        created = await _insert(
+            ConsumerIn(consumer_id="kong-noop", settings=ConsumerSettings(project=ConsumerProjectSettings(max_projects=4)))
+        )
         result = await _repo().update_one({"id": created.id}, update=ConsumerPatch())
         assert result.consumer_id == "kong-noop"
-        assert result.settings.project.max_projects == created.settings.project.max_projects
+        assert result.settings.project.max_projects == 4
 
     async def test_patch_missing_raises_not_found(self, db):
         from beanie import PydanticObjectId

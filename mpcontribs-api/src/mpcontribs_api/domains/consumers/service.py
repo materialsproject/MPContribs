@@ -1,12 +1,12 @@
 from typing import Any
 
+from mpcontribs_api.config import ConsumerLimits, get_settings
 from mpcontribs_api.domains.consumers.models import (
     Consumer,
     ConsumerFilter,
     ConsumerIn,
     ConsumerOut,
     ConsumerPatch,
-    ConsumerSettings,
 )
 from mpcontribs_api.domains.consumers.repository import MongoDbConsumerRepository
 from mpcontribs_api.pagination import CursorParams, Page
@@ -16,17 +16,20 @@ class ConsumerService:
     def __init__(self, consumer: MongoDbConsumerRepository):
         self._consumer = consumer
 
-    async def effective_limits(self, consumer_id: str | None) -> ConsumerSettings:
-        """Resolve the settings in effect for a caller's Kong ``consumer_id``.
+    async def effective_limits(self, consumer_id: str | None) -> ConsumerLimits:
+        """Resolve the concrete limits in effect for a caller's Kong ``consumer_id``.
 
-        Returns the stored override's ``settings`` if one exists, otherwise a default
-        ``ConsumerSettings`` (which fills from the env-backed global defaults). A caller with no
-        ``consumer_id`` (anonymous/dev) skips the lookup entirely.
+        Starts from the env-backed global defaults and merges the caller's stored (sparse) override
+        on top, so every limit the admin did not set inherits the live global. A caller with no
+        ``consumer_id`` (anonymous/dev) skips the lookup and gets the globals unchanged.
         """
+        defaults = get_settings().consumer
         if consumer_id is None:
-            return ConsumerSettings()
+            return defaults
         override = await self._consumer.read_one({"consumer_id": consumer_id}, fields=None)
-        return override.settings if override and override.settings else ConsumerSettings()
+        if override is None or override.settings is None:
+            return defaults
+        return override.settings.resolve(defaults)
 
     async def read_many(
         self, filter: ConsumerFilter, pagination: CursorParams, fields: frozenset[str] | None
