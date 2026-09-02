@@ -166,11 +166,23 @@ class TestContributionByIdentityRouting:
         # Unsupplied hierarchy/tiebreaker fields default to None; the service pins/relaxes them.
         assert identifiers["material_id"] is None
         assert identifiers["formula"] is None
-        # The identity dict always carries the full natural key (server-owned condition_key injected as
-        # ""); an unsupplied unique_value is present as None, which Mongo-matches null-or-absent stored
-        # values (keep_nulls=False) and satisfies the repository's exact-identifier-key check.
+        # The identity dict always carries the full natural key; an unsupplied condition_key defaults to
+        # "" (matching the empty-condition row) and an unsupplied unique_value is present as None, which
+        # Mongo-matches null-or-absent stored values (keep_nulls=False) and satisfies the repository's
+        # exact-identifier-key check.
         assert identifiers["unique_value"] is None
         assert identifiers["condition_key"] == ""
+
+    def test_get_by_identity_forwards_condition_key(self, client, contribution_service):
+        contribution_service.read_one.return_value = SAMPLE_OUT
+        client.get(
+            "/api/v1/contributions/item",
+            params={"project": "p", "chemical_system_id": "Fe-O", "condition_key": "T=300K"},
+        )
+        identifiers = contribution_service.read_one.await_args.args[0]
+        # condition_key is a caller-suppliable selector for a specific pivoted row (no longer forced to
+        # ""), so the caller's value reaches the service verbatim to address that row.
+        assert identifiers["condition_key"] == "T=300K"
 
     def test_get_by_identity_forwards_full_subset(self, client, contribution_service):
         contribution_service.read_one.return_value = SAMPLE_OUT
@@ -207,6 +219,27 @@ class TestContributionByIdentityRouting:
         identifiers = contribution_service.update_one.await_args.args[0]
         assert identifiers["project"] == "p"
         assert "id" not in identifiers
+
+    # A material_id without a formula violates the identifier hierarchy. ``ContributionIdentity``'s
+    # model_validator rejects it at parse time (422) for every verb, so the request never reaches the
+    # service — DELETE in particular must not silently fall through to a 0-count delete.
+    def test_get_by_identity_bad_hierarchy_returns_422(self, client, contribution_service):
+        r = client.get("/api/v1/contributions/item?project=p&chemical_system_id=Fe-O&material_id=mp-1")
+        assert r.status_code == 422
+        contribution_service.read_one.assert_not_called()
+
+    def test_delete_by_identity_bad_hierarchy_returns_422(self, client, contribution_service):
+        r = client.delete("/api/v1/contributions/item?project=p&chemical_system_id=Fe-O&material_id=mp-1")
+        assert r.status_code == 422
+        contribution_service.delete_one.assert_not_called()
+
+    def test_patch_by_identity_bad_hierarchy_returns_422(self, client, contribution_service):
+        r = client.patch(
+            "/api/v1/contributions/item?project=p&chemical_system_id=Fe-O&material_id=mp-1",
+            json={"is_public": True},
+        )
+        assert r.status_code == 422
+        contribution_service.update_one.assert_not_called()
 
 
 # ===========================================================================

@@ -101,28 +101,17 @@ class ContributionIdentity(Identity):
                 material_id=material_id,
             )
 
+    @model_validator(mode="after")
+    def _check_identifier_hierarchy(self) -> ContributionIdentity:
+        """Enforce ``chemical_system_id`` > ``formula`` > ``material_id`` whenever an identity is built.
 
-# Temp while working on condition_key
-class ContributionIdentityQuery(BaseModel):
-    """The caller-supplied half of a Contribution's natural key, bound as ``/item`` query params.
-
-    Deliberately not the full :class:`ContributionIdentity`: it omits the server-owned ``condition_key``
-    (always ``""`` for HTTP callers, never caller-settable) and types ``unique_value`` as a plain
-    ``str`` — the query-string form — rather than the stored ``Scalar``. :meth:`to_identifiers`
-    completes it into the full identity's flat match dict, injecting ``condition_key``.
-    """
-
-    project: str
-    chemical_system_id: ChemicalSystemId
-    material_id: MaterialId | None = None
-    formula: Formula | None = None
-    unique_value: str | None = None
-
-    def to_identifiers(self) -> dict[str, Any]:
-        """The full-identity match dict — all identity fields present (``unique_value=None`` matches
-        null-or-absent stored values under ``keep_nulls=False``), so it satisfies the repository's
-        exact-key identifier check."""
-        return ContributionIdentity(**self.model_dump(), condition_key="").as_dict()
+        Bound directly as the ``/item`` query params, so every selector verb (read, patch, delete)
+        rejects a bad hierarchy with a 422 at the query boundary rather than relying on a downstream
+        ``read_one`` resolution to catch it. ``from_document`` uses ``model_construct`` and skips
+        validators, so trusted stored documents are unaffected.
+        """
+        ContributionIdentity.check_hierarchy(self.material_id, self.chemical_system_id, self.formula)
+        return self
 
 
 class ContributionBase(BaseModel):
