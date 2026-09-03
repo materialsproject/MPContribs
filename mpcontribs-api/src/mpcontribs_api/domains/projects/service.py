@@ -1,10 +1,12 @@
 from typing import Any
 
-from bson import DBRef
+from beanie import Link
+from bson import DBRef, ObjectId
 
 from mpcontribs_api.authz import INITIATIVE_PATH, ROOT_PATH, User
 from mpcontribs_api.config import ConsumerLimits, get_settings
 from mpcontribs_api.domains._shared.models import DeleteResponse
+from mpcontribs_api.domains.initiatives.models import Initiative
 from mpcontribs_api.domains.initiatives.repository import MongoDbInitiativeRepository
 from mpcontribs_api.domains.projects.models import Project, ProjectFilter, ProjectIn, ProjectOut, ProjectPatch
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
@@ -42,15 +44,20 @@ class ProjectService:
 
         Update the document if the id exists, otherwise insert a new one under that id.
 
-        - **Existing project:** only its ``owner`` or an admin may overwrite it. The stored ``owner``
-          and all server-managed fields (see ``Project.server_managed_fields``) are preserved, so a
-          PUT never resets approval, publication, or stats.
-        - **New project:** ``owner`` is forced to the caller, approval starts off for non-admins, and
-          the per-user cap is enforced against the caller.
+        - **Existing project:** only its ``owner`` or an admin may overwrite it. The stored ``owner``,
+          the ``initiative`` link, and all server-managed fields (see ``Project.server_managed_fields``)
+          are preserved, so a PUT never resets approval, publication, stats, or the initiative
+          assignment. Reassigning an initiative goes through PATCH.
+        - **New project:** ``owner`` is forced to the caller, approval starts 'False' for non-admins, and
+          the per-user cap is enforced against the caller. A body-supplied ``initiative`` (id or slug)
+          is resolved through the same guarded path as PATCH — the target must exist, be visible,
+          be manageable by the caller, and (when unapproved) have room under its member cap.
 
         Raises:
-            PermissionError: anonymous caller, or a non-owner/non-admin targeting an existing project
-            ConflictError: a new project would push the caller past the per-user project cap
+            PermissionError: anonymous caller, a non-owner/non-admin targeting an existing project,
+                the per-user project cap, or an initiative the caller cannot manage
+            ConflictError: assigning to an unapproved initiative already at its member cap
+            NotFoundError: a body-supplied initiative that does not exist or is not visible
             ValidationError: the resulting project would be public while unapproved
         """
         # The route enforces authentication, so an anonymous caller should never reach here.
@@ -72,6 +79,9 @@ class ProjectService:
             # Server owned calculated fields are not taken from request body
             project.stats = existing.stats
             project.columns = existing.columns
+            # Initiative assignment is not part of a full replace: preserve the stored link so a PUT
+            # cannot silently clear or reassign it. Reassignment goes through the PATCH path.
+            project.initiative = existing.initiative
             # Approval is an admin-only flag
             if not self._user.is_admin(*ROOT_PATH):
                 project.is_approved = existing.is_approved
@@ -82,6 +92,11 @@ class ProjectService:
             if not self._user.is_admin(*ROOT_PATH):
                 project.is_approved = False
             await self._enforce_project_cap(self._user.username)
+            # Assigning an initiative on create runs the same as PATCH: the target
+            # must exist and be visible, the caller must be able to manage it, and an unapproved
+            # target must have room under its member cap. Accepts the initiative's id or slug.
+            ref = await self._resolve_initiative_assignment(project_id=id, identifier=data.initiative)
+            project.initiative = Link(ref, Initiative) if ref is not None else None
 
         if project.is_public and not project.is_approved:
             raise ValidationError("a project cannot be public until it is approved", id=id)
@@ -100,10 +115,10 @@ class ProjectService:
             return await self._projects.update_one(identifiers, update)
 
         data = update.model_dump(exclude_unset=True)
-        slug = data.pop("initiative", None)
+        identifier = data.pop("initiative", None)
 
         # Resolve the target link (and run the both-rights + limit checks) before touching anything.
-        ref = await self._resolve_initiative_assignment(project_id=id, slug=slug)
+        ref = await self._resolve_initiative_assignment(project_id=id, identifier=identifier)
 
         # `initiative` is server derived, so ProjectPatch can't handle it (expects str), so hand it in extra_set
         return await self._projects.update_one(identifiers, ProjectPatch(**data), extra_set={"initiative": ref})
@@ -164,21 +179,26 @@ class ProjectService:
         if resulting_public and not resulting_approved:
             raise ValidationError("a project cannot be public until it is approved", id=id)
 
-    async def _resolve_initiative_assignment(self, project_id: str, slug: str | None) -> DBRef | None:
+    async def _resolve_initiative_assignment(self, project_id: str, identifier: str | None) -> DBRef | None:
         """Validate an initiative assignment and return the link to store (or None to unassign).
 
-        Unassigning needs only project-write access (already enforced downstream). Assigning
-        additionally requires that the caller can manage the target initiative and that an
+        ``identifier`` addresses the target initiative by its id or its slug. Unassigning
+        (``identifier is None``) needs only project-write access (already enforced downstream).
+        Assigning additionally requires that the caller can manage the target initiative and that an
         unapproved target has room under its member cap.
         """
-        if slug is None:
+        if identifier is None:
             return None
 
-        initiative = await self._initiatives.read_one({"slug": slug})
+        # A valid ObjectId string is an id lookup; anything else is a slug. ``read_one`` is scoped,
+        # so an initiative the caller cannot see resolves to None -> NotFoundError.
+        key = "id" if ObjectId.is_valid(identifier) else "slug"
+        initiative = await self._initiatives.read_one({key: identifier})
         if initiative is None or initiative.id is None:
-            raise NotFoundError("Initiative not found or not visible", slug=slug)
+            raise NotFoundError("Initiative not found or not visible", initiative=identifier)
 
-        self._user.require_manage(*INITIATIVE_PATH, slug, doc_owner=initiative.owner)
+        # Use the resolved slug (the identifier may have been an id) for the manage check.
+        self._user.require_manage(*INITIATIVE_PATH, initiative.slug, doc_owner=initiative.owner)
 
         if not initiative.is_approved:
             # Unscoped integrity count: the member cap must see every project assigned to the
@@ -191,8 +211,8 @@ class ProjectService:
             if members >= self._limits.initiative.max_projects_per_unapproved:
                 raise ConflictError(
                     message="unapproved initiative already has the maximum number of assigned projects",
-                    slug=slug,
-                    limit=self._limits.initiative.max_projects_per_unapproved,
+                    slug=initiative.slug,
+                    limit=self._initiative_limits.max_projects_per_unapproved,
                 )
 
         return DBRef("initiatives", initiative.id)

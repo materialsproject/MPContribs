@@ -1,4 +1,5 @@
 import pytest
+from beanie import Link
 
 from mpcontribs_api.authz import User
 from mpcontribs_api.config import ConsumerLimits, ConsumerProjectLimits
@@ -7,7 +8,7 @@ from mpcontribs_api.domains.projects.models import Column, Project, ProjectFilte
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
 from mpcontribs_api.domains.projects.service import ProjectService
 from mpcontribs_api.exceptions import PermissionError as AppPermissionError
-from mpcontribs_api.exceptions import NotFoundError, ValidationError
+from mpcontribs_api.exceptions import ConflictError, NotFoundError, ValidationError
 from mpcontribs_api.pagination import CursorParams
 
 pytestmark = [pytest.mark.db, pytest.mark.asyncio(loop_scope="session")]
@@ -20,9 +21,11 @@ pytestmark = [pytest.mark.db, pytest.mark.asyncio(loop_scope="session")]
 ADMIN = User(username="google:admin@example.com", groups=frozenset({"admin"}))
 ALICE = User(username="google:alice@example.com", groups=frozenset({"mp-team"}))
 BOB = User(username="google:bob@example.com", groups=frozenset())
+CAROL = User(username="google:carol@example.com", groups=frozenset())
 
 ALICE_EMAIL = "google:alice@example.com"
 BOB_EMAIL = "google:bob@example.com"
+CAROL_EMAIL = "google:carol@example.com"
 
 
 def _service(user: User, limits: ConsumerLimits | None = None) -> ProjectService:
@@ -32,6 +35,10 @@ def _service(user: User, limits: ConsumerLimits | None = None) -> ProjectService
         initiatives=MongoDbInitiativeRepository(user),
         limits=limits,
     )
+
+
+def _collaborator(slug: str, username: str = BOB_EMAIL) -> User:
+    return User(username=username, groups=[f"mpcontribs:initiatives/{slug}=owner"])
 
 
 def _project_in(id: str, **overrides) -> ProjectIn:
@@ -49,6 +56,19 @@ async def _insert(id: str, **overrides) -> Project:
     """Seed a project directly through the repository's mechanical insert (admin, no policy)."""
     document = Project.from_input_model(_project_in(id, **overrides), id=id)
     return await MongoDbProjectRepository(ADMIN).insert_one(document)
+
+
+async def _insert_initiative(slug: str, owner_user: User = ALICE) -> Initiative:
+    document = Initiative.from_input_model(InitiativeIn(slug=slug, name="Init"), owner=owner_user.username)
+    return await MongoDbInitiativeRepository(owner_user).insert_one(document)
+
+
+def _assigned_id(project: Project):
+    """The initiative _id a returned project points at, or None."""
+    link = project.initiative
+    if link is None:
+        return None
+    return link.ref.id if isinstance(link, Link) else link.id
 
 
 # ---------------------------------------------------------------------------
@@ -380,3 +400,95 @@ class TestReadScope:
         await _insert("scope-own-priv", owner=ALICE_EMAIL, is_public=False)
         found = await _service(ALICE).read_one({"id": "scope-own-priv"}, fields=None)
         assert found is not None and found.id == "scope-own-priv"
+
+
+# ---------------------------------------------------------------------------
+# Initiative assignment on create (PUT) — guarded like the PATCH path
+#
+# A body-supplied `initiative` (id or slug) is routed through the same resolution as PATCH: the
+# target must exist and be visible, the caller must manage it, and an unapproved target must have
+# room under its member cap. A body can never write a raw link straight to the document.
+# ---------------------------------------------------------------------------
+
+
+class TestCreateWithInitiative:
+    async def test_create_assigns_by_slug(self, db):
+        init = await _insert_initiative("cwi-slug", ALICE)
+        created = await _service(ALICE).upsert_one(
+            {"id": "cwi-proj-slug"}, _project_in("cwi-proj-slug", owner=ALICE_EMAIL, initiative="cwi-slug")
+        )
+        assert _assigned_id(created) == init.id
+
+    async def test_create_assigns_by_id(self, db):
+        init = await _insert_initiative("cwi-id", ALICE)
+        created = await _service(ALICE).upsert_one(
+            {"id": "cwi-proj-id"}, _project_in("cwi-proj-id", owner=ALICE_EMAIL, initiative=str(init.id))
+        )
+        assert _assigned_id(created) == init.id
+
+    async def test_create_without_initiative_leaves_link_unset(self, db):
+        created = await _service(ALICE).upsert_one({"id": "cwi-none"}, _project_in("cwi-none", owner=ALICE_EMAIL))
+        assert _assigned_id(created) is None
+
+    async def test_create_to_missing_initiative_is_not_found(self, db):
+        with pytest.raises(NotFoundError):
+            await _service(ALICE).upsert_one(
+                {"id": "cwi-ghost"}, _project_in("cwi-ghost", owner=ALICE_EMAIL, initiative="no-such-init")
+            )
+
+    async def test_create_to_unmanaged_initiative_rejected(self, db):
+        # Carol can *see* this public+approved initiative but neither owns nor collaborates on it, so
+        # she cannot assign her new project to it — assignment needs manage rights, not just read.
+        await _insert_initiative("cwi-unmanaged", ALICE)
+        await MongoDbInitiativeRepository(ADMIN).update_one(
+            {"slug": "cwi-unmanaged"}, InitiativePatch(is_approved=True, is_public=True)
+        )
+        with pytest.raises(AppPermissionError):
+            await _service(CAROL).upsert_one(
+                {"id": "cwi-carol"}, _project_in("cwi-carol", owner=CAROL_EMAIL, initiative="cwi-unmanaged")
+            )
+        assert await Project.find_one(Project.id == "cwi-carol") is None
+
+    async def test_create_to_invisible_initiative_is_not_found(self, db):
+        # Alice's private initiative is invisible to Carol, so it reads as not-found (not a 403).
+        await _insert_initiative("cwi-invisible", ALICE)
+        with pytest.raises(NotFoundError):
+            await _service(CAROL).upsert_one(
+                {"id": "cwi-carol-2"}, _project_in("cwi-carol-2", owner=CAROL_EMAIL, initiative="cwi-invisible")
+            )
+
+    async def test_collaborator_can_assign_on_create(self, db):
+        init = await _insert_initiative("cwi-collab", ALICE)
+        bob = _collaborator("cwi-collab")
+        created = await _service(bob).upsert_one(
+            {"id": "cwi-collab-proj"}, _project_in("cwi-collab-proj", owner=BOB_EMAIL, initiative="cwi-collab")
+        )
+        assert _assigned_id(created) == init.id
+
+    async def test_create_over_member_cap_rejected(self, db, monkeypatch):
+        # Isolate the initiative member cap from the per-account project-count cap.
+        member_cap = get_settings().domain.initiatives.max_projects_per_unapproved
+        monkeypatch.setattr(get_settings().consumer, "max_projects", member_cap + 10)
+        await _insert_initiative("cwi-cap", ALICE)
+        for i in range(member_cap):
+            await _service(ALICE).upsert_one(
+                {"id": f"cwi-cap-{i}"}, _project_in(f"cwi-cap-{i}", owner=ALICE_EMAIL, initiative="cwi-cap")
+            )
+        with pytest.raises(ConflictError):
+            await _service(ALICE).upsert_one(
+                {"id": "cwi-cap-over"}, _project_in("cwi-cap-over", owner=ALICE_EMAIL, initiative="cwi-cap")
+            )
+
+    async def test_put_preserves_existing_initiative_link(self, db):
+        # The bug this closes: a full replace (PUT) that omits `initiative` must NOT silently clear
+        # the stored assignment. Reassignment/clearing stays on the guarded PATCH path.
+        await _insert("ppi-proj", owner=ALICE_EMAIL)
+        init = await _insert_initiative("ppi-init", ALICE)
+        await _service(ALICE).update_one({"id": "ppi-proj"}, ProjectPatch(initiative="ppi-init"))
+        await _service(ALICE).upsert_one(
+            {"id": "ppi-proj"}, _project_in("ppi-proj", owner=ALICE_EMAIL, title="Replaced")
+        )
+        reloaded = await MongoDbProjectRepository(ADMIN).find_by_id_unscoped("ppi-proj")
+        assert reloaded is not None
+        assert reloaded.title == "Replaced"
+        assert _assigned_id(reloaded) == init.id
