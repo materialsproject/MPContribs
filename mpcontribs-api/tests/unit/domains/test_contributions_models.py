@@ -649,8 +649,13 @@ class TestContributionIdentityStructure:
 class TestContributionIdentityIndexModel:
     def test_default_index_is_named_and_unique(self):
         index = ContributionIdentity.index_model()
-        assert index.document["name"] == "project_identity"
+        # Neutral default; each collection passes an explicit name matching its deployed index.
+        assert index.document["name"] == "identity"
         assert index.document["unique"] is True
+
+    def test_explicit_name_is_used(self):
+        # Contributions keeps its deployed index name by passing it explicitly.
+        assert ContributionIdentity.index_model(name="project_identity").document["name"] == "project_identity"
 
     def test_unique_can_be_disabled(self):
         assert ContributionIdentity.index_model(unique=False).document["unique"] is False

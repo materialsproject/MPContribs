@@ -6,10 +6,11 @@ from fastapi_filter import FilterDepends
 from mpcontribs_api.dependencies import require_user
 from mpcontribs_api.domains._shared.bulk import BulkWriteSummary
 from mpcontribs_api.domains._shared.models import DeleteResponse
-from mpcontribs_api.domains._shared.types import FieldSelector, PrefixedEmail, SearchStr
+from mpcontribs_api.domains._shared.types import FieldSelector
 from mpcontribs_api.domains.project_groups.dependencies import ProjectGroupServiceDep
 from mpcontribs_api.domains.project_groups.models import (
     ProjectGroupFilter,
+    ProjectGroupIdentity,
     ProjectGroupIn,
     ProjectGroupOut,
     ProjectGroupPatch,
@@ -40,22 +41,20 @@ async def read_many(
 
 
 @router.get("/item")
-async def read_one(
+async def read_one_by_identity(
     service: ProjectGroupServiceDep,
-    name: SearchStr,
-    owner: PrefixedEmail,
+    identity: Annotated[ProjectGroupIdentity, Depends()],
     fields: FieldSelector = None,
 ):
-    """Return the single project group identified by ``name`` + ``owner``.
+    """Return the single project group identified by its ``name`` + ``owner`` natural key.
 
     Args:
         service (ProjectGroupServiceDep): the project group service we depend on
-        name (SearchStr): the project group's name
-        owner (PrefixedEmail): the project group's owner
+        identity (ProjectGroupIdentity): the group's natural key (``name`` + ``owner``) query params
         fields (FieldSelector): the fields to return to a user
     """
     selected = ProjectGroupOut.parse_fields(fields)
-    return await service.read_one({"name": name, "owner": owner}, fields=selected)
+    return await service.read_one(identity.as_dict(), fields=selected)
 
 
 @router.post(
@@ -78,39 +77,35 @@ async def insert_one(
 
 
 @router.patch("/item", response_model=ProjectGroupOut, dependencies=[Depends(require_user)])
-async def update_one(
+async def update_one_by_identity(
     service: ProjectGroupServiceDep,
-    name: SearchStr,
-    owner: PrefixedEmail,
+    identity: Annotated[ProjectGroupIdentity, Depends()],
     update: ProjectGroupPatch,
 ):
-    """Partially update the project group identified by ``name`` + ``owner``.
+    """Partially update the project group identified by its ``name`` + ``owner`` natural key.
 
     Args:
         service (ProjectGroupServiceDep): the project group service we depend on
-        name (SearchStr): the project group's name
-        owner (PrefixedEmail): the project group's owner
+        identity (ProjectGroupIdentity): the group's natural key (``name`` + ``owner``) query params
         update (ProjectGroupPatch): the partial update to apply - unset fields are dropped
     """
-    return await service.update_one({"name": name, "owner": owner}, update=update)
+    return await service.update_one(identity.as_dict(), update=update)
 
 
 @router.delete("/item", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_user)])
-async def delete_one(
+async def delete_one_by_identity(
     service: ProjectGroupServiceDep,
-    name: SearchStr,
-    owner: PrefixedEmail,
+    identity: Annotated[ProjectGroupIdentity, Depends()],
 ):
-    """Delete the single project group identified by ``name`` + ``owner``.
+    """Delete the single project group identified by its ``name`` + ``owner`` natural key.
 
     Raises 404 if no such group is visible to the caller, 409 if the identifiers are ambiguous.
 
     Args:
         service (ProjectGroupServiceDep): the project group service we depend on
-        name (SearchStr): the project group's name
-        owner (PrefixedEmail): the project group's owner
+        identity (ProjectGroupIdentity): the group's natural key (``name`` + ``owner``) query params
     """
-    await service.delete_one({"name": name, "owner": owner})
+    await service.delete_one(identity.as_dict())
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -129,32 +124,30 @@ async def delete_many(
 
 
 @router.post("/item/projects", response_model=BulkWriteSummary[str], dependencies=[Depends(require_user)])
-async def add_projects_by_identifiers(
+async def add_projects_by_identity(
     service: ProjectGroupServiceDep,
-    name: SearchStr,
-    owner: PrefixedEmail,
+    identity: Annotated[ProjectGroupIdentity, Depends()],
     body: ProjectRefs,
 ):
-    """Add projects to the group identified by ``name`` + ``owner``.
+    """Add projects to the group identified by its ``name`` + ``owner`` natural key.
 
     Each project is verified against the projects collection (scoped to the caller); unknown or
     invisible projects are reported per-item in the response rather than failing the whole request.
     """
-    return await service.add_projects({"name": name, "owner": owner}, body.project_ids)
+    return await service.add_projects(identity.as_dict(), body.project_ids)
 
 
 @router.delete("/item/projects", response_model=BulkWriteSummary[str], dependencies=[Depends(require_user)])
-async def delete_projects_by_identifiers(
+async def delete_projects_by_identity(
     service: ProjectGroupServiceDep,
-    name: SearchStr,
-    owner: PrefixedEmail,
+    identity: Annotated[ProjectGroupIdentity, Depends()],
     body: ProjectRefs,
 ):
-    """Delete projects from the group identified by ``name`` + ``owner``.
+    """Delete projects from the group identified by its ``name`` + ``owner`` natural key.
 
     Ids that are not members of the group are reported per-item in the response.
     """
-    return await service.delete_projects({"name": name, "owner": owner}, body.project_ids)
+    return await service.delete_projects(identity.as_dict(), body.project_ids)
 
 
 @router.post("/{id}/projects", response_model=BulkWriteSummary[str], dependencies=[Depends(require_user)])
@@ -175,3 +168,36 @@ async def delete_projects_by_id(
 ):
     """Delete projects from the group identified by ``id``. See ``delete_projects``."""
     return await service.delete_projects({"id": id}, body.project_ids)
+
+
+# Primary-key CRUD, symmetric to the ``/item`` (name+owner) routes above. Declared after ``/item`` so
+# the literal path is never captured as an ``{id}``.
+@router.get("/{id}")
+async def read_one(
+    service: ProjectGroupServiceDep,
+    id: str,
+    fields: FieldSelector = None,
+):
+    """Return the single project group identified by its ``_id``."""
+    selected = ProjectGroupOut.parse_fields(fields)
+    return await service.read_one({"id": id}, fields=selected)
+
+
+@router.patch("/{id}", response_model=ProjectGroupOut, dependencies=[Depends(require_user)])
+async def update_one(
+    service: ProjectGroupServiceDep,
+    id: str,
+    update: ProjectGroupPatch,
+):
+    """Partially update the project group identified by its ``_id``."""
+    return await service.update_one({"id": id}, update=update)
+
+
+@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_user)])
+async def delete_one(
+    service: ProjectGroupServiceDep,
+    id: str,
+):
+    """Delete the project group identified by its ``_id``. Restricted to its owner or an admin."""
+    await service.delete_one({"id": id})
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

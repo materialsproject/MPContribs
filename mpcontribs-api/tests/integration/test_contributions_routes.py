@@ -4,7 +4,7 @@ from beanie import PydanticObjectId
 from mpcontribs_api.domains._shared.bulk import BulkDeleteSummary, BulkUpdateSummary, BulkWriteSummary
 from mpcontribs_api.domains.contributions.dependencies import get_contribution_service
 from mpcontribs_api.domains.contributions.models import ContributionOut
-from mpcontribs_api.exceptions import NotFoundError
+from mpcontribs_api.exceptions import ConflictError, NotFoundError
 from tests.integration.conftest import AUTHED_HEADERS, FORCE_ANON_HEADERS
 
 # ---------------------------------------------------------------------------
@@ -148,6 +148,98 @@ class TestContributionByIdRouting:
     def test_download_route_conventional_path(self, client, contribution_service):
         contribution_service.download.return_value = iter([b"x"])
         assert client.get("/api/v1/contributions/download/gz").status_code == 200
+
+
+class TestContributionByIdentityRouting:
+    """The ``/item`` path addresses a contribution by its user-suppliable natural identity; both it and
+    ``/{id}`` funnel through the unified ``read_one``/``delete_one``/``update_one`` (which take an
+    identity or an id, preferring the id). The server resolves the rest and 409s on an ambiguous subset."""
+
+    def test_get_by_identity_defaults_unsupplied_subset(self, client, contribution_service):
+        contribution_service.read_one.return_value = SAMPLE_OUT
+        r = client.get("/api/v1/contributions/item?project=p&chemical_system_id=Fe-O")
+        assert r.status_code == 200
+        identifiers = contribution_service.read_one.await_args.args[0]
+        # The literal ``item`` must reach ``read_one`` as an identity dict, not ``{"id": "item"}``.
+        assert identifiers["project"] == "p"
+        assert "id" not in identifiers
+        # Unsupplied hierarchy/tiebreaker fields default to None; the service pins/relaxes them.
+        assert identifiers["material_id"] is None
+        assert identifiers["formula"] is None
+        # The identity dict always carries the full natural key; an unsupplied condition_key defaults to
+        # "" (matching the empty-condition row) and an unsupplied unique_value is present as None, which
+        # Mongo-matches null-or-absent stored values (keep_nulls=False) and satisfies the repository's
+        # exact-identifier-key check.
+        assert identifiers["unique_value"] is None
+        assert identifiers["condition_key"] == ""
+
+    def test_get_by_identity_forwards_condition_key(self, client, contribution_service):
+        contribution_service.read_one.return_value = SAMPLE_OUT
+        client.get(
+            "/api/v1/contributions/item",
+            params={"project": "p", "chemical_system_id": "Fe-O", "condition_key": "T=300K"},
+        )
+        identifiers = contribution_service.read_one.await_args.args[0]
+        # condition_key is a caller-suppliable selector for a specific pivoted row (no longer forced to
+        # ""), so the caller's value reaches the service verbatim to address that row.
+        assert identifiers["condition_key"] == "T=300K"
+
+    def test_get_by_identity_forwards_full_subset(self, client, contribution_service):
+        contribution_service.read_one.return_value = SAMPLE_OUT
+        client.get(
+            "/api/v1/contributions/item?project=p&chemical_system_id=Fe-O&material_id=mp-1&formula=Fe2O3&unique_value=A"
+        )
+        identifiers = contribution_service.read_one.await_args.args[0]
+        assert identifiers["material_id"] == "mp-1"
+        assert identifiers["unique_value"] == "A"
+
+    def test_missing_required_chemical_system_returns_422(self, client, contribution_service):
+        assert client.get("/api/v1/contributions/item?project=p").status_code == 422
+
+    def test_ambiguous_identity_returns_409(self, client, contribution_service):
+        contribution_service.read_one.side_effect = ConflictError("ambiguous")
+        r = client.get("/api/v1/contributions/item?project=p&chemical_system_id=Fe-O")
+        assert r.status_code == 409
+
+    def test_delete_by_identity_forwards_to_service(self, client, contribution_service):
+        contribution_service.delete_one.return_value = BulkDeleteSummary(num_deleted=1, num_children_deleted=0)
+        r = client.delete("/api/v1/contributions/item?project=p&chemical_system_id=Fe-O&material_id=mp-1&formula=Fe2O3")
+        assert r.status_code == 200
+        identifiers = contribution_service.delete_one.await_args.args[0]
+        assert identifiers["project"] == "p"
+        assert "id" not in identifiers
+
+    def test_patch_by_identity_forwards_to_service(self, client, contribution_service):
+        contribution_service.update_one.return_value = SAMPLE_OUT
+        r = client.patch(
+            "/api/v1/contributions/item?project=p&chemical_system_id=Fe-O&material_id=mp-1&formula=Fe2O3",
+            json={"is_public": True},
+        )
+        assert r.status_code == 200
+        identifiers = contribution_service.update_one.await_args.args[0]
+        assert identifiers["project"] == "p"
+        assert "id" not in identifiers
+
+    # A material_id without a formula violates the identifier hierarchy. ``ContributionIdentity``'s
+    # model_validator rejects it at parse time (422) for every verb, so the request never reaches the
+    # service — DELETE in particular must not silently fall through to a 0-count delete.
+    def test_get_by_identity_bad_hierarchy_returns_422(self, client, contribution_service):
+        r = client.get("/api/v1/contributions/item?project=p&chemical_system_id=Fe-O&material_id=mp-1")
+        assert r.status_code == 422
+        contribution_service.read_one.assert_not_called()
+
+    def test_delete_by_identity_bad_hierarchy_returns_422(self, client, contribution_service):
+        r = client.delete("/api/v1/contributions/item?project=p&chemical_system_id=Fe-O&material_id=mp-1")
+        assert r.status_code == 422
+        contribution_service.delete_one.assert_not_called()
+
+    def test_patch_by_identity_bad_hierarchy_returns_422(self, client, contribution_service):
+        r = client.patch(
+            "/api/v1/contributions/item?project=p&chemical_system_id=Fe-O&material_id=mp-1",
+            json={"is_public": True},
+        )
+        assert r.status_code == 422
+        contribution_service.update_one.assert_not_called()
 
 
 # ===========================================================================
