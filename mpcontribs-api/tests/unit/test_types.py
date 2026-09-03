@@ -11,7 +11,6 @@ from mpcontribs_api.domains._shared.types import (
     PrefixedEmail,
     ShortStr,
     SearchStr,
-    canonical_key_offense,
     coerce_key,
     to_camel_case,
     to_snake_case,
@@ -212,9 +211,9 @@ class TestCanonicalKeyOffense:
     """The non-raising, non-rewriting predicate behind rejecting non-canonical data keys."""
 
     def test_already_canonical_key_is_no_offense(self):
-        assert canonical_key_offense("bandGap") is None
-        assert canonical_key_offense("volume") is None
-        assert canonical_key_offense("2theta") is None
+        assert KeyOffense.from_key("bandGap") is None
+        assert KeyOffense.from_key("volume") is None
+        assert KeyOffense.from_key("2theta") is None
 
     @pytest.mark.parametrize(
         ("key", "suggestion"),
@@ -229,22 +228,22 @@ class TestCanonicalKeyOffense:
     def test_non_canonical_key_suggests_its_camel_case_form(self, key, suggestion):
         # The suggestion is exactly what the canonical coercion would produce, so it never drifts from
         # the accept/reject rule.
-        assert canonical_key_offense(key) == KeyOffense(key=key, suggestion=suggestion, reason="not_camel_case")
+        assert KeyOffense.from_key(key) == KeyOffense(key=key, suggestion=suggestion, reason="not_camel_case")
         assert suggestion == CANONICAL_KEY_COERCION(key)
 
     def test_non_ascii_key_has_no_suggestion(self):
-        assert canonical_key_offense("ΔE") == KeyOffense(key="ΔE", suggestion=None, reason="non_ascii")
+        assert KeyOffense.from_key("ΔE") == KeyOffense(key="ΔE", suggestion=None, reason="non_ascii")
 
     def test_non_string_key_is_non_ascii_offense(self):
-        assert canonical_key_offense(3) == KeyOffense(key=3, suggestion=None, reason="non_ascii")
+        assert KeyOffense.from_key(3) == KeyOffense(key=3, suggestion=None, reason="non_ascii")
 
     def test_empties_out_key_has_no_suggestion(self):
-        assert canonical_key_offense("***") == KeyOffense(key="***", suggestion=None, reason="empty_after_coercion")
+        assert KeyOffense.from_key("***") == KeyOffense(key="***", suggestion=None, reason="empty_after_coercion")
 
     def test_reserved_key_is_flagged_only_when_reserved_supplied(self):
         # A key that is already canonical but names a reserved leaf field is an offense only when the
         # caller passes the reserved set; without it the key is accepted.
-        assert canonical_key_offense("unit") is None
-        assert canonical_key_offense("unit", reserved=frozenset({"unit"})) == KeyOffense(
+        assert KeyOffense.from_key("unit") is None
+        assert KeyOffense.from_key("unit", reserved=frozenset({"unit"})) == KeyOffense(
             key="unit", suggestion=None, reason="reserved"
         )

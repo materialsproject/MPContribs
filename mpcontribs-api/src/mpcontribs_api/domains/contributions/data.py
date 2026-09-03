@@ -5,7 +5,7 @@ from typing import Annotated, Any
 from pydantic import BeforeValidator
 
 from mpcontribs_api.config import get_settings
-from mpcontribs_api.domains._shared.types import KeyOffense, canonical_key_offense
+from mpcontribs_api.domains._shared.types import KeyOffense
 from mpcontribs_api.domains._shared.units import QuantityLeaf
 from mpcontribs_api.exceptions import DataKeyError, ValidationError
 
@@ -101,7 +101,7 @@ def _validate_data_depth(data: dict[str, Any] | None) -> dict[str, Any] | None:
 
 def _check_key(raw_key: Any, offenses: list[KeyOffense]) -> None:
     """Append a :class:`KeyOffense` for ``raw_key`` unless it is already an acceptable canonical key."""
-    offense = canonical_key_offense(raw_key, reserved=QuantityLeaf.reserved_keys())
+    offense = KeyOffense.from_key(raw_key, reserved=QuantityLeaf.reserved_keys())
     if offense is not None:
         offenses.append(offense)
 
