@@ -7,8 +7,8 @@ from typing import Annotated, Literal
 
 from emmet.core.mpid import MPID
 from pydantic import (
+    AfterValidator,
     BaseModel,
-    BeforeValidator,
     ConfigDict,
     Field,
     StringConstraints,
@@ -17,11 +17,8 @@ from pydantic import (
 from pymatgen.core import Element
 
 
-def _validate_compound_system(value: object) -> str:
+def _validate_compound_system(value: str) -> str:
     """Validate both element symbols while preserving the upload string."""
-    if not isinstance(value, str):
-        raise ValueError("compoundSystem must be a string")
-
     symbols = value.split("-")
     if len(symbols) != 2:
         raise ValueError("compoundSystem must contain exactly two element symbols")
@@ -37,8 +34,8 @@ def _validate_compound_system(value: object) -> str:
 
 CompoundSystem = Annotated[
     str,
-    BeforeValidator(_validate_compound_system),
     StringConstraints(max_length=5),
+    AfterValidator(_validate_compound_system),
 ]
 ClusterLabel = Annotated[
     str,
@@ -222,12 +219,6 @@ class ClusterMaterial(BaseModel):
             "class."
         )
     )
-    hasFlatData: bool = Field(
-        description=(
-            "Whether this material has a cited flat-band record in the reviewed "
-            "flat-band source snapshot."
-        )
-    )
     hasBatteryData: bool = Field(
         description=(
             "Whether this material appears in the reviewed Materials Project "
@@ -270,6 +261,4 @@ class ClusterMaterial(BaseModel):
         if len(labels) != len(set(labels)):
             raise ValueError("clusterPointGroups labels must be unique")
 
-        if self.hasFlatData != (self.flatBand is not None):
-            raise ValueError("hasFlatData must agree with the presence of flatBand")
         return self
