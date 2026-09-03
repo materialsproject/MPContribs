@@ -417,10 +417,10 @@ def coerce_key(
     if not key:
         raise DataKeyError(message="Key must be truthy", key=key)
     if require_ascii and (not isinstance(key, str) or not key.isascii()):
-        raise DataKeyError("Non-ASCII key found in Contribution.data. All dict keys must be only ASCII")
+        raise DataKeyError("Non-ASCII key found. All dict keys must be only ASCII", key=key)
     coerced = coercion_method(key)
     if not coerced:
-        raise DataKeyError(f"data key '{key}' reduces to an empty string after key coercion")
+        raise DataKeyError(f"data key '{key}' reduces to an empty string after key coercion", key=key)
     if reserved is not None and coerced in reserved:
         raise DataKeyError(
             f"data key '{key}' is reserved for annotated-value leaves and may not be used",
