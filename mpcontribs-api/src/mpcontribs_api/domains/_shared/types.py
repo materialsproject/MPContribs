@@ -396,7 +396,7 @@ Slug = Annotated[str, Field(min_length=3, max_length=50), BeforeValidator(_valid
 def coerce_key(
     key: Any,
     *,
-    require_ascii: bool = False,
+    require_ascii: bool = True,
     reserved: frozenset[str] | None = None,
     coercion_method: Callable[[str], str] = CANONICAL_KEY_COERCION,
 ) -> str:
