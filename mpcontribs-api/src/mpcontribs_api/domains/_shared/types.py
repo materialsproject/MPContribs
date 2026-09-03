@@ -1,6 +1,7 @@
 import re
 import unicodedata
 from collections.abc import Callable, Mapping
+from dataclasses import dataclass
 from enum import StrEnum
 from typing import Annotated, Any, Literal, Self
 

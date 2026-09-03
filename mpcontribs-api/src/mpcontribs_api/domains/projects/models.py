@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
 
 from mpcontribs_api import pagination
 from mpcontribs_api.domains._shared.filters import BaseFilter
-from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
+from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut, Identity
 from mpcontribs_api.domains._shared.types import CANONICAL_KEY_COERCION, PrefixedEmail, SearchStr, ShortStr
 from mpcontribs_api.domains.initiatives.models import Initiative
 from mpcontribs_api.exceptions import ValidationError
