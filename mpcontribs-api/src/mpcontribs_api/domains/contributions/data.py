@@ -218,10 +218,6 @@ def validate_stored_contribution_data(data: dict[str, Any] | None) -> dict[str, 
     return data
 
 
-# Three field types over one shared validation core, so the input, patch, and stored paths cannot
-# drift on key rules: inserts/whole-document writes are strict; a merge patch additionally
-# permits leaf fragments (see ``allow_leaf_fragments`` above); the stored document requires canonical
-# plain keys at every level (no annotated-key grammar).
 ContributionData = Annotated[dict[str, Any] | None, BeforeValidator(validate_contribution_data)]
 ContributionPatchData = Annotated[
     dict[str, Any] | None,
