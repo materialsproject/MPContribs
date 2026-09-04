@@ -155,7 +155,7 @@ class TestStatsRecomputeLifecycle:
             [
                 _contrib_in(
                     "with-components",
-                    data={"band_gap": 2.1, "energy": -5.0},
+                    data={"bandGap": 2.1, "energy": -5.0},
                     structures=[_structure(charge=None), _structure(charge=1.0)],
                     tables=[_table(1.0), _table(2.0)],
                 )
@@ -193,7 +193,7 @@ class TestStatsRecomputeLifecycle:
         await _assert_empty()
 
         # --- insert one contribution with no components ---
-        summary = await svc.insert_many([_contrib_in("no-components", data={"band_gap": 3.0})])
+        summary = await svc.insert_many([_contrib_in("no-components", data={"bandGap": 3.0})])
         assert summary.failed == []
         project = await _project()
         assert project.stats.contributions == 1

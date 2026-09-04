@@ -164,8 +164,10 @@ class Project(ProjectBase, BaseDocumentWithInput[ShortStr]):
 
     @classmethod
     def from_input_model(cls, data: ProjectIn, id: str) -> Project:  # pyright: ignore[reportIncompatibleMethodOverride]
-        # ``id`` comes from the request path, not the body (see ``ProjectIn``).
-        return cls(_id=id, **data.model_dump())
+        # ``id`` comes from the request path, not the body (see ``ProjectIn``). ``initiative`` is a
+        # bare id/slug identifier on input (see ``ProjectIn.initiative``); it is resolved to a
+        # ``Link`` by ``ProjectService`` and never flows straight into the document here.
+        return cls(_id=id, **data.model_dump(exclude={"initiative"}))
 
     @staticmethod
     def decode_cursor(cursor: str) -> str:
@@ -257,6 +259,10 @@ class ProjectIn(ProjectBase):
     Carries no ``id`` (it comes from the request path) and no ``stats``/``columns`` (server-owned,
     recomputed from contributions). ``is_approved`` is accepted but only honored for admins.
     """
+
+    # str here (id or slug), but ProjectService resolves it to a Link. Deliberately narrows the
+    # inherited `Link[Initiative] | None` to a plain identifier that never reaches the document.
+    initiative: str | None = None  # pyright: ignore[reportIncompatibleVariableOverride]
 
 
 class ProjectPatch(BaseModel):

@@ -6,6 +6,7 @@ from mpcontribs_api.domains.consumers.models import (
     Consumer,
     ConsumerIn,
     ConsumerPatch,
+    ConsumerProjectSettings,
     ConsumerSettings,
 )
 from mpcontribs_api.domains.consumers.repository import MongoDbConsumerRepository
@@ -53,17 +54,20 @@ class TestInsertAndLookup:
     async def test_lookup_missing_returns_none(self, db):
         assert await _repo().read_one({"consumer_id": "kong-absent"}) is None
 
-    async def test_partial_override_snapshots_defaults_for_siblings(self, db):
-        # Admin overrides only max_projects; the stored document must carry a fully-resolved
-        # settings block, with untouched limits snapshotted from the global defaults.
+    async def test_partial_override_stores_only_set_leaves(self, db):
+        # Admin overrides only max_projects; the stored override is sparse — untouched limits are NOT
+        # snapshotted, they stay unset and inherit the global at resolve time.
         await _insert(
-            ConsumerIn(consumer_id="kong-partial", settings=ConsumerSettings(max_projects=1))
+            ConsumerIn(
+                consumer_id="kong-partial", settings=ConsumerSettings(project=ConsumerProjectSettings(max_projects=1))
+            )
         )
         stored = await _repo().read_one({"consumer_id": "kong-partial"})
         assert stored is not None
         assert stored.settings is not None
-        assert stored.settings.max_projects == 1
-        assert stored.settings.max_columns == get_settings().consumer.max_columns
+        assert stored.settings.project is not None
+        assert stored.settings.project.max_projects == 1
+        assert stored.settings.project.max_columns is None  # sibling leaf not snapshotted
 
 
 # ---------------------------------------------------------------------------
@@ -91,23 +95,29 @@ class TestGetByDocumentId:
 
 
 class TestPatchConsumer:
-    async def test_patch_changes_only_named_limit(self, db):
-        created = await _insert(ConsumerIn(consumer_id="kong-patch"))
-        original_columns = created.settings.max_columns
-
+    async def test_patch_changes_only_named_leaf(self, db):
+        # Seed two project leaves, patch one, and confirm the other survives: the repo dots the update
+        # to settings.<domain>.<leaf>, not a whole-subdocument replace.
+        created = await _insert(
+            ConsumerIn(
+                consumer_id="kong-patch",
+                settings=ConsumerSettings(project=ConsumerProjectSettings(max_projects=3, max_columns=20)),
+            )
+        )
         updated = await _repo().update_one(
             {"id": created.id},
-            update=ConsumerPatch(settings=ConsumerSettings(max_projects=1)),
+            update=ConsumerPatch(settings=ConsumerSettings(project=ConsumerProjectSettings(max_projects=1))),
         )
-        assert updated.settings.max_projects == 1
-        # Sibling limit untouched: a nested-key $set, not a whole-subdocument replace.
-        assert updated.settings.max_columns == original_columns
+        assert updated.settings.project.max_projects == 1
+        assert updated.settings.project.max_columns == 20  # sibling leaf untouched
 
     async def test_empty_patch_returns_existing_unchanged(self, db):
-        created = await _insert(ConsumerIn(consumer_id="kong-noop"))
+        created = await _insert(
+            ConsumerIn(consumer_id="kong-noop", settings=ConsumerSettings(project=ConsumerProjectSettings(max_projects=4)))
+        )
         result = await _repo().update_one({"id": created.id}, update=ConsumerPatch())
         assert result.consumer_id == "kong-noop"
-        assert result.settings.max_projects == created.settings.max_projects
+        assert result.settings.project.max_projects == 4
 
     async def test_patch_missing_raises_not_found(self, db):
         from beanie import PydanticObjectId
@@ -115,7 +125,7 @@ class TestPatchConsumer:
         with pytest.raises(NotFoundError):
             await _repo().update_one(
                 {"id": PydanticObjectId()},
-                update=ConsumerPatch(settings=ConsumerSettings(max_projects=1)),
+                update=ConsumerPatch(settings=ConsumerSettings(project=ConsumerProjectSettings(max_projects=1))),
             )
 
 
@@ -145,8 +155,10 @@ class TestDeleteConsumer:
 class TestUpsertMany:
     """The inherited ``MongoDbRepository.upsert_many`` upserts concurrently and reports per item.
 
-    Consumers exercise the base default directly: they use the base repository and carry a unique
-    index (``consumer_id``) so a colliding item produces a real per-item conflict.
+    Consumers exercise the base default directly. Their identity (``consumer_id``) *is* the only
+    unique key, so upsert-by-natural-key is idempotent here: a re-submitted ``consumer_id`` merges
+    into the existing override rather than conflicting. (A genuine per-item conflict — a new identity
+    colliding with a *separate* unique value — is exercised in the contributions suite instead.)
     """
 
     async def test_all_succeed(self, db):
@@ -159,21 +171,35 @@ class TestUpsertMany:
         for i in range(3):
             assert await _repo().read_one({"consumer_id": f"kong-up-{i}"}) is not None
 
-    async def test_one_conflict_does_not_abort_the_batch(self, db):
-        # Pre-existing consumer occupies the unique consumer_id the middle item will collide with.
-        await _insert(ConsumerIn(consumer_id="kong-taken"))
+    async def test_reupserting_an_existing_id_merges_without_aborting_the_batch(self, db):
+        # Pre-existing override the middle item re-submits under the same consumer_id.
+        await _insert(
+            ConsumerIn(
+                consumer_id="kong-taken",
+                settings=ConsumerSettings(project=ConsumerProjectSettings(max_projects=1)),
+            )
+        )
         docs = [
             Consumer.from_input_model(ConsumerIn(consumer_id="kong-fresh-a")),
-            Consumer.from_input_model(ConsumerIn(consumer_id="kong-taken")),  # unique-index conflict
+            Consumer.from_input_model(  # same identity → merges into the existing override, no conflict
+                ConsumerIn(
+                    consumer_id="kong-taken",
+                    settings=ConsumerSettings(project=ConsumerProjectSettings(max_projects=99)),
+                )
+            ),
             Consumer.from_input_model(ConsumerIn(consumer_id="kong-fresh-b")),
         ]
         summary = await _repo().upsert_many(docs)
 
         assert summary.total == 3
-        # The conflict is reported at its input index, not raised; the siblings still commit.
-        assert [f.index for f in summary.failed] == [1]
-        assert summary.failed[0].error_code == "conflict"
-        assert {c.consumer_id for c in summary.succeeded} == {"kong-fresh-a", "kong-fresh-b"}
+        # Natural-key upsert is idempotent: the duplicate identity updates in place rather than failing.
+        assert summary.failed == []
+        assert {c.consumer_id for c in summary.succeeded} == {"kong-fresh-a", "kong-taken", "kong-fresh-b"}
+        # The re-submitted override updated the existing document rather than inserting a second one.
+        merged = await _repo().read_one({"consumer_id": "kong-taken"})
+        assert merged is not None
+        assert merged.settings.project is not None
+        assert merged.settings.project.max_projects == 99
         assert await _repo().read_one({"consumer_id": "kong-fresh-a"}) is not None
         assert await _repo().read_one({"consumer_id": "kong-fresh-b"}) is not None
 
@@ -199,17 +225,17 @@ class TestEffectiveLimits:
         # A caller with no Kong consumer_id (anonymous/dev) never touches the override collection.
         user = User(username="google:alice@example.com", groups=frozenset())
         limits = await _service(user).effective_limits(user.consumer_id)
-        assert limits.max_projects == get_settings().consumer.max_projects
+        assert limits.project.max_projects == get_settings().consumer.project.max_projects
 
     async def test_stored_override_is_returned(self, db):
         await _insert(
-            ConsumerIn(consumer_id="kong-eff", settings=ConsumerSettings(max_projects=42))
+            ConsumerIn(consumer_id="kong-eff", settings=ConsumerSettings(project=ConsumerProjectSettings(max_projects=42)))
         )
         user = User(consumer_id="kong-eff", username="google:alice@example.com", groups=frozenset())
         limits = await _service(user).effective_limits(user.consumer_id)
-        assert limits.max_projects == 42
+        assert limits.project.max_projects == 42
 
     async def test_consumer_id_without_override_falls_back_to_defaults(self, db):
         user = User(consumer_id="kong-unknown", username="google:alice@example.com", groups=frozenset())
         limits = await _service(user).effective_limits(user.consumer_id)
-        assert limits.max_projects == get_settings().consumer.max_projects
+        assert limits.project.max_projects == get_settings().consumer.project.max_projects

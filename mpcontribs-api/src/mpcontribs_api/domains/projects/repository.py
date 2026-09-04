@@ -66,6 +66,26 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
             result[doc["_id"]] = doc.get("unique_column")
         return result
 
+    async def column_paths_by_id(self, ids: list[str]) -> dict[str, set[str]]:
+        """Return ``{project_id: {column_path, ...}}`` for the given projects, scoped to the user.
+
+        Args:
+            ids: project ids to look up
+
+        Returns:
+            dict[str, set[str]]: mapping of project id to its current set of column paths
+        """
+        if not ids:
+            return {}
+        query: dict[str, Any] = {"_id": {"$in": ids}}
+        if self._scope:
+            query = {"$and": [self._scope, query]}
+        collection = self.document_model.get_pymongo_collection()
+        result: dict[str, set[str]] = {}
+        async for doc in collection.find(query, {"columns.path": 1}):
+            result[doc["_id"]] = {col["path"] for col in doc.get("columns", []) if "path" in col}
+        return result
+
     async def existing_ids(self, ids: list[str], *, scoped: bool) -> set[str]:
         """Return the subset of ``ids`` that exist, in one query.
 

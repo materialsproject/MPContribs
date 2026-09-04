@@ -44,7 +44,7 @@ def _contrib_in(
         "material_id": identifier,
         "chemical_system_id": chemical_system_id,
         "formula": "Fe2O3",
-        "data": {"band_gap": 2.1},
+        "data": {"bandGap": 2.1},
     }
     defaults.update(overrides)
     return ContributionIn(**defaults)
@@ -66,7 +66,7 @@ async def _insert(
         material_id=identifier,
         chemical_system_id=chemical_system_id,
         formula=overrides.pop("formula", "Fe2O3"),
-        data=overrides.pop("data", {"band_gap": 2.1}),
+        data=overrides.pop("data", {"bandGap": 2.1}),
         is_public=is_public,
         **overrides,
     )

@@ -5,19 +5,63 @@ from pydantic import BaseModel, Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class QuotaLimits(BaseModel):
+class ConsumerProjectLimits(BaseModel):
+    """Per-consumer limits governing projects."""
+
     max_projects: int = Field(
         default=3,
         description="The maximum number of projects a single user is allowed to create",
-    )
-    max_unapproved_contributions_per_project: int = Field(
-        default=500,
-        description="The maximum number of unapproved contributions a single user is allowed to have per project",
     )
     max_columns: int = Field(
         default=160,
         description="The maximum number of columns a project is allowed to have",
     )
+
+
+class ConsumerContributionLimits(BaseModel):
+    """Per-consumer limits governing contributions."""
+
+    max_per_unapproved_project: int = Field(
+        default=500,
+        description="The maximum number of contributions allowed on a project that is not yet approved. Approved "
+        "projects are not capped.",
+    )
+    max_components: int = Field(
+        default=500,
+        description="Hard ceiling on structures + tables + attachments (total) for a single contribution. Anything "
+        "larger is rejected upfront so we don't burn a transaction slot on a request guaranteed to exceed "
+        "transactionLifetimeLimitSeconds (default 60s).",
+    )
+    max_data_depth: int = Field(
+        default=7,
+        description="The max number of levels allowed in a Contribution's data dictionary.",
+    )
+
+
+class ConsumerInitiativeLimits(BaseModel):
+    """Per-consumer limits governing user-owned initiatives."""
+
+    max_unapproved_per_owner: int = Field(
+        default=3,
+        description="Maximum number of unapproved initiatives a single owner may have at once. Enforced on create.",
+    )
+    max_projects_per_unapproved: int = Field(
+        default=2,
+        description="Maximum number of projects that may be assigned to an unapproved initiative. Enforced when a "
+        "project's initiative is set via PATCH.",
+    )
+
+
+class ConsumerLimits(BaseModel):
+    """Per-consumer, domain-grouped quota limits.
+
+    Each domain's limits are overridable per consumer (see ``mp_consumers``); an unset field inherits
+    the env-backed global default declared here.
+    """
+
+    project: ConsumerProjectLimits = Field(default_factory=ConsumerProjectLimits)
+    contribution: ConsumerContributionLimits = Field(default_factory=ConsumerContributionLimits)
+    initiative: ConsumerInitiativeLimits = Field(default_factory=ConsumerInitiativeLimits)
 
 
 class RedisSettings(BaseModel):
@@ -133,13 +177,6 @@ class MongoSettings(BaseModel):
         "construction to max_pool_size // 2 so reads on the same request can still acquire connections.",
     )
     # TODO: Tune default
-    max_components_per_contribution: int = Field(
-        default=500,
-        description="Hard ceiling on structures + tables + attachments for a single contribution. Anything larger is "
-        "rejected upfront so we don't burn a transaction slot on a request guaranteed to exceed "
-        "transactionLifetimeLimitSeconds (default 60s).",
-    )
-    # TODO: Tune default
     component_insert_chunk_size: int = Field(
         default=100,
         description="Batch size used by component repositories when chunking insert_many calls inside a transaction.",
@@ -172,26 +209,6 @@ class MongoSettings(BaseModel):
         return self
 
 
-class InitiativeSettings(BaseModel):
-    """Limits governing user-owned initiatives."""
-
-    max_unapproved_per_owner: int = Field(
-        default=3,
-        description="Maximum number of unapproved initiatives a single owner may have at once. Enforced on create.",
-    )
-    max_projects_per_unapproved: int = Field(
-        default=2,
-        description="Maximum number of projects that may be assigned to an unapproved initiative. Enforced when a "
-        "project's initiative is set via PATCH.",
-    )
-
-
-class DomainSettings(BaseModel):
-    """Settings to configure the domain logic of MPContribs"""
-
-    initiatives: InitiativeSettings = Field(default_factory=InitiativeSettings)
-
-
 class AuthzSettings(BaseModel):
     """Authorization settings for the grant-validation layer."""
 
@@ -202,19 +219,6 @@ class AuthzSettings(BaseModel):
 
 
 class MPContribsSettings(BaseModel):
-    max_contrib_data_depth: int = Field(
-        default=7, description="The max number of levels allowed in a Contribution's data dictionary."
-    )
-    max_columns: int = Field(
-        default=160,
-        description="The maximum allowed number of columns for a contribution (len(Contribution.data)), "
-        "which also gets reflected in Project.columns",
-    )
-    max_components: int = Field(
-        default=10,
-        description="The maximum allowed number of a single Component type (Structure, Table, Attachment) on a single "
-        "Contribution",
-    )
     float_precision: int = Field(
         default=6,
         description="The precision with which to store floats in MongoDB. "
@@ -247,14 +251,11 @@ class Settings(BaseSettings):
     # MPContribs_otel__*
     otel: ObservabilitySettings = Field(default_factory=ObservabilitySettings)
 
-    # MPContribs_domain_*
-    domain: DomainSettings = Field(default_factory=DomainSettings)
-
     # MPContribs_authz__* (requires domain)
     authz: AuthzSettings
 
-    # MPContribs_consumer__*
-    consumer: QuotaLimits = Field(default_factory=QuotaLimits)
+    # MPContribs_consumer__* (domain-grouped, per-consumer overridable quota limits)
+    consumer: ConsumerLimits = Field(default_factory=ConsumerLimits)
 
     # SMTP Settings
     mail_default_sender: str = Field(

@@ -9,7 +9,13 @@ from pymongo.errors import BulkWriteError
 
 from mpcontribs_api.authz import User
 from mpcontribs_api.authz_core import ReservedRole
-from mpcontribs_api.config import MongoSettings, get_settings
+from mpcontribs_api.config import (
+    ConsumerContributionLimits,
+    ConsumerLimits,
+    ConsumerProjectLimits,
+    MongoSettings,
+    get_settings,
+)
 from mpcontribs_api.domains.attachments.models import Attachment, AttachmentIn
 from mpcontribs_api.domains.contributions.models import (
     Contribution,
@@ -141,7 +147,6 @@ def _contrib_in(
 
 def _make_mongo_settings(
     *,
-    max_components_per_contribution: int = 500,
     max_concurrent_transactions: int = 8,
     component_insert_chunk_size: int = 100,
     bulk_write_limit: int = 1000,
@@ -150,7 +155,6 @@ def _make_mongo_settings(
         "uri": "mongodb://test",
         "db_name": "test",
         "max_pool_size": 100,
-        "max_components_per_contribution": max_components_per_contribution,
         "max_concurrent_transactions": max_concurrent_transactions,
         "component_insert_chunk_size": component_insert_chunk_size,
         "bulk_write_limit": bulk_write_limit,
@@ -192,6 +196,7 @@ def _make_service(
     client=None,
     projects=None,
     settings: MongoSettings | None = None,
+    limits: ConsumerLimits | None = None,
     write_slots: asyncio.Semaphore | None = None,
     user: User | None = None,
     unique_column: str | None = None,
@@ -215,6 +220,8 @@ def _make_service(
     projects_repo = projects or AsyncMock()
     if projects is None:
         projects_repo.unique_columns_by_id.side_effect = lambda ids: {pid: unique_column for pid in ids}
+        # No stored columns, so the per-consumer max_columns guard is a no-op for these tests.
+        projects_repo.column_paths_by_id.side_effect = lambda ids: {pid: set() for pid in ids}
     contrib_repo.existing_identities.return_value = set()
     if client is None:
         client, _ = _make_fake_client()
@@ -227,6 +234,7 @@ def _make_service(
         tables=table_repo,
         attachments=attach_repo,
         settings=settings or _make_mongo_settings(),
+        limits=limits,
     )
     return svc, contrib_repo, struct_repo, table_repo, attach_repo, client
 
@@ -236,6 +244,7 @@ def _approved_projects_repo() -> AsyncMock:
     repo = AsyncMock()
     repo.read_one = AsyncMock(return_value=MagicMock(is_approved=True))
     repo.unique_columns_by_id.side_effect = lambda ids: {pid: None for pid in ids}
+    repo.column_paths_by_id.side_effect = lambda ids: {pid: set() for pid in ids}
     return repo
 
 
@@ -244,6 +253,7 @@ def _unapproved_projects_repo() -> AsyncMock:
     repo = AsyncMock()
     repo.read_one = AsyncMock(return_value=MagicMock(is_approved=False))
     repo.unique_columns_by_id.side_effect = lambda ids: {pid: None for pid in ids}
+    repo.column_paths_by_id.side_effect = lambda ids: {pid: set() for pid in ids}
     return repo
 
 
@@ -311,8 +321,8 @@ class TestInsertContributionsPreChecks:
         assert len(contrib_repo.insert_many.call_args[0][0]) == 1
 
     async def test_oversize_contribution_goes_to_failures_without_db(self):
-        settings = _make_mongo_settings(max_components_per_contribution=1)
-        svc, contrib_repo, struct_repo, _, _, client = _make_service(settings=settings)
+        limits = ConsumerLimits(contribution=ConsumerContributionLimits(max_components=1))
+        svc, contrib_repo, struct_repo, _, _, client = _make_service(limits=limits)
         contrib_repo.insert_many.return_value = None
 
         good = _contrib_in(identifier="ok")
@@ -329,6 +339,129 @@ class TestInsertContributionsPreChecks:
         # And the in-pool contribution did go through the no-component fast path
         contrib_repo.insert_many.assert_called_once()
 
+    async def test_over_depth_contribution_goes_to_failures_per_item(self):
+        # Data-depth is a per-consumer quota enforced in the service (no longer a model validator), so
+        # an over-depth submission is a per-item failure while its shallow sibling still inserts.
+        limits = ConsumerLimits(contribution=ConsumerContributionLimits(max_data_depth=2))
+        svc, contrib_repo, _, _, _, _ = _make_service(limits=limits)
+        contrib_repo.insert_many.return_value = None
+
+        shallow = _contrib_in(identifier="ok", data={"a": {"b": 1}})  # depth 2, allowed
+        too_deep = _contrib_in(identifier="deep", data={"a": {"b": {"c": 1}}})  # depth 3, rejected
+
+        summary = await svc.insert_many([shallow, too_deep])
+
+        assert summary.total == 2
+        assert [f.index for f in summary.failed] == [1]
+        assert summary.failed[0].error_code == "validation_error"
+        assert "Depth of Contribution.data" in summary.failed[0].message
+        # The shallow sibling still reached Mongo.
+        assert len(contrib_repo.insert_many.call_args[0][0]) == 1
+
+
+# ---------------------------------------------------------------------------
+# column limit (max_columns) — enforced on every contribution write path
+#
+# These mock the DB but exercise the real column-accounting logic (``_split_column_limit`` /
+# ``_enforce_column_limit``), so the batch accumulation and single-write guards are covered even where
+# the live-DB integration tests (tests/integration/db/test_column_limit.py) are skipped.
+# ---------------------------------------------------------------------------
+
+
+def _projects_repo_with_columns(base: set[str], *, approved: bool = True) -> AsyncMock:
+    """Projects repo reporting ``base`` as every project's existing column set (and given approval)."""
+    repo = AsyncMock()
+    repo.read_one = AsyncMock(return_value=MagicMock(is_approved=approved))
+    repo.unique_columns_by_id.side_effect = lambda ids: {pid: None for pid in ids}
+    repo.column_paths_by_id.side_effect = lambda ids: {pid: set(base) for pid in ids}
+    return repo
+
+
+def _column_limits(max_columns: int) -> ConsumerLimits:
+    return ConsumerLimits(project=ConsumerProjectLimits(max_columns=max_columns))
+
+
+class TestColumnLimit:
+    async def test_insert_new_column_over_cap_rejected_per_item(self):
+        # First item fills the cap {a, b}; the second introduces a new leaf and is rejected, while the
+        # first still commits — the cap is a per-item failure, not a whole-batch rejection.
+        svc, contrib_repo, *_ = _make_service(limits=_column_limits(2))
+        contrib_repo.insert_many.return_value = None
+
+        summary = await svc.insert_many([
+            _contrib_in(identifier="c1", data={"a": 1.0, "b": 2.0}),
+            _contrib_in(identifier="c2", data={"c": 3.0}),
+        ])
+
+        assert len(summary.succeeded) == 1
+        assert [f.index for f in summary.failed] == [1]
+        assert summary.failed[0].error_code == "validation_error"
+        # Only the accepted item reached Mongo.
+        assert len(contrib_repo.insert_many.call_args[0][0]) == 1
+
+    async def test_insert_reusing_existing_columns_at_cap_allowed(self):
+        # The project already sits at the cap with {a, b}; a write that reuses a known column adds no
+        # new distinct path, so it must be accepted rather than rejected for being "at the cap".
+        projects = _projects_repo_with_columns({"a", "b"})
+        svc, contrib_repo, *_ = _make_service(limits=_column_limits(2), projects=projects)
+        contrib_repo.insert_many.return_value = None
+
+        summary = await svc.insert_many([_contrib_in(identifier="c1", data={"a": 9.0})])
+
+        assert summary.failed == []
+        assert len(summary.succeeded) == 1
+
+    async def test_insert_new_column_against_existing_columns_over_cap_rejected(self):
+        # Existing columns count toward the cap: with {a, b} stored at cap 2, a brand-new column is
+        # rejected before it can reach the database.
+        projects = _projects_repo_with_columns({"a", "b"})
+        svc, contrib_repo, *_ = _make_service(limits=_column_limits(2), projects=projects)
+        contrib_repo.insert_many.return_value = None
+
+        summary = await svc.insert_many([_contrib_in(identifier="c1", data={"c": 1.0})])
+
+        assert summary.succeeded == []
+        assert [f.error_code for f in summary.failed] == ["validation_error"]
+        contrib_repo.insert_many.assert_not_called()
+
+    async def test_nested_leaves_each_count_as_a_column(self):
+        # A column is a dotted *leaf* path, so a nested object counts once per leaf. Two leaves under a
+        # cap of 1 must overflow — proving the accounting is per-leaf, not per-top-level-key.
+        svc, contrib_repo, *_ = _make_service(limits=_column_limits(1))
+        contrib_repo.insert_many.return_value = None
+
+        summary = await svc.insert_many([_contrib_in(identifier="c1", data={"a": {"b": 1.0, "c": 2.0}})])
+
+        assert summary.succeeded == []
+        assert [f.error_code for f in summary.failed] == ["validation_error"]
+
+    async def test_upsert_one_over_cap_raises(self):
+        # Single-write replace path: the guard raises rather than collecting a bulk failure.
+        projects = _projects_repo_with_columns({"a", "b"})
+        contrib_repo = AsyncMock()
+        contrib_repo.read_one.return_value = None
+        svc, *_ = _make_service(contributions=contrib_repo, projects=projects, limits=_column_limits(2))
+
+        with pytest.raises(ValidationError):
+            await svc.upsert_one({"id": "x"}, _contrib_in(data={"c": 1.0}))
+
+        contrib_repo.upsert_by_id.assert_not_called()
+
+    async def test_update_one_merge_adding_column_over_cap_raises(self):
+        # Merging a new leaf into a stored contribution would push the project past the cap: rejected
+        # before the write, against the merged (post-patch) column set.
+        projects = _projects_repo_with_columns({"a"})
+        contrib_repo = AsyncMock()
+        existing = _existing_doc(material_id=None, chemical_system_id="Fe-O", formula="Fe2O3")
+        existing.data = {"a": 1.0}
+        contrib_repo.read_one.return_value = existing
+        svc, *_ = _make_service(contributions=contrib_repo, projects=projects, limits=_column_limits(1))
+
+        with pytest.raises(ValidationError):
+            await svc.update_one({"id": str(existing.id)}, ContributionPatch(data={"b": 2.0}))
+
+        contrib_repo.update_one.assert_not_called()
+
 
 # ---------------------------------------------------------------------------
 # insert_many — unapproved-contribution quota
@@ -344,12 +477,13 @@ def _projects_repo_by_approval(approval: dict[str, bool]) -> AsyncMock:
 
     repo.read_one = AsyncMock(side_effect=_get_one)
     repo.unique_columns_by_id.side_effect = lambda ids: {pid: None for pid in ids}
+    repo.column_paths_by_id.side_effect = lambda ids: {pid: set() for pid in ids}
     return repo
 
 
 class TestInsertContributionsUnapprovedQuota:
     async def test_unapproved_project_at_capacity_fails_all(self, monkeypatch):
-        monkeypatch.setattr(get_settings().consumer, "max_unapproved_contributions_per_project", 2)
+        monkeypatch.setattr(get_settings().consumer.contribution, "max_per_unapproved_project",2)
         contrib_repo = AsyncMock()
         contrib_repo.insert_many.return_value = None
         contrib_repo.count_matching.return_value = 5  # already over cap
@@ -365,7 +499,7 @@ class TestInsertContributionsUnapprovedQuota:
 
     async def test_batch_trimmed_to_remaining_capacity(self, monkeypatch):
         # cap 5, 3 already stored -> remaining = 5 - 3 = 2 slots for this batch
-        monkeypatch.setattr(get_settings().consumer, "max_unapproved_contributions_per_project", 5)
+        monkeypatch.setattr(get_settings().consumer.contribution, "max_per_unapproved_project",5)
         contrib_repo = AsyncMock()
         contrib_repo.insert_many.return_value = None
         contrib_repo.count_matching.return_value = 3
@@ -382,7 +516,7 @@ class TestInsertContributionsUnapprovedQuota:
 
     async def test_batch_may_fill_project_to_exactly_cap(self, monkeypatch):
         # cap 3, 2 stored -> exactly one slot; the batch fills the project to the cap, not past it.
-        monkeypatch.setattr(get_settings().consumer, "max_unapproved_contributions_per_project", 3)
+        monkeypatch.setattr(get_settings().consumer.contribution, "max_per_unapproved_project",3)
         contrib_repo = AsyncMock()
         contrib_repo.insert_many.return_value = None
         contrib_repo.count_matching.return_value = 2
@@ -396,7 +530,7 @@ class TestInsertContributionsUnapprovedQuota:
 
     async def test_batch_at_exactly_cap_rejects_all_new(self, monkeypatch):
         # cap 3, 3 stored -> zero remaining slots; a project already at the cap admits nothing new.
-        monkeypatch.setattr(get_settings().consumer, "max_unapproved_contributions_per_project", 3)
+        monkeypatch.setattr(get_settings().consumer.contribution, "max_per_unapproved_project",3)
         contrib_repo = AsyncMock()
         contrib_repo.insert_many.return_value = None
         contrib_repo.count_matching.return_value = 3
@@ -409,7 +543,7 @@ class TestInsertContributionsUnapprovedQuota:
         contrib_repo.insert_many.assert_not_called()
 
     async def test_approved_project_is_unlimited(self, monkeypatch):
-        monkeypatch.setattr(get_settings().consumer, "max_unapproved_contributions_per_project", 1)
+        monkeypatch.setattr(get_settings().consumer.contribution, "max_per_unapproved_project",1)
         contrib_repo = AsyncMock()
         contrib_repo.insert_many.return_value = None
         svc, *_ = _make_service(contributions=contrib_repo, projects=_approved_projects_repo())
@@ -422,7 +556,7 @@ class TestInsertContributionsUnapprovedQuota:
         contrib_repo.count_matching.assert_not_called()
 
     async def test_quota_evaluated_per_project(self, monkeypatch):
-        monkeypatch.setattr(get_settings().consumer, "max_unapproved_contributions_per_project", 2)
+        monkeypatch.setattr(get_settings().consumer.contribution, "max_per_unapproved_project",2)
         contrib_repo = AsyncMock()
         contrib_repo.insert_many.return_value = None
         contrib_repo.count_matching.return_value = 99  # only consulted for the unapproved one
@@ -442,7 +576,7 @@ class TestInsertContributionsUnapprovedQuota:
         assert inserted_ids == {_mp_id_for("a"), _mp_id_for("c")}
 
     async def test_breach_emits_structured_audit_log(self, monkeypatch):
-        monkeypatch.setattr(get_settings().consumer, "max_unapproved_contributions_per_project", 2)
+        monkeypatch.setattr(get_settings().consumer.contribution, "max_per_unapproved_project",2)
         contrib_repo = AsyncMock()
         contrib_repo.insert_many.return_value = None
         contrib_repo.count_matching.return_value = 5
@@ -464,7 +598,7 @@ class TestInsertContributionsUnapprovedQuota:
         assert kwargs["rejected_identifiers_truncated"] is False
 
     async def test_approved_project_emits_no_audit_log(self, monkeypatch):
-        monkeypatch.setattr(get_settings().consumer, "max_unapproved_contributions_per_project", 1)
+        monkeypatch.setattr(get_settings().consumer.contribution, "max_per_unapproved_project",1)
         contrib_repo = AsyncMock()
         contrib_repo.insert_many.return_value = None
         svc, *_ = _make_service(contributions=contrib_repo, projects=_approved_projects_repo())
@@ -483,7 +617,7 @@ class TestInsertContributionsUnapprovedQuota:
 class TestUpsertContributionsUnapprovedQuota:
     async def test_only_new_documents_count_against_cap(self, monkeypatch):
         # cap 3, 2 stored -> one slot for a new document; updating an existing one is free.
-        monkeypatch.setattr(get_settings().consumer, "max_unapproved_contributions_per_project", 3)
+        monkeypatch.setattr(get_settings().consumer.contribution, "max_per_unapproved_project",3)
         contrib_repo = AsyncMock()
         contrib_repo.upsert_one.return_value = MagicMock(spec=Contribution, project="proj")
         contrib_repo.count_matching.return_value = 2
@@ -509,7 +643,7 @@ class TestUpsertContributionsUnapprovedQuota:
         assert upserted == {_mp_id_for("a"), _mp_id_for("b")}
 
     async def test_pure_updates_are_never_capped(self, monkeypatch):
-        monkeypatch.setattr(get_settings().consumer, "max_unapproved_contributions_per_project", 1)
+        monkeypatch.setattr(get_settings().consumer.contribution, "max_per_unapproved_project",1)
         contrib_repo = AsyncMock()
         contrib_repo.upsert_one.return_value = MagicMock(spec=Contribution, project="proj")
         contrib_repo.count_matching.return_value = 99  # far over cap
@@ -529,7 +663,7 @@ class TestUpsertContributionsUnapprovedQuota:
         assert contrib_repo.upsert_one.call_count == 3
 
     async def test_approved_project_skips_quota(self, monkeypatch):
-        monkeypatch.setattr(get_settings().consumer, "max_unapproved_contributions_per_project", 1)
+        monkeypatch.setattr(get_settings().consumer.contribution, "max_per_unapproved_project",1)
         contrib_repo = AsyncMock()
         contrib_repo.upsert_one.return_value = MagicMock(spec=Contribution, project="proj")
         svc, *_ = _make_service(contributions=contrib_repo, projects=_approved_projects_repo())
@@ -549,7 +683,7 @@ class TestUpsertContributionsUnapprovedQuota:
 
 class TestUpsertContributionByIdQuota:
     async def test_update_existing_allowed_even_over_cap(self, monkeypatch):
-        monkeypatch.setattr(get_settings().consumer, "max_unapproved_contributions_per_project", 1)
+        monkeypatch.setattr(get_settings().consumer.contribution, "max_per_unapproved_project",1)
         contrib_repo = AsyncMock()
         contrib_repo.read_one.return_value = MagicMock(spec=Contribution)  # id exists -> update
         contrib_repo.count_matching.return_value = 99
@@ -562,7 +696,7 @@ class TestUpsertContributionByIdQuota:
         contrib_repo.count_matching.assert_not_called()
 
     async def test_new_insert_over_cap_rejected(self, monkeypatch):
-        monkeypatch.setattr(get_settings().consumer, "max_unapproved_contributions_per_project", 2)
+        monkeypatch.setattr(get_settings().consumer.contribution, "max_per_unapproved_project",2)
         contrib_repo = AsyncMock()
         contrib_repo.read_one.return_value = None  # id absent -> would insert
         contrib_repo.count_matching.return_value = 5  # over cap
@@ -574,7 +708,7 @@ class TestUpsertContributionByIdQuota:
         contrib_repo.upsert_by_id.assert_not_called()
 
     async def test_new_insert_under_cap_allowed(self, monkeypatch):
-        monkeypatch.setattr(get_settings().consumer, "max_unapproved_contributions_per_project", 5)
+        monkeypatch.setattr(get_settings().consumer.contribution, "max_per_unapproved_project",5)
         contrib_repo = AsyncMock()
         contrib_repo.read_one.return_value = None
         contrib_repo.count_matching.return_value = 1
@@ -587,7 +721,7 @@ class TestUpsertContributionByIdQuota:
 
     async def test_new_insert_at_exactly_cap_rejected(self, monkeypatch):
         # stored == cap: the project is full, so a brand-new document is rejected (no cap+1 slack).
-        monkeypatch.setattr(get_settings().consumer, "max_unapproved_contributions_per_project", 2)
+        monkeypatch.setattr(get_settings().consumer.contribution, "max_per_unapproved_project",2)
         contrib_repo = AsyncMock()
         contrib_repo.read_one.return_value = None
         contrib_repo.count_matching.return_value = 2
@@ -599,7 +733,7 @@ class TestUpsertContributionByIdQuota:
         contrib_repo.upsert_by_id.assert_not_called()
 
     async def test_new_insert_approved_project_unlimited(self, monkeypatch):
-        monkeypatch.setattr(get_settings().consumer, "max_unapproved_contributions_per_project", 1)
+        monkeypatch.setattr(get_settings().consumer.contribution, "max_per_unapproved_project",1)
         contrib_repo = AsyncMock()
         contrib_repo.read_one.return_value = None
         contrib_repo.upsert_by_id.return_value = MagicMock(spec=Contribution)
@@ -1171,8 +1305,8 @@ class TestWriteAuthorization:
     async def test_insert_unauthorized_and_oversize_yield_single_failure(self):
         """An item that is both unauthorized and oversize must produce exactly one BulkFailure
         (authorization runs first), preserving total == len(contributions)."""
-        settings = _make_mongo_settings(max_components_per_contribution=1)
-        svc, contrib_repo, struct_repo, _, _, _ = _make_service(user=_member_user("allowed"), settings=settings)
+        limits = ConsumerLimits(contribution=ConsumerContributionLimits(max_components=1))
+        svc, contrib_repo, struct_repo, _, _, _ = _make_service(user=_member_user("allowed"), limits=limits)
 
         bad = _contrib_in(project="forbidden", identifier="big", structures=[_structure_in(), _structure_in()])
         summary = await svc.insert_many([bad])

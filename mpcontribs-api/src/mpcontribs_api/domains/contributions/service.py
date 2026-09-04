@@ -14,7 +14,7 @@ from pymongo.errors import BulkWriteError
 from types_aiobotocore_s3 import S3Client
 
 from mpcontribs_api.authz import PROJECT_PATH, ROOT_PATH, User
-from mpcontribs_api.config import MongoSettings, get_settings
+from mpcontribs_api.config import ConsumerLimits, MongoSettings, get_settings
 from mpcontribs_api.domains._shared.bulk import (
     BulkDeleteSummary,
     BulkFailure,
@@ -27,8 +27,7 @@ from mpcontribs_api.domains._shared.types import DownloadFormat, ShortMimeFormat
 from mpcontribs_api.domains._shared.units import QuantityLeaf
 from mpcontribs_api.domains.attachments.models import AttachmentFilter
 from mpcontribs_api.domains.attachments.repository import MongoDbAttachmentRepository
-from mpcontribs_api.domains.consumers.models import ConsumerSettings
-from mpcontribs_api.domains.contributions.data import validate_contribution_data
+from mpcontribs_api.domains.contributions.data import validate_contribution_data, validate_data_depth
 from mpcontribs_api.domains.contributions.models import (
     Contribution,
     ContributionFilter,
@@ -41,7 +40,8 @@ from mpcontribs_api.domains.contributions.models import (
 )
 from mpcontribs_api.domains.contributions.pivot import expand_contribution
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
-from mpcontribs_api.domains.projects.models import Column, Stats
+from mpcontribs_api.domains.contributions.stats import iter_leaves
+from mpcontribs_api.domains.projects.models import Column, Stats, validate_column_limit
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
 from mpcontribs_api.domains.structures.models import Structure, StructureFilter
 from mpcontribs_api.domains.structures.repository import MongoDbStructureRepository
@@ -86,7 +86,7 @@ class ContributionService:
         attachments: MongoDbAttachmentRepository,
         tables: MongoDbTableRepository,
         settings: MongoSettings | None = None,
-        limits: ConsumerSettings | None = None,
+        limits: ConsumerLimits | None = None,
     ):
         self._client = client
         self._user = user
@@ -96,7 +96,7 @@ class ContributionService:
         self._attachments = attachments
         self._tables = tables
         self._settings = settings or get_settings().mongo
-        self._limits = limits or ConsumerSettings()
+        self._limits = limits or get_settings().consumer
 
     @property
     def _children(self) -> dict[str, MongoDbRepository]:
@@ -216,12 +216,20 @@ class ContributionService:
         self,
         contributions: list[ContributionIn],
     ) -> tuple[list[BulkFailure], list[PreparedWrite]]:
-        """Annotate units and pivot each submission on its conditions, keeping the original index."""
+        """Annotate units and pivot each submission on its conditions, keeping the original index.
+
+        Data-depth is enforced here, per-consumer, against each *expanded* row (pivoting dotted keys
+        can deepen the stored dict), so an over-depth submission is a per-item failure rather than a
+        whole-request rejection.
+        """
+        max_depth = self._limits.contribution.max_data_depth
         failures: list[BulkFailure] = []
         prepared: list[PreparedWrite] = []
         for i, contrib in enumerate(contributions):
             try:
                 rows = expand_contribution(contrib)
+                for row in rows:
+                    validate_data_depth(row.contribution.data, max_depth)
             except AppError as exc:
                 failures.append(bulk_failure_from_exception(i, contrib.identity_dict(), exc))
                 logger.info("contribution expansion rejected", index=i, identifiers=contrib.identity_dict())
@@ -390,7 +398,7 @@ class ContributionService:
         should proceed to Mongo. Doing this upfront avoids burning a transaction slot on a request
         guaranteed to exceed transactionLifetimeLimitSeconds.
         """
-        cap = self._settings.max_components_per_contribution
+        cap = self._limits.contribution.max_components
         oversize: list[BulkFailure] = []
         remaining: list[PreparedWrite] = []
         for item in items:
@@ -422,7 +430,7 @@ class ContributionService:
         for item in plan:
             by_project[item.contribution.project].append(item)
 
-        cap = self._limits.max_unapproved_contributions_per_project
+        cap = self._limits.contribution.max_per_unapproved_project
         failures: list[BulkFailure] = []
         survivors: list[PreparedWrite] = []
         for project_id, items in by_project.items():
@@ -460,7 +468,7 @@ class ContributionService:
                     rejected_identifiers_truncated=len(rejected) > _QUOTA_LOG_IDENTIFIER_CAP,
                 )
             exc = PermissionError(
-                "Attempted to add more than the allowed number of unapproved contributions",
+                "Attempted to add more than the allowed number of contributions to an unapproved project",
                 project=project_id,
                 max_allowed=cap,
             )
@@ -469,6 +477,60 @@ class ContributionService:
             )
         survivors.sort(key=lambda item: item.index)
         return failures, survivors
+
+    async def _split_column_limit(
+        self,
+        plan: list[PreparedWrite],
+    ) -> tuple[list[BulkFailure], list[PreparedWrite]]:
+        """Reject writes that would push a project past its per-consumer ``max_columns`` cap.
+
+        Per project, items are walked in input order and each accepted item's columns accumulate onto
+        the running set; an item is rejected once accepting it would take the project's distinct-column
+        count past the cap.
+
+        Soft limit: the count-then-write is not atomic, so concurrent writers can overshoot slightly.
+        """
+        by_project: dict[str, list[PreparedWrite]] = defaultdict(list)
+        for item in plan:
+            by_project[item.contribution.project].append(item)
+
+        base = await self._projects.column_paths_by_id(sorted(by_project))
+        failures: list[BulkFailure] = []
+        survivors: list[PreparedWrite] = []
+        for project_id, items in by_project.items():
+            seen = set(base.get(project_id, set()))
+            rejected = 0
+            for item in items:
+                resulting = seen | {path for path, _, _ in iter_leaves(item.contribution.data or {})}
+                try:
+                    validate_column_limit(list(resulting), self._limits.project.max_columns)
+                except ValidationError as exc:
+                    failures.append(bulk_failure_from_exception(item.index, item.contribution.identity_dict(), exc))
+                    rejected += 1
+                    continue
+                seen = resulting
+                survivors.append(item)
+            if rejected:
+                logger.warning(
+                    "contribution.column_limit_exceeded",
+                    project=project_id,
+                    max_allowed=self._limits.project.max_columns,
+                    attempted=len(items),
+                    accepted=len(items) - rejected,
+                    rejected=rejected,
+                )
+        survivors.sort(key=lambda item: item.index)
+        return failures, survivors
+
+    async def _enforce_column_limit(self, project_id: str, data: dict[str, Any] | None) -> None:
+        """Reject a single write whose ``data`` would push ``project_id`` past its ``max_columns`` cap.
+
+        The single-write counterpart of :meth:`_split_column_limit`: same
+        :func:`validate_column_limit` check, but raised rather than collected as a bulk failure.
+        """
+        base = await self._projects.column_paths_by_id([project_id])
+        resulting = base.get(project_id, set()) | {path for path, _, _ in iter_leaves(data or {})}
+        validate_column_limit(list(resulting), self._limits.project.max_columns)
 
     async def _existing_identities(self, items: list[PreparedWrite]) -> set[ContributionIdentity]:
         """Return which of ``items``' identities already have a stored document."""
@@ -509,7 +571,17 @@ class ContributionService:
         identity_failures, plan = await self._resolve_identity(sized, is_upsert=is_upsert)
         # Reject writes that would push an unapproved project past its contribution cap.
         quota_failures, plan = await self._split_quota_exceeded(plan, is_upsert=is_upsert)
-        return (unauthorized_failures + oversize_failures + identity_failures + quota_failures, plan)
+        # Reject writes that would push a project past its per-consumer column cap.
+        column_failures, plan = await self._split_column_limit(plan)
+        return (
+            expand_failures
+            + unauthorized_failures
+            + oversize_failures
+            + identity_failures
+            + quota_failures
+            + column_failures,
+            plan,
+        )
 
     async def _insert_no_components(
         self,
@@ -805,13 +877,15 @@ class ContributionService:
         unapproved project's contribution cap is enforced when the upsert would insert a new document.
         """
         self._user.require_write(*PROJECT_PATH, contribution.project)
+        validate_data_depth(contribution.data, self._limits.contribution.max_data_depth)
+        await self._enforce_column_limit(contribution.project, contribution.data)
         existing = await self._contributions.read_one(identifiers, None)
         if existing is None:
             stored = await self._unapproved_stored_count(contribution.project)
-            cap = self._limits.max_unapproved_contributions_per_project
+            cap = self._limits.contribution.max_per_unapproved_project
             if stored is not None and stored >= cap:
                 raise PermissionError(
-                    "Attempted to add more than the allowed number of unapproved contributions",
+                    "Attempted to add more than the allowed number of contributions to an unapproved project",
                     project=contribution.project,
                     max_allowed=cap,
                 )
@@ -878,6 +952,12 @@ class ContributionService:
             data = set_fields["data"]
         else:
             data = QuantityLeaf.merge_data(existing.data, set_fields["data"])
+        # Enforce the per-consumer depth quota against the data the write will actually persist (the
+        # merged view when merging, the patch's data on replace). Skipped when the patch leaves data
+        # untouched, so a legacy over-depth document can still receive metadata-only patches.
+        if "data" in set_fields:
+            validate_data_depth(data, self._limits.contribution.max_data_depth)
+            await self._enforce_column_limit(project, data)
         unique_value = await self._resolve_unique_value(project, data)
         return await self._contributions.update_one(
             identifiers,

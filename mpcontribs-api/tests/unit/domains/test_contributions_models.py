@@ -127,13 +127,14 @@ class TestContributionBase:
         contrib = _make_contribution_in(data=nested)
         assert contrib.data["bandGap"]["value"] == 1.5
 
-    def test_data_depth_validation(self):
-        max_nesting = {"lvl1": {"lvl2": {"lvl3": {"lvl4": {"lvl5": {"lvl6": {"lvl7": "pass"}}}}}}}
-        invalid_nesting = {"lvl1": {"lvl2": {"lvl3": {"lvl4": {"lvl5": {"lvl6": {"lvl7": {"lvl8": "fail"}}}}}}}}
-        _make_contribution_in(data=max_nesting)
-        assert True
-        with pytest.raises(ValidationError, match="Depth of Contribution.data"):
-            _make_contribution_in(data=invalid_nesting)
+    def test_deep_data_accepted_by_model(self):
+        # Depth is no longer a model-level constraint: it is a per-consumer quota enforced in
+        # ``ContributionService`` (see tests/unit/domains/test_contribution_service.py). The model
+        # accepts arbitrarily deep data so a legacy over-depth document stays readable. Keys use the
+        # canonical camelCase spelling KeyOffense now requires (``lvl1`` not ``lvl_1``).
+        deep = {"lvl1": {"lvl2": {"lvl3": {"lvl4": {"lvl5": {"lvl6": {"lvl7": {"lvl8": "ok"}}}}}}}}
+        contrib = _make_contribution_in(data=deep)
+        assert contrib.data is not None
 
     def test_data_key_validation(self):
         # Keys are validated, never rewritten: a key not already in canonical camelCase is rejected and

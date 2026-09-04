@@ -337,10 +337,12 @@ def _columns(n: int) -> list[Column]:
 
 
 class TestColumnLengthQuota:
-    """The column cap is enforced by ``validate_column_limit`` (called from the repository with the
-    caller's effective ``max_columns``), not by the ``ProjectIn``/``ProjectPatch`` models. These
-    tests pin the pure function's contract: the cap is inclusive, over-cap writes raise, and a
-    non-list value is a no-op so legacy documents that already exceed the cap can still be read back.
+    """The column cap is enforced by ``validate_column_limit``, called on the contribution write path
+    (``ContributionService``) against a project's resulting column set with the caller's effective
+    ``max_columns`` — not by the ``ProjectIn``/``ProjectPatch`` models, since columns are server-derived
+    from contributions. These tests pin the pure function's contract: the cap is inclusive, over-cap
+    writes raise, and a non-list value is a no-op so legacy documents that already exceed the cap can
+    still be read back.
     """
 
     def test_at_cap_is_allowed(self):

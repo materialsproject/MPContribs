@@ -4,7 +4,9 @@ from beanie import PydanticObjectId
 from fastapi_filter import FilterDepends, with_prefix
 from pydantic import BaseModel, Field
 
-from mpcontribs_api.config import get_settings
+from mpcontribs_api.config import (
+    ConsumerLimits,
+)
 from mpcontribs_api.domains._shared.filters import BaseFilter
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
 from mpcontribs_api.domains._shared.types import Identity
@@ -16,34 +18,109 @@ class ConsumerIdentity(Identity):
     consumer_id: str
 
 
-class ConsumerSettings(BaseModel):
-    """Per-consumer settings — the effective, fully-resolved values read by the app.
+class ConsumerProjectSettings(BaseModel):
+    """Sparse per-consumer project overrides — an unset (``None``) field inherits the global default."""
 
-    The quota limits default directly from the env-backed ``config.QuotaLimits`` (so an unset field
-    resolves to its global default), and this model is free to grow settings beyond quota limits.
-    Because unset fields fall back to defaults, admins can supply only the fields they want to change
-    (the repository/input paths use ``exclude_unset`` to keep an override partial).
+    max_projects: int | None = Field(default=None, ge=0)
+    max_columns: int | None = Field(default=None, ge=0)
+
+
+class ConsumerContributionSettings(BaseModel):
+    """Sparse per-consumer contribution overrides — an unset (``None``) field inherits the global default."""
+
+    max_per_unapproved_project: int | None = Field(default=None, ge=0)
+    max_components: int | None = Field(default=None, ge=0)
+    max_data_depth: int | None = Field(default=None, ge=0)
+
+
+class ConsumerInitiativeSettings(BaseModel):
+    """Sparse per-consumer initiative overrides — an unset (``None``) field inherits the global default."""
+
+    max_unapproved_per_owner: int | None = Field(default=None, ge=0)
+    max_projects_per_unapproved: int | None = Field(default=None, ge=0)
+
+
+# uses generic `T` to resolve type-checking
+def _merge_domain[T: BaseModel](override: BaseModel | None, default: T) -> T:
+    """Return ``default`` with each explicitly-set (non-``None``) leaf of ``override`` applied."""
+    if override is None:
+        return default
+    return default.model_copy(update=override.model_dump(exclude_none=True))
+
+
+class ConsumerSettings(BaseModel):
+    """A per-consumer override of the global quota limits — sparse and domain-grouped.
+
+    Only the limits an admin explicitly sets are stored; every unset field (``None``, and whole unset
+    domains) inherits the current env-backed global default at resolve time (see :meth:`resolve`).
+    Nothing is snapshotted, so an unset limit always tracks the live global rather than freezing at
+    creation. The repository patches only the set leaves (``settings.<domain>.<leaf>``) via
+    ``exclude_unset``, keeping a partial override partial.
     """
 
-    max_projects: int = Field(default_factory=lambda: get_settings().consumer.max_projects, ge=0)
-    max_unapproved_contributions_per_project: int = Field(
-        default_factory=lambda: get_settings().consumer.max_unapproved_contributions_per_project, ge=0
-    )
-    max_columns: int = Field(default_factory=lambda: get_settings().consumer.max_columns, ge=0)
+    project: ConsumerProjectSettings | None = None
+    contribution: ConsumerContributionSettings | None = None
+    initiative: ConsumerInitiativeSettings | None = None
+
+    def resolve(self, defaults: ConsumerLimits) -> ConsumerLimits:
+        """Merge this sparse override onto ``defaults``, returning fully-resolved concrete limits."""
+        return ConsumerLimits(
+            project=_merge_domain(self.project, defaults.project),
+            contribution=_merge_domain(self.contribution, defaults.contribution),
+            initiative=_merge_domain(self.initiative, defaults.initiative),
+        )
 
 
-class ConsumerSettingsFilter(BaseFilter):
+class ConsumerProjectSettingsFilter(BaseFilter):
     max_projects: int | None = None
     max_projects__gte: int | None = None
     max_projects__lte: int | None = None
 
-    max_unapproved_contributions_per_project: int | None = None
-    max_unapproved_contributions_per_project__gte: int | None = None
-    max_unapproved_contributions_per_project__lte: int | None = None
-
     max_columns: int | None = None
     max_columns__gte: int | None = None
     max_columns__lte: int | None = None
+
+    order_by: list[str] | None = None
+
+
+class ConsumerContributionSettingsFilter(BaseFilter):
+    max_per_unapproved_project: int | None = None
+    max_per_unapproved_project__gte: int | None = None
+    max_per_unapproved_project__lte: int | None = None
+
+    max_components: int | None = None
+    max_components__gte: int | None = None
+    max_components__lte: int | None = None
+
+    max_data_depth: int | None = None
+    max_data_depth__gte: int | None = None
+    max_data_depth__lte: int | None = None
+
+    order_by: list[str] | None = None
+
+
+class ConsumerInitiativeSettingsFilter(BaseFilter):
+    max_unapproved_per_owner: int | None = None
+    max_unapproved_per_owner__gte: int | None = None
+    max_unapproved_per_owner__lte: int | None = None
+
+    max_projects_per_unapproved: int | None = None
+    max_projects_per_unapproved__gte: int | None = None
+    max_projects_per_unapproved__lte: int | None = None
+
+    order_by: list[str] | None = None
+
+
+class ConsumerSettingsFilter(BaseFilter):
+    # The stored limits are domain-grouped under ``settings.<domain>.<leaf>``; nested prefixes keep
+    # the built Mongo keys aligned with that shape.
+    project: ConsumerProjectSettingsFilter | None = FilterDepends(with_prefix("project", ConsumerProjectSettingsFilter))
+    contribution: ConsumerContributionSettingsFilter | None = FilterDepends(
+        with_prefix("contribution", ConsumerContributionSettingsFilter)
+    )
+    initiative: ConsumerInitiativeSettingsFilter | None = FilterDepends(
+        with_prefix("initiative", ConsumerInitiativeSettingsFilter)
+    )
 
     # sorting
     order_by: list[str] | None = None
@@ -52,9 +129,10 @@ class ConsumerSettingsFilter(BaseFilter):
 class Consumer(BaseDocumentWithInput[PydanticObjectId]):
     """Admin-managed, per-consumer overrides of the global quota limits.
 
-    Stored in ``mp_consumers`` and matched to a request by Kong's ``consumer_id``. The quota limits
-    live under ``settings`` (a ``QuotaLimits``); an admin can override a single limit and any field
-    they leave unset inherits the env-backed default, snapshotted onto the document at insert time.
+    Stored in ``mp_consumers`` and matched to a request by Kong's ``consumer_id``. The overrides live
+    under ``settings``, domain-grouped (``project``/``contribution``/``initiative``), and are sparse:
+    only the limits an admin explicitly set are stored. Every unset limit inherits the current env-backed
+    global at resolve time, so it always tracks the live default rather than a value frozen at creation.
     """
 
     identity_model: ClassVar[type[Identity]] = ConsumerIdentity
@@ -63,7 +141,7 @@ class Consumer(BaseDocumentWithInput[PydanticObjectId]):
 
     @classmethod
     def with_defaults(cls, consumer_id: str = "") -> Consumer:
-        """In-memory Consumer whose ``settings`` carry the env-backed default limits.
+        """In-memory Consumer that overrides nothing (every limit inherits the global default).
 
         Never persisted; a throwaway ``_id`` is minted only to satisfy the document's required id.
         """
@@ -73,8 +151,8 @@ class Consumer(BaseDocumentWithInput[PydanticObjectId]):
     def from_input_model(cls, data: ConsumerIn) -> Consumer:
         """Build a stored document from an input payload, minting a fresh server-owned ``_id``.
 
-        Unset fields snapshot the current env defaults (``ConsumerSettings`` fills them from
-        ``config.QuotaLimits``), so the stored document always carries fully-resolved values.
+        The override is stored sparse - only the limits the admin supplied are persisted; unset ones
+        are resolved against the global default on read.
         """
         settings = data.settings if data.settings is not None else ConsumerSettings()
         return cls.model_validate({"_id": PydanticObjectId(), "consumer_id": data.consumer_id, "settings": settings})
