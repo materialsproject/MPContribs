@@ -40,7 +40,8 @@ from mpcontribs_api.domains.contributions.models import (
 )
 from mpcontribs_api.domains.contributions.pivot import expand_contribution
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
-from mpcontribs_api.domains.projects.models import Column, Stats
+from mpcontribs_api.domains.contributions.stats import iter_leaves
+from mpcontribs_api.domains.projects.models import Column, Stats, validate_column_limit
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
 from mpcontribs_api.domains.structures.models import Structure, StructureFilter
 from mpcontribs_api.domains.structures.repository import MongoDbStructureRepository
@@ -477,6 +478,60 @@ class ContributionService:
         survivors.sort(key=lambda item: item.index)
         return failures, survivors
 
+    async def _split_column_limit(
+        self,
+        plan: list[PreparedWrite],
+    ) -> tuple[list[BulkFailure], list[PreparedWrite]]:
+        """Reject writes that would push a project past its per-consumer ``max_columns`` cap.
+
+        Per project, items are walked in input order and each accepted item's columns accumulate onto
+        the running set; an item is rejected once accepting it would take the project's distinct-column
+        count past the cap.
+
+        Soft limit: the count-then-write is not atomic, so concurrent writers can overshoot slightly.
+        """
+        by_project: dict[str, list[PreparedWrite]] = defaultdict(list)
+        for item in plan:
+            by_project[item.contribution.project].append(item)
+
+        base = await self._projects.column_paths_by_id(sorted(by_project))
+        failures: list[BulkFailure] = []
+        survivors: list[PreparedWrite] = []
+        for project_id, items in by_project.items():
+            seen = set(base.get(project_id, set()))
+            rejected = 0
+            for item in items:
+                resulting = seen | {path for path, _, _ in iter_leaves(item.contribution.data or {})}
+                try:
+                    validate_column_limit(list(resulting), self._limits.project.max_columns)
+                except ValidationError as exc:
+                    failures.append(bulk_failure_from_exception(item.index, item.contribution.identity_dict(), exc))
+                    rejected += 1
+                    continue
+                seen = resulting
+                survivors.append(item)
+            if rejected:
+                logger.warning(
+                    "contribution.column_limit_exceeded",
+                    project=project_id,
+                    max_allowed=self._limits.project.max_columns,
+                    attempted=len(items),
+                    accepted=len(items) - rejected,
+                    rejected=rejected,
+                )
+        survivors.sort(key=lambda item: item.index)
+        return failures, survivors
+
+    async def _enforce_column_limit(self, project_id: str, data: dict[str, Any] | None) -> None:
+        """Reject a single write whose ``data`` would push ``project_id`` past its ``max_columns`` cap.
+
+        The single-write counterpart of :meth:`_split_column_limit`: same
+        :func:`validate_column_limit` check, but raised rather than collected as a bulk failure.
+        """
+        base = await self._projects.column_paths_by_id([project_id])
+        resulting = base.get(project_id, set()) | {path for path, _, _ in iter_leaves(data or {})}
+        validate_column_limit(list(resulting), self._limits.project.max_columns)
+
     async def _existing_identities(self, items: list[PreparedWrite]) -> set[ContributionIdentity]:
         """Return which of ``items``' identities already have a stored document."""
         identities = [item.contribution.identity(item.unique_value, item.condition_key) for item in items]
@@ -516,8 +571,15 @@ class ContributionService:
         identity_failures, plan = await self._resolve_identity(sized, is_upsert=is_upsert)
         # Reject writes that would push an unapproved project past its contribution cap.
         quota_failures, plan = await self._split_quota_exceeded(plan, is_upsert=is_upsert)
+        # Reject writes that would push a project past its per-consumer column cap.
+        column_failures, plan = await self._split_column_limit(plan)
         return (
-            expand_failures + unauthorized_failures + oversize_failures + identity_failures + quota_failures,
+            expand_failures
+            + unauthorized_failures
+            + oversize_failures
+            + identity_failures
+            + quota_failures
+            + column_failures,
             plan,
         )
 
@@ -816,6 +878,7 @@ class ContributionService:
         """
         self._user.require_write(*PROJECT_PATH, contribution.project)
         validate_data_depth(contribution.data, self._limits.contribution.max_data_depth)
+        await self._enforce_column_limit(contribution.project, contribution.data)
         existing = await self._contributions.read_one(identifiers, None)
         if existing is None:
             stored = await self._unapproved_stored_count(contribution.project)
@@ -894,6 +957,7 @@ class ContributionService:
         # untouched, so a legacy over-depth document can still receive metadata-only patches.
         if "data" in set_fields:
             validate_data_depth(data, self._limits.contribution.max_data_depth)
+            await self._enforce_column_limit(project, data)
         unique_value = await self._resolve_unique_value(project, data)
         return await self._contributions.update_one(
             identifiers,
