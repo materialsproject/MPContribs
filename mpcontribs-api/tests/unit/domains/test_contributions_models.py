@@ -18,7 +18,13 @@ from mpcontribs_api.domains.contributions.models import (
     ContributionPatch,
     extract_unique_value,
 )
-from mpcontribs_api.exceptions import ValidationError
+from mpcontribs_api.domains.contributions.pivot import expand_contribution
+from mpcontribs_api.exceptions import DataKeyError, ValidationError
+
+
+def _offenders(exc: DataKeyError) -> dict[str, str | None]:
+    """Map each offending key from a DataKeyError to its suggested canonical spelling (or None)."""
+    return {entry["key"]: entry["suggestion"] for entry in exc.context["offending_keys"]}
 
 # The identity/index column order, declared once here so the tests fail loudly if the field order
 # in ContributionIdentity ever drifts (which silently forces a Mongo index migration).
@@ -44,7 +50,7 @@ def _make_contribution_in(**overrides) -> ContributionIn:
         "material_id": "mp-1234",
         "chemical_system_id": "Fe-O",
         "formula": "Fe2O3",
-        "data": {"band_gap": QuantityLeaf.from_submission(2.1, "eV").as_dict()},
+        "data": {"bandGap": QuantityLeaf.from_submission(2.1, "eV").as_dict()},
     }
     defaults.update(overrides)
     return ContributionIn(**defaults)
@@ -117,49 +123,77 @@ class TestContributionBase:
         assert contrib.data == {}
 
     def test_data_accepts_nested_structure(self):
-        nested = {"band_gap": QuantityLeaf.from_submission(1.5, "eV").as_dict(), "volume": 42.3}
+        nested = {"bandGap": QuantityLeaf.from_submission(1.5, "eV").as_dict(), "volume": 42.3}
         contrib = _make_contribution_in(data=nested)
-        assert contrib.data["band_gap"]["value"] == 1.5
+        assert contrib.data["bandGap"]["value"] == 1.5
 
     def test_deep_data_accepted_by_model(self):
         # Depth is no longer a model-level constraint: it is a per-consumer quota enforced in
         # ``ContributionService`` (see tests/unit/domains/test_contribution_service.py). The model
-        # accepts arbitrarily deep data so a legacy over-depth document stays readable.
-        deep = {"lvl_1": {"lvl_2": {"lvl_3": {"lvl_4": {"lvl_5": {"lvl_6": {"lvl_7": {"lvl_8": "ok"}}}}}}}}
+        # accepts arbitrarily deep data so a legacy over-depth document stays readable. Keys use the
+        # canonical camelCase spelling KeyOffense now requires (``lvl1`` not ``lvl_1``).
+        deep = {"lvl1": {"lvl2": {"lvl3": {"lvl4": {"lvl5": {"lvl6": {"lvl7": {"lvl8": "ok"}}}}}}}}
         contrib = _make_contribution_in(data=deep)
         assert contrib.data is not None
 
     def test_data_key_validation(self):
-        # Input keys are coerced to snake_case on write, so punctuation is folded (not rejected) and
-        # the annotation grammar is allowed. Only keys that can't be coerced are rejected on input.
-        _make_contribution_in(data={"test*/|": "pass"})  # folds to "test", accepted
-        _make_contribution_in(data={"a.b (eV, T=300K)": 1})  # annotated key + dotted path, accepted
-        with pytest.raises(ValidationError, match="Non-ASCII key found in Contribution.data"):
+        # Keys are validated, never rewritten: a key not already in canonical camelCase is rejected and
+        # every offender is reported at once with its suggested spelling. An already-canonical key and
+        # the annotation grammar (with canonical name/condition parts) are accepted.
+        _make_contribution_in(data={"bandGap": "pass"})  # already canonical, accepted
+        _make_contribution_in(data={"a.b (eV, temperature=300K)": 1})  # canonical segments + condition
+        # A non-canonical plain key is rejected with a camelCase suggestion; the offending raw key is
+        # never silently changed.
+        with pytest.raises(DataKeyError) as exc:
+            _make_contribution_in(data={"Band Gap": 1, "band_gap": 2})
+        assert _offenders(exc.value) == {"Band Gap": "bandGap", "band_gap": "bandGap"}
+        # Non-ASCII and empty-after-coercion keys have no clean suggestion.
+        with pytest.raises(DataKeyError) as exc:
             _make_contribution_in(data={"ΔE": "fail"})
-        with pytest.raises(ValidationError, match="reduces to an empty string"):
+        assert _offenders(exc.value) == {"ΔE": None}
+        with pytest.raises(DataKeyError) as exc:
             _make_contribution_in(data={"***": "fail"})
+        assert _offenders(exc.value) == {"***": None}
 
-        # The stored document shares the input path's key rules (ContributionStoredData draws on the
-        # same data.py core), so a coercible-punctuation key is accepted here just as on input, while
-        # reserved and non-ASCII keys are still rejected. The BeforeValidator runs before Beanie's
-        # collection lookup, so any ValidationError surfaces first.
-        Contribution(_id=PydanticObjectId(), project="p", chemical_system_id="Fe-O", data={"bad.key": 1})
-        with pytest.raises(ValidationError, match="reserved"):
+        # The stored document shares the input path's canonical-key rules (ContributionStoredData draws
+        # on the same data.py core), so an already-canonical key is accepted while non-canonical,
+        # reserved, and non-ASCII keys are rejected. The BeforeValidator runs before Beanie's collection
+        # lookup, so the DataKeyError surfaces first.
+        Contribution(_id=PydanticObjectId(), project="p", chemical_system_id="Fe-O", data={"goodKey": 1})
+        with pytest.raises(DataKeyError) as exc:
+            Contribution(_id=PydanticObjectId(), project="p", chemical_system_id="Fe-O", data={"bad.key": 1})
+        assert _offenders(exc.value) == {"bad.key": "badKey"}
+        with pytest.raises(DataKeyError) as exc:
             Contribution(_id=PydanticObjectId(), project="p", chemical_system_id="Fe-O", data={"group": {"unit": "x"}})
-        with pytest.raises(ValidationError, match="Non-ASCII key found in Contribution.data"):
-            Contribution(_id=PydanticObjectId(), project="p", chemical_system_id="Fe-O", data={"ΔE": 1})
+        assert exc.value.context["offending_keys"] == [{"key": "unit", "suggestion": None, "reason": "reserved"}]
 
     def test_reserved_leaf_keys_rejected(self):
-        # A data key that coerces to a reserved value-leaf name is rejected on write.
-        for bad in ("value", "unit", "error", "precision", "si_unit", "display"):
-            with pytest.raises(ValidationError, match="reserved"):
+        # A data key that IS a reserved value-leaf name is rejected on write (reason "reserved", no
+        # suggestion — it is already canonical, just disallowed). Only the single-word leaf keys are
+        # reserved; the SI spellings (siValue, siUnit, siError) are ordinary columns — see
+        # ``test_si_column_keys_are_ordinary``.
+        for bad in ("value", "unit", "error", "precision", "display"):
+            with pytest.raises(DataKeyError) as exc:
                 _make_contribution_in(data={bad: 1})
+            assert exc.value.context["offending_keys"] == [{"key": bad, "suggestion": None, "reason": "reserved"}]
         # rejected when nested, too
-        with pytest.raises(ValidationError, match="reserved"):
+        with pytest.raises(DataKeyError) as exc:
             _make_contribution_in(data={"group": {"unit": "x"}})
+        assert _offenders(exc.value) == {"unit": None}
         # and when used as a condition name in an annotated key
-        with pytest.raises(ValidationError, match="reserved"):
+        with pytest.raises(DataKeyError) as exc:
             _make_contribution_in(data={"x (eV, value=3)": 1})
+        assert _offenders(exc.value) == {"value": None}
+
+    def test_si_column_keys_are_ordinary(self):
+        # The SI leaf field names hold underscores, so their camelCase spellings (siValue, siUnit,
+        # siError) are ordinary column names, distinct from the reserved single-word leaf keys and
+        # accepted as-is. The snake_case spellings are rejected with the camelCase suggestion.
+        contrib = _make_contribution_in(data={"siValue": 1, "siUnit": "x", "siError": 2})
+        assert set(contrib.data) == {"siValue", "siUnit", "siError"}
+        with pytest.raises(DataKeyError) as exc:
+            _make_contribution_in(data={"si_value": 1})
+        assert _offenders(exc.value) == {"si_value": "siValue"}
 
     # There isn't currently value validation. This is to check that that is true
     def test_data_value_validation(self):
@@ -428,24 +462,33 @@ class TestContributionPatch:
         assert ContributionPatch(is_public=False).is_public is False
 
     def test_data_can_be_set(self):
-        patch = ContributionPatch(data={"new_key": 42})
-        assert patch.data == {"new_key": 42}
+        patch = ContributionPatch(data={"newKey": 42})
+        assert patch.data == {"newKey": 42}
 
     def test_data_keys_validated_not_coerced(self):
-        # ContributionPatch only *validates* keys; it no longer rewrites them. snake_case coercion
-        # and unit annotation happen in the service (expand_data), not at the model layer.
-        patch = ContributionPatch(data={"Band Gap": 1, "nested": {"pH-Value": 7}})
-        assert patch.data == {"Band Gap": 1, "nested": {"pH-Value": 7}}
+        # ContributionPatch validates keys and never rewrites them: a non-canonical key is rejected
+        # (at every level) rather than silently folded to camelCase. All offenders are reported at once.
+        with pytest.raises(DataKeyError) as exc:
+            ContributionPatch(data={"Band Gap": 1, "nested": {"pH-Value": 7}})
+        assert _offenders(exc.value) == {"Band Gap": "bandGap", "pH-Value": "phValue"}
 
     def test_data_annotated_key_accepted(self):
-        # Annotated keys (unit + conditions) pass model validation unchanged; the service expands them.
-        patch = ContributionPatch(data={"conductivity (S/cm, T=300K)": 1.2})
-        assert patch.data == {"conductivity (S/cm, T=300K)": 1.2}
+        # Annotated keys (unit + conditions) pass model validation unchanged when the name and every
+        # condition name are already canonical; the unit is exempt. The service expands them later.
+        patch = ContributionPatch(data={"conductivity (S/cm, temperature=300K)": 1.2})
+        assert patch.data == {"conductivity (S/cm, temperature=300K)": 1.2}
+
+    def test_data_annotated_key_non_canonical_parts_rejected(self):
+        # A non-canonical condition name (or path segment) is rejected even though the unit is exempt.
+        with pytest.raises(DataKeyError) as exc:
+            ContributionPatch(data={"conductivity (S/cm, T=300K)": 1.2})
+        assert _offenders(exc.value) == {"T": "t"}
 
     def test_data_uncoercible_key_rejected(self):
-        # A key that reduces to an empty string after coercion is still rejected at validation time.
-        with pytest.raises(ValidationError, match="empty string after snake_case coercion"):
+        # A key that reduces to an empty string after coercion is rejected with no suggestion.
+        with pytest.raises(DataKeyError) as exc:
             ContributionPatch(data={"***": 1})
+        assert _offenders(exc.value) == {"***": None}
 
 
 # ---------------------------------------------------------------------------

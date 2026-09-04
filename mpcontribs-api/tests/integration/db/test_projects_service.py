@@ -3,7 +3,7 @@ from beanie import Link
 
 from mpcontribs_api.authz import User
 from mpcontribs_api.config import ConsumerLimits, ConsumerProjectLimits, get_settings
-from mpcontribs_api.domains.initiatives.models import Initiative
+from mpcontribs_api.domains.initiatives.models import Initiative, InitiativeIn, InitiativePatch
 from mpcontribs_api.domains.initiatives.repository import MongoDbInitiativeRepository
 from mpcontribs_api.domains.projects.models import Column, Project, ProjectFilter, ProjectIn, ProjectPatch, Stats
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository

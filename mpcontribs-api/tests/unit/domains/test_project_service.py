@@ -7,6 +7,7 @@ from bson import DBRef
 from mpcontribs_api.authz import User
 from mpcontribs_api.config import ConsumerLimits, ConsumerProjectLimits
 from mpcontribs_api.domains._shared.models import DeleteResponse
+from mpcontribs_api.domains.initiatives.models import InitiativeIn
 from mpcontribs_api.domains.projects.models import Column, Project, ProjectIn, ProjectPatch, Stats
 from mpcontribs_api.domains.projects.service import ProjectService
 from mpcontribs_api.exceptions import NotFoundError, ValidationError

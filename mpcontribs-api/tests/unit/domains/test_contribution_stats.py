@@ -41,6 +41,14 @@ class TestIterLeaves:
     def test_bare_number_is_numeric_without_unit(self):
         assert list(iter_leaves({"n": 5})) == [("n", 5.0, None)]
 
+    def test_paths_are_verbatim_and_never_re_coerced(self):
+        # Invariant: column paths come straight from the stored keys; this walk applies NO coercion of
+        # its own. A non-canonical key (snake_case, when the canonical data-key form is camelCase) must
+        # pass through verbatim rather than being re-coerced to "bandGap" — that verbatim coupling is
+        # what keeps Project.columns aligned with the data-key coercion instead of drifting from it.
+        paths = [p for p, _, _ in iter_leaves({"band_gap": _annotated(1.0), "nested": {"sub_key": _annotated(2.0)}})]
+        assert paths == ["band_gap", "nested.sub_key"]
+
     def test_string_and_bool_are_non_numeric(self):
         leaves = dict((p, (v, u)) for p, v, u in iter_leaves({"s": "cubic", "flag": True}))
         assert leaves["s"] == (None, NON_NUMERIC_UNIT)

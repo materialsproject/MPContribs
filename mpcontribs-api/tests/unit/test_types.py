@@ -4,11 +4,16 @@ from pydantic import ValidationError as PydanticValidationError
 
 from mpcontribs_api.exceptions import ValidationError as AppValidationError
 from mpcontribs_api.domains._shared.types import (
+    CANONICAL_KEY_COERCION,
     DisplayStr,
+    KeyOffense,
     NFKCStr,
     PrefixedEmail,
-    SearchStr,
     ShortStr,
+    SearchStr,
+    coerce_key,
+    to_camel_case,
+    to_snake_case,
     _validate_prefixed_email,
     nfc_normalize,
     nfkc_normalize,
@@ -184,3 +189,61 @@ class TestPrefixedEmailModel:
     def test_whitespace_stripped(self):
         m = PrefixedEmailModel(email="  orcid:12345@orcid.org  ")
         assert m.email == "orcid:12345@orcid.org"
+
+
+class TestCanonicalKeyCoercion:
+    """The single source of truth every data-key call site shares, so they can't drift."""
+
+    def test_points_at_the_current_choice(self):
+        # Documents that camelCase is today's canonical form. Swapping this one symbol re-points every
+        # site (data keys via coerce_key, Project.unique_column) at once.
+        assert CANONICAL_KEY_COERCION is to_camel_case
+
+    def test_coerce_key_defaults_to_the_canonical_symbol(self):
+        assert coerce_key("band_gap") == CANONICAL_KEY_COERCION("band_gap") == "bandGap"
+
+    def test_coercion_method_override_is_honored(self):
+        # The parameterization still works: an explicit method overrides the canonical default.
+        assert coerce_key("bandGap", coercion_method=to_snake_case) == "band_gap"
+
+
+class TestCanonicalKeyOffense:
+    """The non-raising, non-rewriting predicate behind rejecting non-canonical data keys."""
+
+    def test_already_canonical_key_is_no_offense(self):
+        assert KeyOffense.from_key("bandGap") is None
+        assert KeyOffense.from_key("volume") is None
+        assert KeyOffense.from_key("2theta") is None
+
+    @pytest.mark.parametrize(
+        ("key", "suggestion"),
+        [
+            ("band_gap", "bandGap"),
+            ("Band Gap", "bandGap"),
+            ("BandGap", "bandGap"),
+            ("pH-Value", "phValue"),
+            ("si_value", "siValue"),
+        ],
+    )
+    def test_non_canonical_key_suggests_its_camel_case_form(self, key, suggestion):
+        # The suggestion is exactly what the canonical coercion would produce, so it never drifts from
+        # the accept/reject rule.
+        assert KeyOffense.from_key(key) == KeyOffense(key=key, suggestion=suggestion, reason="not_camel_case")
+        assert suggestion == CANONICAL_KEY_COERCION(key)
+
+    def test_non_ascii_key_has_no_suggestion(self):
+        assert KeyOffense.from_key("ΔE") == KeyOffense(key="ΔE", suggestion=None, reason="non_ascii")
+
+    def test_non_string_key_is_non_ascii_offense(self):
+        assert KeyOffense.from_key(3) == KeyOffense(key=3, suggestion=None, reason="non_ascii")
+
+    def test_empties_out_key_has_no_suggestion(self):
+        assert KeyOffense.from_key("***") == KeyOffense(key="***", suggestion=None, reason="empty_after_coercion")
+
+    def test_reserved_key_is_flagged_only_when_reserved_supplied(self):
+        # A key that is already canonical but names a reserved leaf field is an offense only when the
+        # caller passes the reserved set; without it the key is accepted.
+        assert KeyOffense.from_key("unit") is None
+        assert KeyOffense.from_key("unit", reserved=frozenset({"unit"})) == KeyOffense(
+            key="unit", suggestion=None, reason="reserved"
+        )

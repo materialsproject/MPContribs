@@ -4,7 +4,7 @@ from typing import Annotated, Any
 
 from pydantic import BeforeValidator
 
-from mpcontribs_api.domains._shared.types import coerce_key
+from mpcontribs_api.domains._shared.types import KeyOffense
 from mpcontribs_api.domains._shared.units import QuantityLeaf
 from mpcontribs_api.exceptions import DataKeyError, ValidationError
 
@@ -101,67 +101,58 @@ def validate_data_depth(data: dict[str, Any] | None, max_depth: int) -> dict[str
     return data
 
 
-def _validate_plain_key(key: Any) -> None:
-    """Validate a single plain key token (a path segment or a condition name).
-
-    Punctuation, spaces, and casing are no longer rejected: keys are coerced to ``snake_case`` on the
-    write path (see :func:`to_snake_case`), which folds ``*``/``/``/``|`` and any other non-alphanumeric
-    run to ``_``. This only rejects keys that cannot be coerced into a usable token: non-ASCII, empty,
-    or ones that reduce to an empty string after coercion (e.g. ``"***"``).
-    """
-    if key == "":
-        raise ValidationError("Empty key found in Contribution.data. Keys must be non-empty.")
-    coerce_key(key, require_ascii=True, reserved=QuantityLeaf.reserved_keys())
+def _check_key(raw_key: Any, offenses: list[KeyOffense]) -> None:
+    """Append a :class:`KeyOffense` for ``raw_key`` unless it is already an acceptable canonical key."""
+    offense = KeyOffense.from_key(raw_key, reserved=QuantityLeaf.reserved_keys())
+    if offense is not None:
+        offenses.append(offense)
 
 
-def _validate_nested_keys(value: Any, *, allow_leaf_fragments: bool = False) -> None:
+def _collect_nested_offenses(value: Any, offenses: list[KeyOffense], *, allow_leaf_fragments: bool) -> None:
     if isinstance(value, dict):
-        _validate_keys(value, allow_leaf_fragments=allow_leaf_fragments)
+        _collect_plain_offenses(value, offenses, allow_leaf_fragments=allow_leaf_fragments)
     elif isinstance(value, list):
         for item in value:
-            _validate_nested_keys(item, allow_leaf_fragments=allow_leaf_fragments)
+            _collect_nested_offenses(item, offenses, allow_leaf_fragments=allow_leaf_fragments)
 
 
-def _validate_keys(data: dict[str, Any] | None, *, allow_leaf_fragments: bool = False) -> dict[str, Any] | None:
-    """Strict plain-key validation for a single dict level (used for nested levels).
+def _collect_plain_offenses(
+    data: dict[str, Any] | None, offenses: list[KeyOffense], *, allow_leaf_fragments: bool
+) -> None:
+    """Collect non-canonical keys for a single dict level (strict plain keys, used for nested levels).
 
     With ``allow_leaf_fragments`` (the patch/merge path), a dict whose keys are all reserved leaf
     keys is accepted as a terminal fragment addressing fields *inside* a stored quantity leaf (e.g.
     ``{'unit': 'kg'}``); the strict insert path leaves this off and rejects reserved keys as plain keys.
     """
-    if data is None:
-        return None
-    # A server-built quantity leaf legitimately uses the reserved key names; do not descend into it
-    # (re-validation after normalization/expansion would otherwise reject its own keys).
-    if QuantityLeaf.is_leaf(data):
-        return data
-    if allow_leaf_fragments and QuantityLeaf.is_fragment(data):
-        return data
+    if data is None or QuantityLeaf.is_leaf(data) or allow_leaf_fragments and QuantityLeaf.is_fragment(data):
+        return
     for key in data:
-        _validate_plain_key(key)
+        _check_key(key, offenses)
     # Recurse into nested dicts, including dicts nested inside lists.
     for v in data.values():
-        _validate_nested_keys(v, allow_leaf_fragments=allow_leaf_fragments)
-    return data
+        _collect_nested_offenses(v, offenses, allow_leaf_fragments=allow_leaf_fragments)
 
 
-def _validate_data_keys(data: dict[str, Any] | None, *, allow_leaf_fragments: bool = False) -> dict[str, Any] | None:
-    """Top-level ``data`` key validation, allowing the annotated pattern.
+def _collect_data_offenses(
+    data: dict[str, Any] | None, offenses: list[KeyOffense], *, allow_leaf_fragments: bool
+) -> None:
+    """Collect non-canonical keys for the top ``data`` level, allowing the annotated pattern.
 
-    Each top-level key may be either a plain key or the annotated form
-    ``name (unit, cond1=..., cond2=...)``. The name's dotted segments and every condition name are
-    held to the same plain-key rules (units are unconstrained); nested levels stay strictly plain.
-    Expansion (see :mod:`mpcontribs_api.domains.contributions.pivot`) later rewrites annotated keys
-    into plain ones, so stored keys always satisfy :func:`_validate_keys`.
+    Each top-level key may be either a plain key or the annotated form ``name (unit, cond1=..., cond2=...)``.
+    The name's dotted segments and every condition name are held to the same canonical-key rules (units
+    are unconstrained); nested levels stay strictly plain. A malformed annotation is a syntax error and is
+    raised eagerly (it is not a format-mismatch we can suggest a spelling for).
 
     ``allow_leaf_fragments`` is threaded to nested levels only (the patch/merge path); top-level keys
     stay strict, since a reserved key at the root addresses no leaf.
     """
     if data is None:
-        return None
+        return
     for raw_key in data:
         if not isinstance(raw_key, str):
-            raise ValidationError("Non-ASCII key found in Contribution.data. All dict keys must be only ASCII")
+            _check_key(raw_key, offenses)
+            continue
         try:
             parsed = parse_annotated_key(raw_key)
         except ValidationError as err:
@@ -169,15 +160,22 @@ def _validate_data_keys(data: dict[str, Any] | None, *, allow_leaf_fragments: bo
         if not parsed.is_annotated:
             # A plain key keeps the original strict rule (no '.' nesting); only annotated keys may
             # use dotted paths, whose segments are validated individually below.
-            _validate_plain_key(raw_key)
+            _check_key(raw_key, offenses)
             continue
         for segment in parsed.segments:
-            _validate_plain_key(segment)
+            _check_key(segment, offenses)
         for condition_name in parsed.conditions:
-            _validate_plain_key(condition_name)
+            _check_key(condition_name, offenses)
     for v in data.values():
-        _validate_nested_keys(v, allow_leaf_fragments=allow_leaf_fragments)
-    return data
+        _collect_nested_offenses(v, offenses, allow_leaf_fragments=allow_leaf_fragments)
+
+
+def _raise_on_offenses(offenses: list[KeyOffense]) -> None:
+    if offenses:
+        raise DataKeyError(
+            "Contribution.data contains keys not in the expected canonical (camelCase) format",
+            offending_keys=[{"key": o.key, "suggestion": o.suggestion, "reason": o.reason} for o in offenses],
+        )
 
 
 def validate_contribution_data(
@@ -189,12 +187,18 @@ def validate_contribution_data(
     the final (post-pivot/merge) ``data`` via :func:`validate_data_depth`, since a model validator has
     no consumer context.
 
+    Keys are validated but never rewritten: a key not already in the expected canonical form is rejected, and
+    every offending key is collected so the error lists them all at once (with a suggested spelling) rather than
+    failing on the first.
+
     ``allow_leaf_fragments`` (the merge-patch path) additionally accepts a nested dict of only reserved
-    leaf keys as a terminal fragment addressing a field inside a stored quantity leaf (e.g. ``{'bandgap':
+    leaf keys as a terminal fragment addressing a field inside a stored quantity leaf (e.g. ``{'bandGap':
     {'unit': 'kg'}}``). The strict insert path rejects reserved keys as plain keys; a whole-dict
     overwrite (``replace_data=True``) re-runs this strictly, since the payload becomes a full document.
     """
-    _validate_data_keys(data, allow_leaf_fragments=allow_leaf_fragments)
+    offenses: list[KeyOffense] = []
+    _collect_data_offenses(data, offenses, allow_leaf_fragments=allow_leaf_fragments)
+    _raise_on_offenses(offenses)
     return data
 
 
@@ -203,15 +207,21 @@ def validate_stored_contribution_data(data: dict[str, Any] | None) -> dict[str, 
 
     This is the stored-document counterpart to :func:`validate_contribution_data`. By the time a
     :class:`~mpcontribs_api.domains.contributions.models.Contribution` is built, pivot/expansion has
-    already coerced every key to canonical snake_case, so the stored payload must satisfy the plain-key
-    rules at *every* level — the annotated-key grammar (``name (unit, cond=...)``) is no longer allowed
-    even at the top level. Depth is enforced on the write path by the service (see
-    :func:`validate_data_depth`), so a legacy over-depth document stays readable.
+    unwrapped any annotated keys, so the stored payload must satisfy the canonical plain-key rules at
+    *every* level — the annotated-key grammar (``name (unit, cond=...)``) is no longer allowed even at
+    the top level. Depth is enforced on the write path by the service (see :func:`validate_data_depth`),
+    so a legacy over-depth document stays readable.
     """
-    _validate_keys(data)
+    offenses: list[KeyOffense] = []
+    _collect_plain_offenses(data, offenses, allow_leaf_fragments=False)
+    _raise_on_offenses(offenses)
     return data
 
 
+# Three field types over one shared validation core, so the input, patch, and stored paths cannot
+# drift on key rules: inserts/whole-document writes are strict; a merge patch additionally
+# permits leaf fragments (see ``allow_leaf_fragments`` above); the stored document requires canonical
+# plain keys at every level (no annotated-key grammar).
 ContributionData = Annotated[dict[str, Any] | None, BeforeValidator(validate_contribution_data)]
 ContributionPatchData = Annotated[
     dict[str, Any] | None,

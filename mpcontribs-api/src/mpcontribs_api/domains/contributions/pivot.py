@@ -59,11 +59,11 @@ def _try_coerce_leaf(value: Any, key_unit: str | None = None) -> Any:
 
 
 def normalize_node(value: Any, key_unit: str | None = None) -> Any:
-    """Recursively coerce dict keys to ``snake_case`` and turn scalar measurements into quantity leaves.
+    """Recursively coerce dict keys and turn scalar measurements into quantity leaves.
 
     This is the write-path core of "every numeric becomes a leaf":
 
-    - **dict**: each key is coerced to ``snake_case`` (sibling collisions rejected); values recurse
+    - **dict**: each key is coerced (sibling collisions rejected); values recurse
       with no inherited unit — only a top-level annotated key carries a unit (``key_unit``).
     - **list**: elements recurse, but scalar elements are left verbatim (a list is array data, not a
       column of measurements — mirrors :func:`mpcontribs_api.domains.contributions.stats.iter_leaves`,
@@ -95,7 +95,7 @@ def expand_data(data: dict[str, Any]) -> list[ExpandedData]:
     Returns:
         - a single element with ``condition_key == ""`` when nothing pivots (no annotations at all,
           or annotations but no conditions). When no annotation is present the returned ``data`` is
-          the same object as the input if snake_case coercion is a no-op, else the coerced copy.
+          the same object as the input if coercion is a no-op, else the coerced copy.
         - one element per distinct condition signature otherwise.
 
     Raises:
@@ -117,13 +117,13 @@ def expand_data(data: dict[str, Any]) -> list[ExpandedData]:
         if not pk.conditions:
             broadcast.append((raw_key, pk))
             continue
-        # Condition names become data columns after pivoting, so they are coerced to snake_case like
+        # Condition names become data columns after pivoting, so they are coerced
         # any other key (values and the unit are left verbatim).
         parsed_conditions: dict[str, Any] = {}
         for name, val in pk.conditions.items():
             cname = coerce_key(name)
             if cname in parsed_conditions:
-                raise ValidationError(f"condition names collide after snake_case coercion: '{cname}'")
+                raise ValidationError(f"condition names collide after coercion: '{cname}'")
             parsed_conditions[cname] = parse_condition_value(val)
         ckey = QuantityLeaf.condition_key(parsed_conditions)
         groups.setdefault(ckey, []).append((raw_key, pk))

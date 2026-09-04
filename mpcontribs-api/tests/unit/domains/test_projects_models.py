@@ -35,6 +35,12 @@ class TestUniqueColumnValidation:
         # No subset-of-columns check: columns is derived/eventually-consistent.
         assert self._make_input(unique_column="conditions.temp").unique_column == "conditions.temp"
 
+    def test_segments_coerced_to_camel_case(self):
+        # unique_column is a path into Contribution.data, so each segment is coerced to the same
+        # canonical camelCase form as data keys, keeping the path aligned with stored data.
+        assert self._make_input(unique_column="sample_id").unique_column == "sampleId"
+        assert self._make_input(unique_column="nested.Sample Id").unique_column == "nested.sampleId"
+
     def test_empty_string_rejected(self):
         with pytest.raises(ValidationError):
             self._make_input(unique_column="")
@@ -43,9 +49,16 @@ class TestUniqueColumnValidation:
         with pytest.raises(ValidationError):
             self._make_input(unique_column="a..b")
 
+    def test_segment_reducing_to_empty_rejected(self):
+        with pytest.raises(ValidationError):
+            self._make_input(unique_column="a.***")
+
     def test_patch_validates_unique_column(self):
         with pytest.raises(ValidationError):
             ProjectPatch(unique_column="a..b")
+
+    def test_patch_coerces_unique_column(self):
+        assert ProjectPatch(unique_column="sample_id").unique_column == "sampleId"
 
 # ---------------------------------------------------------------------------
 # Column

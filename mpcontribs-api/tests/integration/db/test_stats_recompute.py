@@ -155,7 +155,7 @@ class TestStatsRecomputeLifecycle:
             [
                 _contrib_in(
                     "with-components",
-                    data={"band_gap": 2.1, "energy": -5.0},
+                    data={"bandGap": 2.1, "energy": -5.0},
                     structures=[_structure(charge=None), _structure(charge=1.0)],
                     tables=[_table(1.0), _table(2.0)],
                 )
@@ -171,9 +171,10 @@ class TestStatsRecomputeLifecycle:
         assert project.stats.attachments == 0
         assert project.stats.size > 0
         cols = _columns_by_path(project)
-        assert set(cols) == {"band_gap", "energy"}
+        # Data keys are coerced to camelCase on write, so derived columns use the camelCase form.
+        assert set(cols) == {"bandGap", "energy"}
         assert project.stats.columns == 2
-        assert (cols["band_gap"].min, cols["band_gap"].max) == (2.1, 2.1)
+        assert (cols["bandGap"].min, cols["bandGap"].max) == (2.1, 2.1)
         assert (cols["energy"].min, cols["energy"].max) == (-5.0, -5.0)
 
         # --- remove it -> back to empty ---
@@ -192,7 +193,7 @@ class TestStatsRecomputeLifecycle:
         await _assert_empty()
 
         # --- insert one contribution with no components ---
-        summary = await svc.insert_many([_contrib_in("no-components", data={"band_gap": 3.0})])
+        summary = await svc.insert_many([_contrib_in("no-components", data={"bandGap": 3.0})])
         assert summary.failed == []
         project = await _project()
         assert project.stats.contributions == 1
@@ -200,8 +201,8 @@ class TestStatsRecomputeLifecycle:
         assert project.stats.tables == 0
         assert project.stats.size > 0
         cols = _columns_by_path(project)
-        assert set(cols) == {"band_gap"}
-        assert (cols["band_gap"].min, cols["band_gap"].max) == (3.0, 3.0)
+        assert set(cols) == {"bandGap"}
+        assert (cols["bandGap"].min, cols["bandGap"].max) == (3.0, 3.0)
 
         # --- remove it -> empty again ---
         deleted = await svc.delete_many(ContributionFilter(id=summary.succeeded[0].id))

@@ -33,7 +33,7 @@ async def _insert(project: str, identifier: str, is_public: bool, **overrides) -
         material_id=identifier,
         chemical_system_id=overrides.pop("chemical_system_id", "Fe-O"),
         formula=overrides.pop("formula", "Fe2O3"),
-        data=overrides.pop("data", {"band_gap": 2.1}),
+        data=overrides.pop("data", {"bandGap": 2.1}),
         is_public=is_public,
         **overrides,
     )

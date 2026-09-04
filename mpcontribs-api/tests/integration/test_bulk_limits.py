@@ -19,7 +19,7 @@ def _valid_contribution_body(**overrides) -> dict:
         "material_id": "mp-1234",
         "chemical_system_id": "Fe-O",
         "formula": "Fe2O3",
-        "data": {"band_gap": 2.1},
+        "data": {"bandGap": 2.1},
     }
     body.update(overrides)
     return body

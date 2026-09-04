@@ -1,8 +1,9 @@
 import re
 import unicodedata
 from collections.abc import Callable, Mapping
+from dataclasses import dataclass
 from enum import StrEnum
-from typing import Annotated, Any, Self
+from typing import Annotated, Any, Literal, Self
 
 import polars as pl
 from fastapi import Query
@@ -339,8 +340,29 @@ def to_snake_case(name: str) -> str:
     return s.strip("_").lower()
 
 
+def to_camel_case(name: str) -> str:
+    """Coerce a single key token to canonical ``camelCase``.
+
+    Uses ``to_snake_case`` as an easy way to coerce.
+    Examples: ``"band_gap"``/``"Band Gap"`` -> ``"bandGap"``, ``"pH-Value"`` -> ``"phValue"``,
+    ``"bandGap"`` -> ``"bandGap"``.
+    """
+    snake = to_snake_case(name)
+    if not snake:
+        return ""
+    # to_snake_case never emits empty or doubled-underscore segments, so every tail word is a
+    # non-empty, already-lowercase token.
+    head, *tail = snake.split("_")
+    return head + "".join(word[:1].upper() + word[1:] for word in tail)
+
+
+CANONICAL_KEY_COERCION: Callable[[str], str] = to_camel_case
+
 # Converts strs to snake case
 SnakeCaseStr = Annotated[str, BeforeValidator(func=to_snake_case)]
+
+# Converts strs to camel case
+CamelCaseStr = Annotated[str, BeforeValidator(func=to_camel_case)]
 
 # Converts strs to searchable form (NFKC compatibility fold + casefold)
 SearchStr = Annotated[str, BeforeValidator(func=_nfkc_casefold)]
@@ -369,8 +391,14 @@ def _validate_slug(v: str) -> str:
 Slug = Annotated[str, Field(min_length=3, max_length=50), BeforeValidator(_validate_slug)]
 
 
-def coerce_key(key: Any, *, require_ascii: bool = False, reserved: frozenset[str] | None = None) -> str:
-    """Coerce one dict key to canonical ``snake_case``, enforcing the shared write-path key guards.
+def coerce_key(
+    key: Any,
+    *,
+    require_ascii: bool = True,
+    reserved: frozenset[str] | None = None,
+    coercion_method: Callable[[str], str] = CANONICAL_KEY_COERCION,
+) -> str:
+    """Coerce one dict key to canonical case using ``coercion_method``, enforcing the shared write-path key guards.
 
     Always rejects a key that reduces to an empty string after coercion. The extra guards are opt-in
     per call site, since not every caller wants them (e.g. the post-validation write path skips the
@@ -378,16 +406,19 @@ def coerce_key(key: Any, *, require_ascii: bool = False, reserved: frozenset[str
 
     - ``require_ascii``: reject a non-``str`` or non-ASCII key before coercion.
     - ``reserved``: reject a coerced key that lands in the reserved-leaf-key set.
+    - ``coercion_method``: the method to use to coerce a key
 
     Raises:
         DataKeyError: on a non-ASCII (when required), empty-after-coercion, or reserved key. It is a
             :class:`ValidationError` subclass, so callers catching either still see it.
     """
+    if not key:
+        raise DataKeyError(message="Key must be truthy", key=key)
     if require_ascii and (not isinstance(key, str) or not key.isascii()):
-        raise DataKeyError("Non-ASCII key found in Contribution.data. All dict keys must be only ASCII")
-    coerced = to_snake_case(key)
+        raise DataKeyError("Non-ASCII key found. All dict keys must be only ASCII", key=key)
+    coerced = coercion_method(key)
     if not coerced:
-        raise DataKeyError(f"data key '{key}' reduces to an empty string after snake_case coercion")
+        raise DataKeyError(f"data key '{key}' reduces to an empty string after key coercion", key=key)
     if reserved is not None and coerced in reserved:
         raise DataKeyError(
             f"data key '{key}' is reserved for annotated-value leaves and may not be used",
@@ -395,6 +426,47 @@ def coerce_key(key: Any, *, require_ascii: bool = False, reserved: frozenset[str
             reserved=sorted(reserved),
         )
     return coerced
+
+
+@dataclass(frozen=True, slots=True)
+class KeyOffense:
+    """One ``data`` key that is not already in the expected canonical form.
+
+    ``suggestion`` is the canonical spelling the caller should use, or ``None`` when there is no
+    clean suggestion (a non-ASCII key, a key that reduces to an empty string, or a reserved leaf
+    name that is already canonical). ``reason`` is a stable, machine-readable tag.
+    """
+
+    key: Any
+    suggestion: str | None
+    reason: Literal["not_camel_case", "non_ascii", "empty_after_coercion", "reserved"]
+
+    @classmethod
+    def from_key(
+        cls,
+        key: Any,
+        *,
+        reserved: frozenset[str] | None = None,
+        coercion_method: Callable[[str], str] = CANONICAL_KEY_COERCION,
+    ) -> KeyOffense | None:
+        """Return a :class:`KeyOffense` when ``key`` is not already an acceptable canonical data key, else ``None``.
+
+        A key is acceptable iff it is a non-empty ASCII string that equals its own canonical form
+        (``coercion_method(key) == key``) and is not a reserved leaf name.
+        """
+        if not isinstance(key, str) or not key.isascii():
+            return cls(key=key, suggestion=None, reason="non_ascii")
+        canonical = coercion_method(key)
+        if not canonical:
+            return cls(key=key, suggestion=None, reason="empty_after_coercion")
+        # Check reserved against the canonical form (not the raw key), so a non-canonical key whose
+        # canonical spelling is reserved (e.g. "Value" -> "value") is reported as reserved rather than
+        # suggesting a reserved name the caller could never use.
+        if reserved is not None and canonical in reserved:
+            return cls(key=key, suggestion=None, reason="reserved")
+        if canonical != key:
+            return cls(key=key, suggestion=canonical, reason="not_camel_case")
+        return None
 
 
 def map_keys(value: Any, *, coerce: Callable[[Any], str], on_scalar: Callable[[Any], Any] = lambda x: x) -> Any:
