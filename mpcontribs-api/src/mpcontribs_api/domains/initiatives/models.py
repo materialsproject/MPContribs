@@ -91,8 +91,8 @@ class InitiativePatch(SparseFieldsModel):
     """Partial update to an initiative.
 
     ``slug`` and ``owner`` are immutable and intentionally absent. ``is_approved`` is admin-only
-    (enforced in the repository), and the ``is_public`` ⇒ ``is_approved`` invariant is re-checked
-    there against the resulting state, since a partial ``$set`` bypasses the document validator.
+    and the ``is_public`` ⇒ ``is_approved`` invariant is re-checked there against the resulting
+    state, since a partial ``$set`` bypasses the document validator.
     """
 
     name: NFKCStr | None = Field(default=None, max_length=100)
