@@ -131,9 +131,8 @@ class Consumer(BaseDocumentWithInput[PydanticObjectId]):
 
     Stored in ``mp_consumers`` and matched to a request by Kong's ``consumer_id``. The overrides live
     under ``settings``, domain-grouped (``project``/``contribution``/``initiative``), and are sparse:
-    only the limits an admin explicitly set are stored (``keep_nulls = False`` drops the rest). Every
-    unset limit inherits the current env-backed global at resolve time, so it always tracks the live
-    default rather than a value frozen at creation.
+    only the limits an admin explicitly set are stored. Every unset limit inherits the current env-backed
+    global at resolve time, so it always tracks the live default rather than a value frozen at creation.
     """
 
     identity_model: ClassVar[type[Identity]] = ConsumerIdentity
@@ -152,8 +151,8 @@ class Consumer(BaseDocumentWithInput[PydanticObjectId]):
     def from_input_model(cls, data: ConsumerIn) -> Consumer:
         """Build a stored document from an input payload, minting a fresh server-owned ``_id``.
 
-        The override is stored sparse — only the limits the admin supplied are persisted; unset ones
-        are resolved against the global default on read, never snapshotted here.
+        The override is stored sparse - only the limits the admin supplied are persisted; unset ones
+        are resolved against the global default on read.
         """
         settings = data.settings if data.settings is not None else ConsumerSettings()
         return cls.model_validate({"_id": PydanticObjectId(), "consumer_id": data.consumer_id, "settings": settings})
