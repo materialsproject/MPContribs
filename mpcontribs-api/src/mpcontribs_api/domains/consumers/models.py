@@ -40,6 +40,7 @@ class ConsumerInitiativeSettings(BaseModel):
     max_projects_per_unapproved: int | None = Field(default=None, ge=0)
 
 
+# uses generic `T` to resolve type-checking
 def _merge_domain[T: BaseModel](override: BaseModel | None, default: T) -> T:
     """Return ``default`` with each explicitly-set (non-``None``) leaf of ``override`` applied."""
     if override is None:
