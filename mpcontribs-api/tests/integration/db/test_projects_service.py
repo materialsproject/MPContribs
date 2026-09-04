@@ -2,7 +2,8 @@ import pytest
 from beanie import Link
 
 from mpcontribs_api.authz import User
-from mpcontribs_api.config import ConsumerLimits, ConsumerProjectLimits
+from mpcontribs_api.config import ConsumerLimits, ConsumerProjectLimits, get_settings
+from mpcontribs_api.domains.initiatives.models import Initiative
 from mpcontribs_api.domains.initiatives.repository import MongoDbInitiativeRepository
 from mpcontribs_api.domains.projects.models import Column, Project, ProjectFilter, ProjectIn, ProjectPatch, Stats
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
@@ -467,8 +468,8 @@ class TestCreateWithInitiative:
 
     async def test_create_over_member_cap_rejected(self, db, monkeypatch):
         # Isolate the initiative member cap from the per-account project-count cap.
-        member_cap = get_settings().domain.initiatives.max_projects_per_unapproved
-        monkeypatch.setattr(get_settings().consumer, "max_projects", member_cap + 10)
+        member_cap = get_settings().consumer.initiative.max_projects_per_unapproved
+        monkeypatch.setattr(get_settings().consumer.project, "max_projects", member_cap + 10)
         await _insert_initiative("cwi-cap", ALICE)
         for i in range(member_cap):
             await _service(ALICE).upsert_one(
