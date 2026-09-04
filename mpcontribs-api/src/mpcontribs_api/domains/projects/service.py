@@ -212,7 +212,7 @@ class ProjectService:
                 raise ConflictError(
                     message="unapproved initiative already has the maximum number of assigned projects",
                     slug=initiative.slug,
-                    limit=self._initiative_limits.max_projects_per_unapproved,
+                    limit=self._limits.initiative.max_projects_per_unapproved,
                 )
 
         return DBRef("initiatives", initiative.id)
