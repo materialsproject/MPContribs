@@ -7,7 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
 from mpcontribs_api import pagination
 from mpcontribs_api.domains._shared.filters import BaseFilter
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut, Identity
-from mpcontribs_api.domains._shared.types import CANONICAL_KEY_COERCION, PrefixedEmail, SearchStr, ShortStr
+from mpcontribs_api.domains._shared.types import CANONICAL_KEY_COERCION, LongStr, PrefixedEmail, SearchStr, ShortStr
 from mpcontribs_api.domains.initiatives.models import Initiative
 from mpcontribs_api.exceptions import ValidationError
 
@@ -120,8 +120,8 @@ class ProjectTag(StrEnum):
 
 class ProjectBase(BaseModel):
     title: ShortStr
-    authors: str
-    description: str
+    authors: LongStr
+    description: LongStr
     owner: PrefixedEmail
 
     # The single data column (dotted path) that disambiguates contributions sharing the same
@@ -134,7 +134,7 @@ class ProjectBase(BaseModel):
     tags: list[ProjectTag] | None = None
     mp_category: str | None = None
     references: list[Reference] = Field(default_factory=list)
-    long_title: str | None = None
+    long_title: LongStr | None = None
     other: dict[str, Any] = Field(default_factory=dict)
     is_public: bool = False
     is_approved: bool = False
@@ -186,8 +186,8 @@ class ProjectOut(DocumentOut[ShortStr]):
     """Full response of all public-facing fields."""
 
     model_config = ConfigDict(extra="ignore")
-    authors: str | None = None
-    description: str | None = None
+    authors: LongStr | None = None
+    description: LongStr | None = None
     title: ShortStr | None = None
     tags: list[SearchStr] | None = None
     mp_category: str | None = None
@@ -195,7 +195,7 @@ class ProjectOut(DocumentOut[ShortStr]):
     other: dict[str, Any] | None = None
     is_public: bool | None = None
     is_approved: bool | None = None
-    long_title: str | None = None
+    long_title: LongStr | None = None
     unique_column: str | None = None
     references: list[Reference] | None = None
     stats: Stats | None = None
@@ -274,13 +274,13 @@ class ProjectPatch(BaseModel):
     """
 
     title: ShortStr | None = None
-    authors: str | None = None
-    description: str | None = None
+    authors: LongStr | None = None
+    description: LongStr | None = None
     tags: list[SearchStr] | None = None
     owner: PrefixedEmail | None = None
     unique_column: str | None = None
     references: list[Reference] = Field(default_factory=list)
-    long_title: str | None = None
+    long_title: LongStr | None = None
     other: dict[str, Any] = Field(default_factory=dict)
     is_public: bool = False
     # None => unset (left unchanged); admin-only when set
