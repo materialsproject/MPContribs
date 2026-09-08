@@ -15,7 +15,7 @@ from mpcontribs_api.exceptions import DataKeyError, ValidationError
 
 ShortStr = Annotated[str, Field(min_length=3, max_length=30)]
 
-LongStr = Annotated[str, Field(max_length=300)]
+LongStr = Annotated[str, Field(min_length=1, max_length=300)]
 
 Scalar = str | int | float | bool
 
