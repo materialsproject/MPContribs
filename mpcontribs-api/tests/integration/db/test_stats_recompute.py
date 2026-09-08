@@ -206,7 +206,7 @@ class TestStatsRecomputeLifecycle:
 
         # --- remove it -> empty again ---
         deleted = await svc.delete_many(ContributionFilter(id=summary.succeeded[0].id))
-        assert deleted.num_deleted == 1
+        assert deleted["contributions"] == 1
         await _assert_empty()
 
         # --- add two contributions whose data overlaps ("shared") and diverges ("b" is new) ---

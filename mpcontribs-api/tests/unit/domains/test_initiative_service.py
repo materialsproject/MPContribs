@@ -13,7 +13,7 @@ from beanie import PydanticObjectId
 
 from mpcontribs_api.authz import User
 from mpcontribs_api.config import get_settings
-from mpcontribs_api.domains._shared.models import DeleteResponse
+from mpcontribs_api.domains._shared.models import DeleteSummary
 from mpcontribs_api.domains.initiatives.models import InitiativeIn, InitiativePatch
 from mpcontribs_api.domains.initiatives.service import InitiativeService
 from mpcontribs_api.exceptions import ConflictError, NotFoundError, ValidationError
@@ -47,7 +47,7 @@ def _service(user: User, *, existing=None, unapproved: int = 0):
     # before inserting; keep document_model a sync mock so it returns a document, not a coroutine.
     initiatives.document_model = MagicMock()
     initiatives.update_one.return_value = _existing()
-    initiatives.delete_one.return_value = DeleteResponse(num_deleted=1)
+    initiatives.delete_one.return_value = DeleteSummary.of("initiatives", 1)
     projects = AsyncMock()
     projects.clear_initiative_refs.return_value = 0
     return InitiativeService(user=user, initiatives=initiatives, projects=projects), initiatives

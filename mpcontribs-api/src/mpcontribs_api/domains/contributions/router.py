@@ -6,8 +6,8 @@ from fastapi_filter import FilterDepends
 
 from mpcontribs_api.config import get_settings
 from mpcontribs_api.dependencies import S3Dep, require_user
-from mpcontribs_api.domains._shared.bulk import BulkDeleteSummary, BulkUpdateSummary, BulkWriteSummary
-from mpcontribs_api.domains._shared.models import DeleteResponse
+from mpcontribs_api.domains._shared.bulk import BulkUpdateSummary, BulkWriteSummary
+from mpcontribs_api.domains._shared.models import DeleteSummary
 from mpcontribs_api.domains._shared.types import (
     DownloadFormat,
     FieldSelector,
@@ -62,11 +62,11 @@ async def read_many(
     return await service.read_many(pagination=pagination, filter=filter, fields=selected)
 
 
-@router.delete("", response_model=DeleteResponse, dependencies=[Depends(require_user)])
+@router.delete("", response_model=DeleteSummary, dependencies=[Depends(require_user)])
 async def delete_many(
     service: ContributionServiceDep,
     filter: ContributionFilter = FilterDepends(ContributionFilter),
-) -> BulkDeleteSummary:
+) -> DeleteSummary:
     return await service.delete_many(filter=filter)
 
 
@@ -150,7 +150,7 @@ async def read_one_by_identity(
 async def delete_one_by_identity(
     service: ContributionServiceDep,
     identity: Annotated[ContributionIdentity, Depends()],
-) -> BulkDeleteSummary:
+) -> DeleteSummary:
     """Delete the single contribution addressed by its natural identity, cascading to components."""
     return await service.delete_one(identity.as_dict())
 
@@ -170,7 +170,7 @@ async def update_one_by_identity(
 async def delete_one(
     service: ContributionServiceDep,
     id: str,
-):
+) -> DeleteSummary:
     return await service.delete_one({"id": id})
 
 

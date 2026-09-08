@@ -1,10 +1,10 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends
 from fastapi_filter import FilterDepends
-from starlette.status import HTTP_204_NO_CONTENT
 
 from mpcontribs_api.dependencies import require_user
+from mpcontribs_api.domains._shared.models import DeleteSummary
 from mpcontribs_api.domains._shared.types import FieldSelector
 from mpcontribs_api.domains.projects.dependencies import ProjectServiceDep
 from mpcontribs_api.domains.projects.models import (
@@ -110,18 +110,18 @@ async def update_one(
     return await service.update_one({"id": id}, update=update)
 
 
-@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_user)])
+@router.delete("/{id}", dependencies=[Depends(require_user)])
 async def delete_one(
     service: ProjectServiceDep,
     id: str,
-):
-    """Deletes a project matching id.
+) -> DeleteSummary:
+    """Deletes a project matching id, cascading to its contributions and their components.
 
     Args:
         service (ProjectServiceDep): the project service we depend on
         id (str): the id of the project to be deleted
     Returns:
-        Response: a response with the 204 response code (rather than FastAPIs default 200)
+        DeleteSummary: per-type counts of everything removed, e.g.
+            ``{"projects": 1, "contributions": 100, "structures": 2}``
     """
-    await service.delete_one({"id": id})
-    return Response(status_code=HTTP_204_NO_CONTENT)
+    return await service.delete_one({"id": id})

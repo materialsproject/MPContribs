@@ -5,7 +5,7 @@ import pytest
 from beanie import PydanticObjectId
 
 from mpcontribs_api.domains._shared.bulk import BulkFailure
-from mpcontribs_api.domains._shared.models import ComponentDeleteResponse, DeleteResponse
+from mpcontribs_api.domains._shared.models import DeleteSummary
 from mpcontribs_api.domains._shared.service import ComponentService
 from mpcontribs_api.domains.attachments.models import Attachment, AttachmentFilter
 from mpcontribs_api.exceptions import NotFoundError
@@ -47,8 +47,8 @@ def _make_service(
     """
     components = AsyncMock(name="components")
     components.list_ids = AsyncMock(return_value=candidate_ids)
-    components.delete_many = AsyncMock(side_effect=lambda filter: DeleteResponse(num_deleted=len(filter.id__in)))
-    components.delete_one = AsyncMock(return_value=DeleteResponse(num_deleted=1))
+    components.delete_many = AsyncMock(side_effect=lambda filter: DeleteSummary.of("attachments", len(filter.id__in)))
+    components.delete_one = AsyncMock(return_value=DeleteSummary.of("attachments", 1))
     components.read_one = _id_resolving_get_one()
 
     contributions = AsyncMock(name="contributions")
@@ -76,10 +76,8 @@ async def test_delete_reachable_and_unreferenced_deletes_all():
 
     result = await svc.delete_many(AttachmentFilter())
 
-    assert isinstance(result, ComponentDeleteResponse)
-    assert result.num_deleted == 2
-    assert result.num_skipped == 0
-    assert result.referenced_ids == []
+    assert isinstance(result, DeleteSummary)
+    assert result.root == {"attachments": 2}
     components.delete_many.assert_awaited_once()
     assert set(components.delete_many.await_args.args[0].id__in) == {a, b}
 
@@ -90,9 +88,7 @@ async def test_delete_skips_globally_referenced():
 
     result = await svc.delete_many(AttachmentFilter())
 
-    assert result.num_deleted == 1
-    assert result.num_skipped == 1
-    assert result.referenced_ids == [b]
+    assert result.root == {"attachments": 1}
     assert components.delete_many.await_args.args[0].id__in == [a]
 
 
@@ -102,9 +98,8 @@ async def test_delete_not_reachable_deletes_nothing():
 
     result = await svc.delete_many(AttachmentFilter())
 
-    assert result.num_deleted == 0
-    assert result.num_skipped == 0
-    components.delete_by_ids.assert_not_awaited()
+    assert result.root == {}
+    components.delete_many.assert_not_awaited()
     # global check is skipped once the access gate yields nothing
     assert contributions.referenced_component_ids.await_count == 1
     assert contributions.referenced_component_ids.await_args.kwargs["scoped"] is True
@@ -115,8 +110,8 @@ async def test_delete_empty_candidate_set():
 
     result = await svc.delete_many(AttachmentFilter())
 
-    assert result.num_deleted == 0
-    components.delete_by_ids.assert_not_awaited()
+    assert result.root == {}
+    components.delete_many.assert_not_awaited()
 
 
 async def test_delete_checks_scoped_before_global():
@@ -148,9 +143,7 @@ async def test_delete_by_id_referenced_is_skipped():
 
     result = await svc.delete_one({"id": str(oid)})
 
-    assert result.num_deleted == 0
-    assert result.num_skipped == 1
-    assert result.referenced_ids == [oid]
+    assert result.root == {}
     components.delete_one.assert_not_awaited()
 
 
@@ -160,8 +153,7 @@ async def test_delete_by_id_reachable_and_unreferenced_deletes():
 
     result = await svc.delete_one({"id": str(oid)})
 
-    assert result.num_deleted == 1
-    assert result.num_skipped == 0
+    assert result.root == {"attachments": 1}
     components.delete_one.assert_awaited_once_with({"id": oid})
 
 

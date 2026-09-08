@@ -1,6 +1,6 @@
 import pytest
 
-from mpcontribs_api.domains._shared.models import DeleteResponse
+from mpcontribs_api.domains._shared.models import DeleteSummary
 from mpcontribs_api.domains.contributions.dependencies import get_contribution_service
 from mpcontribs_api.domains.contributions.models import ContributionOut
 from mpcontribs_api.pagination import Page
@@ -87,7 +87,7 @@ class TestListContributions:
 
 class TestDeleteContributions:
     def test_batch_delete_returns_200(self, client, contribution_service):
-        contribution_service.delete_many.return_value = DeleteResponse(num_deleted=0)
+        contribution_service.delete_many.return_value = DeleteSummary()
         r = client.delete("/api/v1/contributions", headers=AUTHED_HEADERS)
         assert r.status_code == 200
 

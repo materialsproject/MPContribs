@@ -22,7 +22,7 @@ from types_aiobotocore_s3 import S3Client
 from mpcontribs_api.authz import User
 from mpcontribs_api.config import get_settings
 from mpcontribs_api.domains._shared.bulk import BulkFailure, BulkWriteSummary, bulk_failure_from_exception
-from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DeleteResponse, DocumentOut
+from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DeleteSummary, DocumentOut
 from mpcontribs_api.domains._shared.types import DownloadFormat, Identity, ShortMimeFormat
 from mpcontribs_api.exceptions import ConflictError, DownloadError, NotFoundError, ValidationError
 from mpcontribs_api.pagination import CursorParams, Page, encode_cursor
@@ -307,7 +307,7 @@ class MongoDbRepository[
         failed = [r for r in results if isinstance(r, BulkFailure)]
         return BulkWriteSummary[TDoc](total=len(documents), succeeded=succeeded, failed=failed)
 
-    async def delete_many(self, filter: TFilter, session: AsyncClientSession | None = None) -> DeleteResponse:
+    async def delete_many(self, filter: TFilter, session: AsyncClientSession | None = None) -> DeleteSummary:
         """Delete every scoped document matching an arbitrary ``filter``.
 
         Args:
@@ -318,11 +318,9 @@ class MongoDbRepository[
         result = await query.delete_many(session=session)
         if result is None:
             raise ValidationError("DeleteResult not returned internally")
-        return DeleteResponse.from_delete_result(result)
+        return DeleteSummary.from_delete_result(self.document_model.get_collection_name(), result)
 
-    async def delete_one(
-        self, identifiers: dict[str, Any], session: AsyncClientSession | None = None
-    ) -> DeleteResponse:
+    async def delete_one(self, identifiers: dict[str, Any], session: AsyncClientSession | None = None) -> DeleteSummary:
         """Delete the single scoped document matching ``identifiers``.
 
         Args:
@@ -334,7 +332,7 @@ class MongoDbRepository[
         result = await self.document_model.find_one(self._scope, query, session=session).delete(session=session)  # pyright: ignore[reportArgumentType]
         if result is None or result.deleted_count == 0:
             raise NotFoundError(f"{self.document_model.__name__} not found", identifiers=identifiers)
-        return DeleteResponse.from_delete_result(result)
+        return DeleteSummary.from_delete_result(self.document_model.get_collection_name(), result)
 
     def _update_fields(self, update: TPatch) -> dict[str, Any]:
         """Map a patch model to the MongoDB ``$set`` field dict.

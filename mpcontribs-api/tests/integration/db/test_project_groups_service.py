@@ -171,12 +171,12 @@ class TestDeleteAuthorization:
     async def test_owner_can_delete_own(self, db):
         await _insert_group("del-own", owner=ALICE_EMAIL)
         result = await _service(ALICE).delete_one({"name": "del-own", "owner": ALICE_EMAIL})
-        assert result.num_deleted == 1
+        assert result["project_groups"] == 1
 
     async def test_admin_can_delete_any(self, db):
         await _insert_group("del-admin", owner=ALICE_EMAIL)
         result = await _service(ADMIN).delete_one({"name": "del-admin", "owner": ALICE_EMAIL})
-        assert result.num_deleted == 1
+        assert result["project_groups"] == 1
 
     async def test_visible_public_non_owner_forbidden(self, db):
         # Bob can *see* Alice's public group but does not own it → 403, and it is left intact.
@@ -223,7 +223,7 @@ class TestBulkDeleteAuthorization:
             )
         )
         result = await _service(ALICE).delete_many(filter=ProjectGroupFilter(is_public=True))
-        assert result.num_deleted == 1
+        assert result["project_groups"] == 1
         assert await ProjectGroup.find_one(ProjectGroup.name == "own-bulk") is None
         assert await ProjectGroup.find_one(ProjectGroup.name == "other-bulk") is not None
 
@@ -232,7 +232,7 @@ class TestBulkDeleteAuthorization:
         await _insert_group("abulk-2", owner=ALICE_EMAIL)
         await _insert_group("abulk-bob", owner=BOB_EMAIL)
         result = await _service(ADMIN).delete_many(filter=ProjectGroupFilter(owner=ALICE_EMAIL))
-        assert result.num_deleted == 2
+        assert result["project_groups"] == 2
         assert await ProjectGroup.find_one(ProjectGroup.owner == BOB_EMAIL) is not None
 
 

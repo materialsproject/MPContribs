@@ -6,7 +6,7 @@ from bson import DBRef
 
 from mpcontribs_api.authz import User
 from mpcontribs_api.config import ConsumerLimits, ConsumerProjectLimits
-from mpcontribs_api.domains._shared.models import DeleteResponse
+from mpcontribs_api.domains._shared.models import DeleteSummary
 from mpcontribs_api.domains.initiatives.models import InitiativeIn
 from mpcontribs_api.domains.projects.models import Column, Project, ProjectIn, ProjectPatch, Stats
 from mpcontribs_api.domains.projects.service import ProjectService
@@ -68,9 +68,17 @@ def _service(user: User, *, existing=None, scoped=None, count: int = 0, limits: 
     # PUT does a full-replace-by-id (repo.replace_one(id, doc)); return the doc it was handed.
     projects.replace_one.side_effect = lambda id, doc, **kw: doc
     projects.update_one.return_value = _project()
-    projects.delete_one.return_value = DeleteResponse(num_deleted=1)
+    projects.delete_one.return_value = DeleteSummary.of("projects", 1)
     initiatives = AsyncMock()
-    svc = ProjectService(user=user, projects=projects, initiatives=initiatives, limits=limits)
+    contribution_service = AsyncMock()
+    contribution_service.delete_many.return_value = DeleteSummary.of("contributions", 5)
+    svc = ProjectService(
+        user=user,
+        projects=projects,
+        initiatives=initiatives,
+        contribution_service=contribution_service,
+        limits=limits,
+    )
     return svc, projects, initiatives
 
 
@@ -94,8 +102,10 @@ class TestDelete:
 
     async def test_owner_deletes(self):
         svc, projects, _ = _service(ALICE, scoped=_project(owner=ALICE_EMAIL))
-        await svc.delete_one({"id": "proj-1"})
+        result = await svc.delete_one({"id": "proj-1"})
         projects.delete_one.assert_awaited_once_with({"id": "proj-1"})
+        # The project's own count merges with the cascaded contribution summary.
+        assert result.root == {"projects": 1, "contributions": 5}
 
     async def test_admin_deletes_any(self):
         svc, projects, _ = _service(ADMIN, scoped=_project(owner=ALICE_EMAIL))

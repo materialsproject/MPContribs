@@ -2,6 +2,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
+from mpcontribs_api.domains._shared.models import DeleteSummary
 from mpcontribs_api.domains.projects.dependencies import get_project_service
 from mpcontribs_api.domains.projects.models import ProjectOut, Stats
 from mpcontribs_api.exceptions import ConflictError, NotFoundError
@@ -248,18 +249,15 @@ class TestPatchProject:
 
 
 class TestDeleteProject:
-    def test_delete_returns_204(self, client, project_service):
-        project_service.delete_one.return_value = None
+    def test_delete_returns_cascade_summary(self, client, project_service):
+        project_service.delete_one.return_value = DeleteSummary({"projects": 1, "contributions": 3})
         r = client.delete("/api/v1/projects/mp-sample", headers=AUTHED_HEADERS)
-        assert r.status_code == 204
-
-    def test_delete_response_has_no_body(self, client, project_service):
-        project_service.delete_one.return_value = None
-        r = client.delete("/api/v1/projects/mp-sample", headers=AUTHED_HEADERS)
-        assert r.content == b""
+        assert r.status_code == 200
+        # The body is the per-type count of everything the cascade removed.
+        assert r.json() == {"projects": 1, "contributions": 3}
 
     def test_id_forwarded_to_service(self, client, project_service):
-        project_service.delete_one.return_value = None
+        project_service.delete_one.return_value = DeleteSummary.of("projects", 1)
         client.delete("/api/v1/projects/mp-sample", headers=AUTHED_HEADERS)
         assert project_service.delete_one.call_args.args[0] == {"id": "mp-sample"}
 

@@ -1409,7 +1409,7 @@ class TestWriteAuthorization:
 
 from types import SimpleNamespace  # noqa: E402
 
-from mpcontribs_api.domains._shared.models import DeleteResponse  # noqa: E402
+from mpcontribs_api.domains._shared.models import DeleteSummary  # noqa: E402
 from mpcontribs_api.domains.contributions.models import ContributionFilter  # noqa: E402
 from mpcontribs_api.pagination import Page  # noqa: E402
 
@@ -1434,9 +1434,9 @@ def _page(items) -> Page:
     return Page(items=items, next_cursor=None)
 
 
-def _delete_result(n: int) -> SimpleNamespace:
-    """Stand-in for the delete result (only ``.num_deleted`` is read)."""
-    return SimpleNamespace(num_deleted=n)
+def _delete_result(n: int) -> DeleteSummary:
+    """Stand-in for the contributions repo's delete summary."""
+    return DeleteSummary.of("contributions", n)
 
 
 def _noop_filter() -> ContributionFilter:
@@ -1451,8 +1451,7 @@ class TestDeleteContributionsEmpty:
 
         summary = await svc.delete_many(_noop_filter())
 
-        assert summary.num_deleted == 0
-        assert summary.num_children_deleted == 0
+        assert summary.root == {}
 
     async def test_empty_match_does_not_call_child_repos(self):
         svc, contrib_repo, struct_repo, table_repo, attach_repo, _ = _make_service()
@@ -1485,7 +1484,7 @@ class TestDeleteContributionsSinglePage:
 
         summary = await svc.delete_many(_noop_filter())
 
-        assert summary.num_deleted == 3
+        assert summary["contributions"] == 3
 
     async def test_no_components_means_no_child_deletes(self):
         svc, contrib_repo, struct_repo, table_repo, attach_repo, _ = _make_service()
@@ -1497,7 +1496,7 @@ class TestDeleteContributionsSinglePage:
         struct_repo.delete_many.assert_not_called()
         table_repo.delete_many.assert_not_called()
         attach_repo.delete_many.assert_not_called()
-        assert summary.num_children_deleted == 0
+        assert summary.root == {"contributions": 1}
 
     async def test_components_deleted_before_contributions(self):
         # Records call order across repos to assert children go first.
@@ -1510,7 +1509,7 @@ class TestDeleteContributionsSinglePage:
         def _make_child_recorder(name):
             async def _record(ids, *a, **k):
                 order.append(name)
-                return DeleteResponse(num_deleted=1)
+                return DeleteSummary.of(name, 1)
 
             return _record
 
@@ -1538,7 +1537,7 @@ class TestDeleteContributionsSinglePage:
         s1, s2 = _oid(), _oid()
         doc = _contrib_doc(structures=[s1, s2])
         contrib_repo.read_many.side_effect = [_page([doc]), _page([])]
-        struct_repo.delete_many.return_value = DeleteResponse(num_deleted=2)
+        struct_repo.delete_many.return_value = DeleteSummary.of("structures", 2)
         contrib_repo.delete_many.side_effect = [_delete_result(1), _delete_result(0)]
 
         await svc.delete_many(_noop_filter())
@@ -1550,14 +1549,14 @@ class TestDeleteContributionsSinglePage:
         svc, contrib_repo, struct_repo, table_repo, attach_repo, _ = _make_service()
         doc = _contrib_doc(structures=[_oid()], tables=[_oid(), _oid()], attachments=[_oid()])
         contrib_repo.read_many.side_effect = [_page([doc]), _page([])]
-        struct_repo.delete_many.return_value = DeleteResponse(num_deleted=1)
-        table_repo.delete_many.return_value = DeleteResponse(num_deleted=2)
-        attach_repo.delete_many.return_value = DeleteResponse(num_deleted=1)
+        struct_repo.delete_many.return_value = DeleteSummary.of("structures", 1)
+        table_repo.delete_many.return_value = DeleteSummary.of("tables", 2)
+        attach_repo.delete_many.return_value = DeleteSummary.of("attachments", 1)
         contrib_repo.delete_many.side_effect = [_delete_result(1), _delete_result(0)]
 
         summary = await svc.delete_many(_noop_filter())
 
-        assert summary.num_children_deleted == 4
+        assert summary.root == {"contributions": 1, "structures": 1, "tables": 2, "attachments": 1}
 
     async def test_contributions_deleted_in_of_page(self):
         svc, contrib_repo, *_ = _make_service()
@@ -1588,7 +1587,7 @@ class TestDeleteContributionsMultiPage:
 
         summary = await svc.delete_many(_noop_filter())
 
-        assert summary.num_deleted == 3
+        assert summary["contributions"] == 3
         assert contrib_repo.read_many.await_count == 3
 
     async def test_children_accumulate_across_pages(self):
@@ -1598,7 +1597,7 @@ class TestDeleteContributionsMultiPage:
             _page([_contrib_doc(structures=[_oid()])]),
             _page([]),
         ]
-        struct_repo.delete_many.return_value = DeleteResponse(num_deleted=1)
+        struct_repo.delete_many.return_value = DeleteSummary.of("structures", 1)
         contrib_repo.delete_many.side_effect = [
             _delete_result(1),
             _delete_result(1),
@@ -1607,7 +1606,7 @@ class TestDeleteContributionsMultiPage:
 
         summary = await svc.delete_many(_noop_filter())
 
-        assert summary.num_children_deleted == 2
+        assert summary["structures"] == 2
         assert struct_repo.delete_many.await_count == 2
 
 
@@ -1625,8 +1624,7 @@ class TestDeleteContributionsNoneComponents:
 
         summary = await svc.delete_many(_noop_filter())
 
-        assert summary.num_deleted == 1
-        assert summary.num_children_deleted == 0
+        assert summary.root == {"contributions": 1}
         struct_repo.delete_many.assert_not_called()
         table_repo.delete_many.assert_not_called()
         attach_repo.delete_many.assert_not_called()

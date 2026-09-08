@@ -605,7 +605,7 @@ class TestDeleteByIdsScope:
         priv = await _insert(identifier="dbi-priv", is_public=False)
         # Anonymous scope only sees public docs; deleting both ids must spare the private one.
         result = await _repo(ANON).delete_many(ContributionFilter(id__in=[pub.id, priv.id]))
-        assert result.num_deleted == 1
+        assert result["contributions"] == 1
         remaining = {d.material_id for d in await Contribution.find().to_list()}
         assert "dbi-priv" in remaining
         assert "dbi-pub" not in remaining
@@ -614,4 +614,4 @@ class TestDeleteByIdsScope:
         a = await _insert(identifier="dbi-a", is_public=False)
         b = await _insert(identifier="dbi-b", is_public=False)
         result = await _repo(ADMIN).delete_many(ContributionFilter(id__in=[a.id, b.id]))
-        assert result.num_deleted == 2
+        assert result["contributions"] == 2

@@ -1,9 +1,10 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, status
 from fastapi_filter import FilterDepends
 
 from mpcontribs_api.dependencies import require_user
+from mpcontribs_api.domains._shared.models import DeleteSummary
 from mpcontribs_api.domains._shared.types import FieldSelector
 from mpcontribs_api.domains.initiatives.dependencies import InitiativeServiceDep
 from mpcontribs_api.domains.initiatives.models import (
@@ -51,14 +52,13 @@ async def update_one_by_identity(
     return await service.update_one(identity.as_dict(), update=update)
 
 
-@router.delete("/item", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_user)])
+@router.delete("/item", dependencies=[Depends(require_user)])
 async def delete_one_by_identity(
     service: InitiativeServiceDep,
     identity: Annotated[InitiativeIdentity, Depends()],
-):
+) -> DeleteSummary:
     """Delete the initiative by its natural key ``slug`` (the uniform ``/item`` entrypoint)."""
-    await service.delete_one(identity.as_dict())
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+    return await service.delete_one(identity.as_dict())
 
 
 @router.get("/{slug}")
@@ -101,11 +101,10 @@ async def update_one(
     return await service.update_one({"slug": slug}, update=update)
 
 
-@router.delete("/{slug}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_user)])
+@router.delete("/{slug}", dependencies=[Depends(require_user)])
 async def delete_one(
     service: InitiativeServiceDep,
     slug: str,
-):
+) -> DeleteSummary:
     """Delete the initiative identified by ``slug``. Restricted to its owner or an admin."""
-    await service.delete_one({"slug": slug})
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+    return await service.delete_one({"slug": slug})

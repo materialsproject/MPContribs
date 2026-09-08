@@ -5,7 +5,7 @@ from pymongo.results import DeleteResult
 from mpcontribs_api.domains._shared.models import (
     BaseDocumentWithInput,
     ComponentIdentity,
-    DeleteResponse,
+    DeleteSummary,
     DocumentOut,
 )
 from mpcontribs_api.domains.attachments.models import Attachment, ComponentIdentity, AttachmentIn
@@ -170,19 +170,38 @@ class TestDocumentIdentityRoundTrips:
 
 
 # ---------------------------------------------------------------------------
-# DeleteResponse.from_delete_result
+# DeleteSummary
 # ---------------------------------------------------------------------------
 
 
-class TestDeleteResponse:
-    def test_from_delete_result(self):
+class TestDeleteSummary:
+    def test_from_delete_result_keys_by_name(self):
         result = DeleteResult({"n": 3}, acknowledged=True)
-        assert DeleteResponse.from_delete_result(result).num_deleted == 3
+        summary = DeleteSummary.from_delete_result("structures", result)
+        assert summary.root == {"structures": 3}
+        assert summary.total == 3
 
-    def test_zero_deleted(self):
+    def test_zero_deleted_is_omitted(self):
         result = DeleteResult({"n": 0}, acknowledged=True)
-        assert DeleteResponse.from_delete_result(result).num_deleted == 0
+        summary = DeleteSummary.from_delete_result("structures", result)
+        assert summary.root == {}
+        assert summary.total == 0
 
-    def test_serialization_shape(self):
+    def test_serialized_body_is_the_dict(self):
         result = DeleteResult({"n": 7}, acknowledged=True)
-        assert DeleteResponse.from_delete_result(result).model_dump() == {"num_deleted": 7}
+        assert DeleteSummary.from_delete_result("contributions", result).model_dump() == {"contributions": 7}
+
+    def test_add_sums_per_type_and_drops_zeros(self):
+        projects = DeleteSummary({"projects": 1})
+        contributions = DeleteSummary({"contributions": 100, "structures": 2})
+        merged = projects + contributions
+        assert merged.model_dump() == {"projects": 1, "contributions": 100, "structures": 2}
+
+    def test_add_accumulates_shared_keys(self):
+        first = DeleteSummary({"structures": 2})
+        second = DeleteSummary({"structures": 3, "tables": 1})
+        assert (first + second).model_dump() == {"structures": 5, "tables": 1}
+
+    def test_empty_summary_is_identity_for_add(self):
+        summary = DeleteSummary({"contributions": 4})
+        assert (DeleteSummary() + summary).model_dump() == {"contributions": 4}

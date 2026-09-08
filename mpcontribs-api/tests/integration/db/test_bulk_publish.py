@@ -248,25 +248,25 @@ class TestDeleteWriteScope:
         # broad delete must not touch it.
         pub = await _insert(PROJ_B, "del-foreign", is_public=True)
         summary = await _service(mongo_client, ALICE).delete_many(ContributionFilter())
-        assert summary.num_deleted == 0
+        assert summary["contributions"] == 0
         assert await Contribution.find_one(Contribution.id == pub.id) is not None
 
     async def test_non_writer_delete_one_public_foreign_noops(self, db, mongo_client):
         pub = await _insert(PROJ_B, "del-one-foreign", is_public=True)
         summary = await _service(mongo_client, ALICE).delete_one({"id": pub.id})
-        assert summary.num_deleted == 0
+        assert summary["contributions"] == 0
         assert await Contribution.find_one(Contribution.id == pub.id) is not None
 
     async def test_writer_can_delete_own(self, db, mongo_client):
         own = await _insert(PROJ_A, "del-own", is_public=True)
         summary = await _service(mongo_client, ALICE).delete_one({"id": own.id})
-        assert summary.num_deleted == 1
+        assert summary["contributions"] == 1
         assert await Contribution.find_one(Contribution.id == own.id) is None
 
     async def test_admin_can_delete_foreign(self, db, mongo_client):
         pub = await _insert(PROJ_B, "del-admin", is_public=True)
         summary = await _service(mongo_client, ADMIN).delete_one({"id": pub.id})
-        assert summary.num_deleted == 1
+        assert summary["contributions"] == 1
         assert await Contribution.find_one(Contribution.id == pub.id) is None
 
 

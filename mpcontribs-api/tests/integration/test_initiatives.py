@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
+from mpcontribs_api.domains._shared.models import DeleteSummary
 from mpcontribs_api.domains.initiatives.dependencies import get_initiative_service
 from mpcontribs_api.exceptions import NotFoundError
 from mpcontribs_api.pagination import Page
@@ -124,11 +125,11 @@ class TestPatch:
 
 
 class TestDelete:
-    def test_delete_returns_204(self, client, initiative_service):
-        initiative_service.delete_one.return_value = None
+    def test_delete_returns_summary(self, client, initiative_service):
+        initiative_service.delete_one.return_value = DeleteSummary.of("initiatives", 1)
         r = client.delete("/api/v1/initiatives/battery-genome", headers=AUTHED_HEADERS)
-        assert r.status_code == 204
-        assert r.content == b""
+        assert r.status_code == 200
+        assert r.json() == {"initiatives": 1}
 
     def test_anonymous_rejected_401(self, client, initiative_service):
         r = client.delete("/api/v1/initiatives/battery-genome", headers=FORCE_ANON_HEADERS)

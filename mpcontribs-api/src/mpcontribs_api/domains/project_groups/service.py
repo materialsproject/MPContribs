@@ -4,7 +4,7 @@ from beanie import Link
 
 from mpcontribs_api.authz import ROOT_PATH, User
 from mpcontribs_api.domains._shared.bulk import BulkFailure, BulkWriteSummary
-from mpcontribs_api.domains._shared.models import DeleteResponse
+from mpcontribs_api.domains._shared.models import DeleteSummary
 from mpcontribs_api.domains._shared.types import ShortStr
 from mpcontribs_api.domains.project_groups.models import (
     ProjectGroup,
@@ -73,7 +73,7 @@ class ProjectGroupService:
         """Return the single group matching ``identifiers`` (``{"name", "owner"}`` or ``{"id"}``)."""
         return await self._groups.read_one(identifiers, fields)
 
-    async def delete_many(self, filter: ProjectGroupFilter) -> DeleteResponse:
+    async def delete_many(self, filter: ProjectGroupFilter) -> DeleteSummary:
         """Bulk-delete scoped project groups matching ``filter``, restricted to the caller's own.
 
         A non-admin's bulk delete is scoped to their own groups (overriding any ``owner`` in the
@@ -92,7 +92,7 @@ class ProjectGroupService:
             raise PermissionError(required_role="owner-or-admin")
         return await self._groups.update_one(identifiers, update)
 
-    async def delete_one(self, identifiers: dict[str, Any]) -> DeleteResponse:
+    async def delete_one(self, identifiers: dict[str, Any]) -> DeleteSummary:
         """Delete the single group matching ``identifiers`` (``{"name", "owner"}`` or ``{"id"}``).
 
         Restricted to the owner or an admin. Absence (in scope) takes precedence over the ownership

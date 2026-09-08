@@ -5,7 +5,7 @@ from collections.abc import Mapping
 from typing import Annotated, Any, ClassVar, Self
 
 from beanie import Document, PydanticObjectId
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, RootModel, model_validator
 from pymongo.results import DeleteResult
 
 from mpcontribs_api import pagination
@@ -77,24 +77,38 @@ class DocumentOut[TId](SparseFieldsModel):
     id: Annotated[TId | None, Field(alias="_id", serialization_alias="id")] = None
 
 
-class DeleteResponse(BaseModel):
-    num_deleted: int
+# RootModel lets us get the flat response {"projects": 1, "contributions": 50} instead of BaseModel's
+# {"deleted": {"projects": 1, "contributions": 50}}
+class DeleteSummary(RootModel[dict[str, int]]):
+    """Counts of deleted documents, keyed by resource type (the Beanie collection name."""
+
+    root: dict[str, int] = Field(default_factory=dict)
 
     @classmethod
-    def from_delete_result(cls, delete_result: DeleteResult) -> Self:
-        return cls(num_deleted=delete_result.deleted_count)
+    def from_delete_result(cls, name: str, result: DeleteResult) -> Self:
+        """Summary for a single collection's delete, keyed by ``name``."""
+        return cls.of(name, result.deleted_count)
 
+    @classmethod
+    def of(cls, name: str, count: int) -> Self:
+        """Summary of ``count`` deletions of ``name`` (empty when nothing was deleted)."""
+        return cls({name: count} if count else {})
 
-class ComponentDeleteResponse(DeleteResponse):
-    """Result of a component delete that may leave referenced components in place.
+    @property
+    def total(self) -> int:
+        """Total documents deleted across every type."""
+        return sum(self.root.values())
 
-    ``num_deleted`` (inherited) counts components actually removed; ``referenced_ids`` are the
-    component ids skipped because a contribution still references them, and ``num_skipped`` is
-    their count.
-    """
+    def __getitem__(self, name: str) -> int:
+        """Count deleted for a resource type, ``0`` if none (never raises ``KeyError``)."""
+        return self.root.get(name, 0)
 
-    referenced_ids: list[PydanticObjectId] = Field(default_factory=list)
-    num_skipped: int = 0
+    def __add__(self, other: DeleteSummary) -> DeleteSummary:
+        """Merge two summaries, summing counts per type and dropping any that net to zero."""
+        combined: dict[str, int] = dict(self.root)
+        for key, count in other.root.items():
+            combined[key] = combined.get(key, 0) + count
+        return DeleteSummary({key: count for key, count in combined.items() if count})
 
 
 def canonical_md5(payload: Mapping[str, Any]) -> str:

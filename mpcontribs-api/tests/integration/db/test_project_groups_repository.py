@@ -119,7 +119,7 @@ class TestDeleteOne:
     async def test_deletes_matching_group(self, db):
         await _insert("del-a")
         result = await _repo(ADMIN).delete_one({"name": "del-a", "owner": ALICE_EMAIL})
-        assert result.num_deleted == 1
+        assert result["project_groups"] == 1
         assert await ProjectGroup.find_one(ProjectGroup.name == "del-a") is None
 
     async def test_absent_raises_not_found(self, db):
@@ -168,14 +168,14 @@ class TestDeleteByFilter:
         result = await _repo(ADMIN).delete_many(
             filter=ProjectGroupFilter(owner=ALICE_EMAIL)
         )
-        assert result.num_deleted == 2
+        assert result["project_groups"] == 2
         assert await ProjectGroup.find_one(ProjectGroup.owner == "google:bob@example.com") is not None
 
     async def test_no_match_returns_zero(self, db):
         result = await _repo(ADMIN).delete_many(
             filter=ProjectGroupFilter(owner="google:nobody@example.com")
         )
-        assert result.num_deleted == 0
+        assert result["project_groups"] == 0
 
 
 # ---------------------------------------------------------------------------

@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 
 from mpcontribs_api.config import get_settings
 from mpcontribs_api.domains.consumers.dependencies import get_consumer_service
+from mpcontribs_api.domains.contributions.dependencies import get_contribution_service
 from mpcontribs_api.exceptions import (
     AuthenticationError,
     ConflictError,
@@ -60,15 +61,18 @@ class TestUnknownRoute:
 
 class TestRequestValidation:
     @pytest.fixture(autouse=True)
-    def _stub_consumer_service(self, test_app):
-        # The project write endpoints resolve per-consumer limits via ConsumerService, which reads
-        # Mongo; these mock-based route tests have no DB, so stub it so request-body validation (the
-        # behaviour under test) is what surfaces rather than a collection-not-initialised 500.
+    def _stub_project_service_deps(self, test_app):
+        # The project write endpoints resolve per-consumer limits via ConsumerService and, for the
+        # delete cascade, depend on ContributionService (which reads Mongo). These mock-based route
+        # tests have no DB, so stub both so request-body validation (the behaviour under test) is
+        # what surfaces rather than a collection-not-initialised / missing-client 500.
         service = AsyncMock()
         service.effective_limits.return_value = get_settings().consumer
         test_app.dependency_overrides[get_consumer_service] = lambda: service
+        test_app.dependency_overrides[get_contribution_service] = lambda: AsyncMock()
         yield
         test_app.dependency_overrides.pop(get_consumer_service, None)
+        test_app.dependency_overrides.pop(get_contribution_service, None)
 
     def test_missing_required_body_field(self, client):
         # PUT /api/v1/projects/{id} requires a ProjectIn body

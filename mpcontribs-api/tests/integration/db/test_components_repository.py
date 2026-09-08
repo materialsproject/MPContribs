@@ -133,7 +133,7 @@ class TestDeleteComponents:
     async def test_filtered_delete_removes_only_matches(self, db):
         keep, drop = await _insert(_repo(), [_attachment(1), _attachment(2)])
         result = await _repo().delete_many(AttachmentFilter(md5=drop.md5))
-        assert result.num_deleted == 1
+        assert result["attachments"] == 1
         remaining = {doc.md5 async for doc in Attachment.find_all()}
         assert remaining == {keep.md5}
 
@@ -141,7 +141,7 @@ class TestDeleteComponents:
         """The inherited base delete_one removes a single component by its primary key."""
         [doc] = await _insert(_repo(),[_attachment(1)])
         result = await _repo().delete_one({"id": doc.id})
-        assert result.num_deleted == 1
+        assert result["attachments"] == 1
         assert await _count() == 0
 
     async def test_delete_by_unknown_id_raises(self, db):
@@ -154,7 +154,7 @@ class TestDeleteComponents:
         """A component is addressable by its content md5 (its declared identifier) as well as by id."""
         [doc] = await _insert(_repo(),[_attachment(1)])
         result = await _repo().delete_one({"md5": doc.md5})
-        assert result.num_deleted == 1
+        assert result["attachments"] == 1
         assert await _count() == 0
 
 

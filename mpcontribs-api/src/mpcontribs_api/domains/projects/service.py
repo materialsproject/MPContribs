@@ -5,7 +5,9 @@ from bson import DBRef, ObjectId
 
 from mpcontribs_api.authz import INITIATIVE_PATH, ROOT_PATH, User
 from mpcontribs_api.config import ConsumerLimits, get_settings
-from mpcontribs_api.domains._shared.models import DeleteResponse
+from mpcontribs_api.domains._shared.models import DeleteSummary
+from mpcontribs_api.domains.contributions.models import ContributionFilter
+from mpcontribs_api.domains.contributions.service import ContributionService
 from mpcontribs_api.domains.initiatives.models import Initiative
 from mpcontribs_api.domains.initiatives.repository import MongoDbInitiativeRepository
 from mpcontribs_api.domains.projects.models import Project, ProjectFilter, ProjectIn, ProjectOut, ProjectPatch
@@ -22,11 +24,13 @@ class ProjectService:
         user: User,
         projects: MongoDbProjectRepository,
         initiatives: MongoDbInitiativeRepository,
+        contribution_service: ContributionService,
         limits: ConsumerLimits | None = None,
     ) -> None:
         self._user = user
         self._projects = projects
         self._initiatives = initiatives
+        self._contribution_service = contribution_service
         self._limits = limits or get_settings().consumer
 
     async def read_many(
@@ -123,18 +127,21 @@ class ProjectService:
         # `initiative` is server derived, so ProjectPatch can't handle it (expects str), so hand it in extra_set
         return await self._projects.update_one(identifiers, ProjectPatch(**data), extra_set={"initiative": ref})
 
-    async def delete_one(self, identifiers: dict[str, Any]) -> DeleteResponse:
-        """Delete a scoped project by id. Restricted to the owner or an admin.
+    async def delete_one(self, identifiers: dict[str, Any]) -> DeleteSummary:
+        """Delete a scoped project by id, cascading to its contributions and their components.
 
         Project must be deleted by an owner or admin. A caller who cannot see the project gets a 404; a
-        caller who can see it but does not own it gets a 403.
+        caller who can see it but does not own it gets a 403. Returns per-type counts of everything
+        removed, e.g. ``{"projects": 1, "contributions": 100, "structures": 2}``.
         """
         existing = await self._projects.read_one(identifiers)
         if existing is None:
             raise NotFoundError("Project not found", **identifiers)
         if not (self._user.is_admin(*ROOT_PATH) or existing.owner == self._user.username):
             raise PermissionError(required_role="owner-or-admin")
-        return await self._projects.delete_one(identifiers)
+        project_summary = await self._projects.delete_one(identifiers)
+        contribution_summary = await self._contribution_service.delete_many(ContributionFilter(project=existing.id))
+        return project_summary + contribution_summary
 
     async def _enforce_project_cap(self, owner: str) -> None:
         """Reject a *new* project that would push ``owner`` past the per-user cap.

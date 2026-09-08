@@ -11,7 +11,7 @@ from types_aiobotocore_s3 import S3Client
 
 from mpcontribs_api.domains._shared.bulk import BulkFailure, BulkWriteSummary, bulk_failure_from_exception
 from mpcontribs_api.domains._shared.components import MongoDbComponentsRepository
-from mpcontribs_api.domains._shared.models import Component, ComponentDeleteResponse, ComponentIn, DocumentOut
+from mpcontribs_api.domains._shared.models import Component, ComponentIn, DeleteSummary, DocumentOut
 from mpcontribs_api.domains._shared.types import DownloadFormat, ShortMimeFormat
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
 from mpcontribs_api.exceptions import NotFoundError
@@ -160,43 +160,40 @@ class ComponentService[
             restrict_ids=allowed,
         )
 
-    async def delete_many(self, filter: TFilter) -> ComponentDeleteResponse:
+    async def delete_many(self, filter: TFilter) -> DeleteSummary:
         """Delete components matching ``filter`` that are reachable and globally unreferenced.
+
+        Components still referenced by any contribution are skipped. The returned summary counts
+        only what was actually removed (empty when nothing was).
 
         Args:
             filter (TFilter): the component-specific query to apply
 
         Returns:
-            ComponentDeleteResponse: count deleted, plus the ids skipped because a contribution
-            still references them
+            DeleteSummary: count deleted, keyed by this component's collection name
         """
         candidate_ids = await self._components.list_ids(filter)
         reachable = await self._contributions.referenced_component_ids(self._ref_field, candidate_ids, scoped=True)
         if not reachable:
-            return ComponentDeleteResponse(num_deleted=0)
+            return DeleteSummary()
         referenced = await self._contributions.referenced_component_ids(self._ref_field, list(reachable), scoped=False)
         deletable = [cid for cid in reachable if cid not in referenced]
-        num_deleted = (
-            (await self._components.delete_many(type(filter)(id__in=deletable))).num_deleted  # pyright: ignore[reportCallIssue]
-            if deletable
-            else 0
-        )
-        return ComponentDeleteResponse(
-            num_deleted=num_deleted,
-            num_skipped=len(referenced),
-            referenced_ids=sorted(referenced),
-        )
+        if not deletable:
+            return DeleteSummary()
+        return await self._components.delete_many(type(filter)(id__in=deletable))  # pyright: ignore[reportCallIssue]
 
-    async def delete_one(self, identifiers: dict[str, Any]) -> ComponentDeleteResponse:
+    async def delete_one(self, identifiers: dict[str, Any]) -> DeleteSummary:
         """Delete a single component matching ``identifiers``, subject to the access and integrity gates.
 
-        Accepts either the bare ``{"id": ...}`` form or the content-hash ``{"md5": ...}`` form.
+        Accepts either the bare ``{"id": ...}`` form or the content-hash ``{"md5": ...}`` form. A
+        component still referenced by any contribution is left in place and reported as an empty
+        summary (no deletion).
 
         Args:
             identifiers (dict[str, Any]): identifier field values, ``{"id": ...}`` or ``{"md5": ...}``
 
         Returns:
-            ComponentDeleteResponse: the deletion result, or a skipped result if still referenced
+            DeleteSummary: the deletion result, or an empty summary if still referenced
 
         Raises:
             NotFoundError: if the component is not reachable via any in-scope contribution
@@ -205,6 +202,5 @@ class ComponentService[
         if oid is None or not await self._contributions.referenced_component_ids(self._ref_field, [oid], scoped=True):
             raise NotFoundError(f"{self._components.document_model.__name__} not found", **identifiers)
         if await self._contributions.referenced_component_ids(self._ref_field, [oid], scoped=False):
-            return ComponentDeleteResponse(num_deleted=0, num_skipped=1, referenced_ids=[oid])
-        deleted = await self._components.delete_one({"id": oid})
-        return ComponentDeleteResponse(num_deleted=deleted.num_deleted)
+            return DeleteSummary()
+        return await self._components.delete_one({"id": oid})

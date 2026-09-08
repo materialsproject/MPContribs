@@ -321,7 +321,7 @@ class TestInitiativeDelete:
     async def test_owner_can_delete(self, db):
         await _insert_initiative("svc-del-owner", ALICE)
         result = await _initiative_service(ALICE).delete_one({"slug": "svc-del-owner"})
-        assert result.num_deleted == 1
+        assert result["initiatives"] == 1
 
     async def test_collaborator_cannot_delete(self, db):
         await _insert_initiative("svc-del-collab", ALICE)
@@ -335,7 +335,7 @@ class TestInitiativeDelete:
     async def test_admin_can_delete_non_owned(self, db):
         await _insert_initiative("svc-admin-del", ALICE)
         result = await _initiative_service(ADMIN).delete_one({"slug": "svc-admin-del"})
-        assert result.num_deleted == 1
+        assert result["initiatives"] == 1
 
     async def test_delete_clears_member_project_links(self, db):
         # Deleting an initiative must unset the `initiative` link on its members, leaving no
