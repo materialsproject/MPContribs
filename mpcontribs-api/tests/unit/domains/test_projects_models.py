@@ -140,6 +140,91 @@ class TestReference:
 
 
 # ---------------------------------------------------------------------------
+# LongStr field length constraints (authors, description, long_title)
+# ---------------------------------------------------------------------------
+
+# LongStr = Annotated[str, Field(min_length=1, max_length=300)]. Keep this in sync with
+# domains/_shared/types.py — these tests are the regression guard against that bound drifting.
+_MAX_LONGSTR = 300
+
+
+def _project_in_kwargs(**overrides):
+    """Valid ProjectIn kwargs, with the given LongStr field overridden for a boundary case."""
+    defaults = {
+        "title": "Test Project",
+        "authors": "Alice, Bob",
+        "description": "A test project",
+        "owner": "google:alice@example.com",
+    }
+    defaults.update(overrides)
+    return defaults
+
+
+class TestLongStrLengthConstraintsOnInput:
+    """Regression guard for the LongStr fields on ``ProjectIn`` (authors, description, long_title).
+
+    A value longer than ``max_length`` (300) is rejected, and a *present* value must be non-empty
+    (``min_length=1`` -> an empty string is rejected, a single char is the shortest accepted value).
+    ``long_title`` is optional, so ``None``/absent is fine; the required ``authors``/``description``
+    obey the same length bounds.
+    """
+
+    @pytest.mark.parametrize("field", ["authors", "description", "long_title"])
+    def test_over_max_length_rejected(self, field):
+        with pytest.raises(PydanticValidationError):
+            ProjectIn(**_project_in_kwargs(**{field: "x" * (_MAX_LONGSTR + 1)}))
+
+    @pytest.mark.parametrize("field", ["authors", "description", "long_title"])
+    def test_at_max_length_accepted(self, field):
+        # The cap is inclusive: exactly 300 chars must pass.
+        value = "x" * _MAX_LONGSTR
+        assert getattr(ProjectIn(**_project_in_kwargs(**{field: value})), field) == value
+
+    @pytest.mark.parametrize("field", ["authors", "description", "long_title"])
+    def test_empty_string_rejected(self, field):
+        # A present LongStr must be non-empty (min_length=1); "" is rejected.
+        with pytest.raises(PydanticValidationError):
+            ProjectIn(**_project_in_kwargs(**{field: ""}))
+
+    @pytest.mark.parametrize("field", ["authors", "description", "long_title"])
+    def test_single_char_accepted(self, field):
+        # min_length=1: a single character is the shortest allowed value.
+        assert getattr(ProjectIn(**_project_in_kwargs(**{field: "a"})), field) == "a"
+
+    def test_long_title_optional_when_absent(self):
+        # long_title is the only optional LongStr on input; omitting it is valid.
+        assert ProjectIn(**_project_in_kwargs()).long_title is None
+
+
+class TestLongStrLengthConstraintsAcrossModels:
+    """The same LongStr bounds hold on the other Project representations that re-declare these fields.
+
+    ``ProjectOut`` and ``ProjectPatch`` each annotate authors/description/long_title as
+    ``LongStr | None`` independently of ``ProjectIn``, so a regression that widened one model's type
+    would slip past input-only tests. Here every field is optional (``None`` allowed), but any
+    supplied value still obeys min_length=1 / max_length=300.
+    """
+
+    @pytest.mark.parametrize("model", [ProjectOut, ProjectPatch])
+    @pytest.mark.parametrize("field", ["authors", "description", "long_title"])
+    def test_over_max_length_rejected(self, model, field):
+        with pytest.raises(PydanticValidationError):
+            model(**{field: "x" * (_MAX_LONGSTR + 1)})
+
+    @pytest.mark.parametrize("model", [ProjectOut, ProjectPatch])
+    @pytest.mark.parametrize("field", ["authors", "description", "long_title"])
+    def test_empty_string_rejected(self, model, field):
+        with pytest.raises(PydanticValidationError):
+            model(**{field: ""})
+
+    @pytest.mark.parametrize("model", [ProjectOut, ProjectPatch])
+    @pytest.mark.parametrize("field", ["authors", "description", "long_title"])
+    def test_none_allowed(self, model, field):
+        # These fields are all optional on the out/patch models, so an unset value is valid.
+        assert getattr(model(**{field: None}), field) is None
+
+
+# ---------------------------------------------------------------------------
 # ProjectOut — optional fields, extra ignored
 # ---------------------------------------------------------------------------
 

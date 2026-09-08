@@ -15,6 +15,8 @@ from mpcontribs_api.exceptions import DataKeyError, ValidationError
 
 ShortStr = Annotated[str, Field(min_length=3, max_length=30)]
 
+LongStr = Annotated[str, Field(min_length=1, max_length=300)]
+
 Scalar = str | int | float | bool
 
 # A material id is ``mp-`` followed by either a numeric id (MpId) or an alphabetic id (AlphaId).

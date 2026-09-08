@@ -36,8 +36,8 @@ def _project(
     doc = Project.from_input_model(
         ProjectIn(
             title="test-project",
-            authors="a",
-            description="d",
+            authors="abc",
+            description="abc",
             owner=owner,
             is_public=is_public,
             is_approved=is_approved,
@@ -52,7 +52,7 @@ def _project(
 
 
 def _project_in(id: str = "p1", **overrides) -> ProjectIn:
-    defaults = {"title": "test-project", "authors": "a", "description": "d", "owner": ALICE_EMAIL}
+    defaults = {"title": "test-project", "authors": "abc", "description": "abc", "owner": ALICE_EMAIL}
     defaults.update(overrides)
     return ProjectIn(**defaults)
 

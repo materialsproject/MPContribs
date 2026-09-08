@@ -141,7 +141,7 @@ class TestDocumentIdentityRoundTrips:
     def test_id_keyed_document_identity_is_its_id(self):
         # A project's identity IS its id (the human-chosen slug), so ``identity()`` reads it off ``id``.
         project = Project.from_input_model(
-            ProjectIn(title="my-project", authors="a", description="d", owner="google:a@example.com"),
+            ProjectIn(title="my-project", authors="abc", description="abc", owner="google:a@example.com"),
             id="my-proj",
         )
         assert project.identity() == ProjectIdentity(id="my-proj")
