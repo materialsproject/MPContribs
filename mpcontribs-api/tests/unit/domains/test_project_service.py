@@ -17,6 +17,10 @@ pytestmark = pytest.mark.asyncio
 
 ADMIN = User(username="google:admin@example.com", groups=frozenset({"admin"}))
 ALICE = User(username="google:alice@example.com", groups=frozenset())
+# ``ALICE`` plus the write grant on the project the delete tests target ("proj-1", the ``_project``
+# default id). She passes both the owner gate and the cascade's write-grant guard. A bare group token
+# is parsed into an owner-role grant on that project id.
+ALICE_GRANTED = User(username="google:alice@example.com", groups=frozenset({"proj-1"}))
 BOB = User(username="google:bob@example.com", groups=frozenset())
 ANON = User()
 
@@ -106,17 +110,28 @@ class TestDelete:
         svc._project_groups.clear_project_refs.assert_not_called()
 
     async def test_owner_deletes(self):
-        svc, projects, _ = _service(ALICE, scoped=_project(owner=ALICE_EMAIL))
+        svc, projects, _ = _service(ALICE_GRANTED, scoped=_project(owner=ALICE_EMAIL))
         result = await svc.delete_one({"id": "proj-1"})
         projects.delete_one.assert_awaited_once_with({"id": "proj-1"})
         # The project's own count merges with the cascaded contribution summary.
         assert result.root == {"projects": 1, "contributions": 5}
 
     async def test_owner_delete_clears_project_group_refs(self):
-        svc, _, _ = _service(ALICE, scoped=_project(id="proj-1", owner=ALICE_EMAIL))
+        svc, _, _ = _service(ALICE_GRANTED, scoped=_project(id="proj-1", owner=ALICE_EMAIL))
         await svc.delete_one({"id": "proj-1"})
         # The deleted project is pulled from every group that referenced it, keyed by its id.
         svc._project_groups.clear_project_refs.assert_awaited_once_with("proj-1")
+
+    async def test_owner_without_write_grant_refused(self):
+        # ALICE owns the project by its ``owner`` field but holds no write grant for it, so the
+        # cascade would delete nothing and orphan her contributions. The delete must be refused
+        # before anything is removed.
+        svc, projects, _ = _service(ALICE, scoped=_project(owner=ALICE_EMAIL))
+        with pytest.raises(AppPermissionError):
+            await svc.delete_one({"id": "proj-1"})
+        projects.delete_one.assert_not_called()
+        svc._contribution_service.delete_many.assert_not_called()
+        svc._project_groups.clear_project_refs.assert_not_called()
 
     async def test_admin_deletes_any(self):
         svc, projects, _ = _service(ADMIN, scoped=_project(owner=ALICE_EMAIL))

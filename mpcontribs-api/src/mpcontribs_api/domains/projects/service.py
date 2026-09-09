@@ -3,7 +3,7 @@ from typing import Any
 from beanie import Link
 from bson import DBRef, ObjectId
 
-from mpcontribs_api.authz import INITIATIVE_PATH, ROOT_PATH, User
+from mpcontribs_api.authz import INITIATIVE_PATH, PROJECT_PATH, ROOT_PATH, User
 from mpcontribs_api.config import ConsumerLimits, get_settings
 from mpcontribs_api.domains._shared.models import DeleteSummary
 from mpcontribs_api.domains.contributions.models import ContributionFilter
@@ -134,14 +134,26 @@ class ProjectService:
         """Delete a scoped project by id, cascading to its contributions and their components.
 
         Project must be deleted by an owner or admin. A caller who cannot see the project gets a 404; a
-        caller who can see it but does not own it gets a 403. Returns per-type counts of everything
-        removed, e.g. ``{"projects": 1, "contributions": 100, "structures": 2}``.
+        caller who can see it but does not own it gets a 403.
+
+        Returns per-type counts of
+        everything removed, e.g. ``{"projects": 1, "contributions": 100, "structures": 2}``.
+
+        Protects against the case where a user is set as owner on the Project document but lacks the ACL grant by
+        raising an error.
         """
         existing = await self._projects.read_one(identifiers)
         if existing is None:
             raise NotFoundError("Project not found", **identifiers)
         if not (self._user.is_admin(*ROOT_PATH) or existing.owner == self._user.username):
             raise PermissionError(required_role="owner-or-admin")
+        # If user is set as Project.owner but does not has the ACL set for the resource, raise an error
+        if not self._user.can_write(*PROJECT_PATH, existing.id):
+            raise PermissionError(
+                f"Deleting project '{existing.id}' requires a write grant you don't have. "
+                f"Contact an admin with the project name '{existing.id}'.",
+                project=existing.id,
+            )
         # Delete contributions first so a failed project delete can be retried
         contribution_summary = await self._contribution_service.delete_many(ContributionFilter(project=existing.id))
         project_summary = await self._projects.delete_one(identifiers)

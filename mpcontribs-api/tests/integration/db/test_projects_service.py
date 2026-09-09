@@ -76,6 +76,15 @@ def _collaborator(slug: str, username: str = BOB_EMAIL) -> User:
     return User(username=username, groups=[f"mpcontribs:initiatives/{slug}=owner"])
 
 
+def _owner_with_grant(project_id: str, username: str = ALICE_EMAIL) -> User:
+    """An owner who also holds the write grant on ``project_id``.
+
+    Deleting a project requires both owning it (by the ``owner`` field) and holding the write grant
+    the contribution cascade needs; a bare group token is parsed into an owner-role grant on that id.
+    """
+    return User(username=username, groups=frozenset({project_id}))
+
+
 def _project_in(id: str, **overrides) -> ProjectIn:
     defaults = {
         "title": id[:30],
@@ -121,8 +130,16 @@ def _assigned_id(project: Project):
 class TestDeleteAuthorization:
     async def test_owner_can_delete_own_project(self, db):
         await _insert("svc-del-own", owner=ALICE_EMAIL)
-        await _service(ALICE).delete_one({"id": "svc-del-own"})
+        await _service(_owner_with_grant("svc-del-own")).delete_one({"id": "svc-del-own"})
         assert await Project.find_one(Project.id == "svc-del-own") is None
+
+    async def test_owner_without_write_grant_is_refused(self, db):
+        # ALICE owns the project by its ``owner`` field but holds no grant for it. Deleting would
+        # orphan any contributions the cascade can't reach, so it is refused (and the project stays).
+        await _insert("svc-del-nogrant", owner=ALICE_EMAIL)
+        with pytest.raises(AppPermissionError):
+            await _service(ALICE).delete_one({"id": "svc-del-nogrant"})
+        assert await Project.find_one(Project.id == "svc-del-nogrant") is not None
 
     async def test_admin_can_delete_any_project(self, db):
         await _insert("svc-del-admin", owner=ALICE_EMAIL)
@@ -158,7 +175,7 @@ class TestDeleteAuthorization:
         await _insert("cascade-grp-keep", owner=ALICE_EMAIL)
         await _insert_group("watchers", owner=BOB_EMAIL, projects=["cascade-grp-gone", "cascade-grp-keep"])
 
-        await _service(ALICE).delete_one({"id": "cascade-grp-gone"})
+        await _service(_owner_with_grant("cascade-grp-gone")).delete_one({"id": "cascade-grp-gone"})
 
         assert await Project.find_one(Project.id == "cascade-grp-gone") is None
         group = await ProjectGroup.find_one(ProjectGroup.name == "watchers")

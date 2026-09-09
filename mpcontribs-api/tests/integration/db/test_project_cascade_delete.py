@@ -33,6 +33,7 @@ from mpcontribs_api.domains.projects.service import ProjectService
 from mpcontribs_api.domains.structures.models import Lattice, Site, SiteProperties, Species, Structure, StructureIn
 from mpcontribs_api.domains.structures.repository import MongoDbStructureRepository
 from mpcontribs_api.domains.tables.repository import MongoDbTableRepository
+from mpcontribs_api.exceptions import PermissionError as AppPermissionError
 
 pytestmark = [pytest.mark.db, pytest.mark.asyncio(loop_scope="session")]
 
@@ -168,6 +169,38 @@ class TestProjectDeleteCascade:
         summary = await _project_service(mongo_client).delete_one({"id": "cas-empty"})
 
         assert summary.root == {"projects": 1}
+
+    async def test_non_admin_owner_with_grant_cascades(self, db, mongo_client):
+        # A non-admin owner who holds the write grant on the project deletes it end to end: the
+        # cascade's ``writable(*PROJECT_PATH)`` re-scoping (untested by the admin-only cases above)
+        # admits the project, so its contributions and unshared components are removed.
+        owner = User(username="google:owner@example.com", groups=frozenset({"cas-owner"}))
+        await _project("cas-owner", owner=owner.username or "")
+        s1 = await _structure(50.0)
+        await _contribution("cas-owner", "mp-a", structures=[s1])
+
+        summary = await _project_service(mongo_client, owner).delete_one({"id": "cas-owner"})
+
+        assert summary.root == {"projects": 1, "contributions": 1, "structures": 1}
+        assert await Project.find_one(Project.id == "cas-owner") is None
+        assert not await _structure_exists(s1)
+
+    async def test_owner_without_write_grant_is_refused_and_nothing_deleted(self, db, mongo_client):
+        # The owner (by the ``owner`` field) holds no write grant, so the cascade could not reach the
+        # contributions. Rather than delete the project and orphan them, the whole delete is refused
+        # and nothing is removed.
+        owner = User(username="google:owner@example.com", groups=frozenset())
+        await _project("cas-orphan", owner=owner.username or "")
+        s1 = await _structure(51.0)
+        contribution = await _contribution("cas-orphan", "mp-a", structures=[s1])
+
+        with pytest.raises(AppPermissionError):
+            await _project_service(mongo_client, owner).delete_one({"id": "cas-orphan"})
+
+        # Project, contribution, and component all survive untouched.
+        assert await Project.find_one(Project.id == "cas-orphan") is not None
+        assert await Contribution.get(contribution.id) is not None
+        assert await _structure_exists(s1)
 
     async def test_component_shared_with_surviving_project_is_kept(self, db, mongo_client):
         # ``shared`` is referenced by a contribution in the deleted project *and* one in a project
