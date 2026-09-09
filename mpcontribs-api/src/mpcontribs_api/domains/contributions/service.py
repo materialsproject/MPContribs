@@ -1000,7 +1000,10 @@ class ContributionService:
 
         A child component is removed only when no surviving contribution still references it.
 
-        Doesn't guarantee complete atomicity, but prevents orphaned children by deleting components first.
+        Not fully atomic: each page deletes its contributions first, so the integrity check sees
+        only surviving references and keeps any component still shared with a contribution that
+        outlives this delete. A crash mid-delete can therefore leave unreferenced component documents
+        behind, but never a live contribution pointing at a deleted component.
 
         Args:
             filter (ContributionFilter): the Contribution-specific query to apply on top of the user scope
