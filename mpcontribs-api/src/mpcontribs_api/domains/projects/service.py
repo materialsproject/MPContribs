@@ -139,9 +139,10 @@ class ProjectService:
             raise NotFoundError("Project not found", **identifiers)
         if not (self._user.is_admin(*ROOT_PATH) or existing.owner == self._user.username):
             raise PermissionError(required_role="owner-or-admin")
-        project_summary = await self._projects.delete_one(identifiers)
+        # Delete contributions first so a failed project delete can be retried
         contribution_summary = await self._contribution_service.delete_many(ContributionFilter(project=existing.id))
-        return project_summary + contribution_summary
+        project_summary = await self._projects.delete_one(identifiers)
+        return contribution_summary + project_summary
 
     async def _enforce_project_cap(self, owner: str) -> None:
         """Reject a *new* project that would push ``owner`` past the per-user cap.

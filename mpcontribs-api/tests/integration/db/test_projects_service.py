@@ -1,13 +1,21 @@
+from typing import cast
+
 import pytest
 from beanie import Link
+from pymongo import AsyncMongoClient
 
 from mpcontribs_api.authz import User
 from mpcontribs_api.config import ConsumerLimits, ConsumerProjectLimits, get_settings
+from mpcontribs_api.domains.attachments.repository import MongoDbAttachmentRepository
+from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
+from mpcontribs_api.domains.contributions.service import ContributionService
 from mpcontribs_api.domains.initiatives.models import Initiative, InitiativeIn, InitiativePatch
 from mpcontribs_api.domains.initiatives.repository import MongoDbInitiativeRepository
 from mpcontribs_api.domains.projects.models import Column, Project, ProjectFilter, ProjectIn, ProjectPatch, Stats
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
 from mpcontribs_api.domains.projects.service import ProjectService
+from mpcontribs_api.domains.structures.repository import MongoDbStructureRepository
+from mpcontribs_api.domains.tables.repository import MongoDbTableRepository
 from mpcontribs_api.exceptions import PermissionError as AppPermissionError
 from mpcontribs_api.exceptions import ConflictError, NotFoundError, ValidationError
 from mpcontribs_api.pagination import CursorParams
@@ -29,11 +37,34 @@ BOB_EMAIL = "google:bob@example.com"
 CAROL_EMAIL = "google:carol@example.com"
 
 
-def _service(user: User, limits: ConsumerLimits | None = None) -> ProjectService:
+def _contribution_service(user: User, client: AsyncMongoClient | None = None) -> ContributionService:
+    """A real ContributionService for the project delete cascade.
+
+    The delete cascade drives Beanie's global client through the repositories and never dereferences
+    the injected ``client``, so non-delete tests may leave it ``None``; delete tests that create real
+    contributions pass the ``mongo_client`` fixture.
+    """
+    return ContributionService(
+        client=cast(AsyncMongoClient, client),
+        user=user,
+        projects=MongoDbProjectRepository(user),
+        contributions=MongoDbContributionRepository(user),
+        structures=MongoDbStructureRepository(user),
+        attachments=MongoDbAttachmentRepository(user),
+        tables=MongoDbTableRepository(user),
+    )
+
+
+def _service(
+    user: User,
+    limits: ConsumerLimits | None = None,
+    client: AsyncMongoClient | None = None,
+) -> ProjectService:
     return ProjectService(
         user=user,
         projects=MongoDbProjectRepository(user),
         initiatives=MongoDbInitiativeRepository(user),
+        contribution_service=_contribution_service(user, client),
         limits=limits,
     )
 

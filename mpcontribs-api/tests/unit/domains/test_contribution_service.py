@@ -223,6 +223,9 @@ def _make_service(
         # No stored columns, so the per-consumer max_columns guard is a no-op for these tests.
         projects_repo.column_paths_by_id.side_effect = lambda ids: {pid: set() for pid in ids}
     contrib_repo.existing_identities.return_value = set()
+    # Integrity gate for the delete cascade: by default nothing else references the components, so
+    # every gathered child id is deletable (tests exercising the shared case override this).
+    contrib_repo.referenced_component_ids.return_value = set()
     if client is None:
         client, _ = _make_fake_client()
     svc = ContributionService(
@@ -1404,7 +1407,7 @@ class TestWriteAuthorization:
 
 
 # ---------------------------------------------------------------------------
-# delete_many — cascade delete (components-first), cursor loop
+# delete_many — cascade delete (contributions first, then components "when valid"), cursor loop
 # ---------------------------------------------------------------------------
 
 from types import SimpleNamespace  # noqa: E402
@@ -1498,8 +1501,9 @@ class TestDeleteContributionsSinglePage:
         attach_repo.delete_many.assert_not_called()
         assert summary.root == {"contributions": 1}
 
-    async def test_components_deleted_before_contributions(self):
-        # Records call order across repos to assert children go first.
+    async def test_contributions_deleted_before_components(self):
+        # Records call order across repos to assert contributions go first, so the integrity check
+        # (below) sees only surviving references and an interrupted delete can only orphan, never dangle.
         order: list[str] = []
         svc, contrib_repo, struct_repo, table_repo, attach_repo, _ = _make_service()
 
@@ -1525,12 +1529,59 @@ class TestDeleteContributionsSinglePage:
 
         await svc.delete_many(_noop_filter())
 
-        # The loop makes a final pass on the empty page that still issues one
-        # (no-op) contribution delete before breaking, so there are two
-        # "contributions" entries. The invariant under test: all three child
-        # deletes happen before the first contribution delete.
-        first_contrib = order.index("contributions")
-        assert set(order[:first_contrib]) == {"structures", "tables", "attachments"}
+        # The single contribution delete happens before any of the three child deletes.
+        assert order[0] == "contributions"
+        assert set(order[1:]) == {"structures", "tables", "attachments"}
+
+
+class TestDeleteContributionsIntegrityGate:
+    """A component is deleted only when no surviving contribution still references it."""
+
+    async def test_shared_component_is_not_deleted(self):
+        svc, contrib_repo, struct_repo, *_ = _make_service()
+        shared = _oid()
+        doc = _contrib_doc(structures=[shared])
+        contrib_repo.read_many.side_effect = [_page([doc]), _page([])]
+        contrib_repo.delete_many.side_effect = [_delete_result(1), _delete_result(0)]
+        # After the contribution is gone, another contribution still references the structure.
+        contrib_repo.referenced_component_ids.return_value = {shared}
+
+        summary = await svc.delete_many(_noop_filter())
+
+        struct_repo.delete_many.assert_not_called()
+        assert summary.root == {"contributions": 1}
+
+    async def test_only_unreferenced_components_are_deleted(self):
+        svc, contrib_repo, struct_repo, *_ = _make_service()
+        kept, removed = _oid(), _oid()
+        doc = _contrib_doc(structures=[kept, removed])
+        contrib_repo.read_many.side_effect = [_page([doc]), _page([])]
+        contrib_repo.delete_many.side_effect = [_delete_result(1), _delete_result(0)]
+        struct_repo.delete_many.return_value = DeleteSummary.of("structures", 1)
+        # ``kept`` is still referenced elsewhere; ``removed`` is not.
+        contrib_repo.referenced_component_ids.return_value = {kept}
+
+        summary = await svc.delete_many(_noop_filter())
+
+        called_filter = struct_repo.delete_many.await_args.args[0]
+        assert set(called_filter.id__in) == {removed}
+        assert summary.root == {"contributions": 1, "structures": 1}
+
+    async def test_integrity_check_is_unscoped_over_gathered_ids(self):
+        svc, contrib_repo, struct_repo, *_ = _make_service()
+        s1, s2 = _oid(), _oid()
+        doc = _contrib_doc(structures=[s1, s2])
+        contrib_repo.read_many.side_effect = [_page([doc]), _page([])]
+        contrib_repo.delete_many.side_effect = [_delete_result(1), _delete_result(0)]
+        struct_repo.delete_many.return_value = DeleteSummary.of("structures", 2)
+
+        await svc.delete_many(_noop_filter())
+
+        # The gate spans every contribution (global integrity check), not just the caller's scope.
+        ref_call = contrib_repo.referenced_component_ids.await_args_list[0]
+        assert ref_call.args[0] == "structures"
+        assert set(ref_call.args[1]) == {s1, s2}
+        assert ref_call.kwargs["scoped"] is False
 
     async def test_child_ids_collected_from_links(self):
         svc, contrib_repo, struct_repo, *_ = _make_service()

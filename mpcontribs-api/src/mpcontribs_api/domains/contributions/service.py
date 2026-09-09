@@ -996,7 +996,9 @@ class ContributionService:
     }
 
     async def delete_many(self, filter: ContributionFilter) -> DeleteSummary:
-        """Delete contributions matching ``filter`` and all of their child components.
+        """Delete contributions matching ``filter``, cascading to their components.
+
+        A child component is removed only when no surviving contribution still references it.
 
         Doesn't guarantee complete atomicity, but prevents orphaned children by deleting components first.
 
@@ -1020,21 +1022,31 @@ class ContributionService:
                 pagination=CursorParams(cursor=None, limit=100),
                 filter=filter,
             )
+            if not page.items:
+                break
             affected_projects.update(c.project for c in page.items if c.project is not None)
-            # For each component type, gather ObjectIds then bulk delete them
-            # - components first so no children are left orphaned
-            for field, repo in self._children.items():
-                ids = [link.ref.id for c in page.items for link in (getattr(c, field) or [])]
-                if ids:
-                    summary = summary + await repo.delete_many(self._CHILD_FILTERS[field](id__in=ids))
+            # Gather this page's referenced component ids per field, before deleting anything.
+            child_ids = {
+                field: {link.ref.id for c in page.items for link in (getattr(c, field) or [])}
+                for field in self._children
+            }
 
-            # Delete Contributions in this batch by ID
-            # need to make a new filter so we don't eagerly delete all contributions before their components are deleted
+            # Delete the contributions first, so the integrity check below sees only *surviving*
+            # references. A component still referenced once these are gone is shared with a
+            # contribution that outlives this delete and must be kept.
             summary = summary + await self._contributions.delete_many(
                 ContributionFilter(id__in=[cast(PydanticObjectId, c.id) for c in page.items])
             )
-            if not page.items:
-                break
+
+            # Delete each referenced component only when no remaining contribution references it.
+            for field, repo in self._children.items():
+                ids = child_ids[field]
+                if not ids:
+                    continue
+                still_referenced = await self._contributions.referenced_component_ids(field, list(ids), scoped=False)
+                deletable = [cid for cid in ids if cid not in still_referenced]
+                if deletable:
+                    summary = summary + await repo.delete_many(self._CHILD_FILTERS[field](id__in=deletable))
         await self.update_project(affected_projects)
         return summary
 
