@@ -193,14 +193,14 @@ class TestTableFilter:
     def test_constants_bind_table_model(self):
         assert TableFilter.Constants.model is Table
 
-    def test_id_serializes_to_str(self):
+    def test_id_dumps_as_object_id_not_str(self):
         oid = PydanticObjectId()
-        assert TableFilter(id=oid).model_dump()["id"] == str(oid)
+        assert TableFilter(id=oid).model_dump()["id"] == oid
 
-    def test_id_in_serializes_to_sorted_strs(self):
+    def test_id_in_dumps_as_object_ids(self):
         first, second = PydanticObjectId(), PydanticObjectId()
         dumped = TableFilter(id__in=[second, first]).model_dump()
-        assert dumped["id__in"] == sorted([str(first), str(second)])
+        assert dumped["id__in"] == [second, first]
 
     def test_none_ids_serialize_to_none(self):
         dumped = TableFilter().model_dump()
