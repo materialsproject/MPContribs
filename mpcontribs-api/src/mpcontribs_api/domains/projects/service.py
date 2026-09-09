@@ -10,6 +10,7 @@ from mpcontribs_api.domains.contributions.models import ContributionFilter
 from mpcontribs_api.domains.contributions.service import ContributionService
 from mpcontribs_api.domains.initiatives.models import Initiative
 from mpcontribs_api.domains.initiatives.repository import MongoDbInitiativeRepository
+from mpcontribs_api.domains.project_groups.repository import MongoDbProjectGroupRepository
 from mpcontribs_api.domains.projects.models import Project, ProjectFilter, ProjectIn, ProjectOut, ProjectPatch
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
 from mpcontribs_api.exceptions import ConflictError, NotFoundError, PermissionError, ValidationError
@@ -25,12 +26,14 @@ class ProjectService:
         projects: MongoDbProjectRepository,
         initiatives: MongoDbInitiativeRepository,
         contribution_service: ContributionService,
+        project_groups: MongoDbProjectGroupRepository,
         limits: ConsumerLimits | None = None,
     ) -> None:
         self._user = user
         self._projects = projects
         self._initiatives = initiatives
         self._contribution_service = contribution_service
+        self._project_groups = project_groups
         self._limits = limits or get_settings().consumer
 
     async def read_many(
@@ -142,6 +145,9 @@ class ProjectService:
         # Delete contributions first so a failed project delete can be retried
         contribution_summary = await self._contribution_service.delete_many(ContributionFilter(project=existing.id))
         project_summary = await self._projects.delete_one(identifiers)
+        # Pull the now-deleted project out of any groups that referenced it
+        if existing.id is not None:
+            await self._project_groups.clear_project_refs(existing.id)
         return contribution_summary + project_summary
 
     async def _enforce_project_cap(self, owner: str) -> None:

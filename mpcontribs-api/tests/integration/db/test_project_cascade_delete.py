@@ -26,6 +26,7 @@ from mpcontribs_api.domains.contributions.models import Contribution, Contributi
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
 from mpcontribs_api.domains.contributions.service import ContributionService
 from mpcontribs_api.domains.initiatives.repository import MongoDbInitiativeRepository
+from mpcontribs_api.domains.project_groups.repository import MongoDbProjectGroupRepository
 from mpcontribs_api.domains.projects.models import Project, ProjectIn
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
 from mpcontribs_api.domains.projects.service import ProjectService
@@ -61,6 +62,7 @@ def _project_service(client: AsyncMongoClient, user: User = ADMIN) -> ProjectSer
         projects=MongoDbProjectRepository(user),
         initiatives=MongoDbInitiativeRepository(user),
         contribution_service=_contribution_service(client, user),
+        project_groups=MongoDbProjectGroupRepository(user),
     )
 
 

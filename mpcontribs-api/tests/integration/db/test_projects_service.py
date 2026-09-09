@@ -11,6 +11,8 @@ from mpcontribs_api.domains.contributions.repository import MongoDbContributionR
 from mpcontribs_api.domains.contributions.service import ContributionService
 from mpcontribs_api.domains.initiatives.models import Initiative, InitiativeIn, InitiativePatch
 from mpcontribs_api.domains.initiatives.repository import MongoDbInitiativeRepository
+from mpcontribs_api.domains.project_groups.models import ProjectGroup, ProjectGroupIn
+from mpcontribs_api.domains.project_groups.repository import MongoDbProjectGroupRepository
 from mpcontribs_api.domains.projects.models import Column, Project, ProjectFilter, ProjectIn, ProjectPatch, Stats
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
 from mpcontribs_api.domains.projects.service import ProjectService
@@ -65,6 +67,7 @@ def _service(
         projects=MongoDbProjectRepository(user),
         initiatives=MongoDbInitiativeRepository(user),
         contribution_service=_contribution_service(user, client),
+        project_groups=MongoDbProjectGroupRepository(user),
         limits=limits,
     )
 
@@ -93,6 +96,13 @@ async def _insert(id: str, **overrides) -> Project:
 async def _insert_initiative(slug: str, owner_user: User = ALICE) -> Initiative:
     document = Initiative.from_input_model(InitiativeIn(slug=slug, name="Init"), owner=owner_user.username)
     return await MongoDbInitiativeRepository(owner_user).insert_one(document)
+
+
+async def _insert_group(name: str, owner: str, projects: list[str]) -> ProjectGroup:
+    document = ProjectGroup.from_input_model(
+        ProjectGroupIn(name=name, owner=owner, projects=projects, description="a group")
+    )
+    return await MongoDbProjectGroupRepository(ADMIN).insert_one(document)
 
 
 def _assigned_id(project: Project):
@@ -140,6 +150,20 @@ class TestDeleteAuthorization:
         with pytest.raises(NotFoundError):
             await _service(BOB).delete_one({"id": "svc-del-hidden"})
         assert await Project.find_one(Project.id == "svc-del-hidden") is not None
+
+    async def test_delete_pulls_project_from_referencing_groups(self, db):
+        # Deleting a project must remove it from every group that lists it — including a group owned
+        # by another user — while leaving the group and its other members intact.
+        await _insert("cascade-grp-gone", owner=ALICE_EMAIL)
+        await _insert("cascade-grp-keep", owner=ALICE_EMAIL)
+        await _insert_group("watchers", owner=BOB_EMAIL, projects=["cascade-grp-gone", "cascade-grp-keep"])
+
+        await _service(ALICE).delete_one({"id": "cascade-grp-gone"})
+
+        assert await Project.find_one(Project.id == "cascade-grp-gone") is None
+        group = await ProjectGroup.find_one(ProjectGroup.name == "watchers")
+        assert group is not None  # the group survives the project delete
+        assert sorted(link.ref.id for link in (group.projects or [])) == ["cascade-grp-keep"]
 
 
 # ---------------------------------------------------------------------------

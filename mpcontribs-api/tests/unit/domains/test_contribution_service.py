@@ -1412,14 +1412,26 @@ class TestWriteAuthorization:
 
 from types import SimpleNamespace  # noqa: E402
 
+from beanie import Link  # noqa: E402
+from bson import DBRef  # noqa: E402
+
 from mpcontribs_api.domains._shared.models import DeleteSummary  # noqa: E402
 from mpcontribs_api.domains.contributions.models import ContributionFilter  # noqa: E402
 from mpcontribs_api.pagination import Page  # noqa: E402
 
 
-def _link(ref_id: PydanticObjectId) -> SimpleNamespace:
-    """Minimal stand-in for a Beanie Link: only ``.ref.id`` is read by the service."""
-    return SimpleNamespace(ref=SimpleNamespace(id=ref_id))
+def _link(ref_id: PydanticObjectId) -> Link:
+    """A real (unfetched) Beanie Link; the service reads ``.ref.id`` off it.
+
+    Must be a genuine ``Link`` so the service's ``isinstance(link, Link)`` branch is exercised — a
+    read that returns *resolved* component documents (``.id``) is covered by the DB cascade tests.
+    """
+    return Link(DBRef("components", ref_id), Contribution)
+
+
+def _resolved(ref_id: PydanticObjectId) -> SimpleNamespace:
+    """A stand-in for a *resolved* component document (what a projected read can yield): bare ``.id``."""
+    return SimpleNamespace(id=ref_id)
 
 
 def _contrib_doc(structures=None, attachments=None, tables=None, id_=None, project="proj") -> SimpleNamespace:
@@ -1587,6 +1599,21 @@ class TestDeleteContributionsIntegrityGate:
         svc, contrib_repo, struct_repo, *_ = _make_service()
         s1, s2 = _oid(), _oid()
         doc = _contrib_doc(structures=[s1, s2])
+        contrib_repo.read_many.side_effect = [_page([doc]), _page([])]
+        struct_repo.delete_many.return_value = DeleteSummary.of("structures", 2)
+        contrib_repo.delete_many.side_effect = [_delete_result(1), _delete_result(0)]
+
+        await svc.delete_many(_noop_filter())
+
+        called_filter = struct_repo.delete_many.await_args.args[0]
+        assert set(called_filter.id__in) == {s1, s2}
+
+    async def test_child_ids_collected_from_resolved_documents(self):
+        # A projected read can return *resolved* component documents (bare ``.id``) rather than Links;
+        # the cascade must read the id off either form (regression: 'Structure' has no attribute 'ref').
+        svc, contrib_repo, struct_repo, *_ = _make_service()
+        s1, s2 = _oid(), _oid()
+        doc = SimpleNamespace(id=_oid(), project="proj", structures=[_resolved(s1), _resolved(s2)], attachments=[], tables=[])
         contrib_repo.read_many.side_effect = [_page([doc]), _page([])]
         struct_repo.delete_many.return_value = DeleteSummary.of("structures", 2)
         contrib_repo.delete_many.side_effect = [_delete_result(1), _delete_result(0)]

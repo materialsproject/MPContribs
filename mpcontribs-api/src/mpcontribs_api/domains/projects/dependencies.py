@@ -6,6 +6,7 @@ from mpcontribs_api.dependencies import UserDep
 from mpcontribs_api.domains.consumers.dependencies import ConsumerServiceDep
 from mpcontribs_api.domains.contributions.dependencies import ContributionServiceDep
 from mpcontribs_api.domains.initiatives.repository import MongoDbInitiativeRepository
+from mpcontribs_api.domains.project_groups.repository import MongoDbProjectGroupRepository
 from mpcontribs_api.domains.projects.repository import (
     MongoDbProjectRepository,
 )
@@ -22,6 +23,7 @@ async def get_project_service(
         projects=MongoDbProjectRepository(user),
         initiatives=MongoDbInitiativeRepository(user),
         contribution_service=contribution_service,
+        project_groups=MongoDbProjectGroupRepository(user),
         limits=await consumers.effective_limits(user.consumer_id),
     )
 

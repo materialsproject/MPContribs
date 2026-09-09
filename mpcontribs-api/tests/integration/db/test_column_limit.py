@@ -23,6 +23,7 @@ from mpcontribs_api.domains.contributions.models import ContributionFilter, Cont
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
 from mpcontribs_api.domains.contributions.service import ContributionService
 from mpcontribs_api.domains.initiatives.repository import MongoDbInitiativeRepository
+from mpcontribs_api.domains.project_groups.repository import MongoDbProjectGroupRepository
 from mpcontribs_api.domains.projects.models import Column, Project, ProjectIn
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
 from mpcontribs_api.domains.projects.service import ProjectService
@@ -56,6 +57,8 @@ def _project_service() -> ProjectService:
         user=ADMIN,
         projects=MongoDbProjectRepository(ADMIN),
         initiatives=MongoDbInitiativeRepository(ADMIN),
+        contribution_service=_service(None),
+        project_groups=MongoDbProjectGroupRepository(ADMIN),
     )
 
 

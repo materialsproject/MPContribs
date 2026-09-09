@@ -68,3 +68,17 @@ class MongoDbProjectGroupRepository(
             response_type=UpdateResponse.NEW_DOCUMENT,
         )
         return await query  # pyright: ignore[reportGeneralTypeIssues] # beanie UpdateQuery is awaitable
+
+    async def clear_project_refs(self, project_id: ShortStr) -> int:
+        """Pull a deleted project's reference out of every group that lists it.
+
+        Needed in addition to delete_project_refs: clear_project_refs clears a single project from all project_groups,
+        delete_project_refs is scoped to a user.
+
+        Args:
+            project_id (ShortStr): the deleted project whose back-references to clear
+        """
+        ref = DBRef("projects", project_id)
+        collection = self.document_model.get_pymongo_collection()
+        result = await collection.update_many({"projects": ref}, {"$pull": {"projects": ref}})
+        return result.modified_count

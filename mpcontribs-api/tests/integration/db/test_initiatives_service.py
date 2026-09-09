@@ -1,14 +1,23 @@
+from typing import cast
+
 import pytest
 from beanie import Link
+from pymongo import AsyncMongoClient
 
 from mpcontribs_api.authz import User
 from mpcontribs_api.config import get_settings
+from mpcontribs_api.domains.attachments.repository import MongoDbAttachmentRepository
+from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
+from mpcontribs_api.domains.contributions.service import ContributionService
 from mpcontribs_api.domains.initiatives.models import Initiative, InitiativeFilter, InitiativeIn, InitiativePatch
 from mpcontribs_api.domains.initiatives.repository import MongoDbInitiativeRepository
 from mpcontribs_api.domains.initiatives.service import InitiativeService
+from mpcontribs_api.domains.project_groups.repository import MongoDbProjectGroupRepository
 from mpcontribs_api.domains.projects.models import Project, ProjectIn, ProjectPatch
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
 from mpcontribs_api.domains.projects.service import ProjectService
+from mpcontribs_api.domains.structures.repository import MongoDbStructureRepository
+from mpcontribs_api.domains.tables.repository import MongoDbTableRepository
 from mpcontribs_api.exceptions import ConflictError, NotFoundError, PermissionError, ValidationError
 from mpcontribs_api.pagination import CursorParams
 
@@ -28,11 +37,30 @@ BOB_EMAIL = "google:bob@example.com"
 CAROL_EMAIL = "google:carol@example.com"
 
 
+def _contribution_service(user: User) -> ContributionService:
+    """A real ContributionService for ProjectService construction.
+
+    These tests exercise only the initiative-assignment (update) path, which never dereferences the
+    client or the cascade collaborators, so a ``None`` client is fine here.
+    """
+    return ContributionService(
+        client=cast(AsyncMongoClient, None),
+        user=user,
+        projects=MongoDbProjectRepository(user),
+        contributions=MongoDbContributionRepository(user),
+        structures=MongoDbStructureRepository(user),
+        attachments=MongoDbAttachmentRepository(user),
+        tables=MongoDbTableRepository(user),
+    )
+
+
 def _service(user: User) -> ProjectService:
     return ProjectService(
         user=user,
         projects=MongoDbProjectRepository(user),
         initiatives=MongoDbInitiativeRepository(user),
+        contribution_service=_contribution_service(user),
+        project_groups=MongoDbProjectGroupRepository(user),
     )
 
 

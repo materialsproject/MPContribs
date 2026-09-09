@@ -1027,7 +1027,11 @@ class ContributionService:
             affected_projects.update(c.project for c in page.items if c.project is not None)
             # Gather this page's referenced component ids per field, before deleting anything.
             child_ids = {
-                field: {link.ref.id for c in page.items for link in (getattr(c, field) or [])}
+                field: {
+                    (link.ref.id if isinstance(link, Link) else link.id)
+                    for c in page.items
+                    for link in (getattr(c, field) or [])
+                }
                 for field in self._children
             }
 

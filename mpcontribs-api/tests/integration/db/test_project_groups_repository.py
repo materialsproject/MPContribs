@@ -217,3 +217,42 @@ class TestInsertProjectGroup:
         await _insert("ins-shared-name", owner=ALICE_EMAIL)
         other = await _insert("ins-shared-name", owner="google:bob@example.com")
         assert other.owner == "google:bob@example.com"
+
+
+# ---------------------------------------------------------------------------
+# clear_project_refs  (unscoped cross-user cleanup when a project is deleted)
+# ---------------------------------------------------------------------------
+
+
+async def _project_ids(name: str) -> list[str]:
+    doc = await ProjectGroup.find_one(ProjectGroup.name == name)
+    assert doc is not None
+    return sorted(link.ref.id for link in (doc.projects or []))
+
+
+class TestClearProjectRefs:
+    async def test_pulls_project_from_all_referencing_groups(self, db):
+        # A group owned by Alice and one owned by Bob both reference "mp-x"; Alice's also has "mp-y".
+        await _insert("cpr-alice", owner=ALICE_EMAIL, projects=["mp-x", "mp-y"])
+        await _insert("cpr-bob", owner=BOB_EMAIL, projects=["mp-x"])
+        # Called by Bob, who cannot even see Alice's group — the cleanup is deliberately unscoped so a
+        # deleted project never lingers in another user's group.
+        modified = await _repo(BOB).clear_project_refs("mp-x")
+        assert modified == 2
+        assert await _project_ids("cpr-alice") == ["mp-y"]  # mp-x pulled, mp-y kept
+        assert await _project_ids("cpr-bob") == []  # mp-x pulled, group survives
+        # Both group documents still exist — groups are modified, not deleted.
+        assert await ProjectGroup.find_one(ProjectGroup.name == "cpr-alice") is not None
+        assert await ProjectGroup.find_one(ProjectGroup.name == "cpr-bob") is not None
+
+    async def test_is_idempotent(self, db):
+        await _insert("cpr-idem", projects=["mp-x", "mp-y"])
+        assert await _repo(ADMIN).clear_project_refs("mp-x") == 1
+        # A retry after the reference is already gone is a no-op (safe under partial-failure retries).
+        assert await _repo(ADMIN).clear_project_refs("mp-x") == 0
+        assert await _project_ids("cpr-idem") == ["mp-y"]
+
+    async def test_unreferenced_project_is_noop(self, db):
+        await _insert("cpr-untouched", projects=["mp-y"])
+        assert await _repo(ADMIN).clear_project_refs("mp-x") == 0
+        assert await _project_ids("cpr-untouched") == ["mp-y"]

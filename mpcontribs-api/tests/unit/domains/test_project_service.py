@@ -72,11 +72,14 @@ def _service(user: User, *, existing=None, scoped=None, count: int = 0, limits: 
     initiatives = AsyncMock()
     contribution_service = AsyncMock()
     contribution_service.delete_many.return_value = DeleteSummary.of("contributions", 5)
+    project_groups = AsyncMock()
+    # Reachable in assertions via ``svc._project_groups`` (like ``projects`` is ``svc._projects``).
     svc = ProjectService(
         user=user,
         projects=projects,
         initiatives=initiatives,
         contribution_service=contribution_service,
+        project_groups=project_groups,
         limits=limits,
     )
     return svc, projects, initiatives
@@ -93,12 +96,14 @@ class TestDelete:
         with pytest.raises(NotFoundError):
             await svc.delete_one({"id": "proj-1"})
         projects.delete_one.assert_not_called()
+        svc._project_groups.clear_project_refs.assert_not_called()
 
     async def test_non_owner_raises_permission(self):
         svc, projects, _ = _service(BOB, scoped=_project(owner=ALICE_EMAIL))
         with pytest.raises(AppPermissionError):
             await svc.delete_one({"id": "proj-1"})
         projects.delete_one.assert_not_called()
+        svc._project_groups.clear_project_refs.assert_not_called()
 
     async def test_owner_deletes(self):
         svc, projects, _ = _service(ALICE, scoped=_project(owner=ALICE_EMAIL))
@@ -106,6 +111,12 @@ class TestDelete:
         projects.delete_one.assert_awaited_once_with({"id": "proj-1"})
         # The project's own count merges with the cascaded contribution summary.
         assert result.root == {"projects": 1, "contributions": 5}
+
+    async def test_owner_delete_clears_project_group_refs(self):
+        svc, _, _ = _service(ALICE, scoped=_project(id="proj-1", owner=ALICE_EMAIL))
+        await svc.delete_one({"id": "proj-1"})
+        # The deleted project is pulled from every group that referenced it, keyed by its id.
+        svc._project_groups.clear_project_refs.assert_awaited_once_with("proj-1")
 
     async def test_admin_deletes_any(self):
         svc, projects, _ = _service(ADMIN, scoped=_project(owner=ALICE_EMAIL))
