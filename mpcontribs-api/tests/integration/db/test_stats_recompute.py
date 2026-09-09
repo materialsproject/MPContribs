@@ -177,19 +177,10 @@ class TestStatsRecomputeLifecycle:
         assert (cols["bandGap"].min, cols["bandGap"].max) == (2.1, 2.1)
         assert (cols["energy"].min, cols["energy"].max) == (-5.0, -5.0)
 
-        # --- remove it -> back to empty ---
-        # NOTE: svc.delete_many() cannot delete a contribution that references a real table
-        # component: its cascade re-reads the contribution through ContributionFilter, whose nested
-        # component sub-filters make Beanie fetch the linked components, and the fetched Table.data
-        # frame fails to round-trip (Table.data is a PolarsFrame that pymongo stores as bare column
-        # lists which _coerce_frame rejects on read). That is a pre-existing bug in the tables domain,
-        # unrelated to the stats recompute. (Structure.lattice.matrix used to hit the same bug but is
-        # now a plain nested-list type that round-trips.) To still assert the removal recompute, drop
-        # the docs directly and recompute; the no-components case below covers delete() end-to-end.
-        await db["contributions"].delete_many({"project": PID})
-        for coll in ("structures", "tables"):
-            await db[coll].delete_many({})
-        await svc.update_project([PID])
+        delete_summary = await svc.delete_many(ContributionFilter(project=PID))
+        assert delete_summary["contributions"] == 1
+        assert delete_summary["structures"] == 2
+        assert delete_summary["tables"] == 2
         await _assert_empty()
 
         # --- insert one contribution with no components ---

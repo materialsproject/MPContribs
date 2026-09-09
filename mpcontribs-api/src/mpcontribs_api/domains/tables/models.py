@@ -6,7 +6,6 @@ from beanie import PydanticObjectId
 from pydantic import (
     BaseModel,
     ConfigDict,
-    field_serializer,
     model_validator,
 )
 
@@ -122,14 +121,6 @@ class TableFilter(BaseFilter):
 
     class Constants(BaseFilter.Constants):
         model = Table
-
-    @field_serializer("id", "id__in", "id__neq")
-    def id_to_str(self, v: PydanticObjectId | list[PydanticObjectId] | None) -> str | list[str] | None:
-        if v is None:
-            return None
-        if isinstance(v, list):
-            return sorted(str(o) for o in v)
-        return str(v)
 
 
 class TableOut(DocumentOut[PydanticObjectId]):
