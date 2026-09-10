@@ -10,7 +10,7 @@ from pymongo.operations import SearchIndexModel
 class SearchIndex:
     """A single Atlas Search index definition.
 
-    Pymongo.SearchIndexModel does not keep paramters accessible.
+    Pymongo.SearchIndexModel does not keep parameters accessible.
     """
 
     name: str
