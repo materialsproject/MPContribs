@@ -171,4 +171,7 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
             pipeline.append({"$match": self._scope})
         pipeline.append({"$project": {"_id": 1}})
         collection = self.document_model.get_pymongo_collection()
-        return [self.out_model(**doc) async for doc in await collection.aggregate(pipeline)]
+        return [
+            self.out_model.model_validate(obj=doc, from_attributes=True)
+            async for doc in await collection.aggregate(pipeline)
+        ]
