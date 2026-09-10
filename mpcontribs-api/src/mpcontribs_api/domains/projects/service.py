@@ -8,7 +8,13 @@ from mpcontribs_api.config import ConsumerLimits, get_settings
 from mpcontribs_api.domains._shared.models import DeleteResponse
 from mpcontribs_api.domains.initiatives.models import Initiative
 from mpcontribs_api.domains.initiatives.repository import MongoDbInitiativeRepository
-from mpcontribs_api.domains.projects.models import Project, ProjectFilter, ProjectIn, ProjectOut, ProjectPatch
+from mpcontribs_api.domains.projects.models import (
+    Project,
+    ProjectFilter,
+    ProjectIn,
+    ProjectOut,
+    ProjectPatch,
+)
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
 from mpcontribs_api.exceptions import ConflictError, NotFoundError, PermissionError, ValidationError
 from mpcontribs_api.pagination import CursorParams, Page
@@ -216,3 +222,9 @@ class ProjectService:
                 )
 
         return DBRef("initiatives", initiative.id)
+
+    async def search(self, query: str) -> list[ProjectOut]:
+        """Full-text search across projects; the Atlas Search query is run by the repository."""
+        if not query:
+            raise ValidationError(message="search query cannot be empty")
+        return await self._projects.search(query)

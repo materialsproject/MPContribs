@@ -40,6 +40,25 @@ async def read_many(
     return await service.read_many(filter=filter, pagination=pagination, fields=selected)
 
 
+@router.get("/search")
+async def search(
+    service: ProjectServiceDep,
+    query: str,
+):
+    """Full-text search across projects.
+
+    Declared before ``/{id}`` so the literal ``search`` segment is never captured as a project id.
+
+    Args:
+        service (ProjectServiceDep): the project service we depend on
+        query (str): the free-text search string
+
+    Returns:
+        list[ProjectOut]: the matching projects
+    """
+    return await service.search(query)
+
+
 @router.get("/{id}")
 async def read_one(
     id: str,

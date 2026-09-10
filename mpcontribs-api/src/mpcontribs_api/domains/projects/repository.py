@@ -12,6 +12,7 @@ from mpcontribs_api.domains.projects.models import (
     ProjectIn,
     ProjectOut,
     ProjectPatch,
+    ProjectSearchIndex,
     Stats,
 )
 from mpcontribs_api.scope import Granted, Owned, Public, Scope
@@ -143,3 +144,29 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
             {"$set": {"initiative": None}},
         )
         return result.modified_count
+
+    async def search(self, query: str) -> list[ProjectOut]:
+        """Run an Atlas Search wildcard text query across the project index.
+
+        The source index is dynamic, so the ``*`` wildcard path matches ``query`` against every
+        indexed field through its analyzer. Only ``_id`` is projected.
+
+        Args:
+            query: the free-text search string
+
+        Returns:
+            list[ProjectOut]: the matching projects (id only)
+        """
+        pipeline: list[dict[str, Any]] = [
+            {
+                "$search": {
+                    "index": ProjectSearchIndex.SEARCH,
+                    # Wildcard path: match the query against every field the dynamic index covers,
+                    # each through its own analyzer.
+                    "text": {"path": {"wildcard": "*"}, "query": query},
+                },
+            },
+            {"$project": {"_id": 1}},
+        ]
+        collection = self.document_model.get_pymongo_collection()
+        return [self.out_model(**doc) async for doc in await collection.aggregate(pipeline)]
