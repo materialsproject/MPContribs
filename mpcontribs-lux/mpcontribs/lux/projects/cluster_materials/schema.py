@@ -1,8 +1,8 @@
-"""Pydantic schemas for contributed cluster and cited flat-band results."""
+"""Pydantic schema for contributed cluster and cited flat-band results."""
 
 from __future__ import annotations
 
-from math import isclose
+import re
 from typing import Annotated, Literal
 
 from emmet.core.mpid import MPID
@@ -32,79 +32,50 @@ def _validate_compound_system(value: str) -> str:
     return value
 
 
+def _split_comma_separated(value: str, field_name: str) -> list[str]:
+    """Return canonical comma-separated values or raise a validation error."""
+    values = value.split(",")
+    if any(not item or item != item.strip() for item in values):
+        raise ValueError(
+            f"{field_name} must contain nonempty values separated by commas "
+            "without spaces"
+        )
+    return values
+
+
+def _validate_lattice_dimensionalities(value: str) -> str:
+    """Validate comma-separated flat-band lattice dimensionalities."""
+    values = _split_comma_separated(value, "latticeDimensionalities")
+    if any(item not in {"1", "2", "3"} for item in values):
+        raise ValueError("latticeDimensionalities entries must be 1, 2, or 3")
+    return value
+
+
+def _validate_lattice_ids(value: str) -> str:
+    """Validate comma-separated flat-band lattice identifiers."""
+    values = _split_comma_separated(value, "latticeIds")
+    if any(re.fullmatch(r"(?:LI|SK)-\d+", item) is None for item in values):
+        raise ValueError("latticeIds entries must match LI-<digits> or SK-<digits>")
+    return value
+
+
 CompoundSystem = Annotated[
     str,
     StringConstraints(max_length=5),
     AfterValidator(_validate_compound_system),
 ]
-ClusterLabel = Annotated[
+CommaSeparatedDimensionalities = Annotated[
     str,
-    StringConstraints(pattern=r"^X\d+$", max_length=16),
+    StringConstraints(min_length=1, max_length=64),
+    AfterValidator(_validate_lattice_dimensionalities),
 ]
-FlatBandLatticeId = Annotated[
+CommaSeparatedLatticeIds = Annotated[
     str,
-    StringConstraints(pattern=r"^(?:LI|SK)-\d+$", max_length=16),
+    StringConstraints(min_length=1, max_length=512),
+    AfterValidator(_validate_lattice_ids),
 ]
 
 _MODEL_CONFIG = ConfigDict(extra="forbid", allow_inf_nan=False)
-
-
-class ClusterDescriptor(BaseModel):
-    """Properties of one cluster instance identified by Cluster Finder."""
-
-    model_config = _MODEL_CONFIG
-
-    size: int = Field(
-        ge=2,
-        description="Number of atomic sites in this cluster instance.",
-    )
-    averageDistance: float = Field(
-        gt=0,
-        description=(
-            "Mean Cartesian distance, in angstroms, over the connected site pairs "
-            "used by Cluster Finder for this cluster instance."
-        ),
-    )
-    elements: list[Element] = Field(
-        min_length=2,
-        description="Element symbol at each site in this cluster instance.",
-    )
-    isExtended: bool = Field(
-        description=(
-            "Whether supercell analysis identifies the cluster as part of an "
-            "extended cluster network."
-        )
-    )
-    isShared: bool = Field(
-        description=(
-            "Whether supercell analysis identifies sharing between periodic "
-            "cluster images."
-        )
-    )
-
-    @model_validator(mode="after")
-    def validate_cluster(self) -> ClusterDescriptor:
-        """Enforce invariants used when Cluster Finder created the CSV."""
-        if len(self.elements) != self.size:
-            raise ValueError("elements must contain exactly size entries")
-        if self.isExtended and self.isShared:
-            raise ValueError("isExtended and isShared cannot both be true")
-        return self
-
-
-class ClusterPointGroup(BaseModel):
-    """Point-group assignment for one unique cluster type."""
-
-    model_config = _MODEL_CONFIG
-
-    label: ClusterLabel = Field(
-        description="Cluster Finder label for the unique cluster type."
-    )
-    symbol: str = Field(
-        min_length=1,
-        max_length=16,
-        description="Schoenflies point-group symbol of the unique cluster type.",
-    )
 
 
 class FlatBandProperties(BaseModel):
@@ -123,16 +94,17 @@ class FlatBandProperties(BaseModel):
         ge=1,
         description="Number of sites present in the selected flat-band model.",
     )
-    latticeDimensionalities: list[Literal[1, 2, 3]] = Field(
-        min_length=1,
-        description="Dimensionality of each classified flat-band lattice motif.",
-    )
-    latticeIds: list[FlatBandLatticeId] = Field(
-        min_length=1,
+    latticeDimensionalities: CommaSeparatedDimensionalities = Field(
         description=(
-            "Flat-band lattice identifiers assigned by Neves et al.; LI denotes "
-            "lattice-invariant classification and SK denotes Systre-key "
-            "classification."
+            "Comma-separated integer dimensionalities, in latticeIds order, for "
+            "the classified flat-band lattice motifs."
+        ),
+    )
+    latticeIds: CommaSeparatedLatticeIds = Field(
+        description=(
+            "Comma-separated flat-band lattice identifiers assigned by Neves et "
+            "al.; LI denotes lattice-invariant classification and SK denotes "
+            "Systre-key classification."
         ),
     )
     remainsFlatWithDecay: bool = Field(
@@ -145,7 +117,9 @@ class FlatBandProperties(BaseModel):
     @model_validator(mode="after")
     def validate_lattice_annotations(self) -> FlatBandProperties:
         """Require one dimensionality annotation for each lattice identifier."""
-        if len(self.latticeDimensionalities) != len(self.latticeIds):
+        if len(self.latticeDimensionalities.split(",")) != len(
+            self.latticeIds.split(",")
+        ):
             raise ValueError(
                 "latticeDimensionalities and latticeIds must have equal lengths"
             )
@@ -153,7 +127,7 @@ class FlatBandProperties(BaseModel):
 
 
 class ClusterMaterial(BaseModel):
-    """Contributed cluster results for one Materials Project material."""
+    """Main data fields for one Cluster Materials contribution."""
 
     model_config = _MODEL_CONFIG
 
@@ -171,11 +145,7 @@ class ClusterMaterial(BaseModel):
     )
     numberOfClusters: int = Field(
         ge=1,
-        description="Number of cluster instances reported for this material.",
-    )
-    clusters: list[ClusterDescriptor] = Field(
-        min_length=1,
-        description="Cluster instances identified in the material.",
+        description="Number of rows in this contribution's clusters table.",
     )
     clusterLatticeSpaceGroup: str = Field(
         min_length=1,
@@ -183,13 +153,6 @@ class ClusterMaterial(BaseModel):
         description=(
             "Space-group symbol of the derived lattice whose sites are unique "
             "cluster centroids; this is not the parent material space group."
-        ),
-    )
-    clusterPointGroups: list[ClusterPointGroup] = Field(
-        min_length=1,
-        description=(
-            "Point groups of unique cluster types. Its length may be smaller than "
-            "numberOfClusters when instances are symmetry-equivalent."
         ),
     )
     predictedDimensionality: Literal["0D", "1D", "2D", "3D"] = Field(
@@ -201,8 +164,8 @@ class ClusterMaterial(BaseModel):
     minimumAverageDistance: float = Field(
         gt=0,
         description=(
-            "Minimum, in angstroms, of averageDistance over all reported cluster "
-            "instances."
+            "Minimum averageDistance, in angstroms, among the rows in this "
+            "contribution's clusters table."
         ),
     )
     isPolar: bool = Field(
@@ -234,31 +197,3 @@ class ClusterMaterial(BaseModel):
             "doi:10.1038/s41524-024-01220-x."
         ),
     )
-
-    @model_validator(mode="after")
-    def validate_material(self) -> ClusterMaterial:
-        """Enforce cross-field invariants for the contributed cluster data."""
-        if len(self.clusters) != self.numberOfClusters:
-            raise ValueError("numberOfClusters must equal len(clusters)")
-
-        minimum = min(cluster.averageDistance for cluster in self.clusters)
-        if not isclose(
-            minimum,
-            self.minimumAverageDistance,
-            rel_tol=1e-9,
-            abs_tol=1e-6,
-        ):
-            raise ValueError(
-                "minimumAverageDistance must equal the minimum cluster distance"
-            )
-
-        if len(self.clusterPointGroups) > self.numberOfClusters:
-            raise ValueError(
-                "clusterPointGroups cannot contain more entries than clusters"
-            )
-
-        labels = [point_group.label for point_group in self.clusterPointGroups]
-        if len(labels) != len(set(labels)):
-            raise ValueError("clusterPointGroups labels must be unique")
-
-        return self
