@@ -171,16 +171,16 @@ async def search(
     service: ContributionServiceDep,
     query: str,
 ):
-    """Full-text search across projects.
+    """Search formulas.
 
     Declared before ``/{id}`` so the literal ``search`` segment is never captured as a contribution id.
 
     Args:
-        service (ContributionServiceDep): the project service we depend on
+        service (ContributionServiceDep): the contribution service we depend on
         query (str): the free-text search string
 
     Returns:
-        list[ContributionOut]: the matching projects
+        list[ContributionOut]: the matching contributions
     """
     return await service.search(query)
 
