@@ -16,6 +16,7 @@ from mpcontribs_api.domains.contributions.models import (
     ContributionIn,
     ContributionOut,
     ContributionPatch,
+    ContributionSearchIndex,
     Scalar,
 )
 from mpcontribs_api.domains.contributions.stats import (
@@ -340,3 +341,32 @@ class MongoDbContributionRepository(
                 f"contribution '{id}' cannot be upserted: the resulting identity already exists",
                 id=id,
             ) from err
+
+    async def search(self, terms: list[str], limit: int) -> list[ContributionOut]:
+        """Run the formula-autocomplete Atlas Search over ``terms``, shortest formula first.
+
+        ``terms`` are the element-count permutations the service derives from the query formula. The
+        ``$match`` drops formulas shorter than the query so a search for ``Fe2O3`` never surfaces a
+        substring match like ``FeO``.
+
+        Args:
+            terms: the formula permutations to match against the ``formula`` field
+            limit: the maximum number of matches to return
+
+        Returns:
+            list[ContributionOut]: the matching contributions, shortest formula first
+        """
+        pipeline: list[dict[str, Any]] = [
+            {
+                "$search": {
+                    "index": ContributionSearchIndex.FORMULA_AUTOCOMPLETE,
+                    "text": {"path": "formula", "query": terms},
+                }
+            },
+            {"$project": {"formula": 1, "length": {"$strLenCP": "$formula"}, "project": 1}},
+            {"$match": {"length": {"$gte": len(terms[0])}}},
+            {"$limit": limit},
+            {"$sort": {"length": 1}},
+        ]
+        collection = self.document_model.get_pymongo_collection()
+        return [self.out_model(**doc) async for doc in await collection.aggregate(pipeline)]

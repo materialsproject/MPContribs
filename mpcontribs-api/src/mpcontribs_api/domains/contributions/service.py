@@ -3,11 +3,14 @@ from collections import defaultdict
 from collections.abc import AsyncIterable, Iterable
 from contextlib import AbstractAsyncContextManager
 from dataclasses import dataclass
+from itertools import permutations
 from typing import Any, cast
 
 import structlog
 from beanie import Link, PydanticObjectId
 from pydantic import ValidationError as PydanticValidationError
+from pymatgen.core import Composition
+from pymatgen.core.composition import CompositionError
 from pymongo import AsyncMongoClient
 from pymongo.asynchronous.client_session import AsyncClientSession
 from pymongo.errors import BulkWriteError
@@ -1069,3 +1072,31 @@ class ContributionService:
             columns = [Column(path=c.path, min=c.min, max=c.max, unit=c.unit) for c in agg.columns]
             updates[pid] = (stats, columns)
         await self._projects.set_stats_and_columns(updates)
+
+    async def search(self, query: str, limit: int = 5) -> list[ContributionOut]:
+        if not query:
+            raise ValidationError(message="search query cannot be empty")
+        try:
+            comp = Composition(query)
+        except (CompositionError, ValueError) as err:
+            raise ValidationError(message="invalid formula provided", formula=query) from err
+
+        # Build the element-count permutations to match against the formula index.
+        # This block could probably be replaced by a MongoDB Analyzer.
+        ind_str = []
+        if len(comp) == 1:
+            d = comp.get_integer_formula_and_factor()
+            ind_str.append(d[0] + str(int(d[1])) if d[1] != 1 else d[0])
+        else:
+            for i, j in comp.reduced_composition.items():
+                ind_str.append(i.name + str(int(j)) if j != 1 else i.name)
+        final_terms = ["".join(entry) for entry in permutations(ind_str)]
+
+        try:
+            return await self._contributions.search(final_terms, limit)
+        except Exception as err:
+            raise AppError(
+                message="search cannot be completed. Please try a different formula or try again later.",
+                formula=query,
+                limit=limit,
+            ) from err

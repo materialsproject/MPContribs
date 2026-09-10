@@ -166,6 +166,25 @@ async def update_one_by_identity(
     return await service.update_one(identity.as_dict(), update=update, replace_data=replace_data)
 
 
+@router.get("/search")
+async def search(
+    service: ContributionServiceDep,
+    query: str,
+):
+    """Full-text search across projects.
+
+    Declared before ``/{id}`` so the literal ``search`` segment is never captured as a contribution id.
+
+    Args:
+        service (ContributionServiceDep): the project service we depend on
+        query (str): the free-text search string
+
+    Returns:
+        list[ContributionOut]: the matching projects
+    """
+    return await service.search(query)
+
+
 @router.delete("/{id}", dependencies=[Depends(require_user)])
 async def delete_one(
     service: ContributionServiceDep,
