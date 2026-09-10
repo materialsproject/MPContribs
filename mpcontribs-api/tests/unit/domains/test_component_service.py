@@ -8,7 +8,7 @@ from mpcontribs_api.domains._shared.bulk import BulkFailure
 from mpcontribs_api.domains._shared.models import DeleteSummary
 from mpcontribs_api.domains._shared.service import ComponentService
 from mpcontribs_api.domains.attachments.models import Attachment, AttachmentFilter
-from mpcontribs_api.exceptions import NotFoundError
+from mpcontribs_api.exceptions import ConflictError, NotFoundError
 
 pytestmark = pytest.mark.asyncio
 
@@ -137,13 +137,13 @@ async def test_delete_by_id_not_reachable_raises_not_found():
         await svc.delete_one({"id": str(oid)})
 
 
-async def test_delete_by_id_referenced_is_skipped():
+async def test_delete_by_id_referenced_raises_conflict():
     oid = _oid()
     svc, components, _ = _make_service(candidate_ids=[], reachable={oid}, referenced={oid})
 
-    result = await svc.delete_one({"id": str(oid)})
+    with pytest.raises(ConflictError):
+        await svc.delete_one({"id": str(oid)})
 
-    assert result.root == {}
     components.delete_one.assert_not_awaited()
 
 

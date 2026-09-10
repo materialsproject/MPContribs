@@ -14,7 +14,7 @@ from mpcontribs_api.domains._shared.components import MongoDbComponentsRepositor
 from mpcontribs_api.domains._shared.models import Component, ComponentIn, DeleteSummary, DocumentOut
 from mpcontribs_api.domains._shared.types import DownloadFormat, ShortMimeFormat
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
-from mpcontribs_api.exceptions import NotFoundError
+from mpcontribs_api.exceptions import ConflictError, NotFoundError
 from mpcontribs_api.pagination import CursorParams, Page
 
 
@@ -202,5 +202,5 @@ class ComponentService[
         if oid is None or not await self._contributions.referenced_component_ids(self._ref_field, [oid], scoped=True):
             raise NotFoundError(f"{self._components.document_model.__name__} not found", **identifiers)
         if await self._contributions.referenced_component_ids(self._ref_field, [oid], scoped=False):
-            return DeleteSummary()
+            raise ConflictError(message=f"{self.__class__} still referenced, cannot delete", id=oid)
         return await self._components.delete_one({"id": oid})
