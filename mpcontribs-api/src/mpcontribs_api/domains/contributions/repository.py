@@ -343,18 +343,18 @@ class MongoDbContributionRepository(
             ) from err
 
     async def search(self, terms: list[str], limit: int) -> list[ContributionOut]:
-        """Run the formula-autocomplete Atlas Search over ``terms``, shortest formula first.
+        """Run the formula-autocomplete Atlas Search over ``terms``, scoped to the user.
 
         ``terms`` are the element-count permutations the service derives from the query formula. The
-        ``$match`` drops formulas shorter than the query so a search for ``Fe2O3`` never surfaces a
-        substring match like ``FeO``.
+        length ``$match`` drops formulas shorter than the query so a search for ``Fe2O3`` never
+        surfaces a substring match like ``FeO``; results are the ``limit`` shortest visible formulas.
 
         Args:
             terms: the formula permutations to match against the ``formula`` field
             limit: the maximum number of matches to return
 
         Returns:
-            list[ContributionOut]: the matching contributions, shortest formula first
+            list[ContributionOut]: the matching contributions visible to the caller, shortest formula first
         """
         pipeline: list[dict[str, Any]] = [
             {
@@ -363,10 +363,17 @@ class MongoDbContributionRepository(
                     "text": {"path": "formula", "query": terms},
                 }
             },
-            {"$project": {"formula": 1, "length": {"$strLenCP": "$formula"}, "project": 1}},
-            {"$match": {"length": {"$gte": len(terms[0])}}},
-            {"$limit": limit},
-            {"$sort": {"length": 1}},
         ]
+        # TODO: Can optimize further by modifying the Atlas Search to use a compound.filter instead of a match
+        if self._scope:
+            pipeline.append({"$match": self._scope})
+        pipeline.extend(
+            [
+                {"$project": {"formula": 1, "length": {"$strLenCP": "$formula"}, "project": 1}},
+                {"$match": {"length": {"$gte": len(terms[0])}}},
+                {"$limit": limit},
+                {"$sort": {"length": 1}},
+            ]
+        )
         collection = self.document_model.get_pymongo_collection()
         return [self.out_model(**doc) async for doc in await collection.aggregate(pipeline)]

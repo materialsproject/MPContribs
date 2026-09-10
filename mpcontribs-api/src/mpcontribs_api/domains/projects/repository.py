@@ -146,7 +146,7 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
         return result.modified_count
 
     async def search(self, query: str) -> list[ProjectOut]:
-        """Run an Atlas Search wildcard text query across the project index.
+        """Run an Atlas Search wildcard text query across the project index, scoped to the user.
 
         The source index is dynamic, so the ``*`` wildcard path matches ``query`` against every
         indexed field through its analyzer. Only ``_id`` is projected.
@@ -155,7 +155,7 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
             query: the free-text search string
 
         Returns:
-            list[ProjectOut]: the matching projects (id only)
+            list[ProjectOut]: the matching projects visible to the caller (id only)
         """
         pipeline: list[dict[str, Any]] = [
             {
@@ -166,7 +166,9 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
                     "text": {"path": {"wildcard": "*"}, "query": query},
                 },
             },
-            {"$project": {"_id": 1}},
         ]
+        if self._scope:
+            pipeline.append({"$match": self._scope})
+        pipeline.append({"$project": {"_id": 1}})
         collection = self.document_model.get_pymongo_collection()
         return [self.out_model(**doc) async for doc in await collection.aggregate(pipeline)]
