@@ -23,6 +23,7 @@ from mpcontribs_api.authz import User
 from mpcontribs_api.config import get_settings
 from mpcontribs_api.domains._shared.bulk import BulkFailure, BulkWriteSummary, bulk_failure_from_exception
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DeleteResponse, DocumentOut
+from mpcontribs_api.domains._shared.search_index import SearchQuery
 from mpcontribs_api.domains._shared.types import DownloadFormat, Identity, ShortMimeFormat
 from mpcontribs_api.exceptions import ConflictError, DownloadError, NotFoundError, ValidationError
 from mpcontribs_api.pagination import CursorParams, Page, encode_cursor
@@ -192,6 +193,23 @@ class MongoDbRepository[
         if scoped and self._scope:
             match = {"$and": [self._scope, match]}
         return await self.document_model.get_pymongo_collection().count_documents(match)
+
+    async def _run_search(self, query: SearchQuery) -> list[TOut]:
+        """Execute an Atlas ``$search`` ``SearchQuery``, scoped to the user, mapped to ``out_model``.
+
+        Args:
+            query (SearchQuery): the search built from a model's ``SearchIndex``
+
+        Returns:
+            list[TOut]: the matching documents visible to the caller
+        """
+        search_stage, *stages = query.to_pipeline()
+        pipeline = [search_stage, {"$match": dict(self._scope)}, *stages] if self._scope else [search_stage, *stages]
+        collection = self.document_model.get_pymongo_collection()
+        return [
+            self.out_model.model_validate(obj=doc, from_attributes=True)
+            async for doc in await collection.aggregate(pipeline)
+        ]
 
     async def insert_one(self, document: TDoc, session: AsyncClientSession | None = None) -> TDoc:
         """Persist a fully-built document, rejecting an existing duplicate.

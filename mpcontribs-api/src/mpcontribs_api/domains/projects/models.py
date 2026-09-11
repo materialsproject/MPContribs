@@ -158,7 +158,8 @@ class ProjectBase(BaseModel):
 class ProjectSearchIndex(StrEnum):
     """Names of Project's Atlas Search indexes (single source of truth for each index name)."""
 
-    SEARCH = "mpcontribs-dev-project-search"
+    # NOTE the legacy ``mpcontribs-dev-project-search`` index is now orphaned and needs manual deletion in Atlas.
+    SEARCH = "project-search"
 
 
 class Project(ProjectBase, BaseDocumentWithInput[ShortStr], SearchIndexed):

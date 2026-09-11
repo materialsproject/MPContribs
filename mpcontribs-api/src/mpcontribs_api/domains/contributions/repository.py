@@ -347,7 +347,7 @@ class MongoDbContributionRepository(
 
         ``terms`` are the element-count permutations the service derives from the query formula. The
         length ``$match`` drops formulas shorter than the query so a search for ``Fe2O3`` never
-        surfaces a substring match like ``FeO``; results are the ``limit`` shortest visible formulas.
+        surfaces a substring match like ``FeO``.
 
         Args:
             terms: the formula permutations to match against the ``formula`` field
@@ -356,27 +356,13 @@ class MongoDbContributionRepository(
         Returns:
             list[ContributionOut]: the matching contributions visible to the caller, shortest formula first
         """
-        pipeline: list[dict[str, Any]] = [
-            {
-                "$search": {
-                    "index": ContributionSearchIndex.FORMULA_AUTOCOMPLETE,
-                    "text": {"path": "formula", "query": terms},
-                }
-            },
-        ]
         # TODO: Can optimize further by modifying the Atlas Search to use a compound.filter instead of a match
-        if self._scope:
-            pipeline.append({"$match": self._scope})
-        pipeline.extend(
-            [
-                {"$project": {"formula": 1, "length": {"$strLenCP": "$formula"}, "project": 1}},
-                {"$match": {"length": {"$gte": len(terms[0])}}},
-                {"$limit": limit},
-                {"$sort": {"length": 1}},
-            ]
+        index = self.document_model.get_search_index(ContributionSearchIndex.FORMULA_AUTOCOMPLETE)
+        query = (
+            index.text(query=terms, path="formula")
+            .project({"formula": 1, "length": {"$strLenCP": "$formula"}, "project": 1})
+            .match({"length": {"$gte": len(terms[0])}})
+            .sort({"length": 1})
+            .limit(limit)
         )
-        collection = self.document_model.get_pymongo_collection()
-        return [
-            self.out_model.model_validate(obj=doc, from_attributes=True)
-            async for doc in await collection.aggregate(pipeline)
-        ]
+        return await self._run_search(query)

@@ -5,6 +5,7 @@ from pymongo import UpdateOne
 
 from mpcontribs_api.authz import PROJECT_PATH
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
+from mpcontribs_api.domains._shared.search_index import WILDCARD_PATH
 from mpcontribs_api.domains.projects.models import (
     Column,
     Project,
@@ -157,21 +158,6 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
         Returns:
             list[ProjectOut]: the matching projects visible to the caller (id only)
         """
-        pipeline: list[dict[str, Any]] = [
-            {
-                "$search": {
-                    "index": ProjectSearchIndex.SEARCH,
-                    # Wildcard path: match the query against every field the dynamic index covers,
-                    # each through its own analyzer.
-                    "text": {"path": {"wildcard": "*"}, "query": query},
-                },
-            },
-        ]
-        if self._scope:
-            pipeline.append({"$match": self._scope})
-        pipeline.append({"$project": {"_id": 1}})
-        collection = self.document_model.get_pymongo_collection()
-        return [
-            self.out_model.model_validate(obj=doc, from_attributes=True)
-            async for doc in await collection.aggregate(pipeline)
-        ]
+        index = self.document_model.get_search_index(ProjectSearchIndex.SEARCH)
+        search_query = index.text(query=query, path=WILDCARD_PATH).project({"_id": 1})
+        return await self._run_search(search_query)
