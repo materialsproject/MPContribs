@@ -146,7 +146,7 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
         )
         return result.modified_count
 
-    async def search(self, query: str) -> list[ProjectOut]:
+    async def search(self, query: str, limit: int = 10) -> list[ProjectOut]:
         """Run an Atlas Search wildcard text query across the project index, scoped to the user.
 
         The source index is dynamic, so the ``*`` wildcard path matches ``query`` against every
@@ -159,5 +159,5 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
             list[ProjectOut]: the matching projects visible to the caller (id only)
         """
         index = self.document_model.get_search_index(ProjectSearchIndex.SEARCH)
-        search_query = index.text(query=query, path=WILDCARD_PATH).project({"_id": 1})
+        search_query = index.text(query=query, path=WILDCARD_PATH).limit(limit=limit).project({"_id": 1})
         return await self._run_search(search_query)

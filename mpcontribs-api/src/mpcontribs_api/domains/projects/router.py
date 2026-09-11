@@ -44,6 +44,7 @@ async def read_many(
 async def search(
     service: ProjectServiceDep,
     query: str,
+    limit: int = 10,
 ):
     """Full-text search across projects.
 
@@ -56,7 +57,7 @@ async def search(
     Returns:
         list[ProjectOut]: the matching projects
     """
-    return await service.search(query)
+    return await service.search(query=query, limit=limit)
 
 
 @router.get("/{id}")
