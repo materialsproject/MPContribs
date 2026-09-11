@@ -191,7 +191,17 @@ async def search_indexes(db):
 
     Module-scoped: index creation and the multi-minute build happen once for the whole module. The
     per-test ``clean_*`` fixtures wipe *documents* between tests but leave the indexes in place.
+
+    Atlas' ``createSearchIndexes`` requires the target namespace to already exist. The session ``db``
+    fixture drops these collections and ``init_beanie`` does not physically recreate them until the
+    first write, so create them explicitly here first — otherwise the sync fails with
+    ``NamespaceNotFound`` and (mis)reads as "search unavailable".
     """
+    existing = await db.list_collection_names()
+    for model in (Project, Contribution):
+        name = model.get_pymongo_collection().name
+        if name not in existing:
+            await db.create_collection(name)
     try:
         await Project.sync_search_indexes()
         await Contribution.sync_search_indexes()
