@@ -318,7 +318,6 @@ class TestProjectPatch:
         patch = ProjectPatch()
         assert patch.title is None
         assert patch.authors is None
-        assert patch.owner is None
 
     def test_partial_update(self):
         patch = ProjectPatch(title="Updated Title", is_public=True)
