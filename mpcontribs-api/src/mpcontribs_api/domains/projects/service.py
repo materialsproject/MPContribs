@@ -224,7 +224,7 @@ class ProjectService:
         return DBRef("initiatives", initiative.id)
 
     async def search(self, query: str, limit: int = 10) -> list[ProjectOut]:
-        """Full-text search across projects; the Atlas Search query is run by the repository."""
+        """Full-text search across projects."""
         if not query:
             raise ValidationError(message="search query cannot be empty")
-        return await self._projects.search(query)
+        return await self._projects.search(query=query, limit=limit)

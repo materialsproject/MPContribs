@@ -1086,8 +1086,8 @@ class ContributionService:
         if len(comp.elements) > 5:
             raise ValidationError(message="too many elements in search formula", query=query)
         # Build the element-count permutations to match against the formula index.
-        # This block could probably be replaced by a MongoDB Analyzer.
-        # NOTE: the we should include "matchCriteria: all" so when tokenizing a formula, all tokens are required
+        # NOTE: This block could probably be replaced by a MongoDB Analyzer.
+        # then we should include "matchCriteria: all" so when tokenizing a formula, all tokens are required
         # This prevents query=Fe2O3 from returning documents like AlO3 (O3 token match)
         ind_str = []
         if len(comp) == 1:
