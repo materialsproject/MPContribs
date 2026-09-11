@@ -277,7 +277,6 @@ class ProjectPatch(BaseModel):
     authors: LongStr | None = None
     description: LongStr | None = None
     tags: list[SearchStr] | None = None
-    owner: PrefixedEmail | None = None
     unique_column: str | None = None
     references: list[Reference] = Field(default_factory=list)
     long_title: LongStr | None = None
