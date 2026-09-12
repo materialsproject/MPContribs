@@ -237,10 +237,9 @@ class TestSyncSearchIndexes:
 # ---------------------------------------------------------------------------
 # Project wildcard search — dynamic index + read-scope injection
 #
-# The text/scope/limit behaviours are the repository's (they belong to the index), so they are driven
-# through the repository directly. The service only adds the empty-query guard, tested on its own.
-# NOTE: ``ProjectService.search`` currently drops its ``limit`` argument on the floor — it never
-# forwards it to the repo — so the repository is also the only layer where a limit assertion is valid.
+# The text and scope behaviours belong to the index, so they are driven through the repository
+# directly. The service adds the empty-query guard and forwards ``limit`` to the repo, so the limit
+# cap is asserted through the service to cover that hand-off end to end.
 # ---------------------------------------------------------------------------
 
 
@@ -279,7 +278,30 @@ class TestProjectSearch:
         anon_result = await MongoDbProjectRepository(ANON).search("electrocatalysts")
         assert "hidden-catalysis" not in _ids(anon_result)
 
+    async def test_group_member_sees_granted_private_project(self, db, search_indexes):
+        # A private, non-owner project granted to ALICE's group: the token "mp-team" maps (legacy
+        # shorthand) to a grant on project id "mp-team". ALICE sees it via the Granted scope clause;
+        # an anonymous caller, held to public+approved, does not.
+        await _insert_project(
+            "mp-team",
+            is_public=False,
+            is_approved=False,
+            owner="google:bob@example.com",
+            description="granted-only magnetometry of layered superconductors",
+        )
+        alice_hit = await _search_eventually(
+            lambda: MongoDbProjectRepository(ALICE).search("magnetometry"),
+            lambda r: "mp-team" in _ids(r),
+        )
+        assert "mp-team" in _ids(alice_hit)
+
+        # ALICE already surfaced it, so the index is populated; the anon miss is a real exclusion.
+        anon_result = await MongoDbProjectRepository(ANON).search("magnetometry")
+        assert "mp-team" not in _ids(anon_result)
+
     async def test_limit_caps_the_result_count(self, db, search_indexes):
+        # Driven through the service to prove it forwards ``limit`` to the repo (not just the repo's
+        # own $limit stage).
         for i in range(5):
             await _insert_project(
                 f"limit-thermoelectrics-{i}",
@@ -288,7 +310,7 @@ class TestProjectSearch:
                 description="thermoelectrics figure of merit survey",
             )
         results = await _search_eventually(
-            lambda: MongoDbProjectRepository(ADMIN).search("thermoelectrics", limit=2),
+            lambda: _project_service(ADMIN).search("thermoelectrics", limit=2),
             lambda r: len(r) >= 2,
         )
         assert len(results) == 2
@@ -332,6 +354,21 @@ class TestContributionFormulaSearch:
             lambda r: str(contribution.id) in _ids(r),
         )
         assert str(contribution.id) in _ids(admin_hit)
+
+        anon_result = await _contribution_service(mongo_client, ANON).search("Fe2O3")
+        assert str(contribution.id) not in _ids(anon_result)
+
+    async def test_group_member_sees_granted_private_contribution(self, db, mongo_client, search_indexes):
+        # Contribution scope is grant-only (no owner clause): ALICE's "mp-team" group grants visibility
+        # of contributions whose ``project`` is "mp-team". An anonymous caller sees only public rows.
+        contribution = await _insert_contribution(
+            project="mp-team", formula="Fe2O3", identifier="granted-formula", is_public=False
+        )
+        alice_hit = await _search_eventually(
+            lambda: _contribution_service(mongo_client, ALICE).search("Fe2O3"),
+            lambda r: str(contribution.id) in _ids(r),
+        )
+        assert str(contribution.id) in _ids(alice_hit)
 
         anon_result = await _contribution_service(mongo_client, ANON).search("Fe2O3")
         assert str(contribution.id) not in _ids(anon_result)
