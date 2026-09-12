@@ -1073,7 +1073,7 @@ class ContributionService:
             updates[pid] = (stats, columns)
         await self._projects.set_stats_and_columns(updates)
 
-    async def search(self, query: str, limit: int = 5) -> list[ContributionOut]:
+    async def search(self, query: str, limit: int = 10) -> list[ContributionOut]:
         if not query:
             raise ValidationError(message="search query cannot be empty")
         try:
@@ -1098,11 +1098,4 @@ class ContributionService:
                 ind_str.append(i.name + str(int(j)) if j != 1 else i.name)
         final_terms = ["".join(entry) for entry in permutations(ind_str)]
 
-        try:
-            return await self._contributions.search(final_terms, limit)
-        except Exception as err:
-            raise AppError(
-                message="search cannot be completed. Please try a different formula or try again later.",
-                formula=query,
-                limit=limit,
-            ) from err
+        return await self._contributions.search(final_terms, limit)

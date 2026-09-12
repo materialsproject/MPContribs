@@ -170,6 +170,7 @@ async def update_one_by_identity(
 async def search(
     service: ContributionServiceDep,
     query: str,
+    limit: int = 10,
 ):
     """Search formulas.
 
@@ -178,11 +179,12 @@ async def search(
     Args:
         service (ContributionServiceDep): the contribution service we depend on
         query (str): the free-text search string
+        limit (int): the maximum number of matches to return
 
     Returns:
         list[ContributionOut]: the matching contributions
     """
-    return await service.search(query)
+    return await service.search(query, limit=limit)
 
 
 @router.delete("/{id}", dependencies=[Depends(require_user)])
