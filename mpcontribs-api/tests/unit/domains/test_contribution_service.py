@@ -36,7 +36,7 @@ from mpcontribs_api.domains.structures.models import (
     StructureIn,
 )
 from mpcontribs_api.domains.tables.models import Attributes, Labels, Table, TableIn
-from mpcontribs_api.exceptions import AppError, ConflictError, NotFoundError, PermissionError, ValidationError
+from mpcontribs_api.exceptions import ConflictError, NotFoundError, PermissionError, ValidationError
 
 pytestmark = pytest.mark.asyncio
 
@@ -1771,7 +1771,7 @@ class TestSearch:
         await svc.search("O2")
         terms, limit = contrib_repo.search.await_args.args
         assert terms == ["O2"]
-        assert limit == 5  # default
+        assert limit == 10  # default
 
     async def test_single_element_unit_count_drops_the_one(self):
         svc, contrib_repo, *_ = _make_service()
@@ -1780,10 +1780,10 @@ class TestSearch:
         terms, _ = contrib_repo.search.await_args.args
         assert terms == ["Fe"]
 
-    async def test_repository_failure_is_wrapped_as_app_error(self):
+    async def test_repository_failure_propagates(self):
         svc, contrib_repo, *_ = _make_service()
         contrib_repo.search.side_effect = RuntimeError("atlas down")
-        with pytest.raises(AppError) as excinfo:
+        # Infra failures are not wrapped: they propagate to the global handler (a 500), rather than
+        # being masked as a misleading "try a different formula" 4xx.
+        with pytest.raises(RuntimeError, match="atlas down"):
             await svc.search("Fe2O3")
-        # Not a ValidationError (a 4xx) — an infrastructure failure surfaces as the generic AppError.
-        assert not isinstance(excinfo.value, ValidationError)

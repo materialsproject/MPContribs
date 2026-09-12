@@ -286,6 +286,7 @@ class TestProjectRepositorySearch:
         assert pipeline == [
             {"$search": {"index": "project-search", "text": {"query": "solar", "path": {"wildcard": "*"}}}},
             {"$match": {"$or": [{"is_public": True, "is_approved": True}]}},
+            {"$limit": 10},
             {"$project": {"_id": 1}},
         ]
         assert [p.id for p in results] == ["mp-1", "mp-2"]
@@ -302,5 +303,6 @@ class TestProjectRepositorySearch:
         (pipeline,) = collection.aggregate.await_args.args
         assert pipeline == [
             {"$search": {"index": "project-search", "text": {"query": "solar", "path": {"wildcard": "*"}}}},
+            {"$limit": 10},
             {"$project": {"_id": 1}},
         ]
