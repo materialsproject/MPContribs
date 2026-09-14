@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
 from mpcontribs_api import pagination
 from mpcontribs_api.domains._shared.filters import BaseFilter
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut, Identity
+from mpcontribs_api.domains._shared.search_index import SearchIndex, SearchIndexed
 from mpcontribs_api.domains._shared.types import CANONICAL_KEY_COERCION, LongStr, PrefixedEmail, SearchStr, ShortStr
 from mpcontribs_api.domains.initiatives.models import Initiative
 from mpcontribs_api.exceptions import ValidationError
@@ -154,13 +155,33 @@ class ProjectBase(BaseModel):
         keep_nulls = False
 
 
-class Project(ProjectBase, BaseDocumentWithInput[ShortStr]):
+class ProjectSearchIndex(StrEnum):
+    """Names of Project's Atlas Search indexes (single source of truth for each index name)."""
+
+    # NOTE the legacy ``mpcontribs-dev-project-search`` index is now orphaned and needs manual deletion in Atlas.
+    SEARCH = "project-search"
+
+
+class Project(ProjectBase, BaseDocumentWithInput[ShortStr], SearchIndexed):
     """Document model of what is actually stored."""
 
     identity_model: ClassVar[type[Identity]] = ProjectIdentity
     # Server-owned: derived from the project's contributions
     stats: Stats = Field(default_factory=Stats)
     columns: list[Column] = Field(default_factory=list)
+
+    @classmethod
+    def search_indexes(cls) -> tuple[SearchIndex, ...]:
+        return (
+            SearchIndex(
+                name=ProjectSearchIndex.SEARCH,
+                type="search",
+                # TODO: We should exlude columns due to high cardinality
+                # Argument against is that its a relatively small field and it could be useful to look for
+                # projects that measured X
+                definition={"mappings": {"dynamic": True}},
+            ),
+        )
 
     @classmethod
     def from_input_model(cls, data: ProjectIn, id: str) -> Project:  # pyright: ignore[reportIncompatibleMethodOverride]

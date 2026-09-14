@@ -3,11 +3,14 @@ from collections import defaultdict
 from collections.abc import AsyncIterable, Iterable
 from contextlib import AbstractAsyncContextManager
 from dataclasses import dataclass
+from itertools import permutations
 from typing import Any, cast
 
 import structlog
 from beanie import Link, PydanticObjectId
 from pydantic import ValidationError as PydanticValidationError
+from pymatgen.core import Composition
+from pymatgen.core.composition import CompositionError
 from pymongo import AsyncMongoClient
 from pymongo.asynchronous.client_session import AsyncClientSession
 from pymongo.errors import BulkWriteError
@@ -1069,3 +1072,30 @@ class ContributionService:
             columns = [Column(path=c.path, min=c.min, max=c.max, unit=c.unit) for c in agg.columns]
             updates[pid] = (stats, columns)
         await self._projects.set_stats_and_columns(updates)
+
+    async def search(self, query: str, limit: int = 10) -> list[ContributionOut]:
+        if not query:
+            raise ValidationError(message="search query cannot be empty")
+        try:
+            comp = Composition(query)
+        except (CompositionError, ValueError) as err:
+            raise ValidationError(message="invalid formula provided", formula=query) from err
+
+        # Guard against explosion of permutations
+        # TODO: Remove once proper SearchIndex Analyzer is used
+        if len(comp.elements) > 5:
+            raise ValidationError(message="too many elements in search formula", query=query)
+        # Build the element-count permutations to match against the formula index.
+        # NOTE: This block could probably be replaced by a MongoDB Analyzer.
+        # then we should include "matchCriteria: all" so when tokenizing a formula, all tokens are required
+        # This prevents query=Fe2O3 from returning documents like AlO3 (O3 token match)
+        ind_str = []
+        if len(comp) == 1:
+            d = comp.get_integer_formula_and_factor()
+            ind_str.append(d[0] + str(int(d[1])) if d[1] != 1 else d[0])
+        else:
+            for i, j in comp.reduced_composition.items():
+                ind_str.append(i.name + str(int(j)) if j != 1 else i.name)
+        final_terms = ["".join(entry) for entry in permutations(ind_str)]
+
+        return await self._contributions.search(final_terms, limit)

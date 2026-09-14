@@ -158,6 +158,13 @@ class MongoSettings(BaseModel):
         "consumed by auth.",
     )
 
+    manage_search_indexes: bool = Field(
+        default=False,
+        description="When True, create/update the Atlas Search indexes declared by SearchIndexed models on "
+        "startup (after init_beanie). A logged no-op that never fails startup when the target is not an Atlas "
+        "cluster. Opt-in: enable in dev to validate against real Atlas before flipping prod.",
+    )
+
     compressors: str = Field(
         default="snappy,zstd,zlib",
         description="Comma separated list of compressors for wire protocol compression. Compression support must also "

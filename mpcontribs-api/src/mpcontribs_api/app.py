@@ -17,6 +17,7 @@ from mpcontribs_api.authz import (
     consumer_username_scheme,
 )
 from mpcontribs_api.config import Settings, get_settings
+from mpcontribs_api.domains._shared.search_index import sync_all_search_indexes
 from mpcontribs_api.domains.attachments.models import Attachment
 from mpcontribs_api.domains.consumers.models import Consumer
 from mpcontribs_api.domains.contributions.models import Contribution
@@ -36,6 +37,18 @@ from mpcontribs_api.middleware import (
 )
 
 logger = get_logger(__name__)
+
+# The Beanie document models registered with the app; reused for init_beanie and search-index sync.
+DOCUMENT_MODELS = [
+    Project,
+    ProjectGroup,
+    Initiative,
+    Contribution,
+    Attachment,
+    Structure,
+    Table,
+    Consumer,
+]
 
 
 async def _setup_mongo(app: FastAPI, settings: Settings, stack: AsyncExitStack) -> None:
@@ -63,18 +76,11 @@ async def _setup_mongo(app: FastAPI, settings: Settings, stack: AsyncExitStack) 
     app.state.db = client[settings.mongo.db_name]
     await init_beanie(
         database=client[settings.mongo.db_name],
-        document_models=[
-            Project,
-            ProjectGroup,
-            Initiative,
-            Contribution,
-            Attachment,
-            Structure,
-            Table,
-            Consumer,
-        ],
+        document_models=DOCUMENT_MODELS,
         allow_index_dropping=True,  # allow old indices to be dropped from MongoDB when not specified in this package
     )
+    # Reconcile Atlas Search indexes with what the models declare (opt-in, non-fatal, non-blocking).
+    await sync_all_search_indexes(DOCUMENT_MODELS, manage=settings.mongo.manage_search_indexes)
 
 
 async def _setup_s3(app: FastAPI, settings: Settings, stack: AsyncExitStack) -> None:

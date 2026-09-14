@@ -16,6 +16,7 @@ from mpcontribs_api.domains.contributions.models import (
     ContributionIn,
     ContributionOut,
     ContributionPatch,
+    ContributionSearchIndex,
     Scalar,
 )
 from mpcontribs_api.domains.contributions.stats import (
@@ -340,3 +341,28 @@ class MongoDbContributionRepository(
                 f"contribution '{id}' cannot be upserted: the resulting identity already exists",
                 id=id,
             ) from err
+
+    async def search(self, terms: list[str], limit: int) -> list[ContributionOut]:
+        """Run the formula-autocomplete Atlas Search over ``terms``, scoped to the user.
+
+        ``terms`` are the element-count permutations the service derives from the query formula. The
+        length ``$match`` drops formulas shorter than the query so a search for ``Fe2O3`` never
+        surfaces a substring match like ``FeO``.
+
+        Args:
+            terms: the formula permutations to match against the ``formula`` field
+            limit: the maximum number of matches to return
+
+        Returns:
+            list[ContributionOut]: the matching contributions visible to the caller, shortest formula first
+        """
+        # TODO: Can optimize further by modifying the Atlas Search to use a compound.filter instead of a match
+        index = self.document_model.get_search_index(ContributionSearchIndex.FORMULA_AUTOCOMPLETE)
+        query = (
+            index.text(query=terms, path="formula")
+            .project({"formula": 1, "length": {"$strLenCP": "$formula"}, "project": 1})
+            .match({"length": {"$gte": len(terms[0])}})
+            .sort({"length": 1})
+            .limit(limit)
+        )
+        return await self._run_search(query)

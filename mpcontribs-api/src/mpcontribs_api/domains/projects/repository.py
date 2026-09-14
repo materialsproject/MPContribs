@@ -5,6 +5,7 @@ from pymongo import UpdateOne
 
 from mpcontribs_api.authz import PROJECT_PATH
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
+from mpcontribs_api.domains._shared.search_index import WILDCARD_PATH
 from mpcontribs_api.domains.projects.models import (
     Column,
     Project,
@@ -12,6 +13,7 @@ from mpcontribs_api.domains.projects.models import (
     ProjectIn,
     ProjectOut,
     ProjectPatch,
+    ProjectSearchIndex,
     Stats,
 )
 from mpcontribs_api.scope import Granted, Owned, Public, Scope
@@ -143,3 +145,19 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
             {"$set": {"initiative": None}},
         )
         return result.modified_count
+
+    async def search(self, query: str, limit: int = 10) -> list[ProjectOut]:
+        """Run an Atlas Search wildcard text query across the project index, scoped to the user.
+
+        The source index is dynamic, so the ``*`` wildcard path matches ``query`` against every
+        indexed field through its analyzer. Only ``_id`` is projected.
+
+        Args:
+            query: the free-text search string
+
+        Returns:
+            list[ProjectOut]: the matching projects visible to the caller (id only)
+        """
+        index = self.document_model.get_search_index(ProjectSearchIndex.SEARCH)
+        search_query = index.text(query=query, path=WILDCARD_PATH).limit(limit=limit).project({"_id": 1})
+        return await self._run_search(search_query)

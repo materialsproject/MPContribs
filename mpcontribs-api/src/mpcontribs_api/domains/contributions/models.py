@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+from enum import StrEnum
 from typing import Any, ClassVar
 
 from beanie import (
@@ -19,6 +20,7 @@ from pymongo import ASCENDING, IndexModel
 from mpcontribs_api._openapi import CONTRIBUTION_DATA_INPUT_DESCRIPTION, CONTRIBUTION_DATA_OUTPUT_DESCRIPTION
 from mpcontribs_api.domains._shared.filters import BaseFilter
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
+from mpcontribs_api.domains._shared.search_index import SearchIndex, SearchIndexed
 from mpcontribs_api.domains._shared.types import ChemicalSystemId, Formula, Identity, MaterialId, Scalar, ShortStr
 from mpcontribs_api.domains.attachments.models import Attachment, AttachmentFilter, AttachmentIn
 from mpcontribs_api.domains.contributions.data import ContributionData, ContributionPatchData, ContributionStoredData
@@ -149,7 +151,17 @@ class ContributionBase(BaseModel):
         ]
 
 
-class Contribution(ContributionBase, BaseDocumentWithInput[PydanticObjectId]):
+class ContributionSearchIndex(StrEnum):
+    """Names of Contribution's Atlas Search indexes."""
+
+    FORMULA_AUTOCOMPLETE = "formula_autocomplete"
+
+
+class Contribution(
+    ContributionBase,
+    BaseDocumentWithInput[PydanticObjectId],
+    SearchIndexed,
+):
     """Models what is actually stored in the database."""
 
     identity_model: ClassVar[type[Identity]] = ContributionIdentity
@@ -163,6 +175,37 @@ class Contribution(ContributionBase, BaseDocumentWithInput[PydanticObjectId]):
     structures: list[Link[Structure]] | None = None
     tables: list[Link[Table]] | None = None
     attachments: list[Link[Attachment]] | None = None
+
+    @classmethod
+    def search_indexes(cls) -> tuple[SearchIndex, ...]:
+        return (
+            SearchIndex(
+                # TODO: formula autocomplete doesn't use `type: autocomplete` for formula
+                name=ContributionSearchIndex.FORMULA_AUTOCOMPLETE,
+                type="search",
+                definition={
+                    "analyzer": "lucene.whitespace",
+                    "searchAnalyzer": "lucene.whitespace",
+                    "mappings": {
+                        "dynamic": False,
+                        "fields": {
+                            # TODO: Why do we index data for a formula autocomplete?
+                            cls._path("data"): {"dynamic": True, "type": "document"},
+                            cls._path("formula"): {"type": "string"},
+                            cls._path("material_id"): {"type": "string"},
+                            cls._path("chemical_system_id"): {"type": "string"},
+                            cls._path("unique_value"): {"type": "string"},
+                            cls._path("condition_key"): {"type": "string"},
+                            cls._path("is_public"): {"type": "boolean"},
+                            cls._path("last_modified"): {"type": "date"},
+                            cls._path("project"): [{"type": "stringFacet"}, {"type": "string"}],
+                        },
+                    },
+                    # TODO: remove data from storedSource
+                    "storedSource": True,
+                },
+            ),
+        )
 
     @classmethod
     def from_input_model(cls, data: ContributionIn) -> Contribution:
