@@ -232,6 +232,11 @@ class MPContribsSettings(BaseModel):
         "Primarily used to handle Contribution.data values.",
     )
 
+    downloads_cache_ttl: int = Field(
+        default=24,
+        description="Number of hours to hold a download in S3 as a cached object.",
+    )
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
