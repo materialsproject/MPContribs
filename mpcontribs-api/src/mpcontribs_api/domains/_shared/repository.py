@@ -161,16 +161,14 @@ class MongoDbRepository[
         """
         query = self._identifier_query(identifiers)
         projection = self.out_model.projection(fields)
-        stored_doc = await self.document_model.find_one(
-            self._scope, query, projection_model=projection, session=session
-        )
-        if stored_doc is None:
+        existing = await self.document_model.find_one(self._scope, query, projection_model=projection, session=session)
+        if existing is None:
             raise NotFoundError(
                 message=f"{self.document_model.__name__} not found for provided query",
                 identifiers=identifiers,
                 fields=fields,
             )
-        return self.out_model.model_validate(obj=stored_doc, from_attributes=True)
+        return self.out_model.model_validate(obj=existing, from_attributes=True)
 
     async def list_ids(self, filter: TFilter, session: AsyncClientSession | None = None) -> list[Any]:
         """Return just the ids of scoped documents matching ``filter``.
