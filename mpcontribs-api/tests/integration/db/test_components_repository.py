@@ -139,7 +139,7 @@ class TestDeleteComponents:
 
     async def test_delete_by_id_removes_one(self, db):
         """The inherited base delete_one removes a single component by its primary key."""
-        [doc] = await _insert(_repo(),[_attachment(1)])
+        [doc] = await _insert(_repo(), [_attachment(1)])
         result = await _repo().delete_one({"id": doc.id})
         assert result.num_deleted == 1
         assert await _count() == 0
@@ -152,7 +152,7 @@ class TestDeleteComponents:
 
     async def test_delete_by_md5_removes_one(self, db):
         """A component is addressable by its content md5 (its declared identifier) as well as by id."""
-        [doc] = await _insert(_repo(),[_attachment(1)])
+        [doc] = await _insert(_repo(), [_attachment(1)])
         result = await _repo().delete_one({"md5": doc.md5})
         assert result.num_deleted == 1
         assert await _count() == 0
@@ -165,14 +165,14 @@ class TestDeleteComponents:
 
 class TestAddressComponentByMd5:
     async def test_get_one_by_md5(self, db):
-        [doc] = await _insert(_repo(),[_attachment(1)])
+        [doc] = await _insert(_repo(), [_attachment(1)])
         by_md5 = await _repo().read_one({"md5": doc.md5}, fields=None)
         by_id = await _repo().read_one({"id": doc.id}, fields=None)
         assert by_md5 is not None
         assert by_md5.id == by_id.id == doc.id
 
     async def test_patch_one_by_md5(self, db):
-        [doc] = await _insert(_repo(),[_attachment(1, name="data.csv")])
+        [doc] = await _insert(_repo(), [_attachment(1, name="data.csv")])
         updated = await _repo().update_one({"md5": doc.md5}, AttachmentPatch(name="renamed.png"))
         assert updated.name == "renamed.png"
 
@@ -184,18 +184,18 @@ class TestAddressComponentByMd5:
 
 class TestPatchComponent:
     async def test_patch_updates_field(self, db):
-        [doc] = await _insert(_repo(),[_attachment(1, name="data.csv")])
+        [doc] = await _insert(_repo(), [_attachment(1, name="data.csv")])
         updated = await _repo().update_one({"id": doc.id}, AttachmentPatch(name="renamed.png"))
         assert updated.name == "renamed.png"
 
     async def test_empty_patch_returns_existing(self, db):
-        [doc] = await _insert(_repo(),[_attachment(1, name="data.csv")])
+        [doc] = await _insert(_repo(), [_attachment(1, name="data.csv")])
         updated = await _repo().update_one({"id": doc.id}, AttachmentPatch())
         assert updated.id == doc.id
 
     async def test_patch_content_recomputes_md5(self, db):
         # name is not a hash field, so renaming must NOT change md5.
-        [doc] = await _insert(_repo(),[_attachment(1)])
+        [doc] = await _insert(_repo(), [_attachment(1)])
         renamed = await _repo().update_one({"id": doc.id}, AttachmentPatch(name="renamed.png"))
         assert renamed.md5 == doc.md5
         # content IS a hash field, so changing it must recompute md5.

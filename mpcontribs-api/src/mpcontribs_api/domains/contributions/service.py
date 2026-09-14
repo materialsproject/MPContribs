@@ -109,9 +109,7 @@ class ContributionService:
             "tables": self._tables,
         }
 
-    async def read_one(
-        self, identifiers: dict[str, Any], fields: frozenset[str] | None
-    ) -> Contribution | ContributionOut | None:
+    async def read_one(self, identifiers: dict[str, Any], fields: frozenset[str] | None) -> ContributionOut:
         """Return the single scoped contribution matching ``identifiers``.
 
         Accepts either the bare ``{"id": ...}`` form or the semantic
@@ -156,7 +154,10 @@ class ContributionService:
         if set(identifiers) == {"id"}:
             filter = ContributionFilter(id=identifiers["id"])
         else:
-            existing = await self._contributions.read_one(identifiers, frozenset({"id"}))
+            try:
+                existing = await self._contributions.read_one(identifiers, frozenset({"id"}))
+            except NotFoundError:
+                return BulkDeleteSummary(num_deleted=0, num_children_deleted=0)
             if existing is None:
                 return BulkDeleteSummary(num_deleted=0, num_children_deleted=0)
             filter = ContributionFilter(id=existing.id)
@@ -169,7 +170,10 @@ class ContributionService:
         be read in the current scope (existence/permission is enforced on insert, not here). The
         caller turns the count into a remaining allowance against the cap.
         """
-        project = await self._projects.read_one({"id": project_id}, frozenset({"is_approved"}))
+        try:
+            project = await self._projects.read_one({"id": project_id}, frozenset({"is_approved"}))
+        except NotFoundError:
+            return None
         if not project or project.is_approved:
             return None
         # Soft limit: this count feeds a non-atomic check-then-write, so concurrent writes to the
@@ -882,7 +886,11 @@ class ContributionService:
         self._user.require_write(*PROJECT_PATH, contribution.project)
         validate_data_depth(contribution.data, self._limits.contribution.max_data_depth)
         await self._enforce_column_limit(contribution.project, contribution.data)
-        existing = await self._contributions.read_one(identifiers, None)
+        try:
+            existing = await self._contributions.read_one(identifiers, None)
+        except NotFoundError:
+            # No document at this id yet: the upsert will insert, so enforce the unapproved-project cap.
+            existing = None
         if existing is None:
             stored = await self._unapproved_stored_count(contribution.project)
             cap = self._limits.contribution.max_per_unapproved_project

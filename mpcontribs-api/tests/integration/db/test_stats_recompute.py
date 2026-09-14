@@ -77,8 +77,12 @@ def _structure(charge: float | None) -> StructureIn:
         lattice=Lattice(
             matrix=[[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]],
             pbc=[True, True, True],
-            a=1.0, b=1.0, c=1.0,
-            alpha=90.0, beta=90.0, gamma=90.0,
+            a=1.0,
+            b=1.0,
+            c=1.0,
+            alpha=90.0,
+            beta=90.0,
+            gamma=90.0,
             volume=1.0,
         ),
         sites=[

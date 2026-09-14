@@ -7,35 +7,36 @@ from mpcontribs_api.dependencies import require_user
 from mpcontribs_api.domains._shared.types import FieldSelector
 from mpcontribs_api.domains.initiatives.dependencies import InitiativeServiceDep
 from mpcontribs_api.domains.initiatives.models import (
+    Initiative,
     InitiativeFilter,
     InitiativeIdentity,
     InitiativeIn,
     InitiativeOut,
     InitiativePatch,
 )
-from mpcontribs_api.pagination import CursorParams
+from mpcontribs_api.pagination import CursorParams, Page
 
 router = APIRouter()
 
 
-@router.get("")
+@router.get("", response_model=None)
 async def read_many(
     service: InitiativeServiceDep,
     pagination: Annotated[CursorParams, Depends()],
     filter: InitiativeFilter = FilterDepends(InitiativeFilter),
     fields: FieldSelector = None,
-):
+) -> Page[InitiativeOut]:
     """Return paginated initiatives matching a filter, scoped to the caller."""
     selected = InitiativeOut.parse_fields(fields)
     return await service.read_many(pagination=pagination, filter=filter, fields=selected)
 
 
-@router.get("/item")
+@router.get("/item", response_model=None)
 async def read_one_by_identity(
     service: InitiativeServiceDep,
     identity: Annotated[InitiativeIdentity, Depends()],
     fields: FieldSelector = None,
-):
+) -> InitiativeOut:
     """Return the single initiative by its natural key ``slug`` (the uniform ``/item`` entrypoint)."""
     selected = InitiativeOut.parse_fields(fields)
     return await service.read_one(identity.as_dict(), fields=selected)
@@ -46,7 +47,7 @@ async def update_one_by_identity(
     service: InitiativeServiceDep,
     identity: Annotated[InitiativeIdentity, Depends()],
     update: InitiativePatch,
-):
+) -> Initiative:
     """Partially update the initiative by its natural key ``slug`` (the uniform ``/item`` entrypoint)."""
     return await service.update_one(identity.as_dict(), update=update)
 
@@ -55,18 +56,18 @@ async def update_one_by_identity(
 async def delete_one_by_identity(
     service: InitiativeServiceDep,
     identity: Annotated[InitiativeIdentity, Depends()],
-):
+) -> Response:
     """Delete the initiative by its natural key ``slug`` (the uniform ``/item`` entrypoint)."""
     await service.delete_one(identity.as_dict())
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router.get("/{slug}")
+@router.get("/{slug}", response_model=None)
 async def read_one(
     service: InitiativeServiceDep,
     slug: str,
     fields: FieldSelector = None,
-):
+) -> InitiativeOut:
     """Return the single initiative identified by ``slug``, scoped to the caller."""
     selected = InitiativeOut.parse_fields(fields)
     return await service.read_one({"slug": slug}, fields=selected)
@@ -78,7 +79,7 @@ async def read_one(
 async def insert_one(
     service: InitiativeServiceDep,
     initiative: InitiativeIn,
-):
+) -> Initiative:
     """Create a new initiative owned by the caller.
 
     Starts unapproved and private. Rejected with 409 if the caller already owns the maximum number
@@ -92,7 +93,7 @@ async def update_one(
     service: InitiativeServiceDep,
     slug: str,
     update: InitiativePatch,
-):
+) -> Initiative:
     """Partially update the initiative identified by ``slug``.
 
     Requires manage rights (owner/collaborator/admin). ``is_approved`` is admin-only, and an
@@ -105,7 +106,7 @@ async def update_one(
 async def delete_one(
     service: InitiativeServiceDep,
     slug: str,
-):
+) -> Response:
     """Delete the initiative identified by ``slug``. Restricted to its owner or an admin."""
     await service.delete_one({"slug": slug})
     return Response(status_code=status.HTTP_204_NO_CONTENT)

@@ -209,7 +209,9 @@ class TestUpsertAuthorization:
 
     async def test_new_project_sets_owner_to_caller(self, db):
         # Body carries a foreign owner; the authenticated caller's identity must win on insert.
-        await _service(BOB).upsert_one({"id": "svc-auth-newowner"}, data=_project_in("svc-auth-newowner", owner=ALICE_EMAIL))
+        await _service(BOB).upsert_one(
+            {"id": "svc-auth-newowner"}, data=_project_in("svc-auth-newowner", owner=ALICE_EMAIL)
+        )
         found = await Project.find_one(Project.id == "svc-auth-newowner")
         assert found.owner == BOB_EMAIL
 
@@ -388,9 +390,10 @@ class TestReadScope:
         assert "scope-pub" in ids
         assert "scope-priv" not in ids
 
-    async def test_get_one_private_unowned_returns_none(self, db):
+    async def test_get_one_private_unowned_raises_not_found(self, db):
         await _insert("scope-one-priv", owner=ALICE_EMAIL, is_public=False)
-        assert await _service(BOB).read_one({"id": "scope-one-priv"}, fields=None) is None
+        with pytest.raises(NotFoundError):
+            await _service(BOB).read_one({"id": "scope-one-priv"}, fields=None)
 
     async def test_get_one_public_visible_to_non_owner(self, db):
         await _insert("scope-one-pub", owner=ALICE_EMAIL, is_public=True, is_approved=True)

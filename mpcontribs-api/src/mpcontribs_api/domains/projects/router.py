@@ -8,23 +8,24 @@ from mpcontribs_api.dependencies import require_user
 from mpcontribs_api.domains._shared.types import FieldSelector
 from mpcontribs_api.domains.projects.dependencies import ProjectServiceDep
 from mpcontribs_api.domains.projects.models import (
+    Project,
     ProjectFilter,
     ProjectIn,
     ProjectOut,
     ProjectPatch,
 )
-from mpcontribs_api.pagination import CursorParams
+from mpcontribs_api.pagination import CursorParams, Page
 
 router = APIRouter()
 
 
-@router.get("")
+@router.get("", response_model=None)
 async def read_many(
     service: ProjectServiceDep,
     pagination: Annotated[CursorParams, Depends()],
     filter: ProjectFilter = FilterDepends(ProjectFilter),
     fields: FieldSelector = None,
-):
+) -> Page[ProjectOut]:
     """Return paginated projects matching a filter.
 
     Args:
@@ -40,12 +41,12 @@ async def read_many(
     return await service.read_many(filter=filter, pagination=pagination, fields=selected)
 
 
-@router.get("/search")
+@router.get("/search", response_model=None)
 async def search(
     service: ProjectServiceDep,
     query: str,
     limit: int = 10,
-):
+) -> list[ProjectOut]:
     """Full-text search across projects.
 
     Declared before ``/{id}`` so the literal ``search`` segment is never captured as a project id.
@@ -60,12 +61,12 @@ async def search(
     return await service.search(query=query, limit=limit)
 
 
-@router.get("/{id}")
+@router.get("/{id}", response_model=None)
 async def read_one(
     id: str,
     service: ProjectServiceDep,
     fields: FieldSelector = None,
-):
+) -> ProjectOut:
     """Gets a single project by its ID.
 
     Args:
@@ -86,7 +87,7 @@ async def upsert_one(
     service: ProjectServiceDep,
     id: str,
     project: ProjectIn,
-):
+) -> Project:
     """Upsert a project by provided id.
 
     Upsert: Update document if id is found, otherwise insert new document using id.
@@ -108,7 +109,7 @@ async def update_one(
     service: ProjectServiceDep,
     id: str,
     update: ProjectPatch,
-):
+) -> Project:
     """Partial update to project identified with 'id'.
 
     Note: overwrites fields with given values - arrays are not appended to.
@@ -134,7 +135,7 @@ async def update_one(
 async def delete_one(
     service: ProjectServiceDep,
     id: str,
-):
+) -> Response:
     """Deletes a project matching id.
 
     Args:

@@ -51,8 +51,9 @@ class TestInsertAndLookup:
         with pytest.raises(ConflictError):
             await _insert(ConsumerIn(consumer_id="kong-dup"))
 
-    async def test_lookup_missing_returns_none(self, db):
-        assert await _repo().read_one({"consumer_id": "kong-absent"}) is None
+    async def test_lookup_missing_raises_not_found(self, db):
+        with pytest.raises(NotFoundError):
+            await _repo().read_one({"consumer_id": "kong-absent"})
 
     async def test_partial_override_stores_only_set_leaves(self, db):
         # Admin overrides only max_projects; the stored override is sparse — untouched limits are NOT
@@ -82,11 +83,11 @@ class TestGetByDocumentId:
         assert result is not None
         assert result.consumer_id == "kong-doc"
 
-    async def test_missing_returns_none(self, db):
+    async def test_missing_raises_not_found(self, db):
         from beanie import PydanticObjectId
 
-        result = await _repo().read_one({"id": PydanticObjectId()}, None)
-        assert result is None
+        with pytest.raises(NotFoundError):
+            await _repo().read_one({"id": PydanticObjectId()}, None)
 
 
 # ---------------------------------------------------------------------------
@@ -113,7 +114,9 @@ class TestPatchConsumer:
 
     async def test_empty_patch_returns_existing_unchanged(self, db):
         created = await _insert(
-            ConsumerIn(consumer_id="kong-noop", settings=ConsumerSettings(project=ConsumerProjectSettings(max_projects=4)))
+            ConsumerIn(
+                consumer_id="kong-noop", settings=ConsumerSettings(project=ConsumerProjectSettings(max_projects=4))
+            )
         )
         result = await _repo().update_one({"id": created.id}, update=ConsumerPatch())
         assert result.consumer_id == "kong-noop"
@@ -138,7 +141,8 @@ class TestDeleteConsumer:
     async def test_delete_removes_override(self, db):
         created = await _insert(ConsumerIn(consumer_id="kong-del"))
         await _repo().delete_one({"id": created.id})
-        assert await _repo().read_one({"consumer_id": "kong-del"}) is None
+        with pytest.raises(NotFoundError):
+            await _repo().read_one({"consumer_id": "kong-del"})
 
     async def test_delete_missing_raises_not_found(self, db):
         from beanie import PydanticObjectId
@@ -229,7 +233,9 @@ class TestEffectiveLimits:
 
     async def test_stored_override_is_returned(self, db):
         await _insert(
-            ConsumerIn(consumer_id="kong-eff", settings=ConsumerSettings(project=ConsumerProjectSettings(max_projects=42)))
+            ConsumerIn(
+                consumer_id="kong-eff", settings=ConsumerSettings(project=ConsumerProjectSettings(max_projects=42))
+            )
         )
         user = User(consumer_id="kong-eff", username="google:alice@example.com", groups=frozenset())
         limits = await _service(user).effective_limits(user.consumer_id)
