@@ -50,7 +50,7 @@ async def delete_one_by_identity(
     return await service.delete_one(identifiers=identity.as_dict())
 
 
-@router.patch("/item", response_model=None, dependencies=[Depends(require_user)])
+@router.patch("/item", response_model=TableOut, dependencies=[Depends(require_user)])
 async def update_one_by_identity(
     service: TableServiceDep,
     identity: Annotated[ComponentIdentity, Depends()],
@@ -98,11 +98,11 @@ async def download_table(
     )
 
 
-@router.post("", response_model=BulkWriteSummary[Table], dependencies=[Depends(require_writer)])
+@router.post("", response_model=BulkWriteSummary[TableOut], dependencies=[Depends(require_writer)])
 async def insert_many(
     service: TableServiceDep,
     tables: list[TableIn],
-) -> BulkWriteSummary[Table]:
+) -> BulkWriteSummary[Table]:  # succeeded items rendered as TableOut via response_model
     return await service.insert_many(components=tables)
 
 
@@ -119,7 +119,7 @@ async def delete_one(service: TableServiceDep, id: str) -> ComponentDeleteRespon
     return await service.delete_one(identifiers={"id": id})
 
 
-@router.patch("/{id}", response_model=None, dependencies=[Depends(require_user)])
+@router.patch("/{id}", response_model=TableOut, dependencies=[Depends(require_user)])
 async def update_one(
     service: TableServiceDep,
     id: str,

@@ -54,7 +54,7 @@ async def delete_one_by_identity(
     return await service.delete_one(identifiers=identity.as_dict())
 
 
-@router.patch("/item", response_model=None, dependencies=[Depends(require_user)])
+@router.patch("/item", response_model=AttachmentOut, dependencies=[Depends(require_user)])
 async def update_one_by_identity(
     service: AttachmentServiceDep,
     identity: Annotated[ComponentIdentity, Depends()],
@@ -115,7 +115,7 @@ async def delete_one(service: AttachmentServiceDep, id: str) -> ComponentDeleteR
     return await service.delete_one(identifiers={"id": id})
 
 
-@router.patch("/{id}", response_model=None, dependencies=[Depends(require_user)])
+@router.patch("/{id}", response_model=AttachmentOut, dependencies=[Depends(require_user)])
 async def update_one(
     service: AttachmentServiceDep,
     id: str,

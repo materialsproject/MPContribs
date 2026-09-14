@@ -89,20 +89,20 @@ async def update_many(
 
 
 # TODO: Might want to take contributions in from request body and run model_validate_json on it (much faster)
-@router.post("", response_model=BulkWriteSummary[Contribution], dependencies=[Depends(require_user)])
+@router.post("", response_model=BulkWriteSummary[ContributionOut], dependencies=[Depends(require_user)])
 async def insert_many(
     service: ContributionServiceDep,
     contributions: list[ContributionIn],
-) -> BulkWriteSummary[Contribution]:
+) -> BulkWriteSummary[Contribution]:  # succeeded items rendered as ContributionOut via response_model
     _enforce_bulk_limit(contributions)
     return await service.insert_many(contributions=contributions)
 
 
-@router.put("", response_model=BulkWriteSummary[Contribution], dependencies=[Depends(require_user)])
+@router.put("", response_model=BulkWriteSummary[ContributionOut], dependencies=[Depends(require_user)])
 async def upsert_many(
     service: ContributionServiceDep,
     contributions: list[ContributionIn],
-) -> BulkWriteSummary[Contribution]:
+) -> BulkWriteSummary[Contribution]:  # succeeded items rendered as ContributionOut via response_model
     _enforce_bulk_limit(contributions)
     return await service.upsert_many(contributions=contributions)
 
@@ -155,7 +155,7 @@ async def delete_one_by_identity(
     return await service.delete_one(identity.as_dict())
 
 
-@router.patch("/item", response_model=None, dependencies=[Depends(require_user)])
+@router.patch("/item", response_model=ContributionOut, dependencies=[Depends(require_user)])
 async def update_one_by_identity(
     service: ContributionServiceDep,
     update: ContributionPatch,
@@ -187,7 +187,7 @@ async def search(
     return await service.search(query, limit=limit)
 
 
-@router.delete("/{id}", response_model=None, dependencies=[Depends(require_user)])
+@router.delete("/{id}", dependencies=[Depends(require_user)])
 async def delete_one(
     service: ContributionServiceDep,
     id: str,
@@ -205,14 +205,14 @@ async def read_one(
     return await service.read_one({"id": id}, fields=selected)
 
 
-@router.put("/{id}", response_model=None, dependencies=[Depends(require_user)])
+@router.put("/{id}", response_model=ContributionOut, dependencies=[Depends(require_user)])
 async def upsert_one(service: ContributionServiceDep, id: str, contribution: ContributionIn) -> Contribution:
     # The by-id upsert resolves the server-owned ``unique_value`` and enforces the unapproved quota
     # (see ``ContributionService.upsert_one``), which the generic identity upsert does not.
     return await service.upsert_one({"id": id}, contribution)
 
 
-@router.patch("/{id}", response_model=None, dependencies=[Depends(require_user)])
+@router.patch("/{id}", response_model=ContributionOut, dependencies=[Depends(require_user)])
 async def update_one(
     service: ContributionServiceDep, id: str, update: ContributionPatch, replace_data: bool = False
 ) -> Contribution:
