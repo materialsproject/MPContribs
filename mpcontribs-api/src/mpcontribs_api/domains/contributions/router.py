@@ -24,7 +24,7 @@ from mpcontribs_api.domains.contributions.models import (
     ContributionPatch,
 )
 from mpcontribs_api.exceptions import ValidationError
-from mpcontribs_api.pagination import CursorParams
+from mpcontribs_api.pagination import CursorParams, Page
 
 router = APIRouter()
 
@@ -51,13 +51,13 @@ def _enforce_bulk_limit(contributions: list[ContributionIn]) -> None:
         )
 
 
-@router.get("")
+@router.get("", response_model=None)
 async def read_many(
     service: ContributionServiceDep,
     pagination: Annotated[CursorParams, Depends()],
     filter: ContributionFilter = FilterDepends(ContributionFilter),
     fields: FieldSelector = None,
-):
+) -> Page[ContributionOut]:
     selected = ContributionOut.parse_fields(fields)
     return await service.read_many(pagination=pagination, filter=filter, fields=selected)
 
@@ -66,7 +66,7 @@ async def read_many(
 async def delete_many(
     service: ContributionServiceDep,
     filter: ContributionFilter = FilterDepends(ContributionFilter),
-) -> BulkDeleteSummary:
+) -> BulkDeleteSummary:  # serialized through response_model=DeleteResponse
     return await service.delete_many(filter=filter)
 
 
@@ -93,7 +93,7 @@ async def update_many(
 async def insert_many(
     service: ContributionServiceDep,
     contributions: list[ContributionIn],
-):
+) -> BulkWriteSummary[Contribution]:
     _enforce_bulk_limit(contributions)
     return await service.insert_many(contributions=contributions)
 
@@ -102,7 +102,7 @@ async def insert_many(
 async def upsert_many(
     service: ContributionServiceDep,
     contributions: list[ContributionIn],
-):
+) -> BulkWriteSummary[Contribution]:
     _enforce_bulk_limit(contributions)
     return await service.upsert_many(contributions=contributions)
 
@@ -116,7 +116,7 @@ async def download_contributions(
     ignore_cache: bool = False,
     filter: ContributionFilter = FilterDepends(ContributionFilter),
     fields: FieldSelector = None,
-):
+) -> StreamingResponse:
     selected = ContributionOut.parse_fields(fields)
     body = await service.download(
         format=format,
@@ -135,12 +135,12 @@ async def download_contributions(
 
 
 # Declared before the ``/{id}`` routes so the literal ``item`` is never captured as an id.
-@router.get("/item")
+@router.get("/item", response_model=None)
 async def read_one_by_identity(
     service: ContributionServiceDep,
     identity: Annotated[ContributionIdentity, Depends()],
     fields: FieldSelector = None,
-):
+) -> Contribution | ContributionOut | None:
     """Return the single contribution addressed by its natural identity (409 if ambiguous)."""
     selected = ContributionOut.parse_fields(fields)
     return await service.read_one(identity.as_dict(), fields=selected)
@@ -155,23 +155,23 @@ async def delete_one_by_identity(
     return await service.delete_one(identity.as_dict())
 
 
-@router.patch("/item", dependencies=[Depends(require_user)])
+@router.patch("/item", response_model=None, dependencies=[Depends(require_user)])
 async def update_one_by_identity(
     service: ContributionServiceDep,
     update: ContributionPatch,
     identity: Annotated[ContributionIdentity, Depends()],
     replace_data: bool = False,
-):
+) -> Contribution:
     """Patch the single contribution addressed by its natural identity (409 if ambiguous)."""
     return await service.update_one(identity.as_dict(), update=update, replace_data=replace_data)
 
 
-@router.get("/search")
+@router.get("/search", response_model=None)
 async def search(
     service: ContributionServiceDep,
     query: str,
     limit: int = 10,
-):
+) -> list[ContributionOut]:
     """Search formulas.
 
     Declared before ``/{id}`` so the literal ``search`` segment is never captured as a contribution id.
@@ -187,33 +187,35 @@ async def search(
     return await service.search(query, limit=limit)
 
 
-@router.delete("/{id}", dependencies=[Depends(require_user)])
+@router.delete("/{id}", response_model=None, dependencies=[Depends(require_user)])
 async def delete_one(
     service: ContributionServiceDep,
     id: str,
-):
+) -> BulkDeleteSummary:
     return await service.delete_one({"id": id})
 
 
-@router.get("/{id}")
+@router.get("/{id}", response_model=None)
 async def read_one(
     service: ContributionServiceDep,
     id: str,
     fields: FieldSelector = None,
-):
+) -> Contribution | ContributionOut | None:
     selected = ContributionOut.parse_fields(fields)
     return await service.read_one({"id": id}, fields=selected)
 
 
-@router.put("/{id}", dependencies=[Depends(require_user)])
-async def upsert_one(service: ContributionServiceDep, id: str, contribution: ContributionIn):
+@router.put("/{id}", response_model=None, dependencies=[Depends(require_user)])
+async def upsert_one(service: ContributionServiceDep, id: str, contribution: ContributionIn) -> Contribution:
     # The by-id upsert resolves the server-owned ``unique_value`` and enforces the unapproved quota
     # (see ``ContributionService.upsert_one``), which the generic identity upsert does not.
     return await service.upsert_one({"id": id}, contribution)
 
 
-@router.patch("/{id}", dependencies=[Depends(require_user)])
-async def update_one(service: ContributionServiceDep, id: str, update: ContributionPatch, replace_data: bool = False):
+@router.patch("/{id}", response_model=None, dependencies=[Depends(require_user)])
+async def update_one(
+    service: ContributionServiceDep, id: str, update: ContributionPatch, replace_data: bool = False
+) -> Contribution:
     # The by-id patch re-resolves ``unique_value`` and validates the identifier hierarchy against the
     # merged state (see ``ContributionService.update_one``); ``?replace_data=true``
     # overwrites the whole ``data`` dict instead of deep-merging.
