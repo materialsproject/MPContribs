@@ -42,7 +42,7 @@ async def read_one_by_identity(
     service: StructureServiceDep,
     identity: Annotated[ComponentIdentity, Depends()],
     fields: FieldSelector = None,
-) -> Structure | StructureOut | None:
+) -> StructureOut | None:
     """Return a single structure addressed by its content ``md5`` (its natural key)."""
     selected = StructureOut.parse_fields(fields)
     return await service.read_one(identifiers=identity.as_dict(), fields=selected)
@@ -71,7 +71,7 @@ async def read_one(
     service: StructureServiceDep,
     id: str,
     fields: FieldSelector = None,
-) -> Structure | StructureOut | None:
+) -> StructureOut | None:
     """Return a single structure addressed by its ``_id``."""
     selected = StructureOut.parse_fields(fields)
     return await service.read_one(identifiers={"id": id}, fields=selected)

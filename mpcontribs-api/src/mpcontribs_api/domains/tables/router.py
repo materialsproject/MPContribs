@@ -36,7 +36,7 @@ async def read_one_by_identity(
     service: TableServiceDep,
     identity: Annotated[ComponentIdentity, Depends()],
     fields: FieldSelector = None,
-) -> Table | TableOut | None:
+) -> TableOut | None:
     """Return a single table addressed by its content ``md5`` (its natural key)."""
     selected = TableOut.parse_fields(fields)
     return await service.read_one(identifiers=identity.as_dict(), fields=selected)
@@ -65,7 +65,7 @@ async def read_one(
     service: TableServiceDep,
     id: str,
     fields: FieldSelector = None,
-) -> Table | TableOut | None:
+) -> TableOut | None:
     """Return a single table addressed by its ``_id``."""
     selected = TableOut.parse_fields(fields)
     return await service.read_one(identifiers={"id": id}, fields=selected)

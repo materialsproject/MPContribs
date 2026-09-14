@@ -9,6 +9,7 @@ from mpcontribs_api.domains.consumers.models import (
     ConsumerPatch,
 )
 from mpcontribs_api.domains.consumers.repository import MongoDbConsumerRepository
+from mpcontribs_api.exceptions import NotFoundError
 from mpcontribs_api.pagination import CursorParams, Page
 
 
@@ -26,7 +27,11 @@ class ConsumerService:
         defaults = get_settings().consumer
         if consumer_id is None:
             return defaults
-        override = await self._consumer.read_one({"consumer_id": consumer_id}, fields=None)
+        try:
+            override = await self._consumer.read_one({"consumer_id": consumer_id}, fields=None)
+        except NotFoundError:
+            # No stored override for this consumer: fall back to the global defaults.
+            return defaults
         if override is None or override.settings is None:
             return defaults
         return override.settings.resolve(defaults)
@@ -36,8 +41,8 @@ class ConsumerService:
     ) -> Page[ConsumerOut]:
         return await self._consumer.read_many(filter=filter, pagination=pagination, fields=fields)
 
-    async def read_one(self, identifiers: dict[str, Any], fields: frozenset[str] | None) -> ConsumerOut | None:
-        """Read one override by its identity — the bare ``{"id": ...}`` or ``{"consumer_id": ...}``."""
+    async def read_one(self, identifiers: dict[str, Any], fields: frozenset[str] | None) -> ConsumerOut:
+        """Read one override by its identity — the bare ``{"id": ...}`` or ``{"consumer_id": ...}``; 404 if absent."""
         return await self._consumer.read_one(identifiers=identifiers, fields=fields)
 
     async def insert_one(self, consumer: ConsumerIn) -> Consumer:

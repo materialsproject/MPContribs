@@ -46,7 +46,7 @@ async def read_one_by_identity(
     service: ProjectGroupServiceDep,
     identity: Annotated[ProjectGroupIdentity, Depends()],
     fields: FieldSelector = None,
-) -> ProjectGroupOut | None:
+) -> ProjectGroupOut:
     """Return the single project group identified by its ``name`` + ``owner`` natural key.
 
     Args:
@@ -178,7 +178,7 @@ async def read_one(
     service: ProjectGroupServiceDep,
     id: str,
     fields: FieldSelector = None,
-) -> ProjectGroupOut | None:
+) -> ProjectGroupOut:
     """Return the single project group identified by its ``_id``."""
     selected = ProjectGroupOut.parse_fields(fields)
     return await service.read_one({"id": id}, fields=selected)

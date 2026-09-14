@@ -39,7 +39,7 @@ async def read_one_by_identity(
     identity: Annotated[ConsumerIdentity, Depends()],
     service: ConsumerServiceDep,
     fields: FieldSelector = None,
-) -> ConsumerOut | None:
+) -> ConsumerOut:
     """Get a single consumer override by its natural key, Kong's ``consumer_id`` (admin only)."""
     selected = ConsumerOut.parse_fields(fields)
     return await service.read_one(identity.as_dict(), fields=selected)
@@ -70,7 +70,7 @@ async def read_one(
     id: str,
     service: ConsumerServiceDep,
     fields: FieldSelector = None,
-) -> ConsumerOut | None:
+) -> ConsumerOut:
     """Get a single consumer override by document id (admin only)."""
     selected = ConsumerOut.parse_fields(fields)
     return await service.read_one({"id": id}, fields=selected)

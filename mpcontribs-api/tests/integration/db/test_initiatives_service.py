@@ -171,14 +171,14 @@ class TestMemberCap:
         # this test isolates the *initiative member* cap, not the project-count cap.
         monkeypatch.setattr(get_settings().consumer.project, "max_projects", cap + 5)
         await _insert_initiative("init-approved", ALICE)
-        await MongoDbInitiativeRepository(ADMIN).update_one({"slug": "init-approved"}, InitiativePatch(is_approved=True))
+        await MongoDbInitiativeRepository(ADMIN).update_one(
+            {"slug": "init-approved"}, InitiativePatch(is_approved=True)
+        )
         for i in range(cap + 2):  # comfortably past the unapproved cap
             await _insert_project(f"appr-proj-{i}", owner=ALICE_EMAIL)
             await _service(ALICE).update_one({"id": f"appr-proj-{i}"}, ProjectPatch(initiative="init-approved"))
         initiative_id = (await MongoDbInitiativeRepository(ADMIN).read_one({"slug": "init-approved"})).id  # type: ignore[union-attr]
-        count = await MongoDbProjectRepository(ADMIN).count_matching(
-            {"initiative.$id": initiative_id}, scoped=False
-        )
+        count = await MongoDbProjectRepository(ADMIN).count_matching({"initiative.$id": initiative_id}, scoped=False)
         assert count == cap + 2
 
 
@@ -372,10 +372,11 @@ class TestInitiativeReadScope:
         assert "scope-pub" in slugs
         assert "scope-priv" not in slugs
 
-    async def test_get_one_private_unowned_returns_none(self, db):
+    async def test_get_one_private_unowned_raises_not_found(self, db):
         await _insert_initiative("scope-one-priv", ALICE)
         stranger = User(username=CAROL_EMAIL, groups=frozenset())
-        assert await _initiative_service(stranger).read_one({"slug": "scope-one-priv"}, fields=None) is None
+        with pytest.raises(NotFoundError):
+            await _initiative_service(stranger).read_one({"slug": "scope-one-priv"}, fields=None)
 
     async def test_owner_sees_own_private_initiative(self, db):
         await _insert_initiative("scope-own", ALICE)

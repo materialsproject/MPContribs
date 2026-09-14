@@ -66,7 +66,7 @@ async def read_one(
     id: str,
     service: ProjectServiceDep,
     fields: FieldSelector = None,
-) -> Project | ProjectOut | None:
+) -> ProjectOut:
     """Gets a single project by its ID.
 
     Args:

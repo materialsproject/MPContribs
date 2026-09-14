@@ -150,7 +150,7 @@ class MongoDbRepository[
         identifiers: dict[str, Any],
         fields: frozenset[str] | None = None,
         session: AsyncClientSession | None = None,
-    ) -> TOut | None:
+    ) -> TOut:
         """Return the single scoped document matching ``identifiers``, projected to ``fields``.
 
         Args:
@@ -161,7 +161,16 @@ class MongoDbRepository[
         """
         query = self._identifier_query(identifiers)
         projection = self.out_model.projection(fields)
-        return await self.document_model.find_one(self._scope, query, projection_model=projection, session=session)  # pyright: ignore[reportArgumentType]
+        stored_doc = await self.document_model.find_one(
+            self._scope, query, projection_model=projection, session=session
+        )
+        if stored_doc is None:
+            raise NotFoundError(
+                message=f"{self.document_model.__name__} not found for provided query",
+                identifiers=identifiers,
+                fields=fields,
+            )
+        return self.out_model.model_validate(obj=stored_doc, from_attributes=True)
 
     async def list_ids(self, filter: TFilter, session: AsyncClientSession | None = None) -> list[Any]:
         """Return just the ids of scoped documents matching ``filter``.

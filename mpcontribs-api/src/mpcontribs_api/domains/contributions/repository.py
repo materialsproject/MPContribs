@@ -265,7 +265,7 @@ class MongoDbContributionRepository(
         identifiers: dict[str, Any],
         fields: frozenset[str] | None = None,
         session: AsyncClientSession | None = None,
-    ) -> ContributionOut | None:
+    ) -> ContributionOut:
         """Read one contribution by its Mongo ``_id`` or by a (possibly partial) natural identity.
 
         Prefers the id: a bare ``{"id": ...}`` takes the exact, index-covered base path. Any other
@@ -284,6 +284,7 @@ class MongoDbContributionRepository(
             session: optional client session for transactions
 
         Raises:
+            NotFoundError: if no in-scope contribution matches
             ConflictError: if more than one in-scope contribution matches a partial identity
         """
         if identifiers.keys() == {"id"}:
@@ -302,7 +303,9 @@ class MongoDbContributionRepository(
                 "identifiers match more than one contribution; supply unique_value to disambiguate",
                 identifiers=identifiers,
             )
-        return docs[0] if docs else None
+        if not docs:
+            raise NotFoundError(f"{self.document_model.__name__} not found", identifiers=identifiers, fields=fields)
+        return docs[0]
 
     async def upsert_by_id(
         self,
