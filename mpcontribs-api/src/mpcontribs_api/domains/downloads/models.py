@@ -2,6 +2,7 @@ import json
 from datetime import UTC, datetime, timedelta
 from enum import StrEnum
 from hashlib import md5
+from tracemalloc import BaseFilter
 from typing import Self
 
 from beanie import PydanticObjectId
@@ -11,6 +12,7 @@ from pymongo import ASCENDING, IndexModel
 from mpcontribs_api.config import get_settings
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
 from mpcontribs_api.domains._shared.types import DownloadFormat, Identity
+from mpcontribs_api.projection import SparseFieldsModel
 
 
 class JobStatus(StrEnum):
@@ -86,3 +88,32 @@ class DownloadOut(DocumentOut):
     s3_key: str | None = None
     created_at: datetime
     expires_at: datetime
+
+
+class DownloadPatch(SparseFieldsModel):
+    status: JobStatus | None = None
+    rows_written: int | None = None
+    bytes_written: int | None = None
+    error: str | None = None
+    s3_key: str | None = None
+    created_at: datetime | None = None
+    expires_at: datetime | None = None
+
+
+class DownloadFilter(BaseFilter):
+    status: JobStatus | None = None
+    requester: str | None = None
+    requester__in: list[str] | None = None
+    fmt: DownloadFormat | None = None
+    fmt__in: DownloadFormat | None = None
+    error: str | None = None
+    error__in: str | None = None
+    error_neq: str | None = None
+    s3_key: str | None = None
+    s3_key__in: list[str] | None = None
+    created_at: datetime | None = None
+    created_at__lte: datetime | None = None
+    created_at__gte: datetime | None = None
+    expires_at: datetime | None = None
+    expires_at__lte: datetime | None = None
+    expires_at__gte: datetime | None = None
