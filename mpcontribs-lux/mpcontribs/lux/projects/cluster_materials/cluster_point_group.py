@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
+from emmet.core.mpid import MPID
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 
@@ -20,6 +21,12 @@ class ClusterPointGroup(BaseModel):
 
     model_config = _MODEL_CONFIG
 
+    materialId: MPID = Field(
+        description=(
+            "Materials Project identifier linking this row to its parent "
+            "ClusterMaterial contribution."
+        )
+    )
     label: ClusterLabel = Field(
         description="Cluster Finder label for the unique cluster type."
     )

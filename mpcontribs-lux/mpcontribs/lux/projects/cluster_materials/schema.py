@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import re
+from math import isclose
 from typing import Annotated, Literal
 
+import pandas as pd
 from emmet.core.mpid import MPID
 from pydantic import (
     AfterValidator,
@@ -66,7 +68,7 @@ CompoundSystem = Annotated[
 ]
 CommaSeparatedDimensionalities = Annotated[
     str,
-    StringConstraints(min_length=1, max_length=64),
+    StringConstraints(min_length=1, max_length=512),
     AfterValidator(_validate_lattice_dimensionalities),
 ]
 CommaSeparatedLatticeIds = Annotated[
@@ -197,3 +199,58 @@ class ClusterMaterial(BaseModel):
             "doi:10.1038/s41524-024-01220-x."
         ),
     )
+
+
+def validate_material(
+    cluster_material: ClusterMaterial,
+    clusters: pd.DataFrame,
+    cluster_groups: pd.DataFrame,
+) -> bool:
+    """Return True when main data and both tables satisfy shared invariants."""
+    from .cluster import Cluster
+    from .cluster_point_group import ClusterPointGroup
+
+    if not isinstance(cluster_material, ClusterMaterial):
+        raise TypeError("cluster_material must be a ClusterMaterial")
+    if not isinstance(clusters, pd.DataFrame):
+        raise TypeError("clusters must be a pandas DataFrame")
+    if not isinstance(cluster_groups, pd.DataFrame):
+        raise TypeError("cluster_groups must be a pandas DataFrame")
+
+    cluster_rows = [
+        Cluster.model_validate(row) for row in clusters.to_dict(orient="records")
+    ]
+    cluster_group_rows = [
+        ClusterPointGroup.model_validate(row)
+        for row in cluster_groups.to_dict(orient="records")
+    ]
+    material_id = str(cluster_material.materialId)
+
+    if len(cluster_rows) != cluster_material.numberOfClusters:
+        raise ValueError("numberOfClusters must equal the number of clusters rows")
+    if any(str(row.materialId) != material_id for row in cluster_rows):
+        raise ValueError("clusters materialId values must match ClusterMaterial")
+    if not isclose(
+        min(row.averageDistance for row in cluster_rows),
+        cluster_material.minimumAverageDistance,
+        rel_tol=1e-9,
+        abs_tol=1e-6,
+    ):
+        raise ValueError(
+            "minimumAverageDistance must equal the minimum clusters-table distance"
+        )
+    if not cluster_group_rows:
+        raise ValueError("clusterPointGroups must contain at least one row")
+    if len(cluster_group_rows) > len(cluster_rows):
+        raise ValueError(
+            "clusterPointGroups cannot contain more rows than the clusters table"
+        )
+    if any(str(row.materialId) != material_id for row in cluster_group_rows):
+        raise ValueError(
+            "clusterPointGroups materialId values must match ClusterMaterial"
+        )
+    labels = [row.label for row in cluster_group_rows]
+    if len(labels) != len(set(labels)):
+        raise ValueError("clusterPointGroups labels must be unique")
+
+    return True

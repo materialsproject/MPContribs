@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
+from emmet.core.mpid import MPID
 from pydantic import (
     AfterValidator,
     BaseModel,
@@ -14,16 +15,7 @@ from pydantic import (
 )
 from pymatgen.core import Element
 
-
-def _split_comma_separated(value: str, field_name: str) -> list[str]:
-    """Return canonical comma-separated values or raise a validation error."""
-    values = value.split(",")
-    if any(not item or item != item.strip() for item in values):
-        raise ValueError(
-            f"{field_name} must contain nonempty values separated by commas "
-            "without spaces"
-        )
-    return values
+from .schema import _split_comma_separated
 
 
 def _validate_elements(value: str) -> str:
@@ -50,6 +42,12 @@ class Cluster(BaseModel):
 
     model_config = _MODEL_CONFIG
 
+    materialId: MPID = Field(
+        description=(
+            "Materials Project identifier linking this row to its parent "
+            "ClusterMaterial contribution."
+        )
+    )
     size: int = Field(
         ge=2,
         description="Number of atomic sites in this cluster instance.",
