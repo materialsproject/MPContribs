@@ -82,15 +82,17 @@ class ComponentService[
             return None
         return existing.id if existing is not None else None
 
-    async def read_one(self, identifiers: dict[str, Any], fields: frozenset[str] | None) -> TOut | None:
+    async def read_one(self, identifiers: dict[str, Any], fields: frozenset[str] | None) -> TOut:
         """Find a single component matching ``identifiers``, gated by contribution reachability.
 
-        Returns ``None``  when no in-scope contribution references the component.
         Accepts either the bare ``{"id": ...}`` form or the content-hash ``{"md5": ...}`` form.
+
+        Raises:
+            NotFoundError: when the component is absent, or when no in-scope contribution references it
         """
         oid = await self._resolve_component_id(identifiers)
         if oid is None or not await self._contributions.referenced_component_ids(self._ref_field, [oid], scoped=True):
-            return None
+            raise NotFoundError(f"{self._components.document_model.__name__} not found", **identifiers)
         return await self._components.read_one(identifiers, fields)
 
     async def insert_many(
