@@ -15,17 +15,16 @@ from pydantic import (
 )
 from pymatgen.core import Element
 
-from .schema import _split_comma_separated
-
 
 def _validate_elements(value: str) -> str:
-    """Validate comma-separated element symbols while preserving the string."""
+    """Validate and canonicalize comma-separated element symbols."""
+    values = [symbol.strip() for symbol in value.split(",")]
     try:
-        for symbol in _split_comma_separated(value, "elements"):
+        for symbol in values:
             Element(symbol)
     except ValueError as exc:
         raise ValueError("elements contains an invalid element symbol") from exc
-    return value
+    return ",".join(values)
 
 
 CommaSeparatedElements = Annotated[

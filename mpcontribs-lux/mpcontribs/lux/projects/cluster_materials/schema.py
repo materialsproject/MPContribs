@@ -7,7 +7,6 @@ from math import isclose
 from typing import Annotated, Literal
 
 import pandas as pd
-from emmet.core.mpid import MPID
 from pydantic import (
     AfterValidator,
     BaseModel,
@@ -17,6 +16,9 @@ from pydantic import (
     model_validator,
 )
 from pymatgen.core import Element
+
+from .cluster import Cluster
+from .cluster_point_group import ClusterPointGroup
 
 
 def _validate_compound_system(value: str) -> str:
@@ -34,31 +36,20 @@ def _validate_compound_system(value: str) -> str:
     return value
 
 
-def _split_comma_separated(value: str, field_name: str) -> list[str]:
-    """Return canonical comma-separated values or raise a validation error."""
-    values = value.split(",")
-    if any(not item or item != item.strip() for item in values):
-        raise ValueError(
-            f"{field_name} must contain nonempty values separated by commas "
-            "without spaces"
-        )
-    return values
-
-
 def _validate_lattice_dimensionalities(value: str) -> str:
     """Validate comma-separated flat-band lattice dimensionalities."""
-    values = _split_comma_separated(value, "latticeDimensionalities")
+    values = [item.strip() for item in value.split(",")]
     if any(item not in {"1", "2", "3"} for item in values):
         raise ValueError("latticeDimensionalities entries must be 1, 2, or 3")
-    return value
+    return ",".join(values)
 
 
 def _validate_lattice_ids(value: str) -> str:
     """Validate comma-separated flat-band lattice identifiers."""
-    values = _split_comma_separated(value, "latticeIds")
+    values = [item.strip() for item in value.split(",")]
     if any(re.fullmatch(r"(?:LI|SK)-\d+", item) is None for item in values):
         raise ValueError("latticeIds entries must match LI-<digits> or SK-<digits>")
-    return value
+    return ",".join(values)
 
 
 CompoundSystem = Annotated[
@@ -133,12 +124,6 @@ class ClusterMaterial(BaseModel):
 
     model_config = _MODEL_CONFIG
 
-    materialId: MPID = Field(
-        description=(
-            "Materials Project identifier used only as the external linkage key "
-            "for this contribution."
-        )
-    )
     compoundSystem: CompoundSystem = Field(
         description=(
             "Transition-metal and anion pair used for the Cluster Finder search, "
@@ -207,16 +192,6 @@ def validate_material(
     cluster_groups: pd.DataFrame,
 ) -> bool:
     """Return True when main data and both tables satisfy shared invariants."""
-    from .cluster import Cluster
-    from .cluster_point_group import ClusterPointGroup
-
-    if not isinstance(cluster_material, ClusterMaterial):
-        raise TypeError("cluster_material must be a ClusterMaterial")
-    if not isinstance(clusters, pd.DataFrame):
-        raise TypeError("clusters must be a pandas DataFrame")
-    if not isinstance(cluster_groups, pd.DataFrame):
-        raise TypeError("cluster_groups must be a pandas DataFrame")
-
     cluster_rows = [
         Cluster.model_validate(row) for row in clusters.to_dict(orient="records")
     ]
@@ -224,12 +199,12 @@ def validate_material(
         ClusterPointGroup.model_validate(row)
         for row in cluster_groups.to_dict(orient="records")
     ]
-    material_id = str(cluster_material.materialId)
 
     if len(cluster_rows) != cluster_material.numberOfClusters:
         raise ValueError("numberOfClusters must equal the number of clusters rows")
-    if any(str(row.materialId) != material_id for row in cluster_rows):
-        raise ValueError("clusters materialId values must match ClusterMaterial")
+    cluster_material_ids = {str(row.materialId) for row in cluster_rows}
+    if len(cluster_material_ids) != 1:
+        raise ValueError("clusters must contain exactly one materialId")
     if not isclose(
         min(row.averageDistance for row in cluster_rows),
         cluster_material.minimumAverageDistance,
@@ -245,10 +220,11 @@ def validate_material(
         raise ValueError(
             "clusterPointGroups cannot contain more rows than the clusters table"
         )
-    if any(str(row.materialId) != material_id for row in cluster_group_rows):
-        raise ValueError(
-            "clusterPointGroups materialId values must match ClusterMaterial"
-        )
+    group_material_ids = {str(row.materialId) for row in cluster_group_rows}
+    if len(group_material_ids) != 1:
+        raise ValueError("clusterPointGroups must contain exactly one materialId")
+    if cluster_material_ids != group_material_ids:
+        raise ValueError("clusters and clusterPointGroups materialId values must match")
     labels = [row.label for row in cluster_group_rows]
     if len(labels) != len(set(labels)):
         raise ValueError("clusterPointGroups labels must be unique")
