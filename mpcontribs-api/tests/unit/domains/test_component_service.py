@@ -70,9 +70,7 @@ def _make_service(
 
 async def test_delete_reachable_and_unreferenced_deletes_all():
     a, b = _oid(), _oid()
-    svc, components, contributions = _make_service(
-        candidate_ids=[a, b], reachable={a, b}, referenced=set()
-    )
+    svc, components, contributions = _make_service(candidate_ids=[a, b], reachable={a, b}, referenced=set())
 
     result = await svc.delete_many(AttachmentFilter())
 
@@ -188,15 +186,14 @@ def _make_read_service(*, reachable: set[PydanticObjectId]) -> tuple[ComponentSe
     return service, components, contributions
 
 
-async def test_get_by_id_unreachable_returns_none():
-    # The id is resolved through the repo, but an unreachable component still yields None (and the
+async def test_get_by_id_unreachable_raises_not_found():
+    # The id is resolved through the repo, but an unreachable component raises NotFoundError (and the
     # full-fields fetch is skipped once the reachability gate fails).
     oid = _oid()
     svc, components, _ = _make_read_service(reachable=set())
 
-    result = await svc.read_one({"id": str(oid)}, fields=None)
-
-    assert result is None
+    with pytest.raises(NotFoundError):
+        await svc.read_one({"id": str(oid)}, fields=None)
     components.read_one.assert_awaited_once()
 
 

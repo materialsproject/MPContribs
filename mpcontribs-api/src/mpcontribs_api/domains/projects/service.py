@@ -41,8 +41,8 @@ class ProjectService:
         """Return a page of scoped projects matching ``filter``."""
         return await self._projects.read_many(filter=filter, pagination=pagination, fields=fields)
 
-    async def read_one(self, identifiers: dict[str, Any], fields: frozenset[str] | None) -> Project | ProjectOut | None:
-        """Return the single scoped project matching ``identifiers`` (``{"id": ...}``)."""
+    async def read_one(self, identifiers: dict[str, Any], fields: frozenset[str] | None) -> ProjectOut:
+        """Return the single scoped project matching ``identifiers`` (``{"id": ...}``); 404 if absent."""
         return await self._projects.read_one(identifiers, fields)
 
     async def upsert_one(self, identifiers: dict[str, Any], data: ProjectIn) -> Project:
