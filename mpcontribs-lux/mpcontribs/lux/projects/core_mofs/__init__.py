@@ -1,21 +1,5 @@
-"""CoRE MOF MPContribs-Lux schema staging package."""
+"""CoRE MOF contribution schema."""
 
-from .schemas import (
-    CalculationDiagnosticRecord,
-    CheckerFindingRecord,
-    CifManifestRecord,
-    MetadataRecord,
-    StructureRegistryRecord,
-    TopologyRecord,
-    ZeoFeaturesRecord,
-)
+from .schemas import CoreMofContribution
 
-__all__ = [
-    "CalculationDiagnosticRecord",
-    "CheckerFindingRecord",
-    "CifManifestRecord",
-    "MetadataRecord",
-    "StructureRegistryRecord",
-    "TopologyRecord",
-    "ZeoFeaturesRecord",
-]
+__all__ = ["CoreMofContribution"]

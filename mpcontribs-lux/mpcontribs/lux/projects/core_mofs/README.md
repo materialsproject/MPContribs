@@ -1,26 +1,37 @@
-# CoRE MOF Lux schemas
+# CoRE MOF Lux schema
 
-These Pydantic models describe the released CoRE MOF v26.0.2 artifacts. The
-canonical join key is the exact release-preserved `structure_id`; row order,
-formula, common name, topology, and `source_id` are not join keys.
+## Contribution definition
 
-## Models
+A CoRE MOF contribution is one final, release-preserved structure identified
+by a unique `structureId`. ASR, FSR, and ION representations are separate
+contributions when they have distinct identifiers.
 
-| Model | Released artifact | Relationship | v26.0.2 rows |
-| --- | --- | --- | ---: |
-| `StructureRegistryRecord` | structure-name registry | one per structure | 42,574 |
-| `CifManifestRecord` | CIF integrity manifest | one per structure | 42,574 |
-| `MetadataRecord` | chemistry and checker summary | one per structure | 42,574 |
-| `ZeoFeaturesRecord` | pore, periodicity, and OMS features | one per structure | 42,574 |
-| `TopologyRecord` | nested CrystalNets result | one per structure | 42,574 |
-| `CheckerFindingRecord` | individual checker result | five per structure | 212,870 |
-| `CalculationDiagnosticRecord` | failed/partial calculations | zero to four per structure | 49,028 |
+Only final, publication-authorized structures with five successfully completed
+PASS checker outcomes (the strict five-checker CR subset) are selected before
+submission. Pipeline failures, non-CR structures, non-final intermediate
+results, diagnostics, logs, runtimes, file paths, manifests, and retry
+information are filtered out before submission. The Pydantic model validates
+the shape of a selected record; it does not reproduce pipeline aggregation
+rules.
 
-`CheckerFindingRecord.detail_errors` and `raw_prediction_output` retain their
-source JSON serialization as strings. The five checkers publish different
-nested payload shapes; storing the strings keeps the combined table
-Arrow-compatible while validators still require valid JSON objects and a
-consistent operational vote.
+Raw release artifacts such as metadata CSV, checker findings, Zeo++ features,
+topology output, and calculation diagnostics do not independently define a
+contribution. They are source artifacts associated through `structureId`.
 
-These schemas do not grant permission to redistribute or upload CIF files.
-Data publication and upload remain separate approval steps.
+## Initial schema scope
+
+The initial `CoreMofContribution` contains:
+
+- the release-preserved structure identifier;
+- the original CIF text;
+- a pymatgen `Structure` containing lattice, sites, and charge;
+- source database, source identifier, and structure variant;
+- optional formula, common name, DOI, and publication year.
+
+Checker findings and topology are deferred until their user-facing shape and
+final-data policy are agreed in a later review round. Zeo++ features are
+deferred because they are likely to become an MPContribs Table.
+
+All field names use camelCase. Units are not encoded in field names and are
+assigned through `client.init_columns` during upload. Optional fields default
+to `None`.
