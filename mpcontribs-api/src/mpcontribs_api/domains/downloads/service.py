@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 import structlog
 from pymongo.asynchronous.client_session import AsyncClientSession
 from types_aiobotocore_sqs.client import SQSClient
@@ -16,6 +18,8 @@ class DownloadService:
     the worker that streams the results to S3 and marks the job ``ready`` lives elsewhere.
     """
 
+    QUEUE_URL: ClassVar[str] = "some_url"
+
     def __init__(self, downloads: MongoDbDownloadRepository, sqs: SQSClient) -> None:
         self._downloads = downloads
         self._sqs = sqs
@@ -32,24 +36,22 @@ class DownloadService:
         The :class:`Download` document is the source of truth for job status; ``_enqueue`` only
         signals a worker to pick it up. Returns the stored job so the caller can report its id.
         """
+        # TODO: Check Redis cache for s3_key first.
+        # If cache hit, generate presigned url immediately. If cache miss, add to mongo and SQS
         job = Download.from_input_model(download_in)
         inserted = await self._downloads.insert_one(job)
         await self._enqueue(inserted)
         return DownloadOut.model_validate(inserted.model_dump())
 
     async def _enqueue(self, download: Download) -> None:
-        """Push the job onto the Redis work queue for a worker to pick up.
+        """Push the job into SQS for a worker to pick up.
 
-        TODO: publish ``download.id`` onto the Redis queue (see ``settings.redis``) and have the
-        download worker consume it, stream the results to S3, and patch the job to ``ready``/``error``.
-        For now this is a stub that only records that the job would have been enqueued.
+        Since the job is already added to MongoDB, we just pass the ID of the inserted document.
         """
-        logger.info(
-            "download.enqueue_stub",
-            download_id=str(download.id),
-            s3_key=download.s3_key,
-            domain=download.domain,
-            fmt=download.fmt,
+
+        await self._sqs.send_message(
+            QueueUrl=self.QUEUE_URL,
+            MessageBody=str(download.id),
         )
 
     async def get_presigned_url(self, s3_key: str) -> str:
