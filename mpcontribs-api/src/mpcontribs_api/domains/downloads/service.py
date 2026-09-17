@@ -1,5 +1,3 @@
-from typing import ClassVar
-
 import structlog
 from botocore.exceptions import ClientError
 from pymongo.asynchronous.client_session import AsyncClientSession
@@ -21,8 +19,6 @@ class DownloadService:
     handed to a background worker via a queue. This service only persists the job and enqueues it;
     the worker that streams the results to S3 and marks the job ``ready`` lives elsewhere.
     """
-
-    QUEUE_URL: ClassVar[str] = "some_url"
 
     def __init__(self, downloads: MongoDbDownloadRepository, sqs: SQSClient, s3: S3Client) -> None:
         self._downloads = downloads
@@ -55,7 +51,7 @@ class DownloadService:
         """
 
         await self._sqs.send_message(
-            QueueUrl=self.QUEUE_URL,
+            QueueUrl=get_settings().aws.sqs.download_queue_url,
             MessageBody=str(download.id),
         )
 
