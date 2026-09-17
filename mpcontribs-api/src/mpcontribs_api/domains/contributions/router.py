@@ -1,18 +1,15 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
-from fastapi.responses import StreamingResponse
 from fastapi_filter import FilterDepends
 
 from mpcontribs_api.config import get_settings
-from mpcontribs_api.dependencies import S3Dep, require_user
+from mpcontribs_api.dependencies import require_user
 from mpcontribs_api.domains._shared.bulk import BulkDeleteSummary, BulkUpdateSummary, BulkWriteSummary
 from mpcontribs_api.domains._shared.models import DeleteResponse
 from mpcontribs_api.domains._shared.types import (
     DownloadFormat,
     FieldSelector,
-    ShortMimeFormat,
-    download_filename,
 )
 from mpcontribs_api.domains.contributions.dependencies import ContributionServiceDep
 from mpcontribs_api.domains.contributions.models import (
@@ -107,31 +104,13 @@ async def upsert_many(
     return await service.upsert_many(contributions=contributions)
 
 
-@router.get("/download/{short_mime}")
-async def download_contributions(
+@router.post("/download")
+async def download(
     service: ContributionServiceDep,
-    s3: S3Dep,
-    short_mime: ShortMimeFormat = ShortMimeFormat.GZ,
+    filter: ContributionFilter = FilterDepends(Filter=ContributionFilter),
     format: DownloadFormat = DownloadFormat.JSONL,
-    ignore_cache: bool = False,
-    filter: ContributionFilter = FilterDepends(ContributionFilter),
-    fields: FieldSelector = None,
 ):
-    selected = ContributionOut.parse_fields(fields)
-    body = await service.download(
-        format=format,
-        short_mime=short_mime,
-        ignore_cache=ignore_cache,
-        filter=filter,
-        fields=selected,
-        s3=s3,
-    )
-    filename = download_filename("contributions", format, short_mime)
-    return StreamingResponse(
-        body,
-        media_type="application/gzip",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
-    )
+    return await service.queue_download(filter=filter, format=format)
 
 
 # Declared before the ``/{id}`` routes so the literal ``item`` is never captured as an id.

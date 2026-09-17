@@ -1,7 +1,6 @@
 import asyncio
 from collections import defaultdict
-from collections.abc import AsyncIterable, Iterable
-from contextlib import AbstractAsyncContextManager
+from collections.abc import Iterable
 from dataclasses import dataclass
 from itertools import permutations
 from typing import Any, cast
@@ -14,7 +13,6 @@ from pymatgen.core.composition import CompositionError
 from pymongo import AsyncMongoClient
 from pymongo.asynchronous.client_session import AsyncClientSession
 from pymongo.errors import BulkWriteError
-from types_aiobotocore_s3 import S3Client
 
 from mpcontribs_api.authz import PROJECT_PATH, ROOT_PATH, User
 from mpcontribs_api.config import ConsumerLimits, MongoSettings, get_settings
@@ -26,7 +24,7 @@ from mpcontribs_api.domains._shared.bulk import (
     bulk_failure_from_exception,
 )
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
-from mpcontribs_api.domains._shared.types import DownloadFormat, ShortMimeFormat
+from mpcontribs_api.domains._shared.types import DownloadFormat
 from mpcontribs_api.domains._shared.units import QuantityLeaf
 from mpcontribs_api.domains.attachments.models import AttachmentFilter
 from mpcontribs_api.domains.attachments.repository import MongoDbAttachmentRepository
@@ -44,6 +42,8 @@ from mpcontribs_api.domains.contributions.models import (
 from mpcontribs_api.domains.contributions.pivot import expand_contribution
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
 from mpcontribs_api.domains.contributions.stats import iter_leaves
+from mpcontribs_api.domains.downloads.models import DownloadIn, DownloadOut, JobStatus
+from mpcontribs_api.domains.downloads.service import DownloadService
 from mpcontribs_api.domains.projects.models import Column, Stats, validate_column_limit
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
 from mpcontribs_api.domains.structures.models import Structure, StructureFilter
@@ -88,6 +88,7 @@ class ContributionService:
         structures: MongoDbStructureRepository,
         attachments: MongoDbAttachmentRepository,
         tables: MongoDbTableRepository,
+        downloads: DownloadService,
         settings: MongoSettings | None = None,
         limits: ConsumerLimits | None = None,
     ):
@@ -98,6 +99,7 @@ class ContributionService:
         self._structures = structures
         self._attachments = attachments
         self._tables = tables
+        self._downloads = downloads
         self._settings = settings or get_settings().mongo
         self._limits = limits or get_settings().consumer
 
@@ -124,29 +126,20 @@ class ContributionService:
     ) -> Page[ContributionOut]:
         return await self._contributions.read_many(pagination=pagination, filter=filter, fields=fields)
 
-    async def download(
-        self,
-        format: DownloadFormat,
-        short_mime: ShortMimeFormat,
-        ignore_cache: bool,
-        filter: ContributionFilter,
-        fields: frozenset[str] | None,
-        s3: AbstractAsyncContextManager[S3Client],
-    ) -> AsyncIterable[bytes]:
-        """Stream a gzip-compressed export of matching contributions. See repository ``download``."""
-        return self._contributions.download(
-            format=format,
-            short_mime=short_mime,
-            ignore_cache=ignore_cache,
+    async def queue_download(self, filter: ContributionFilter, format: DownloadFormat) -> DownloadOut:
+        consumer_id = self._user.consumer_id
+        requesting_user = consumer_id if consumer_id is not None else "anonymous"
+        download_in = DownloadIn(
+            status=JobStatus.submitted,
+            requester=requesting_user,
             filter=filter,
-            fields=fields,
-            s3=s3,
-            key_name="",  # TODO: Temp
-            bucket_name="contributions",
+            domain="contributions",
+            fmt=format,
         )
+        return await self._downloads.queue_download(download_in)
 
     async def delete_one(self, identifiers: dict[str, Any]) -> BulkDeleteSummary:
-        """Delete a single contribution and its child components, matching ``identifiers``.
+        """Delete a single contribution and its child components, matchingdoc = doc =  ``identifiers``.
 
         Accepts either the bare ``{"id": ...}`` form or the semantic
         ``{"project", "identifier", "version"}`` set. Cascades component deletion via

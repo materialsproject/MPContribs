@@ -21,6 +21,7 @@ from mpcontribs_api.domains._shared.search_index import sync_all_search_indexes
 from mpcontribs_api.domains.attachments.models import Attachment
 from mpcontribs_api.domains.consumers.models import Consumer
 from mpcontribs_api.domains.contributions.models import Contribution
+from mpcontribs_api.domains.downloads.models import Download
 from mpcontribs_api.domains.healthcheck.router import router as healthcheck_router
 from mpcontribs_api.domains.initiatives.models import Initiative
 from mpcontribs_api.domains.project_groups.models import ProjectGroup
@@ -48,6 +49,7 @@ DOCUMENT_MODELS = [
     Structure,
     Table,
     Consumer,
+    Download,
 ]
 
 
