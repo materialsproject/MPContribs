@@ -93,12 +93,12 @@ async def _setup_s3(app: FastAPI, settings: Settings, stack: AsyncExitStack) -> 
         app.state.boto_session.client(
             "s3",
             region_name=settings.aws.region,
-            config=AioConfig(max_pool_connections=settings.aws.max_pool_connections),
+            config=AioConfig(max_pool_connections=settings.aws.s3.max_pool_connections),
         ),
     )
     s3: S3Client = await stack.enter_async_context(cm)
     app.state.s3 = s3
-    logger.info("connected to s3")
+    logger.info("connected to S3")
 
 
 async def _setup_sqs(app: FastAPI, settings: Settings, stack: AsyncExitStack) -> None:
@@ -112,7 +112,7 @@ async def _setup_sqs(app: FastAPI, settings: Settings, stack: AsyncExitStack) ->
     )
     sqs: SQSClient = await stack.enter_async_context(cm)
     app.state.sqs = sqs
-    logger.info("connected to sqs")
+    logger.info("connected to SQS")
 
 
 async def _setup_aws(app: FastAPI, settings: Settings, stack: AsyncExitStack) -> None:
@@ -120,6 +120,8 @@ async def _setup_aws(app: FastAPI, settings: Settings, stack: AsyncExitStack) ->
 
     await _setup_s3(app, settings, stack)
     await _setup_sqs(app, settings, stack)
+
+    logger.info("all AWS connections connected")
 
 
 def _build_lifespan(settings: Settings):

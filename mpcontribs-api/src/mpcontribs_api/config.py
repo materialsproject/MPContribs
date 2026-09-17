@@ -99,13 +99,9 @@ class ObservabilitySettings(BaseModel):
     )
 
 
-class AwsSettings(BaseModel):
-    """AWS Settings
+class S3Settings(BaseModel):
+    """AWS S3 Settings for MPContribs"""
 
-    Primarily used for S3 access
-    """
-
-    region: str = Field(default="us-east-1", description="The region to connect to")
     max_pool_connections: int = Field(
         default=10,
         description="The maximum number of connections the app is allowed to have to S3",
@@ -113,6 +109,27 @@ class AwsSettings(BaseModel):
     health_bucket: str = Field(
         default="contributions",
         description="The S3 bucket probed by the healthcheck to verify connectivity",
+    )
+
+
+class SqsSettings(BaseModel):
+    """AWS SQS Settings for MPContribs"""
+
+    download_queue_url: str = Field(default="", description="The url to connect to the download queue")
+
+
+class AwsSettings(BaseModel):
+    """AWS Settings
+
+    Primarily used for S3 access
+    """
+
+    region: str = Field(default="us-east-1", description="The region to connect to")
+    s3: S3Settings = Field(
+        default_factory=S3Settings, description="Settings to configure the S3 connection for MPContribs"
+    )
+    sqs: SqsSettings = Field(
+        default_factory=SqsSettings, description="Settings to configure the SQS connection for MPContribs"
     )
 
 
