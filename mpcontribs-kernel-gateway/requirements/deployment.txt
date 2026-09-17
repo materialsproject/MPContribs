@@ -235,7 +235,7 @@ packaging==26.3
     #   plotly
 palettable==3.3.3
     # via pymatgen-core
-pandas==2.3.3
+pandas==3.0.5
     # via
     #   -r python/requirements.txt
     #   mpcontribs-client
@@ -304,9 +304,7 @@ python-dateutil==2.9.0.post0
 python-json-logger==4.2.0
     # via jupyter-events
 pytz==2026.3.post1
-    # via
-    #   bravado-core
-    #   pandas
+    # via bravado-core
 pyyaml==6.0.3
     # via
     #   bravado
@@ -425,9 +423,7 @@ typing-extensions==4.16.0
     #   spglib
     #   swagger-spec-validator
 tzdata==2026.4
-    # via
-    #   arrow
-    #   pandas
+    # via arrow
 ujson==6.0.0
     # via mpcontribs-client
 uncertainties==3.2.3

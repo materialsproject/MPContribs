@@ -313,7 +313,7 @@ packaging==26.3
     #   plotly
 palettable==3.3.3
     # via pymatgen-core
-pandas==2.3.3
+pandas==3.0.5
     # via
     #   -r python/requirements.txt
     #   pymatgen-core
@@ -390,9 +390,7 @@ python-mimeparse==2.0.0
 python-snappy==0.7.3
     # via mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
 pytz==2026.3.post1
-    # via
-    #   dateparser
-    #   pandas
+    # via dateparser
 pyyaml==6.0.3
     # via
     #   flasgger-tschaume
@@ -514,9 +512,7 @@ typing-extensions==4.16.0
     #   referencing
     #   spglib
 tzdata==2026.4
-    # via
-    #   arrow
-    #   pandas
+    # via arrow
 tzlocal==5.4.4
     # via dateparser
 uncertainties==3.2.3
