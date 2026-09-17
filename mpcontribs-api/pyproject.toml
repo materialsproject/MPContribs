@@ -70,6 +70,7 @@ dev = [
     "httpx2>=0.28.0",
     "pytest-asyncio>=1.4.0",
     "hypothesis>=6.100.0",
+    "types-aioboto3-custom",
 ]
 
 [tool.pytest.ini_options]
@@ -100,3 +101,6 @@ extraPaths = ["src"]
 # "build/" is a setuptools build artifact (gitignored); type-checking its stale copies produces
 # phantom errors against superseded source.
 ignore=["tests/", "build/"]
+
+[tool.uv.sources]
+types-aioboto3-custom = { path = "vendored/types_aioboto3_custom-14.1.0-py3-none-any.whl" }
