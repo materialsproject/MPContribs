@@ -1,11 +1,15 @@
 from typing import ClassVar
 
 import structlog
+from botocore.exceptions import ClientError
 from pymongo.asynchronous.client_session import AsyncClientSession
+from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_sqs.client import SQSClient
 
-from mpcontribs_api.domains.downloads.models import Download, DownloadIn, DownloadOut
+from mpcontribs_api.config import get_settings
+from mpcontribs_api.domains.downloads.models import Download, DownloadIn, DownloadOut, JobStatus
 from mpcontribs_api.domains.downloads.repository import MongoDbDownloadRepository
+from mpcontribs_api.exceptions import JobStatusError, NotFoundError, S3Error
 
 logger = structlog.get_logger(__name__)
 
@@ -20,9 +24,10 @@ class DownloadService:
 
     QUEUE_URL: ClassVar[str] = "some_url"
 
-    def __init__(self, downloads: MongoDbDownloadRepository, sqs: SQSClient) -> None:
+    def __init__(self, downloads: MongoDbDownloadRepository, sqs: SQSClient, s3: S3Client) -> None:
         self._downloads = downloads
         self._sqs = sqs
+        self._s3 = s3
 
     async def read_one(
         self, s3_key: str, fields: frozenset[str], session: AsyncClientSession | None = None
@@ -59,5 +64,27 @@ class DownloadService:
 
         If the file is not ready, raise an error.
         """
-        # TODO: Implement. Left as stub method to silence errors
-        return ""
+        bucket_name = "mpcontribs-dowloads"
+
+        doc = await self.read_one(s3_key=s3_key, fields=frozenset(["status"]))
+
+        if doc is None:
+            raise NotFoundError(message="download not found", s3_key=s3_key)
+        if doc.status != JobStatus.ready:
+            raise JobStatusError(message="download status not 'ready'", s3_key=s3_key, status=doc.status)
+
+        try:
+            url = await self._s3.generate_presigned_url(
+                ClientMethod="get_object",
+                Params={
+                    "Bucket": bucket_name,
+                    "Key": s3_key,
+                },
+                ExpiresIn=get_settings().aws.s3.expires_in,
+            )
+        except ClientError as err:
+            raise S3Error(
+                message="error generating presigned url for object", object_key=s3_key, bucket=bucket_name
+            ) from err
+
+        return url
