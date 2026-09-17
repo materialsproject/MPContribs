@@ -110,6 +110,10 @@ class S3Settings(BaseModel):
         default="contributions",
         description="The S3 bucket probed by the healthcheck to verify connectivity",
     )
+    expires_in: int = Field(
+        default=60,
+        description="Duration (in seconds) for presigned url expiration",
+    )
 
 
 class SqsSettings(BaseModel):
