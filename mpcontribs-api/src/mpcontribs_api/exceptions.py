@@ -100,6 +100,22 @@ class DownloadError(AppError):
     log_level = logging.WARNING
 
 
+class JobStatusError(AppError):
+    status_code = 425
+    error_code = "job_status_error"
+    log_level = logging.INFO
+
+
+class AwsError(AppError):
+    status_code = 500
+    error_code = "aws_error"
+    log_level = logging.WARNING
+
+
+class S3Error(AwsError):
+    error_code = "s3_error"
+
+
 def error_body(error_code: str, message: str, **public_context) -> dict:
     body: dict[str, Any] = {"error": {"code": error_code, "message": message}}
     if public_context:
