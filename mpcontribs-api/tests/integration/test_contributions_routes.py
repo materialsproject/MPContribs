@@ -3,7 +3,7 @@ from beanie import PydanticObjectId
 
 from mpcontribs_api.domains._shared.bulk import BulkDeleteSummary, BulkUpdateSummary, BulkWriteSummary
 from mpcontribs_api.domains.contributions.dependencies import get_contribution_service
-from mpcontribs_api.domains.contributions.models import ContributionOut
+from mpcontribs_api.domains.contributions.models import ContributionFilter, ContributionOut
 from mpcontribs_api.exceptions import ConflictError, NotFoundError
 from tests.integration.conftest import AUTHED_HEADERS, FORCE_ANON_HEADERS
 
@@ -47,6 +47,16 @@ def _valid_contribution_body(**overrides) -> dict:
 
 
 SAMPLE_OUT = ContributionOut(project="p", material_id="mp-1", formula="Fe2O3")
+
+# A queued download job as the service returns it (POST /download responds with the tracked job).
+SAMPLE_JOB = {
+    "id": str(PydanticObjectId()),
+    "s3_key": "contributions/" + "0" * 32 + ".jsonl.gz",
+    "status": "submitted",
+    "requester": "test-consumer-id",
+    "domain": "contributions",
+    "fmt": "jsonl",
+}
 
 
 # ===========================================================================
@@ -146,8 +156,8 @@ class TestContributionByIdRouting:
         assert client.delete(f"/api/v1/contributions/{PydanticObjectId()}").status_code == 200
 
     def test_download_route_conventional_path(self, client, contribution_service):
-        contribution_service.download.return_value = iter([b"x"])
-        assert client.get("/api/v1/contributions/download/gz").status_code == 200
+        contribution_service.queue_download.return_value = SAMPLE_JOB
+        assert client.post("/api/v1/contributions/download").status_code == 200
 
 
 class TestContributionByIdentityRouting:
@@ -263,66 +273,54 @@ class TestDeleteContributionByIdWiring:
 
 
 # ===========================================================================
-# GET /contributions/download/{short_mime}
+# POST /contributions/download
 # ===========================================================================
 
 
-class TestDownloadContributions:
-    def test_default_format_jsonl_returns_200(self, client, contribution_service):
-        # The contributions route gives `format` a default of JSONL, so it works
-        # with the param omitted (component routes require it — see test_component_routes).
-        contribution_service.download.return_value = iter([b"x"])
-        assert client.get("/api/v1/contributions/download/gz").status_code == 200
+class TestQueueDownload:
+    """The download endpoint queues an async job (delegating to ``queue_download``) and returns the
+    tracked job, rather than streaming the export inline."""
+
+    def test_default_format_returns_200(self, client, contribution_service):
+        # ``format`` defaults to JSONL, so the endpoint works with the param omitted.
+        contribution_service.queue_download.return_value = SAMPLE_JOB
+        assert client.post("/api/v1/contributions/download").status_code == 200
 
     def test_csv_format_returns_200(self, client, contribution_service):
-        contribution_service.download.return_value = iter([b"x"])
-        assert client.get("/api/v1/contributions/download/gz?format=csv").status_code == 200
+        contribution_service.queue_download.return_value = SAMPLE_JOB
+        assert client.post("/api/v1/contributions/download?format=csv").status_code == 200
 
-    def test_body_is_streamed_bytes(self, client, contribution_service):
-        contribution_service.download.return_value = iter([b"abc", b"def"])
-        assert client.get("/api/v1/contributions/download/gz").content == b"abcdef"
+    def test_returns_the_queued_job(self, client, contribution_service):
+        contribution_service.queue_download.return_value = SAMPLE_JOB
+        assert client.post("/api/v1/contributions/download").json() == SAMPLE_JOB
 
-    def test_invalid_short_mime_returns_422(self, client, contribution_service):
-        contribution_service.download.return_value = iter([b"x"])
-        # Only 'gz' is a valid ShortMimeFormat.
-        assert client.get("/api/v1/contributions/download/zip").status_code == 422
+    def test_default_format_forwarded_is_jsonl(self, client, contribution_service):
+        contribution_service.queue_download.return_value = SAMPLE_JOB
+        client.post("/api/v1/contributions/download")
+        assert contribution_service.queue_download.call_args.kwargs["format"] == "jsonl"
+
+    def test_format_forwarded_to_service(self, client, contribution_service):
+        contribution_service.queue_download.return_value = SAMPLE_JOB
+        client.post("/api/v1/contributions/download?format=csv")
+        assert contribution_service.queue_download.call_args.kwargs["format"] == "csv"
 
     def test_invalid_format_returns_422(self, client, contribution_service):
-        contribution_service.download.return_value = iter([b"x"])
-        assert client.get("/api/v1/contributions/download/gz?format=xml").status_code == 422
+        contribution_service.queue_download.return_value = SAMPLE_JOB
+        assert client.post("/api/v1/contributions/download?format=xml").status_code == 422
 
-    def test_format_forwarded_to_repo(self, client, contribution_service):
-        contribution_service.download.return_value = iter([b"x"])
-        client.get("/api/v1/contributions/download/gz?format=csv")
-        assert contribution_service.download.call_args.kwargs["format"] == "csv"
+    def test_filter_forwarded_to_service(self, client, contribution_service):
+        # The request's query params are parsed into a ContributionFilter and handed to the service.
+        contribution_service.queue_download.return_value = SAMPLE_JOB
+        client.post("/api/v1/contributions/download?project=my-proj")
+        forwarded = contribution_service.queue_download.call_args.kwargs["filter"]
+        assert isinstance(forwarded, ContributionFilter)
+        assert forwarded.project == "my-proj"
 
-    def test_fields_parsed_and_forwarded(self, client, contribution_service):
-        contribution_service.download.return_value = iter([b"x"])
-        client.get("/api/v1/contributions/download/gz?_fields=project")
-        forwarded = contribution_service.download.call_args.kwargs["fields"]
-        assert "project" in forwarded
-
-    def test_invalid_fields_returns_422(self, client, contribution_service):
-        contribution_service.download.return_value = iter([b"x"])
-        assert client.get("/api/v1/contributions/download/gz?_fields=not_a_field").status_code == 422
-
-    def test_filename_names_the_contributions_resource(self, client, contribution_service):
-        """The attachment filename references the contributions resource."""
-        contribution_service.download.return_value = iter([b"x"])
-        cd = client.get("/api/v1/contributions/download/gz").headers["content-disposition"]
-        assert "contributions" in cd
-
-    def test_csv_filename_uses_csv_extension(self, client, contribution_service):
-        """A CSV download is named *.csv.gz, matching the requested format."""
-        contribution_service.download.return_value = iter([b"x"])
-        cd = client.get("/api/v1/contributions/download/gz?format=csv").headers["content-disposition"]
-        assert ".csv.gz" in cd
-
-    def test_repo_error_surfaces_as_uniform_json(self, client, contribution_service):
-        # An AppError raised while the repo builds the download surfaces through the
-        # registered exception handler as the uniform error envelope (not a 500 traceback).
-        contribution_service.download.side_effect = NotFoundError("nothing to download")
-        r = client.get("/api/v1/contributions/download/gz")
+    def test_service_error_surfaces_as_uniform_json(self, client, contribution_service):
+        # An AppError raised while queueing surfaces through the registered exception handler as the
+        # uniform error envelope (not a 500 traceback).
+        contribution_service.queue_download.side_effect = NotFoundError("nothing to download")
+        r = client.post("/api/v1/contributions/download")
         assert r.status_code == 404
         assert r.json()["error"]["code"] == "not_found"
 

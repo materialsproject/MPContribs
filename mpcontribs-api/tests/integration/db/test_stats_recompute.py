@@ -27,6 +27,8 @@ from mpcontribs_api.domains.contributions.models import ContributionFilter, Cont
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
 from mpcontribs_api.domains.contributions.service import ContributionService
 from mpcontribs_api.domains.attachments.repository import MongoDbAttachmentRepository
+from mpcontribs_api.domains.downloads.repository import MongoDbDownloadRepository
+from mpcontribs_api.domains.downloads.service import DownloadService
 from mpcontribs_api.domains.projects.models import Column, Project, ProjectIn, Stats
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
 from mpcontribs_api.domains.structures.models import Lattice, Site, SiteProperties, Species, StructureIn
@@ -57,6 +59,7 @@ def _service(client) -> ContributionService:
         structures=MongoDbStructureRepository(ADMIN),
         attachments=MongoDbAttachmentRepository(ADMIN),
         tables=MongoDbTableRepository(ADMIN),
+        downloads=DownloadService(downloads=MongoDbDownloadRepository(ADMIN)),
     )
 
 

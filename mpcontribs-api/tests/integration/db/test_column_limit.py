@@ -22,6 +22,8 @@ from mpcontribs_api.domains.attachments.repository import MongoDbAttachmentRepos
 from mpcontribs_api.domains.contributions.models import ContributionFilter, ContributionIn, ContributionPatch
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
 from mpcontribs_api.domains.contributions.service import ContributionService
+from mpcontribs_api.domains.downloads.repository import MongoDbDownloadRepository
+from mpcontribs_api.domains.downloads.service import DownloadService
 from mpcontribs_api.domains.initiatives.repository import MongoDbInitiativeRepository
 from mpcontribs_api.domains.projects.models import Column, Project, ProjectIn
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
@@ -47,6 +49,7 @@ def _service(client) -> ContributionService:
         structures=MongoDbStructureRepository(ADMIN),
         attachments=MongoDbAttachmentRepository(ADMIN),
         tables=MongoDbTableRepository(ADMIN),
+        downloads=DownloadService(downloads=MongoDbDownloadRepository(ADMIN)),
     )
 
 

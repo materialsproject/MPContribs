@@ -200,6 +200,7 @@ def _make_service(
     write_slots: asyncio.Semaphore | None = None,
     user: User | None = None,
     unique_column: str | None = None,
+    downloads=None,
 ) -> tuple[ContributionService, AsyncMock, AsyncMock, AsyncMock, AsyncMock, MagicMock]:
     contrib_repo = contributions or AsyncMock()
     struct_repo = structures or AsyncMock()
@@ -233,6 +234,7 @@ def _make_service(
         structures=struct_repo,
         tables=table_repo,
         attachments=attach_repo,
+        downloads=downloads or AsyncMock(),
         settings=settings or _make_mongo_settings(),
         limits=limits,
     )
