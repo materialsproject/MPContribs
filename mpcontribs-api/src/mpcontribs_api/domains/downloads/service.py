@@ -1,5 +1,6 @@
 import structlog
 from pymongo.asynchronous.client_session import AsyncClientSession
+from types_aiobotocore_sqs.client import SQSClient
 
 from mpcontribs_api.domains.downloads.models import Download, DownloadIn, DownloadOut
 from mpcontribs_api.domains.downloads.repository import MongoDbDownloadRepository
@@ -15,8 +16,9 @@ class DownloadService:
     the worker that streams the results to S3 and marks the job ``ready`` lives elsewhere.
     """
 
-    def __init__(self, downloads: MongoDbDownloadRepository) -> None:
+    def __init__(self, downloads: MongoDbDownloadRepository, sqs: SQSClient) -> None:
         self._downloads = downloads
+        self._sqs = sqs
 
     async def read_one(
         self, s3_key: str, fields: frozenset[str], session: AsyncClientSession | None = None

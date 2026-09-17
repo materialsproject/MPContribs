@@ -3,11 +3,12 @@ from contextlib import AbstractAsyncContextManager, AsyncExitStack, asynccontext
 from typing import cast
 
 import aioboto3
+from aiobotocore.config import AioConfig
 from beanie import init_beanie
-from botocore.config import Config
 from fastapi import Depends, FastAPI
 from pymongo import AsyncMongoClient
 from types_aiobotocore_s3 import S3Client
+from types_aiobotocore_sqs.client import SQSClient
 
 from mpcontribs_api._openapi import contact_info, license_info, openapi_tags
 from mpcontribs_api.api.v1.router import router as v1_router
@@ -87,19 +88,38 @@ async def _setup_mongo(app: FastAPI, settings: Settings, stack: AsyncExitStack) 
 
 async def _setup_s3(app: FastAPI, settings: Settings, stack: AsyncExitStack) -> None:
     """Setting up app-wide access to AWS S3 via aioboto3"""
-    session = aioboto3.Session()
     cm = cast(
         AbstractAsyncContextManager[S3Client],
-        session.client(
+        app.state.boto_session.client(
             "s3",
             region_name=settings.aws.region,
-            config=Config(max_pool_connections=settings.aws.max_pool_connections),
+            config=AioConfig(max_pool_connections=settings.aws.max_pool_connections),
         ),
     )
-    s3 = await stack.enter_async_context(cm)
-    app.state.boto_session = session
+    s3: S3Client = await stack.enter_async_context(cm)
     app.state.s3 = s3
     logger.info("connected to s3")
+
+
+async def _setup_sqs(app: FastAPI, settings: Settings, stack: AsyncExitStack) -> None:
+    """Setting up app-wide access to AWS SQS via aioboto3"""
+    cm = cast(
+        AbstractAsyncContextManager[SQSClient],
+        app.state.boto_session.client(
+            service_name="sqs",
+            region_name=settings.aws.region,
+        ),
+    )
+    sqs: SQSClient = await stack.enter_async_context(cm)
+    app.state.sqs = sqs
+    logger.info("connected to sqs")
+
+
+async def _setup_aws(app: FastAPI, settings: Settings, stack: AsyncExitStack) -> None:
+    app.state.boto_session = aioboto3.Session()
+
+    await _setup_s3(app, settings, stack)
+    await _setup_sqs(app, settings, stack)
 
 
 def _build_lifespan(settings: Settings):
@@ -107,7 +127,7 @@ def _build_lifespan(settings: Settings):
     async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
         async with AsyncExitStack() as stack:
             await _setup_mongo(app, settings, stack)
-            await _setup_s3(app, settings, stack)
+            await _setup_aws(app, settings, stack)
             yield
             # stack unwinds in reverse: s3 closed, then mongo
 
