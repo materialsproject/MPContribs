@@ -372,11 +372,10 @@ class TestInitiativeReadScope:
         assert "scope-pub" in slugs
         assert "scope-priv" not in slugs
 
-    async def test_get_one_private_unowned_raises_not_found(self, db):
+    async def test_get_one_private_unowned_returns_none(self, db):
         await _insert_initiative("scope-one-priv", ALICE)
         stranger = User(username=CAROL_EMAIL, groups=frozenset())
-        with pytest.raises(NotFoundError):
-            await _initiative_service(stranger).read_one({"slug": "scope-one-priv"}, fields=None)
+        assert await _initiative_service(stranger).read_one({"slug": "scope-one-priv"}, fields=None) is None
 
     async def test_owner_sees_own_private_initiative(self, db):
         await _insert_initiative("scope-own", ALICE)

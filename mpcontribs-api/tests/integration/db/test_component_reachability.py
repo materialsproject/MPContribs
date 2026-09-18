@@ -14,7 +14,6 @@ from mpcontribs_api.domains.attachments.models import Attachment, AttachmentFilt
 from mpcontribs_api.domains.attachments.repository import MongoDbAttachmentRepository
 from mpcontribs_api.domains.contributions.models import Contribution
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
-from mpcontribs_api.exceptions import NotFoundError
 from mpcontribs_api.pagination import CursorParams
 
 pytestmark = [pytest.mark.db, pytest.mark.asyncio(loop_scope="session")]
@@ -62,16 +61,14 @@ class TestComponentReadReachability:
 
     async def test_get_by_id_hides_unreachable_component(self, db):
         att = await _attachment(2)
-        # Referenced only by a private contribution -> anonymous cannot reach it.
+        # Referenced only by a private contribution -> anonymous cannot reach it, so it reads as None.
         await _contribution("mp-priv", is_public=False, attachments=[att])
-        with pytest.raises(NotFoundError):
-            await _service(ANON).read_one({"id": str(att.id)}, fields=None)
+        assert await _service(ANON).read_one({"id": str(att.id)}, fields=None) is None
 
     async def test_get_by_id_hides_orphan_component(self, db):
-        # No contribution references this attachment at all.
+        # No contribution references this attachment at all, so it reads as None.
         att = await _attachment(3)
-        with pytest.raises(NotFoundError):
-            await _service(ANON).read_one({"id": str(att.id)}, fields=None)
+        assert await _service(ANON).read_one({"id": str(att.id)}, fields=None) is None
 
     async def test_get_many_only_lists_reachable(self, db):
         pub = await _attachment(10)

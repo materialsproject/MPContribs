@@ -69,9 +69,12 @@ class ProjectGroupService:
         """Return a page of scoped project groups matching ``filter``."""
         return await self._groups.read_many(pagination=pagination, filter=filter, fields=fields)
 
-    async def read_one(self, identifiers: dict[str, Any], fields: frozenset[str] | None) -> ProjectGroupOut:
-        """Return the single group matching ``identifiers`` (``{"name", "owner"}`` or ``{"id"}``); 404 if absent."""
-        return await self._groups.read_one(identifiers, fields)
+    async def read_one(self, identifiers: dict[str, Any], fields: frozenset[str] | None) -> ProjectGroupOut | None:
+        """Return the group matching ``identifiers`` (``{"name", "owner"}`` or ``{"id"}``), or None when absent."""
+        try:
+            return await self._groups.read_one(identifiers, fields)
+        except NotFoundError:
+            return None
 
     async def delete_many(self, filter: ProjectGroupFilter) -> DeleteResponse:
         """Bulk-delete scoped project groups matching ``filter``, restricted to the caller's own.

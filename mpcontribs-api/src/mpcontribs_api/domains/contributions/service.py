@@ -109,13 +109,17 @@ class ContributionService:
             "tables": self._tables,
         }
 
-    async def read_one(self, identifiers: dict[str, Any], fields: frozenset[str] | None) -> ContributionOut:
-        """Return the single scoped contribution matching ``identifiers``.
+    async def read_one(self, identifiers: dict[str, Any], fields: frozenset[str] | None) -> ContributionOut | None:
+        """Return the single scoped contribution matching ``identifiers``, or None when none matches.
 
         Accepts either the bare ``{"id": ...}`` form or the semantic
         ``{"project", "identifier", "version"}`` set, resolved by the base ``_identifier_query``.
+        An ambiguous natural identity still raises ``ConflictError``.
         """
-        return await self._contributions.read_one(identifiers, fields)
+        try:
+            return await self._contributions.read_one(identifiers, fields)
+        except NotFoundError:
+            return None
 
     async def read_many(
         self, pagination: CursorParams, filter: ContributionFilter, fields: frozenset[str] | None

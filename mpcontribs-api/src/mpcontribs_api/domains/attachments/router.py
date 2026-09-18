@@ -39,8 +39,8 @@ async def read_one_by_identity(
     service: AttachmentServiceDep,
     identity: Annotated[ComponentIdentity, Depends()],
     fields: FieldSelector = None,
-) -> AttachmentOut:
-    """Return a single attachment addressed by its content ``md5`` (its natural key)."""
+) -> AttachmentOut | None:
+    """Return the attachment addressed by its content ``md5`` (its natural key), or None when none matches."""
     selected = AttachmentOut.parse_fields(fields)
     return await service.read_one(identifiers=identity.as_dict(), fields=selected)
 
@@ -68,8 +68,8 @@ async def read_one(
     service: AttachmentServiceDep,
     id: str,
     fields: FieldSelector = None,
-) -> AttachmentOut:
-    """Return a single attachment addressed by its ``_id``."""
+) -> AttachmentOut | None:
+    """Return the attachment addressed by its ``_id``, or None when none matches."""
     selected = AttachmentOut.parse_fields(fields)
     return await service.read_one(identifiers={"id": id}, fields=selected)
 

@@ -65,8 +65,8 @@ async def read_one(
     id: str,
     service: ProjectServiceDep,
     fields: FieldSelector = None,
-) -> ProjectOut:
-    """Gets a single project by its ID.
+) -> ProjectOut | None:
+    """Gets a single project by its ID, or None when no in-scope project matches.
 
     Args:
         id (str): the id of the project to retrieve

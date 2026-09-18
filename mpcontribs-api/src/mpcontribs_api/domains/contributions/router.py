@@ -139,8 +139,8 @@ async def read_one_by_identity(
     service: ContributionServiceDep,
     identity: Annotated[ContributionIdentity, Depends()],
     fields: FieldSelector = None,
-) -> ContributionOut:
-    """Return the single contribution addressed by its natural identity (409 if ambiguous)."""
+) -> ContributionOut | None:
+    """Return the contribution addressed by its natural identity, or None when none matches (409 if ambiguous)."""
     selected = ContributionOut.parse_fields(fields)
     return await service.read_one(identity.as_dict(), fields=selected)
 
@@ -199,7 +199,7 @@ async def read_one(
     service: ContributionServiceDep,
     id: str,
     fields: FieldSelector = None,
-) -> ContributionOut:
+) -> ContributionOut | None:
     selected = ContributionOut.parse_fields(fields)
     return await service.read_one({"id": id}, fields=selected)
 

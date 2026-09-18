@@ -49,9 +49,12 @@ class InitiativeService:
         """Return a page of scoped initiatives matching ``filter``."""
         return await self._initiatives.read_many(pagination=pagination, filter=filter, fields=fields)
 
-    async def read_one(self, identifiers: dict[str, Any], fields: frozenset[str] | None) -> InitiativeOut:
-        """Return the single scoped initiative matching ``identifiers`` (``{"slug": ...}``); 404 if absent."""
-        return await self._initiatives.read_one(identifiers, fields)
+    async def read_one(self, identifiers: dict[str, Any], fields: frozenset[str] | None) -> InitiativeOut | None:
+        """Return the single scoped initiative matching ``identifiers`` (``{"slug": ...}``), or None when absent."""
+        try:
+            return await self._initiatives.read_one(identifiers, fields)
+        except NotFoundError:
+            return None
 
     async def insert_one(self, data: InitiativeIn) -> InitiativeOut:
         """Create an initiative owned by the caller, enforcing the per-owner unapproved quota.

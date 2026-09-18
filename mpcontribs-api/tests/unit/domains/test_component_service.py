@@ -190,14 +190,13 @@ def _make_read_service(*, reachable: set[PydanticObjectId]) -> tuple[ComponentSe
     return service, components, contributions
 
 
-async def test_get_by_id_unreachable_raises_not_found():
-    # The id is resolved through the repo, but an unreachable component raises NotFoundError (and the
+async def test_get_by_id_unreachable_returns_none():
+    # The id is resolved through the repo, but an unreachable component reads as None (and the
     # full-fields fetch is skipped once the reachability gate fails).
     oid = _oid()
     svc, components, _ = _make_read_service(reachable=set())
 
-    with pytest.raises(NotFoundError):
-        await svc.read_one({"id": str(oid)}, fields=None)
+    assert await svc.read_one({"id": str(oid)}, fields=None) is None
     components.read_one.assert_awaited_once()
 
 

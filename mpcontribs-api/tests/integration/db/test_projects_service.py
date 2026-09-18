@@ -390,10 +390,9 @@ class TestReadScope:
         assert "scope-pub" in ids
         assert "scope-priv" not in ids
 
-    async def test_get_one_private_unowned_raises_not_found(self, db):
+    async def test_get_one_private_unowned_returns_none(self, db):
         await _insert("scope-one-priv", owner=ALICE_EMAIL, is_public=False)
-        with pytest.raises(NotFoundError):
-            await _service(BOB).read_one({"id": "scope-one-priv"}, fields=None)
+        assert await _service(BOB).read_one({"id": "scope-one-priv"}, fields=None) is None
 
     async def test_get_one_public_visible_to_non_owner(self, db):
         await _insert("scope-one-pub", owner=ALICE_EMAIL, is_public=True, is_approved=True)

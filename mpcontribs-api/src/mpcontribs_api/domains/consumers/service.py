@@ -40,9 +40,12 @@ class ConsumerService:
     ) -> Page[ConsumerOut]:
         return await self._consumer.read_many(filter=filter, pagination=pagination, fields=fields)
 
-    async def read_one(self, identifiers: dict[str, Any], fields: frozenset[str] | None) -> ConsumerOut:
-        """Read one override by its identity — the bare ``{"id": ...}`` or ``{"consumer_id": ...}``; 404 if absent."""
-        return await self._consumer.read_one(identifiers=identifiers, fields=fields)
+    async def read_one(self, identifiers: dict[str, Any], fields: frozenset[str] | None) -> ConsumerOut | None:
+        """Read one override by ``{"id": ...}`` or ``{"consumer_id": ...}``; None when absent."""
+        try:
+            return await self._consumer.read_one(identifiers=identifiers, fields=fields)
+        except NotFoundError:
+            return None
 
     async def insert_one(self, consumer: ConsumerIn) -> ConsumerOut:
         document = self._consumer.document_model.from_input_model(consumer)

@@ -40,9 +40,12 @@ class ProjectService:
         """Return a page of scoped projects matching ``filter``."""
         return await self._projects.read_many(filter=filter, pagination=pagination, fields=fields)
 
-    async def read_one(self, identifiers: dict[str, Any], fields: frozenset[str] | None) -> ProjectOut:
-        """Return the single scoped project matching ``identifiers`` (``{"id": ...}``); 404 if absent."""
-        return await self._projects.read_one(identifiers, fields)
+    async def read_one(self, identifiers: dict[str, Any], fields: frozenset[str] | None) -> ProjectOut | None:
+        """Return the single scoped project matching ``identifiers`` (``{"id": ...}``), or None when absent."""
+        try:
+            return await self._projects.read_one(identifiers, fields)
+        except NotFoundError:
+            return None
 
     async def upsert_one(self, identifiers: dict[str, Any], data: ProjectIn) -> ProjectOut:
         """Upsert a project by id, applying every write-policy decision before persisting.

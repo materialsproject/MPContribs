@@ -35,8 +35,8 @@ async def read_one_by_identity(
     service: InitiativeServiceDep,
     identity: Annotated[InitiativeIdentity, Depends()],
     fields: FieldSelector = None,
-) -> InitiativeOut:
-    """Return the single initiative by its natural key ``slug`` (the uniform ``/item`` entrypoint)."""
+) -> InitiativeOut | None:
+    """Return the initiative by its natural key ``slug`` (the ``/item`` entrypoint), or None when none matches."""
     selected = InitiativeOut.parse_fields(fields)
     return await service.read_one(identity.as_dict(), fields=selected)
 
@@ -66,8 +66,8 @@ async def read_one(
     service: InitiativeServiceDep,
     slug: str,
     fields: FieldSelector = None,
-) -> InitiativeOut:
-    """Return the single initiative identified by ``slug``, scoped to the caller."""
+) -> InitiativeOut | None:
+    """Return the single initiative identified by ``slug``, scoped to the caller, or None when none matches."""
     selected = InitiativeOut.parse_fields(fields)
     return await service.read_one({"slug": slug}, fields=selected)
 
