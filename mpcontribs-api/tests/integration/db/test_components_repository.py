@@ -1,12 +1,8 @@
-import gzip
-from unittest.mock import MagicMock
-
 import pytest
 from beanie import PydanticObjectId
 
 from mpcontribs_api.authz import User
 from mpcontribs_api.config import get_settings
-from mpcontribs_api.domains._shared.types import DownloadFormat, ShortMimeFormat
 from mpcontribs_api.domains.attachments.models import (
     Attachment,
     AttachmentFilter,
@@ -203,31 +199,6 @@ class TestPatchComponent:
         assert rehashed.md5 != doc.md5
         persisted = await Attachment.find_one(Attachment.id == doc.id)
         assert persisted.md5 == rehashed.md5
-
-
-# ---------------------------------------------------------------------------
-# Component download round-trip
-# ---------------------------------------------------------------------------
-
-
-class TestComponentDownload:
-    async def test_jsonl_download_round_trips(self, db):
-        """Component downloads stream a decompressable gzip of all rows."""
-        repo = _repo()
-        await repo.insert_many(_build(repo, [_attachment(1), _attachment(2)]))
-        stream = _repo().download(
-            format=DownloadFormat.JSONL,
-            short_mime=ShortMimeFormat.GZ,
-            ignore_cache=True,
-            filter=AttachmentFilter(),
-            fields=None,
-            s3=MagicMock(),
-            bucket_name="attachments",
-            key_name="",
-        )
-        chunks = [c async for c in stream]
-        decompressed = gzip.decompress(b"".join(chunks))
-        assert decompressed.count(b"\n") == 2
 
 
 # ---------------------------------------------------------------------------

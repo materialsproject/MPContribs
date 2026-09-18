@@ -59,7 +59,9 @@ def _make_service(
 
     contributions.referenced_component_ids = AsyncMock(side_effect=_referenced)
 
-    service = ComponentService(components, contributions, ref_field="attachments")
+    service = ComponentService(
+        components, contributions, user=MagicMock(), downloads=AsyncMock(), ref_field="attachments"
+    )
     return service, components, contributions
 
 
@@ -184,7 +186,9 @@ def _make_read_service(*, reachable: set[PydanticObjectId]) -> tuple[ComponentSe
 
     contributions.referenced_component_ids = AsyncMock(side_effect=_referenced)
 
-    service = ComponentService(components, contributions, ref_field="attachments")
+    service = ComponentService(
+        components, contributions, user=MagicMock(), downloads=AsyncMock(), ref_field="attachments"
+    )
     return service, components, contributions
 
 

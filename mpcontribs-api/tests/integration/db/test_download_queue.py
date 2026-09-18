@@ -12,19 +12,23 @@ import pytest
 from mpcontribs_api.authz import User
 from mpcontribs_api.domains._shared.types import DownloadFormat
 from mpcontribs_api.domains.contributions.models import ContributionFilter
+from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
 from mpcontribs_api.domains.downloads.models import DownloadIn, JobStatus
-from mpcontribs_api.domains.downloads.repository import MongoDbDownloadRepository
 from mpcontribs_api.domains.downloads.service import DownloadService
 from mpcontribs_api.exceptions import JobStatusError
 
 pytestmark = [pytest.mark.db, pytest.mark.asyncio(loop_scope="session")]
+
+# Callers spanning two visibility buckets: an admin (unscoped) and an anonymous user (public only).
+ADMIN = User(username="google:admin@example.com", groups=frozenset({"admin"}))
+ANON = User()
 
 
 def _service() -> tuple[DownloadService, MagicMock]:
     """A DownloadService with an async-mocked SQS and S3 client, plus a handle on the SQS mock."""
     sqs = MagicMock()
     sqs.send_message = AsyncMock()
-    service = DownloadService(downloads=MongoDbDownloadRepository(User()), sqs=sqs, s3=MagicMock())
+    service = DownloadService(user=User(), sqs=sqs, s3=MagicMock())
     return service, sqs
 
 
@@ -33,11 +37,23 @@ def _user(requester: str) -> User:
     return User(consumer_id=requester)
 
 
-def _download_in(requester: str, *, fmt: DownloadFormat = DownloadFormat.JSONL, **filter_kwargs) -> DownloadIn:
+def _query(scope_user: User, **filter_kwargs) -> dict:
+    """The effective Mongo query (filter AND read scope) exactly as the source domain builds it."""
+    return MongoDbContributionRepository(scope_user).build_download_query(ContributionFilter(**filter_kwargs))
+
+
+def _download_in(
+    requester: str,
+    *,
+    scope_user: User = ANON,
+    fmt: DownloadFormat = DownloadFormat.JSONL,
+    **filter_kwargs,
+) -> DownloadIn:
+    """A download request whose ``query`` carries ``scope_user``'s visibility (anonymous by default)."""
     return DownloadIn(
         status=JobStatus.submitted,
         requester=requester,
-        filter=ContributionFilter(**filter_kwargs),
+        query=_query(scope_user, **filter_kwargs),
         domain="contributions",
         fmt=fmt,
     )
@@ -64,7 +80,9 @@ class TestQueueIdempotency:
         assert out_a.id != out_b.id
         assert await db["downloads"].count_documents({}) == 2
         assert sqs.send_message.await_count == 2
-        # ...but the same physical object key, so S3 dedupes the bytes across callers with equal scope.
+        # ...but the same physical object key: both callers have identical (anonymous) scope, so their
+        # effective queries match and S3 can safely dedupe the bytes. Scope equality is now *enforced*
+        # by folding scope into the query (see TestScopeIsolation), not merely assumed.
         assert out_a.s3_key == out_b.s3_key
 
     async def test_distinct_requests_produce_distinct_tickets(self, db):
@@ -76,6 +94,37 @@ class TestQueueIdempotency:
         assert len({jsonl.s3_key, csv.s3_key, filtered.s3_key}) == 3
         assert await db["downloads"].count_documents({}) == 3
         assert sqs.send_message.await_count == 3
+
+
+class TestScopeIsolation:
+    """The s3_key must isolate callers who see different rows, and only those callers."""
+
+    async def test_build_download_query_reflects_scope(self, db):
+        # Admin is unscoped; the anonymous caller is restricted to public rows. Same filter, so any
+        # difference in the effective query is purely the access scope.
+        admin_query = _query(ADMIN)
+        anon_query = _query(ANON)
+        assert admin_query != anon_query
+        assert admin_query == {}  # admin bypasses read scope entirely
+        assert "is_public" in repr(anon_query)  # anonymous callers are pinned to public data
+
+    async def test_different_scope_same_filter_gets_distinct_s3_key(self, db):
+        # Regression: previously the s3_key hashed only the raw filter, so these two callers collided
+        # on one physical object and the anonymous caller could receive admin-scoped bytes.
+        service, sqs = _service()
+        admin_out = await service.queue_download(_download_in("admin-consumer", scope_user=ADMIN))
+        anon_out = await service.queue_download(_download_in("anon-consumer", scope_user=ANON))
+
+        assert admin_out.s3_key != anon_out.s3_key
+        assert await db["downloads"].count_documents({}) == 2
+        assert sqs.send_message.await_count == 2
+
+    async def test_same_scope_and_filter_shares_s3_key(self, db):
+        # The dedup contract still holds for callers who would see the same rows.
+        service, _ = _service()
+        first = await service.queue_download(_download_in("consumer-a", scope_user=ANON))
+        second = await service.queue_download(_download_in("consumer-b", scope_user=ANON))
+        assert first.s3_key == second.s3_key
 
 
 class TestRetryOnError:

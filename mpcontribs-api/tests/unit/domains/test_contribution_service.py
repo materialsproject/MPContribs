@@ -35,6 +35,7 @@ from mpcontribs_api.domains.structures.models import (
     StructureIn,
 )
 from mpcontribs_api.domains.tables.models import Attributes, Labels, Table, TableIn
+from mpcontribs_api.domains._shared.types import DownloadFormat
 from mpcontribs_api.exceptions import ConflictError, PermissionError, ValidationError
 
 pytestmark = pytest.mark.asyncio
@@ -1787,3 +1788,23 @@ class TestSearch:
         # being masked as a misleading "try a different formula" 4xx.
         with pytest.raises(RuntimeError, match="atlas down"):
             await svc.search("Fe2O3")
+
+
+class TestQueueDownload:
+    """queue_download must hand the download service the scoped effective query, not the raw filter."""
+
+    async def test_forwards_scoped_effective_query(self):
+        downloads = AsyncMock()
+        svc, contrib_repo, *_ = _make_service(downloads=downloads)
+        # The repo owns scope resolution; stub its effective-query builder with a sentinel so we can
+        # assert the service forwards exactly that dict (rather than re-dumping the raw filter).
+        contrib_repo.build_download_query = MagicMock(return_value={"$and": [{"scoped": True}]})
+
+        filter = ContributionFilter(material_id="mp-1")
+        await svc.queue_download(filter=filter, format=DownloadFormat.CSV)
+
+        contrib_repo.build_download_query.assert_called_once_with(filter)
+        download_in = downloads.queue_download.await_args.args[0]
+        assert download_in.query == {"$and": [{"scoped": True}]}
+        assert download_in.domain == "contributions"
+        assert download_in.fmt == DownloadFormat.CSV

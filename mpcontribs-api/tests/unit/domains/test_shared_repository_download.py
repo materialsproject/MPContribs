@@ -1,20 +1,20 @@
 import csv
-import gzip
 import io
 import json
 from collections.abc import AsyncIterable, AsyncIterator
 from datetime import UTC, datetime
-from types import SimpleNamespace
-from typing import Any
-from unittest.mock import MagicMock
+from typing import Any, cast
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from beanie import PydanticObjectId
 from pydantic import BaseModel
 
 from mpcontribs_api.authz import User
+from mpcontribs_api.domains._shared.downloadable import DownloadableRepository
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
-from mpcontribs_api.domains._shared.types import DownloadFormat, ShortMimeFormat
+from mpcontribs_api.domains._shared.types import DownloadFormat
+from mpcontribs_api.exceptions import DownloadError
 from mpcontribs_api.scope import Scope
 
 # ---------------------------------------------------------------------------
@@ -36,41 +36,13 @@ class _OutWithData(BaseModel):
     data: dict
 
 
-class _FakeQuery:
-    """Async-iterable stand-in for a Beanie find() query."""
+class _FakeRepo(DownloadableRepository, MongoDbRepository):
+    """A repository that mixes in the download capability, binding just enough to exercise it.
 
-    def __init__(self, rows: list[Any]) -> None:
-        self._rows = rows
-
-    async def __aiter__(self) -> AsyncIterator[Any]:
-        for row in self._rows:
-            yield row
-
-
-class _FakeFilter:
-    """Stand-in for a fastapi-filter Filter.
-
-    ``filter()`` ignores the base query and returns a fake query over the seeded
-    rows; ``sort()`` is a passthrough; ``model_dump()`` returns the configured
-    payload (used by ``download`` when building the cache key).
+    Mirrors how a real download-capable repository is composed — ``DownloadableRepository`` before
+    the base ``MongoDbRepository`` — so the mixin resolves ``document_model`` / ``out_model`` /
+    ``_scope`` off the concrete repo exactly as it does in production.
     """
-
-    def __init__(self, rows: list[Any], dump: dict[str, Any] | None = None) -> None:
-        self._rows = rows
-        self._dump = {} if dump is None else dump
-
-    def filter(self, _base: Any) -> _FakeQuery:
-        return _FakeQuery(self._rows)
-
-    def sort(self, query: _FakeQuery) -> _FakeQuery:
-        return query
-
-    def model_dump(self) -> dict[str, Any]:
-        return self._dump
-
-
-class _FakeRepo(MongoDbRepository):
-    """Concrete repository binding just enough to exercise the shared download core."""
 
     document_model = MagicMock()
     out_model = _Out
@@ -104,27 +76,27 @@ async def _collect(stream: AsyncIterable[bytes]) -> bytes:
 class TestSerializeJsonl:
     async def test_one_line_per_row(self):
         rows = [_Out(a=1, b="x"), _Out(a=2, b="y")]
-        out = await _collect(MongoDbRepository._serialize_jsonl(_aiter(rows)))
+        out = await _collect(DownloadableRepository._serialize_jsonl(_aiter(rows)))
         assert out.count(b"\n") == 2
 
     async def test_each_line_round_trips_to_row(self):
         rows = [_Out(a=1, b="x"), _Out(a=2, b="y")]
-        out = await _collect(MongoDbRepository._serialize_jsonl(_aiter(rows)))
+        out = await _collect(DownloadableRepository._serialize_jsonl(_aiter(rows)))
         parsed = [json.loads(line) for line in out.splitlines()]
         assert parsed == [{"a": 1, "b": "x"}, {"a": 2, "b": "y"}]
 
     async def test_every_line_terminated_with_newline(self):
         rows = [_Out(a=1, b="x"), _Out(a=2, b="y")]
-        out = await _collect(MongoDbRepository._serialize_jsonl(_aiter(rows)))
+        out = await _collect(DownloadableRepository._serialize_jsonl(_aiter(rows)))
         assert out.endswith(b"\n")
 
     async def test_empty_input_yields_nothing(self):
-        out = await _collect(MongoDbRepository._serialize_jsonl(_aiter([])))
+        out = await _collect(DownloadableRepository._serialize_jsonl(_aiter([])))
         assert out == b""
 
     async def test_unicode_payload_preserved(self):
         rows = [_Out(a=1, b="café—ü")]
-        out = await _collect(MongoDbRepository._serialize_jsonl(_aiter(rows)))
+        out = await _collect(DownloadableRepository._serialize_jsonl(_aiter(rows)))
         assert json.loads(out)["b"] == "café—ü"
 
 
@@ -140,57 +112,92 @@ def _parse_csv(raw: bytes) -> list[dict[str, str]]:
 class TestSerializeCsv:
     async def test_header_written_once(self):
         rows = [_Out(a=1, b="x"), _Out(a=2, b="y")]
-        raw = await _collect(MongoDbRepository._serialize_csv(_aiter(rows), None))
+        raw = await _collect(DownloadableRepository._serialize_csv(_aiter(rows), None))
         # Header appears exactly once even across multiple rows.
         assert raw.decode().count("a,b") == 1
 
     async def test_columns_default_to_first_row_keys_when_no_fields(self):
         rows = [_Out(a=1, b="x")]
-        raw = await _collect(MongoDbRepository._serialize_csv(_aiter(rows), None))
+        raw = await _collect(DownloadableRepository._serialize_csv(_aiter(rows), None))
         reader = csv.reader(io.StringIO(raw.decode()))
         assert next(reader) == ["a", "b"]
 
     async def test_columns_follow_sorted_fields_when_given(self):
         rows = [_Out(a=1, b="x")]
-        raw = await _collect(MongoDbRepository._serialize_csv(_aiter(rows), frozenset({"b", "a"})))
+        raw = await _collect(DownloadableRepository._serialize_csv(_aiter(rows), frozenset({"b", "a"})))
         reader = csv.reader(io.StringIO(raw.decode()))
         assert next(reader) == ["a", "b"]
 
     async def test_extra_fields_are_ignored(self):
         # 'b' is not in the requested field set -> dropped from output.
         rows = [_Out(a=1, b="x")]
-        raw = await _collect(MongoDbRepository._serialize_csv(_aiter(rows), frozenset({"a"})))
+        raw = await _collect(DownloadableRepository._serialize_csv(_aiter(rows), frozenset({"a"})))
         parsed = _parse_csv(raw)
         assert parsed == [{"a": "1"}]
 
     async def test_all_rows_emitted(self):
         rows = [_Out(a=i, b=str(i)) for i in range(5)]
-        raw = await _collect(MongoDbRepository._serialize_csv(_aiter(rows), None))
+        raw = await _collect(DownloadableRepository._serialize_csv(_aiter(rows), None))
         assert len(_parse_csv(raw)) == 5
 
     async def test_no_row_bleed_between_chunks(self):
         # Each yielded chunk after the header must contain exactly one row, proving
         # the shared StringIO buffer is truncated between iterations.
         rows = [_Out(a=1, b="x"), _Out(a=2, b="y")]
-        chunks = [c async for c in MongoDbRepository._serialize_csv(_aiter(rows), None)]
+        chunks = [c async for c in DownloadableRepository._serialize_csv(_aiter(rows), None)]
         # First chunk: header + row 1; subsequent chunks: one row each.
         assert b"2,y" not in chunks[0]
 
     async def test_empty_input_yields_no_bytes(self):
-        raw = await _collect(MongoDbRepository._serialize_csv(_aiter([]), None))
+        raw = await _collect(DownloadableRepository._serialize_csv(_aiter([]), None))
         assert raw == b""
 
-    async def test_dict_value_serialized_as_json(self):
-        """Dict-valued columns are emitted as JSON, not Python repr.
+    async def test_nested_dict_column_flattens_to_dotted_columns(self):
+        """A dict-valued column is flattened into dotted-path columns, not one JSON cell.
 
-        ``model_dump(mode="json")`` leaves nested dicts as dict objects; the serializer
-        JSON-encodes them so the cell is valid JSON a consumer can round-trip (rather
-        than ``str(dict)``, the single-quoted Python repr).
+        ``{"data": {"k": "v", "n": 1}}`` becomes the columns ``data.k`` and ``data.n`` so a
+        consumer reads each leaf as its own cell rather than parsing an embedded JSON blob.
         """
         rows = [_OutWithData(name="r1", data={"k": "v", "n": 1})]
-        raw = await _collect(MongoDbRepository._serialize_csv(_aiter(rows), None))
-        cell = _parse_csv(raw)[0]["data"]
-        assert json.loads(cell) == {"k": "v", "n": 1}
+        raw = await _collect(DownloadableRepository._serialize_csv(_aiter(rows), None))
+        parsed = _parse_csv(raw)[0]
+        # DictReader returns every cell as a string.
+        assert parsed == {"name": "r1", "data.k": "v", "data.n": "1"}
+
+
+# ===========================================================================
+# _csv_cell
+# ===========================================================================
+
+
+class TestCsvCell:
+    @pytest.mark.parametrize("value", [None, "s", 1, 1.5, True])
+    def test_scalar_terminates_as_a_single_cell_under_its_path(self, value: Any):
+        # A scalar (or None) yields exactly one cell keyed by the column path, value verbatim.
+        assert DownloadableRepository._csv_cell("col", value) == {"col": value}
+
+    def test_nested_dict_flattens_to_dotted_paths(self):
+        # {v1: {v2: {v3: 1}}} at path "v1" -> {"v1.v2.v3": 1}
+        assert DownloadableRepository._csv_cell("v1", {"v2": {"v3": 1}}) == {"v1.v2.v3": 1}
+
+    def test_each_leaf_gets_its_own_dotted_column(self):
+        flat = DownloadableRepository._csv_cell("data", {"a": 1, "b": {"c": 2}})
+        assert flat == {"data.a": 1, "data.b.c": 2}
+
+    def test_list_leaf_is_json_encoded_not_exploded(self):
+        assert DownloadableRepository._csv_cell("tags", [1, "x"]) == {"tags": '[1,"x"]'}
+
+    def test_empty_dict_stays_a_single_json_cell(self):
+        # No leaves to flatten, so it stays one JSON cell under its own path.
+        assert DownloadableRepository._csv_cell("data", {}) == {"data": "{}"}
+
+    def test_string_leaf_is_verbatim_not_json_escaped(self):
+        # A nested string leaf is written as-is (not quoted/JSON-encoded).
+        assert DownloadableRepository._csv_cell("data", {"b": "café"}) == {"data.b": "café"}
+
+    def test_json_encoded_list_leaf_preserves_unicode(self):
+        # ensure_ascii=False keeps human-readable unicode in a JSON-encoded leaf.
+        assert DownloadableRepository._csv_cell("t", ["café"]) == {"t": '["café"]'}
 
 
 # ===========================================================================
@@ -228,6 +235,17 @@ class TestGetSerializer:
         serializer = repo._get_serializer(DownloadFormat.CSV, frozenset({"a"}))
         raw = await _collect(serializer(_aiter([_Out(a=1, b="x")])))
         assert _parse_csv(raw) == [{"a": "1"}]
+
+    async def test_unhandled_format_raises_download_error(self):
+        """An unknown format hits the ``case _`` guard and raises rather than returning None.
+
+        The router coerces the path param to a ``DownloadFormat``, so this is defence in depth: a
+        member added to the enum without a serializer case fails loudly here instead of dispatching
+        to ``None`` and blowing up mid-stream.
+        """
+        repo = _repo()
+        with pytest.raises(DownloadError):
+            repo._get_serializer(cast(DownloadFormat, "xml"), None)
 
 
 # ===========================================================================
@@ -276,72 +294,28 @@ class TestHashPayload:
 
 
 # ===========================================================================
-# download (end-to-end: query -> serialize -> gzip stream)
+# _s3_object_exists
 # ===========================================================================
 
 
-class TestDownload:
-    async def test_jsonl_stream_decompresses_to_rows(self):
-        """The gzip stream decompresses cleanly to the JSONL payload.
+def _s3_ctx(head_object: Any) -> Any:
+    """An async-context-manager S3 client stand-in whose ``head_object`` is ``head_object``."""
+    client = MagicMock()
+    client.head_object = head_object
+    ctx = MagicMock()
+    ctx.__aenter__ = AsyncMock(return_value=client)
+    ctx.__aexit__ = AsyncMock(return_value=False)
+    return ctx
 
-        ``download`` flushes the zlib gzip compressor after the final chunk so the
-        trailing buffered bytes and the gzip footer (CRC32 + ISIZE) are emitted.
-        Regression guard: without the flush the member is truncated and
-        ``gzip.decompress`` raises.
-        """
-        repo = _repo(_Out)
-        filter = _FakeFilter(rows=[SimpleNamespace(a=1, b="x"), SimpleNamespace(a=2, b="y")])
-        stream = repo.download(
-            format=DownloadFormat.JSONL,
-            short_mime=ShortMimeFormat.GZ,
-            ignore_cache=True,
-            filter=filter,  # type: ignore[arg-type]
-            fields=None,
-            s3=MagicMock(),
-            bucket_name="test-bucket",
-            key_name="test-key",
-        )
-        compressed = await _collect(stream)
-        decompressed = gzip.decompress(compressed)
-        parsed = [json.loads(line) for line in decompressed.splitlines()]
-        assert parsed == [{"a": 1, "b": "x"}, {"a": 2, "b": "y"}]
 
-    async def test_csv_stream_decompresses_to_rows(self):
-        """Same gzip flush guard, exercised through the CSV serializer."""
-        repo = _repo(_Out)
-        filter = _FakeFilter(rows=[SimpleNamespace(a=1, b="x"), SimpleNamespace(a=2, b="y")])
-        stream = repo.download(
-            format=DownloadFormat.CSV,
-            short_mime=ShortMimeFormat.GZ,
-            ignore_cache=True,
-            filter=filter,  # type: ignore[arg-type]
-            fields=frozenset({"a", "b"}),
-            s3=MagicMock(),
-            bucket_name="test-bucket",
-            key_name="test-key",
-        )
-        compressed = await _collect(stream)
-        decompressed = gzip.decompress(compressed)
-        assert _parse_csv(decompressed) == [{"a": "1", "b": "x"}, {"a": "2", "b": "y"}]
+class TestS3ObjectExists:
+    async def test_true_when_head_object_succeeds(self):
+        repo = _repo()
+        s3 = _s3_ctx(AsyncMock(return_value={"ContentLength": 10}))
+        assert await repo._s3_object_exists("bucket", "key", s3) is True
 
-    async def test_empty_result_is_valid_empty_gzip(self):
-        """A download with no matching rows yields zero bytes, which gzip treats as empty.
-
-        Unlike the non-empty cases (which hit the missing-``flush()`` bug), an empty
-        result never enters the compress loop, so the stream is genuinely empty and
-        ``gzip.decompress(b"")`` returns ``b""``.  Guards that empty downloads stay valid.
-        """
-        repo = _repo(_Out)
-        filter = _FakeFilter(rows=[])
-        stream = repo.download(
-            format=DownloadFormat.JSONL,
-            short_mime=ShortMimeFormat.GZ,
-            ignore_cache=True,
-            filter=filter,  # type: ignore[arg-type]
-            fields=None,
-            s3=MagicMock(),
-            bucket_name="test-bucket",
-            key_name="test-key",
-        )
-        compressed = await _collect(stream)
-        assert gzip.decompress(compressed) == b""
+    async def test_false_when_head_object_raises(self):
+        # A missing object makes head_object raise (404/NoSuchKey); that is a cache miss, not an error.
+        repo = _repo()
+        s3 = _s3_ctx(AsyncMock(side_effect=Exception("404")))
+        assert await repo._s3_object_exists("bucket", "key", s3) is False

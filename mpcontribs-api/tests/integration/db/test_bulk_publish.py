@@ -13,7 +13,6 @@ from mpcontribs_api.domains.contributions.models import (
 )
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
 from mpcontribs_api.domains.contributions.service import ContributionService
-from mpcontribs_api.domains.downloads.repository import MongoDbDownloadRepository
 from mpcontribs_api.domains.downloads.service import DownloadService
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
 from mpcontribs_api.domains.structures.repository import MongoDbStructureRepository
@@ -39,7 +38,7 @@ def _service(client, user: User) -> ContributionService:
         structures=MongoDbStructureRepository(user),
         attachments=MongoDbAttachmentRepository(user),
         tables=MongoDbTableRepository(user),
-        downloads=DownloadService(downloads=MongoDbDownloadRepository(user), sqs=MagicMock(), s3=MagicMock()),
+        downloads=DownloadService(user, sqs=MagicMock(), s3=MagicMock()),
     )
 
 

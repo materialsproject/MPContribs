@@ -57,6 +57,18 @@ SAMPLE_STRUCTURE = StructureOut(name="Fe2O3.cif", md5="a" * 32)
 SAMPLE_TABLE = TableOut(name="bandgaps", md5="b" * 32)
 
 
+def _download_job(domain: str) -> dict:
+    """A queued download job as ``queue_download`` returns it (POST /download responds with it)."""
+    return {
+        "id": str(PydanticObjectId()),
+        "s3_key": f"{domain}/" + "0" * 64 + ".jsonl.gz",
+        "status": "submitted",
+        "requester": "test-consumer-id",
+        "domain": domain,
+        "fmt": "jsonl",
+    }
+
+
 # ===========================================================================
 # STRUCTURES
 # ===========================================================================
@@ -140,8 +152,8 @@ class TestStructuresByIdRouting:
         assert r.status_code == 200
 
     def test_download_conventional_path(self, client, structure_service):
-        structure_service.download.return_value = iter([b"x"])
-        assert client.get("/api/v1/structures/download/gz?format=csv").status_code == 200
+        structure_service.queue_download.return_value = _download_job("structures")
+        assert client.post("/api/v1/structures/download?format=csv").status_code == 200
 
 
 class TestStructuresByMd5Routing:
@@ -263,11 +275,11 @@ class TestAttachmentsRouterWiring:
 
 
 # ===========================================================================
-# Component downloads: /{resource}/download/{short_mime}
+# Component downloads: POST /{resource}/download
 #
 # Parametrised over the three component resources so download behavior is held
 # to the same contract everywhere.  Each entry is
-# (url_prefix, service_fixture_name, expected_stem).
+# (url_prefix, service_fixture_name, download_domain).
 # ===========================================================================
 
 _DOWNLOAD_CASES = [
@@ -279,51 +291,50 @@ _DOWNLOAD_CASES = [
 
 @pytest.fixture
 def download_target(request):
-    """Resolve a (prefix, service_fixture, stem) case into a wired service mock."""
-    prefix, service_fixture, stem = request.param
+    """Resolve a (prefix, service_fixture, domain) case into a wired service mock."""
+    prefix, service_fixture, domain = request.param
     service = request.getfixturevalue(service_fixture)
-    service.download.return_value = iter([b"x"])
-    return prefix, service, stem
+    service.queue_download.return_value = _download_job(domain)
+    return prefix, service, domain
 
 
 @pytest.mark.parametrize("download_target", _DOWNLOAD_CASES, indirect=True)
 class TestComponentDownloads:
-    def test_csv_returns_200(self, client, download_target):
-        prefix, *_ = download_target
-        assert client.get(f"/api/v1/{prefix}/download/gz?format=csv").status_code == 200
+    """Component downloads queue an async job (delegating to ``queue_download``) and return the
+    tracked job, mirroring the contributions download endpoint rather than streaming inline."""
 
-    def test_jsonl_returns_200(self, client, download_target):
+    def test_default_format_returns_200(self, client, download_target):
+        # ``format`` defaults to JSONL, so the endpoint works with the param omitted.
         prefix, *_ = download_target
-        assert client.get(f"/api/v1/{prefix}/download/gz?format=jsonl").status_code == 200
+        assert client.post(f"/api/v1/{prefix}/download").status_code == 200
 
-    def test_body_is_streamed_bytes(self, client, download_target):
+    def test_csv_format_returns_200(self, client, download_target):
+        prefix, *_ = download_target
+        assert client.post(f"/api/v1/{prefix}/download?format=csv").status_code == 200
+
+    def test_returns_the_queued_job(self, client, download_target):
+        prefix, _, domain = download_target
+        assert client.post(f"/api/v1/{prefix}/download").json()["domain"] == domain
+
+    def test_default_format_forwarded_is_jsonl(self, client, download_target):
         prefix, service, _ = download_target
-        service.download.return_value = iter([b"ab", b"cd"])
-        assert client.get(f"/api/v1/{prefix}/download/gz?format=jsonl").content == b"abcd"
-
-    def test_format_is_required(self, client, download_target):
-        # Component download routes give `format` no default, unlike contributions.
-        prefix, *_ = download_target
-        assert client.get(f"/api/v1/{prefix}/download/gz").status_code == 422
-
-    def test_invalid_short_mime_returns_422(self, client, download_target):
-        prefix, *_ = download_target
-        assert client.get(f"/api/v1/{prefix}/download/zip?format=jsonl").status_code == 422
-
-    def test_invalid_format_returns_422(self, client, download_target):
-        prefix, *_ = download_target
-        assert client.get(f"/api/v1/{prefix}/download/gz?format=xml").status_code == 422
+        client.post(f"/api/v1/{prefix}/download")
+        assert service.queue_download.call_args.kwargs["format"] == "jsonl"
 
     def test_format_forwarded_to_service(self, client, download_target):
         prefix, service, _ = download_target
-        client.get(f"/api/v1/{prefix}/download/gz?format=csv")
-        assert service.download.call_args.kwargs["format"] == "csv"
+        client.post(f"/api/v1/{prefix}/download?format=csv")
+        assert service.queue_download.call_args.kwargs["format"] == "csv"
 
-    def test_csv_filename_uses_csv_extension(self, client, download_target):
-        """A CSV download is named *.csv.gz, matching the requested format."""
+    def test_invalid_format_returns_422(self, client, download_target):
         prefix, *_ = download_target
-        cd = client.get(f"/api/v1/{prefix}/download/gz?format=csv").headers["content-disposition"]
-        assert ".csv.gz" in cd
+        assert client.post(f"/api/v1/{prefix}/download?format=xml").status_code == 422
+
+    def test_filter_forwarded_to_service(self, client, download_target):
+        # Request query params are parsed into the component filter and handed to the service.
+        prefix, service, _ = download_target
+        client.post(f"/api/v1/{prefix}/download")
+        assert "filter" in service.queue_download.call_args.kwargs
 
 
 # ===========================================================================

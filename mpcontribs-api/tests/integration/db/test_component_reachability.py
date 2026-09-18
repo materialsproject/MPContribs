@@ -1,15 +1,19 @@
-"""End-to-end reachability gating for component reads.
+"""End-to-end reachability gating for component reads and queued downloads.
 
 Components (structures/tables/attachments) carry no access field of their own. Visibility is
 gated by whether a contribution the caller can see references the component. These tests drive the
-real ComponentService against MongoDB to confirm reads only surface reachable components.
+real ComponentService against MongoDB to confirm reads only surface reachable components, and that a
+queued download embeds the reachable ids in the query the worker will run.
 """
+
+from unittest.mock import AsyncMock
 
 import pytest
 from beanie import PydanticObjectId
 
 from mpcontribs_api.authz import User
 from mpcontribs_api.domains._shared.service import ComponentService
+from mpcontribs_api.domains._shared.types import DownloadFormat
 from mpcontribs_api.domains.attachments.models import Attachment, AttachmentFilter
 from mpcontribs_api.domains.attachments.repository import MongoDbAttachmentRepository
 from mpcontribs_api.domains.contributions.models import Contribution
@@ -22,9 +26,13 @@ ANON = User()
 
 
 def _service(user: User) -> ComponentService:
+    # ``downloads`` is an AsyncMock so a queued download can be inspected via ``service._downloads``
+    # without exercising the DownloadService lifecycle (covered by test_download_queue.py).
     return ComponentService(
         MongoDbAttachmentRepository(user),
         MongoDbContributionRepository(user),
+        user=user,
+        downloads=AsyncMock(),
         ref_field="attachments",
     )
 
@@ -85,3 +93,52 @@ class TestComponentReadReachability:
         assert pub.id in ids
         assert priv.id not in ids
         assert orphan.id not in ids
+
+
+class TestComponentQueueDownloadReachability:
+    """A queued component download folds the caller's reachable ids into the query the worker runs,
+    so the async export is gated exactly as a synchronous read would be."""
+
+    async def test_queued_query_embeds_only_reachable_ids(self, db):
+        pub = await _attachment(1)
+        priv = await _attachment(2)
+        orphan = await _attachment(3)  # referenced by nothing
+        await _contribution("mp-a", is_public=True, attachments=[pub])
+        await _contribution("mp-b", is_public=False, attachments=[priv])
+
+        service = _service(ANON)
+        await service.queue_download(filter=AttachmentFilter(), format=DownloadFormat.CSV)
+
+        download_in = service._downloads.queue_download.await_args.args[0]
+        assert download_in.domain == "attachments"
+        assert download_in.fmt == DownloadFormat.CSV
+        # The reachability gate lives in the query's `_id $in` clause.
+        allowed = download_in.query["$and"][1]["_id"]["$in"]
+        assert pub.id in allowed  # reachable via a public contribution
+        assert priv.id not in allowed  # only a private contribution references it
+        assert orphan.id not in allowed  # referenced by no contribution
+
+    async def test_admin_reaches_private_and_public(self, db):
+        admin = User(username="google:admin@example.com", groups=frozenset({"admin"}))
+        pub = await _attachment(10)
+        priv = await _attachment(20)
+        await _contribution("mp-a", is_public=True, attachments=[pub])
+        await _contribution("mp-b", is_public=False, attachments=[priv])
+
+        service = _service(admin)
+        await service.queue_download(filter=AttachmentFilter(), format=DownloadFormat.JSONL)
+
+        allowed = service._downloads.queue_download.await_args.args[0].query["$and"][1]["_id"]["$in"]
+        assert pub.id in allowed and priv.id in allowed  # admin bypasses scope
+
+    async def test_no_reachable_components_queues_empty_allow_list(self, db):
+        # An anonymous caller can reach nothing referenced only by a private contribution: the query
+        # carries an empty `_id $in []`, i.e. an empty export rather than the whole collection.
+        att = await _attachment(30)
+        await _contribution("mp-x", is_public=False, attachments=[att])
+
+        service = _service(ANON)
+        await service.queue_download(filter=AttachmentFilter(), format=DownloadFormat.JSONL)
+
+        allowed = service._downloads.queue_download.await_args.args[0].query["$and"][1]["_id"]["$in"]
+        assert allowed == []
