@@ -1,18 +1,12 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
-from fastapi.responses import StreamingResponse
 from fastapi_filter import FilterDepends
 
-from mpcontribs_api.dependencies import S3Dep, require_user, require_writer
+from mpcontribs_api.dependencies import require_user, require_writer
 from mpcontribs_api.domains._shared.bulk import BulkWriteSummary
 from mpcontribs_api.domains._shared.models import ComponentDeleteResponse, ComponentIdentity
-from mpcontribs_api.domains._shared.types import (
-    DownloadFormat,
-    FieldSelector,
-    ShortMimeFormat,
-    download_filename,
-)
+from mpcontribs_api.domains._shared.types import DownloadFormat, FieldSelector
 from mpcontribs_api.domains.structures.dependencies import StructureServiceDep
 from mpcontribs_api.domains.structures.models import StructureFilter, StructureIn, StructureOut, StructurePatch
 from mpcontribs_api.pagination import CursorParams
@@ -69,31 +63,14 @@ async def read_one(
     return await service.read_one(identifiers={"id": id}, fields=selected)
 
 
-@router.get("/download/{short_mime}")
+@router.post("/download")
 async def download_structure(
     service: StructureServiceDep,
-    format: DownloadFormat,
-    s3: S3Dep,
-    short_mime: ShortMimeFormat = ShortMimeFormat.GZ,
-    ignore_cache: bool = False,
     filter: StructureFilter = FilterDepends(StructureFilter),
-    fields: FieldSelector = None,
-) -> StreamingResponse:
-    selected = StructureOut.parse_fields(fields)
-    body = await service.download(
-        format=format,
-        short_mime=short_mime,
-        ignore_cache=ignore_cache,
-        filter=filter,
-        fields=selected,
-        s3=s3,
-    )
-    filename = download_filename("structures", format, short_mime)
-    return StreamingResponse(
-        body,
-        media_type="application/gzip",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
-    )
+    format: DownloadFormat = DownloadFormat.JSONL,
+):
+    """Enqueue an async export of the matching structures, returning the download job ticket."""
+    return await service.queue_download(filter=filter, format=format)
 
 
 @router.post("", response_model=BulkWriteSummary[StructureOut], dependencies=[Depends(require_writer)])

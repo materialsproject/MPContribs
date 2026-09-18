@@ -1,5 +1,3 @@
-from collections.abc import AsyncIterable
-from contextlib import AbstractAsyncContextManager
 from typing import Any
 
 from beanie import PydanticObjectId
@@ -7,13 +5,15 @@ from fastapi_filter.contrib.beanie import Filter
 from pydantic import BaseModel
 from pydantic import ValidationError as PydanticValidationError
 from pymongo.asynchronous.client_session import AsyncClientSession
-from types_aiobotocore_s3 import S3Client
 
+from mpcontribs_api.authz import User
 from mpcontribs_api.domains._shared.bulk import BulkFailure, BulkWriteSummary, bulk_failure_from_exception
 from mpcontribs_api.domains._shared.components import MongoDbComponentsRepository
 from mpcontribs_api.domains._shared.models import Component, ComponentDeleteResponse, ComponentIn, DocumentOut
-from mpcontribs_api.domains._shared.types import DownloadFormat, ShortMimeFormat
+from mpcontribs_api.domains._shared.types import DownloadFormat
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
+from mpcontribs_api.domains.downloads.models import DownloadIn, DownloadOut, JobStatus
+from mpcontribs_api.domains.downloads.service import DownloadService
 from mpcontribs_api.exceptions import NotFoundError
 from mpcontribs_api.pagination import CursorParams, Page
 
@@ -35,8 +35,8 @@ class ComponentService[
       (``"attachments"`` / ``"structures"`` / ``"tables"``)
     - ``bucket_name``: the S3 bucket downloads are cached in (defaults to ``ref_field``)
 
-    Reads, inserts, patches, and downloads forward to the components repository. Deletion is the only
-    operation with cross-repository logic, applying two gates:
+    Reads, inserts, and patches forward to the components repository. Deletion is the only operation with
+    cross-repository logic, applying two gates:
 
     1. **Access (scoped):** candidates are restricted to components reachable via a contribution
        in the user's scope. A component the user cannot reach is treated as not found.
@@ -49,13 +49,15 @@ class ComponentService[
         components: MongoDbComponentsRepository[TDoc, TIn, TOut, TFilter, TPatch],
         contributions: MongoDbContributionRepository,
         *,
+        user: User,
+        downloads: DownloadService,
         ref_field: str,
-        bucket_name: str | None = None,
     ) -> None:
         self._components = components
         self._contributions = contributions
+        self._user = user
+        self._downloads = downloads
         self._ref_field = ref_field
-        self._bucket_name = bucket_name or ref_field
 
     async def read_many(
         self,
@@ -137,28 +139,24 @@ class ComponentService[
             raise NotFoundError(f"{self._components.document_model.__name__} not found", **identifiers)
         return await self._components.update_one(identifiers, update)
 
-    async def download(
-        self,
-        format: DownloadFormat,
-        short_mime: ShortMimeFormat,
-        ignore_cache: bool,
-        filter: TFilter,
-        fields: frozenset[str] | None,
-        s3: AbstractAsyncContextManager[S3Client],
-    ) -> AsyncIterable[bytes]:
-        """Stream a gzip-compressed export of matching components. See ``download``."""
-        allowed = await self._contributions.referenced_component_ids(self._ref_field, scoped=True)
-        return self._components.download(
-            format=format,
-            short_mime=short_mime,
-            ignore_cache=ignore_cache,
-            filter=filter,
-            fields=fields,
-            s3=s3,
-            bucket_name=self._bucket_name,
-            key_name="",  # TODO: Temp
-            restrict_ids=allowed,
+    async def queue_download(self, filter: TFilter, format: DownloadFormat) -> DownloadOut:
+        """Enqueue an async export of the matching, reachable components.
+
+        Since components don't carry a scope directly, we gather all in-scope components for the query and write them to
+        the Download.
+        """
+        reachable = await self._contributions.referenced_component_ids(self._ref_field, scoped=True)
+        base = self._components.build_download_query(filter)
+        # ``$and`` (rather than merging ``_id``) so a caller-supplied ``id__in`` filter is preserved.
+        query = {"$and": [base, {"_id": {"$in": list(reachable)}}]}
+        download_in = DownloadIn(
+            status=JobStatus.submitted,
+            requester=self._user.requester_id,
+            query=query,
+            domain=self._ref_field,
+            fmt=format,
         )
+        return await self._downloads.queue_download(download_in)
 
     async def delete_many(self, filter: TFilter) -> ComponentDeleteResponse:
         """Delete components matching ``filter`` that are reachable and globally unreferenced.
