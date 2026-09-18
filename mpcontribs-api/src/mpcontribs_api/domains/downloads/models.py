@@ -125,9 +125,9 @@ class DownloadFilter(BaseFilter):
     requester: str | None = None
     requester__in: list[str] | None = None
     fmt: DownloadFormat | None = None
-    fmt__in: DownloadFormat | None = None
+    fmt__in: list[DownloadFormat] | None = None
     error: str | None = None
-    error__in: str | None = None
+    error__in: list[str] | None = None
     error_neq: str | None = None
     s3_key: str | None = None
     s3_key__in: list[str] | None = None
