@@ -110,6 +110,10 @@ class S3Settings(BaseModel):
         default="contributions",
         description="The S3 bucket probed by the healthcheck to verify connectivity",
     )
+    downloads_bucket: str = Field(
+        default="mpcontribs-downloads",
+        description="The S3 bucket holding generated download objects",
+    )
     expires_in: int = Field(
         default=60,
         description="Duration (in seconds) for presigned url expiration",
@@ -254,8 +258,8 @@ class MPContribsSettings(BaseModel):
     )
 
     downloads_cache_ttl: int = Field(
-        default=24,
-        description="Number of hours to hold a download in S3 as a cached object.",
+        default=86_400,  # One day
+        description="Number of seconds to hold a download in S3 as a cached object.",
     )
 
 
