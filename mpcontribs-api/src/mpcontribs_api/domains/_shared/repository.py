@@ -3,7 +3,6 @@ import csv
 import hashlib
 import io
 import json
-import zlib
 from abc import ABC
 from collections.abc import AsyncIterable, AsyncIterator, Callable, Iterable, Mapping
 from contextlib import AbstractAsyncContextManager
@@ -24,7 +23,7 @@ from mpcontribs_api.config import get_settings
 from mpcontribs_api.domains._shared.bulk import BulkFailure, BulkWriteSummary, bulk_failure_from_exception
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DeleteResponse, DocumentOut
 from mpcontribs_api.domains._shared.search_index import SearchQuery
-from mpcontribs_api.domains._shared.types import DownloadFormat, Identity, ShortMimeFormat
+from mpcontribs_api.domains._shared.types import DownloadFormat, Identity
 from mpcontribs_api.exceptions import ConflictError, DownloadError, NotFoundError, ValidationError
 from mpcontribs_api.pagination import CursorParams, Page, encode_cursor
 from mpcontribs_api.scope import Scope
@@ -487,55 +486,3 @@ class MongoDbRepository[
                 return True
             except Exception:
                 return False
-
-    async def download(
-        self,
-        format: DownloadFormat,
-        short_mime: ShortMimeFormat,
-        ignore_cache: bool,
-        filter: TFilter,
-        fields: frozenset[str] | None,
-        s3: AbstractAsyncContextManager[S3Client],
-        bucket_name: str,
-        key_name: str,
-        restrict_ids: Iterable[Any] | None = None,
-        session: AsyncClientSession | None = None,
-    ) -> AsyncIterable[bytes]:
-        # Hash parameters to generate key for cache
-        payload = {
-            "format": format,
-            "short_mime": short_mime,
-            "filter": filter.model_dump(),
-            "fields": sorted(fields) if fields else None,
-        }
-        _ = self._hash_payload(payload)
-
-        # TODO: S3 download cache. When implemented, this should `await
-        # self._s3_object_exists(...)` and stream the cached object on a hit.
-
-        # Build from MongoDB (and, in future, save to cache)
-        query = filter.filter(self.document_model.find(self._scope, session=session))
-        if restrict_ids is not None:
-            query = query.find(In(self.document_model.id, list(restrict_ids)))
-        query = filter.sort(query)
-
-        serializer = self._get_serializer(format, fields)
-
-        # Compress using gzip level 9 and stream out
-        compressor = zlib.compressobj(9, zlib.DEFLATED, 16 + zlib.MAX_WBITS)
-
-        async def rows() -> AsyncIterator[TOut]:
-            async for table in query:
-                # TODO: We might think about skipping validation to save time
-                yield self.out_model.model_validate(table, from_attributes=True)
-
-        async for line in serializer(rows()):
-            chunk = compressor.compress(line)
-            if chunk:
-                yield chunk
-
-        # Flush the remaining buffered bytes and the gzip footer
-        # Without this the stream is a truncated gzip that cannot be decompressed.
-        tail = compressor.flush()
-        if tail:
-            yield tail
