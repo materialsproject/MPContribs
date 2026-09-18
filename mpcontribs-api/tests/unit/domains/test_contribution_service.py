@@ -619,7 +619,7 @@ class TestUpsertContributionsUnapprovedQuota:
         # cap 3, 2 stored -> one slot for a new document; updating an existing one is free.
         monkeypatch.setattr(get_settings().consumer.contribution, "max_per_unapproved_project",3)
         contrib_repo = AsyncMock()
-        contrib_repo.upsert_one.return_value = MagicMock(spec=Contribution, project="proj")
+        contrib_repo.upsert_one.return_value = _stored_contrib()
         contrib_repo.count_matching.return_value = 2
         svc, *_ = _make_service(contributions=contrib_repo, projects=_unapproved_projects_repo())
         # Set after _make_service, which stubs existing_identities to an empty set. 'a' already exists.
@@ -645,7 +645,7 @@ class TestUpsertContributionsUnapprovedQuota:
     async def test_pure_updates_are_never_capped(self, monkeypatch):
         monkeypatch.setattr(get_settings().consumer.contribution, "max_per_unapproved_project",1)
         contrib_repo = AsyncMock()
-        contrib_repo.upsert_one.return_value = MagicMock(spec=Contribution, project="proj")
+        contrib_repo.upsert_one.return_value = _stored_contrib()
         contrib_repo.count_matching.return_value = 99  # far over cap
         svc, *_ = _make_service(contributions=contrib_repo, projects=_unapproved_projects_repo())
         # Every contribution in the batch is an existing document -> all are free updates.
@@ -665,7 +665,7 @@ class TestUpsertContributionsUnapprovedQuota:
     async def test_approved_project_skips_quota(self, monkeypatch):
         monkeypatch.setattr(get_settings().consumer.contribution, "max_per_unapproved_project",1)
         contrib_repo = AsyncMock()
-        contrib_repo.upsert_one.return_value = MagicMock(spec=Contribution, project="proj")
+        contrib_repo.upsert_one.return_value = _stored_contrib()
         svc, *_ = _make_service(contributions=contrib_repo, projects=_approved_projects_repo())
 
         summary = await svc.upsert_many([_contrib_in(identifier=f"mp-{i}") for i in range(3)])
@@ -687,7 +687,7 @@ class TestUpsertContributionByIdQuota:
         contrib_repo = AsyncMock()
         contrib_repo.read_one.return_value = MagicMock(spec=Contribution)  # id exists -> update
         contrib_repo.count_matching.return_value = 99
-        contrib_repo.upsert_by_id.return_value = MagicMock(spec=Contribution)
+        contrib_repo.upsert_by_id.return_value = _stored_contrib()
         svc, *_ = _make_service(contributions=contrib_repo, projects=_unapproved_projects_repo())
 
         await svc.upsert_one({"id": "someid"}, _contrib_in())
@@ -712,7 +712,7 @@ class TestUpsertContributionByIdQuota:
         contrib_repo = AsyncMock()
         contrib_repo.read_one.return_value = None
         contrib_repo.count_matching.return_value = 1
-        contrib_repo.upsert_by_id.return_value = MagicMock(spec=Contribution)
+        contrib_repo.upsert_by_id.return_value = _stored_contrib()
         svc, *_ = _make_service(contributions=contrib_repo, projects=_unapproved_projects_repo())
 
         await svc.upsert_one({"id": "someid"}, _contrib_in())
@@ -736,7 +736,7 @@ class TestUpsertContributionByIdQuota:
         monkeypatch.setattr(get_settings().consumer.contribution, "max_per_unapproved_project",1)
         contrib_repo = AsyncMock()
         contrib_repo.read_one.return_value = None
-        contrib_repo.upsert_by_id.return_value = MagicMock(spec=Contribution)
+        contrib_repo.upsert_by_id.return_value = _stored_contrib()
         svc, *_ = _make_service(contributions=contrib_repo, projects=_approved_projects_repo())
 
         await svc.upsert_one({"id": "someid"}, _contrib_in())
@@ -1080,7 +1080,7 @@ class TestContributionIdentity:
     async def test_upsert_does_not_conflict_on_existing_identity(self):
         """Upsert targets an existing identity (update), so it must not pre-reject as a conflict."""
         svc, contrib_repo, *_ = _make_service()
-        contrib_repo.upsert_one.return_value = MagicMock(spec=Contribution, project="proj")
+        contrib_repo.upsert_one.return_value = _stored_contrib()
 
         await svc.upsert_many([_contrib_in(identifier="mp-1")])
 
@@ -1090,7 +1090,7 @@ class TestContributionIdentity:
 
     async def test_upsert_passes_resolved_unique_value_in_identifiers(self):
         svc, contrib_repo, *_ = _make_service(unique_column="sampleId")
-        contrib_repo.upsert_one.return_value = MagicMock(spec=Contribution, project="proj")
+        contrib_repo.upsert_one.return_value = _stored_contrib()
 
         await svc.upsert_many([_contrib_in(data={"sampleId": "A"})])
 
@@ -1169,7 +1169,7 @@ class TestUpsertContributionsGuard:
 class TestUpsertContributionsAtomic:
     async def test_calls_atomic_repo_method_once_per_item(self):
         svc, contrib_repo, *_ = _make_service()
-        contrib_repo.upsert_one.return_value = MagicMock(spec=Contribution, project="proj")
+        contrib_repo.upsert_one.return_value = _stored_contrib()
 
         contribs = [_contrib_in(identifier=f"mp-{i}") for i in range(3)]
         summary = await svc.upsert_many(contribs)
@@ -1183,7 +1183,7 @@ class TestUpsertContributionsAtomic:
 
     async def test_passes_identity_stamped_document_to_repo(self):
         svc, contrib_repo, *_ = _make_service()
-        contrib_repo.upsert_one.return_value = MagicMock(spec=Contribution, project="proj")
+        contrib_repo.upsert_one.return_value = _stored_contrib()
 
         contrib = _contrib_in(project="my-proj", material_id="mp-99")
         await svc.upsert_many([contrib])
@@ -1201,10 +1201,9 @@ class TestUpsertContributionsAtomic:
 
     async def test_returns_repo_results_in_input_order(self):
         svc, contrib_repo, *_ = _make_service()
-        docs = [MagicMock(spec=Contribution) for _ in range(3)]
-        for i, doc in enumerate(docs):
-            doc.project = "proj"  # real project so update_project can aggregate the affected set
-            doc.material_id = f"mp-{i}"  # distinct real id so the converted output models stay orderable
+        # distinct real material_ids so the side-effect can map by index and the converted output
+        # models stay orderable; project defaults to "proj" so update_project can aggregate.
+        docs = [_stored_contrib(material_id=f"mp-{i}") for i in range(3)]
 
         async def _upsert(document):
             return docs[int(document.material_id.split("-")[1])]
@@ -1232,7 +1231,7 @@ class TestUpsertContributionsAtomic:
         tiebreaker — the service must not pre-deduplicate or otherwise swallow one.
         """
         svc, contrib_repo, *_ = _make_service()
-        contrib_repo.upsert_one.return_value = MagicMock(spec=Contribution, project="proj")
+        contrib_repo.upsert_one.return_value = _stored_contrib()
 
         contribs = [
             _contrib_in(project="prj", identifier="same"),
@@ -1249,7 +1248,7 @@ class TestUpsertContributionsAtomic:
         async def _upsert(document):
             if document.material_id == "mp-1":
                 raise ConflictError("boom")
-            return MagicMock(spec=Contribution, project="proj")
+            return _stored_contrib()
 
         contrib_repo.upsert_one.side_effect = _upsert
 
@@ -1319,7 +1318,7 @@ class TestWriteAuthorization:
 
     async def test_upsert_rejects_unauthorized_project_per_item(self):
         svc, contrib_repo, *_ = _make_service(user=_member_user("allowed"))
-        contrib_repo.upsert_one.return_value = MagicMock(spec=Contribution, project="proj")
+        contrib_repo.upsert_one.return_value = _stored_contrib()
 
         contribs = [
             _contrib_in(project="allowed", identifier="ok"),
@@ -1383,7 +1382,7 @@ class TestWriteAuthorization:
         # not gated by the quota, so the write goes through.
         contrib_repo = AsyncMock()
         contrib_repo.read_one.return_value = MagicMock(spec=Contribution)  # exists -> update
-        contrib_repo.upsert_by_id.return_value = MagicMock(spec=Contribution)
+        contrib_repo.upsert_by_id.return_value = _stored_contrib()
         svc, *_ = _make_service(
             contributions=contrib_repo, projects=_unapproved_projects_repo(), user=_member_user("allowed")
         )
@@ -1395,7 +1394,7 @@ class TestWriteAuthorization:
     async def test_upsert_admin_bypasses_authorization(self):
         contrib_repo = AsyncMock()
         contrib_repo.read_one.return_value = MagicMock(spec=Contribution)
-        contrib_repo.upsert_by_id.return_value = MagicMock(spec=Contribution)
+        contrib_repo.upsert_by_id.return_value = _stored_contrib()
         svc, *_ = _make_service(contributions=contrib_repo, projects=_approved_projects_repo())  # admin default
 
         await svc.upsert_one({"id": "someid"}, _contrib_in(project="anything"))
@@ -1417,6 +1416,19 @@ from mpcontribs_api.pagination import Page  # noqa: E402
 def _link(ref_id: PydanticObjectId) -> SimpleNamespace:
     """Minimal stand-in for a Beanie Link: only ``.ref.id`` is read by the service."""
     return SimpleNamespace(ref=SimpleNamespace(id=ref_id))
+
+
+def _stored_contrib(**overrides) -> SimpleNamespace:
+    """Stored-Contribution stand-in for the service's ``ContributionOut`` output boundary.
+
+    ``ContributionService`` converts repo write results with
+    ``ContributionOut.model_validate(doc, from_attributes=True)``, which reads every field off the
+    object. A ``MagicMock`` returns child-mocks for the typed fields a test never set
+    (``data``/``structures``/``is_public``/...), which fail validation once Beanie finalizes the
+    models; a ``SimpleNamespace`` simply omits them, so Pydantic falls back to the ``None`` defaults.
+    Set only the fields a test asserts on via ``overrides``.
+    """
+    return SimpleNamespace(id=_oid(), project="proj", **overrides)
 
 
 def _contrib_doc(structures=None, attachments=None, tables=None, id_=None, project="proj") -> SimpleNamespace:
@@ -1665,7 +1677,7 @@ class TestPatchIdentifierHierarchy:
         svc, contrib_repo, *_ = _make_service()
         existing = _existing_doc(material_id=None, chemical_system_id="Fe-O", formula="Fe2O3")
         contrib_repo.read_one.return_value = existing
-        contrib_repo.update_one.return_value = MagicMock(spec=Contribution)
+        contrib_repo.update_one.return_value = _stored_contrib()
 
         await svc.update_one({"id": str(existing.id)}, ContributionPatch(material_id="mp-1"))
 
@@ -1673,7 +1685,7 @@ class TestPatchIdentifierHierarchy:
 
     async def test_metadata_only_patch_skips_existing_read(self):
         svc, contrib_repo, *_ = _make_service()
-        contrib_repo.update_one.return_value = MagicMock(spec=Contribution)
+        contrib_repo.update_one.return_value = _stored_contrib()
 
         await svc.update_one({"id": "some-id"}, ContributionPatch(is_public=True))
 
@@ -1693,7 +1705,7 @@ class TestPatchDataMergeReplace:
         existing = _existing_doc(material_id=None, chemical_system_id="Fe-O", formula="Fe2O3")
         existing.data = {"x": 1.0}
         contrib_repo.read_one.return_value = existing
-        contrib_repo.update_one.return_value = MagicMock(spec=Contribution)
+        contrib_repo.update_one.return_value = _stored_contrib()
 
         await svc.update_one({"id": str(existing.id)}, ContributionPatch(data={"y": 9.0}))
 
@@ -1705,7 +1717,7 @@ class TestPatchDataMergeReplace:
         existing = _existing_doc(material_id=None, chemical_system_id="Fe-O", formula="Fe2O3")
         existing.data = {"x": 1.0}
         contrib_repo.read_one.return_value = existing
-        contrib_repo.update_one.return_value = MagicMock(spec=Contribution)
+        contrib_repo.update_one.return_value = _stored_contrib()
 
         await svc.update_one(
             {"id": str(existing.id)}, ContributionPatch(data={"y": 9.0}), replace_data=True
@@ -1720,7 +1732,7 @@ class TestPatchDataMergeReplace:
         existing = _existing_doc(material_id=None, chemical_system_id="Fe-O", formula="Fe2O3")
         existing.data = {"sampleId": 42, "x": 1.0}
         contrib_repo.read_one.return_value = existing
-        contrib_repo.update_one.return_value = MagicMock(spec=Contribution)
+        contrib_repo.update_one.return_value = _stored_contrib()
 
         await svc.update_one({"id": str(existing.id)}, ContributionPatch(data={"y": 9.0}))
 
