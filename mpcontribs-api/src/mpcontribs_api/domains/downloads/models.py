@@ -1,9 +1,10 @@
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import ClassVar, Self
 
 from beanie import PydanticObjectId
 from pydantic import BaseModel, SerializeAsAny
+from pymongo import ASCENDING, IndexModel
 
 from mpcontribs_api.config import get_settings
 from mpcontribs_api.domains._shared.filters import BaseFilter
@@ -19,8 +20,15 @@ class JobStatus(StrEnum):
 
 
 class DownloadIdentity(Identity):
-    # The S3 object key is the job's natural key: identical requests (same domain, format, query, and access scope)
-    # address one object.
+    """Natural key of a download doc in MongoDB.
+
+    `requester` is the `consumer_id` of the user that requested the download.
+    `s3_key` is the stable hash of the file generated.
+
+    Field order is the compound-index column order.
+    """
+
+    requester: str
     s3_key: str
 
 
@@ -36,13 +44,17 @@ class Download(BaseDocumentWithInput[PydanticObjectId]):
     bytes_written: int = 0
     error: str | None = None
     created_at: datetime
-    expires_at: datetime
 
     class Settings:
         name = "downloads"
         keep_nulls = False
         indexes = [
-            DownloadIdentity.index_model(name="s3_key"),
+            IndexModel(
+                name="download_ttl_index",
+                keys=[("created_at", ASCENDING)],
+                expireAfterSeconds=get_settings().mpcontribs.downloads_cache_ttl,
+            ),
+            DownloadIdentity.index_model(name="requester_s3_key", unique=True),
         ]
 
     @staticmethod
@@ -62,7 +74,6 @@ class Download(BaseDocumentWithInput[PydanticObjectId]):
         cls,
         data: DownloadIn,
     ) -> Self:
-        settings = get_settings()
         created_at = datetime.now(UTC)
         query = data.filter.model_dump(mode="json", exclude_none=True)
         return cls.model_validate(
@@ -75,7 +86,6 @@ class Download(BaseDocumentWithInput[PydanticObjectId]):
                 "domain": data.domain,
                 "fmt": data.fmt,
                 "created_at": created_at,
-                "expires_at": created_at + timedelta(hours=settings.mpcontribs.downloads_cache_ttl),
             }
         )
 
@@ -99,7 +109,6 @@ class DownloadOut(DocumentOut):
     bytes_written: int = 0
     error: str | None = None
     created_at: datetime | None = None
-    expires_at: datetime | None = None
 
 
 class DownloadPatch(SparseFieldsModel):
@@ -109,7 +118,6 @@ class DownloadPatch(SparseFieldsModel):
     rows_written: int | None = None
     bytes_written: int | None = None
     error: str | None = None
-    expires_at: datetime | None = None
 
 
 class DownloadFilter(BaseFilter):
@@ -126,6 +134,3 @@ class DownloadFilter(BaseFilter):
     created_at: datetime | None = None
     created_at__lte: datetime | None = None
     created_at__gte: datetime | None = None
-    expires_at: datetime | None = None
-    expires_at__lte: datetime | None = None
-    expires_at__gte: datetime | None = None
