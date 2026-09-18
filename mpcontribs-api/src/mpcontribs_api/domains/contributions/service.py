@@ -127,11 +127,9 @@ class ContributionService:
         return await self._contributions.read_many(pagination=pagination, filter=filter, fields=fields)
 
     async def queue_download(self, filter: ContributionFilter, format: DownloadFormat) -> DownloadOut:
-        consumer_id = self._user.consumer_id
-        requesting_user = consumer_id if consumer_id is not None else "anonymous"
         download_in = DownloadIn(
             status=JobStatus.submitted,
-            requester=requesting_user,
+            requester=self._user.requester_id,
             filter=filter,
             domain="contributions",
             fmt=format,

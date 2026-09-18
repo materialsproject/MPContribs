@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from mpcontribs_api.dependencies import MongoClientDep, UserDep
+from mpcontribs_api.dependencies import MongoClientDep, S3Dep, SQSDep, UserDep
 from mpcontribs_api.domains.attachments.repository import MongoDbAttachmentRepository
 from mpcontribs_api.domains.consumers.dependencies import ConsumerServiceDep
 from mpcontribs_api.domains.contributions.repository import (
@@ -20,6 +20,8 @@ async def get_contribution_service(
     user: UserDep,
     client: MongoClientDep,
     consumers: ConsumerServiceDep,
+    sqs: SQSDep,
+    s3: S3Dep,
 ) -> ContributionService:
     return ContributionService(
         client=client,
@@ -29,7 +31,7 @@ async def get_contribution_service(
         structures=MongoDbStructureRepository(user),
         attachments=MongoDbAttachmentRepository(user),
         tables=MongoDbTableRepository(user),
-        downloads=DownloadService(downloads=MongoDbDownloadRepository(user)),
+        downloads=DownloadService(downloads=MongoDbDownloadRepository(user), sqs=sqs, s3=s3),
         limits=await consumers.effective_limits(user.consumer_id),
     )
 
