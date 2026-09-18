@@ -130,7 +130,7 @@ class ContributionService:
         download_in = DownloadIn(
             status=JobStatus.submitted,
             requester=self._user.requester_id,
-            filter=filter,
+            query=self._contributions.build_download_query(filter),
             domain="contributions",
             fmt=format,
         )

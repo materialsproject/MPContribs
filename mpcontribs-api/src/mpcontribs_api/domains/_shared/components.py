@@ -6,6 +6,7 @@ from pymongo.errors import BulkWriteError
 
 from mpcontribs_api.config import get_settings
 from mpcontribs_api.domains._shared.bulk import BulkFailure
+from mpcontribs_api.domains._shared.downloadable import DownloadableRepository
 from mpcontribs_api.domains._shared.models import Component, ComponentIn, DeleteResponse, DocumentOut
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
 from mpcontribs_api.domains._shared.types import MD5Hash
@@ -19,7 +20,7 @@ class MongoDbComponentsRepository[
     TOut: DocumentOut,
     TFilter: Filter,
     TPatch: BaseModel,
-](MongoDbRepository[TDoc, TIn, TOut, TFilter, TPatch]):
+](DownloadableRepository[TDoc, TOut, TFilter], MongoDbRepository[TDoc, TIn, TOut, TFilter, TPatch]):
     # Components' visibility is determined by the visibility of referencing Contributions by user
     read_scope = Scope()
 

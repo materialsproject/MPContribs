@@ -7,6 +7,7 @@ from pymongo.errors import DuplicateKeyError
 
 from mpcontribs_api.authz import PROJECT_PATH
 from mpcontribs_api.domains._shared.bulk import BulkUpdateSummary
+from mpcontribs_api.domains._shared.downloadable import DownloadableRepository
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
 from mpcontribs_api.domains._shared.units import QuantityLeaf
 from mpcontribs_api.domains.contributions.models import (
@@ -53,7 +54,8 @@ def _build_update_set(update_data: dict[str, Any], existing_data: Any, *, replac
 
 
 class MongoDbContributionRepository(
-    MongoDbRepository[Contribution, ContributionIn, ContributionOut, ContributionFilter, ContributionPatch]
+    DownloadableRepository[Contribution, ContributionOut, ContributionFilter],
+    MongoDbRepository[Contribution, ContributionIn, ContributionOut, ContributionFilter, ContributionPatch],
 ):
     """A repository layer for access to MongoDB."""
 

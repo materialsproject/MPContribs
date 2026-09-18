@@ -1,11 +1,6 @@
 import asyncio
-import csv
-import hashlib
-import io
-import json
 from abc import ABC
-from collections.abc import AsyncIterable, AsyncIterator, Callable, Iterable, Mapping
-from contextlib import AbstractAsyncContextManager
+from collections.abc import Iterable, Mapping
 from typing import Any, ClassVar, cast
 
 import structlog
@@ -16,15 +11,14 @@ from fastapi_filter.contrib.beanie import Filter
 from pydantic import BaseModel
 from pymongo.asynchronous.client_session import AsyncClientSession
 from pymongo.errors import DuplicateKeyError
-from types_aiobotocore_s3 import S3Client
 
 from mpcontribs_api.authz import User
 from mpcontribs_api.config import get_settings
 from mpcontribs_api.domains._shared.bulk import BulkFailure, BulkWriteSummary, bulk_failure_from_exception
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DeleteResponse, DocumentOut
 from mpcontribs_api.domains._shared.search_index import SearchQuery
-from mpcontribs_api.domains._shared.types import DownloadFormat, Identity
-from mpcontribs_api.exceptions import ConflictError, DownloadError, NotFoundError, ValidationError
+from mpcontribs_api.domains._shared.types import Identity
+from mpcontribs_api.exceptions import ConflictError, NotFoundError, ValidationError
 from mpcontribs_api.pagination import CursorParams, Page, encode_cursor
 from mpcontribs_api.scope import Scope
 
@@ -430,59 +424,3 @@ class MongoDbRepository[
         query = self._identifier_query(identifiers)
         not_found = NotFoundError(f"{self.document_model.__name__} not found", identifiers=identifiers)
         return await self._update_matching(query, update, not_found, session=session, extra_set=extra_set)
-
-    def _hash_payload(self, payload: dict[str, Any], *, separators: tuple[str, str] = (",", ":")) -> str:
-        canonical = json.dumps(
-            payload,
-            sort_keys=True,
-            separators=separators,
-            ensure_ascii=True,
-            default=str,  # filters may carry ObjectId/datetime values; stringify for a stable key
-        )
-        return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
-
-    def _get_serializer(
-        self, format: DownloadFormat, fields: frozenset[str] | None
-    ) -> Callable[[AsyncIterable[TOut]], AsyncIterable[bytes]]:
-        match format:
-            case DownloadFormat.JSONL:
-                return self._serialize_jsonl
-            case DownloadFormat.CSV:
-                return lambda rows: self._serialize_csv(rows, fields)
-            case _:
-                raise DownloadError("download format unhandled", format=format)
-
-    @staticmethod
-    async def _serialize_jsonl(rows: AsyncIterable) -> AsyncIterator[bytes]:
-        async for out in rows:
-            yield out.model_dump_json().encode() + b"\n"
-
-    @staticmethod
-    def _csv_cell(value: Any) -> Any:
-        """Render a cell value for CSV: scalars as-is, dict/list as JSON (not Python repr)."""
-        if value is None or isinstance(value, (str, int, float, bool)):
-            return value
-        return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
-
-    @staticmethod
-    async def _serialize_csv(rows: AsyncIterable, fields: frozenset[str] | None) -> AsyncIterator[bytes]:
-        buf = io.StringIO()
-        writer: csv.DictWriter | None = None
-        async for out in rows:
-            row = out.model_dump(mode="json")
-            if writer is None:
-                cols = sorted(fields) if fields else list(row.keys())
-                writer = csv.DictWriter(buf, fieldnames=cols, extrasaction="ignore")
-                writer.writeheader()
-            writer.writerow({key: MongoDbRepository._csv_cell(value) for key, value in row.items()})
-            yield buf.getvalue().encode()
-            buf.seek(0)
-            buf.truncate(0)
-
-    async def _s3_object_exists(self, bucket_name: str, key_name: str, s3: AbstractAsyncContextManager[S3Client]):
-        async with s3 as s3_client:
-            try:
-                await s3_client.head_object(Bucket=bucket_name, Key=key_name)
-                return True
-            except Exception:
-                return False
