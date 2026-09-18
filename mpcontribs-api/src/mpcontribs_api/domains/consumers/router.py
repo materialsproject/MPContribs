@@ -7,7 +7,6 @@ from mpcontribs_api.dependencies import require_admin
 from mpcontribs_api.domains._shared.types import FieldSelector
 from mpcontribs_api.domains.consumers.dependencies import ConsumerServiceDep
 from mpcontribs_api.domains.consumers.models import (
-    Consumer,
     ConsumerFilter,
     ConsumerIdentity,
     ConsumerIn,
@@ -22,7 +21,7 @@ from mpcontribs_api.pagination import CursorParams, Page
 router = APIRouter(dependencies=[Depends(require_admin)])
 
 
-@router.get("", response_model=None)
+@router.get("", response_model_exclude_unset=True)
 async def read_many(
     service: ConsumerServiceDep,
     pagination: Annotated[CursorParams, Depends()],
@@ -34,7 +33,7 @@ async def read_many(
     return await service.read_many(filter=filter, pagination=pagination, fields=selected)
 
 
-@router.get("/item", response_model=None)
+@router.get("/item", response_model_exclude_unset=True)
 async def read_one_by_identity(
     identity: Annotated[ConsumerIdentity, Depends()],
     service: ConsumerServiceDep,
@@ -45,12 +44,12 @@ async def read_one_by_identity(
     return await service.read_one(identity.as_dict(), fields=selected)
 
 
-@router.patch("/item", response_model=ConsumerOut)
+@router.patch("/item")
 async def update_one_by_identity(
     service: ConsumerServiceDep,
     identity: Annotated[ConsumerIdentity, Depends()],
     update: ConsumerPatch,
-) -> Consumer:
+) -> ConsumerOut:
     """Partially update a consumer override by its ``consumer_id`` natural key (admin only)."""
     return await service.update_one(identity.as_dict(), update)
 
@@ -65,7 +64,7 @@ async def delete_one_by_identity(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router.get("/{id}", response_model=None)
+@router.get("/{id}", response_model_exclude_unset=True)
 async def read_one(
     id: str,
     service: ConsumerServiceDep,
@@ -76,21 +75,21 @@ async def read_one(
     return await service.read_one({"id": id}, fields=selected)
 
 
-@router.post("", response_model=ConsumerOut, status_code=status.HTTP_201_CREATED)
+@router.post("", status_code=status.HTTP_201_CREATED)
 async def insert_one(
     service: ConsumerServiceDep,
     consumer: ConsumerIn,
-) -> Consumer:
+) -> ConsumerOut:
     """Create a new consumer override, rejecting a duplicate ``consumer_id`` with 409 (admin only)."""
     return await service.insert_one(consumer)
 
 
-@router.patch("/{id}", response_model=ConsumerOut)
+@router.patch("/{id}")
 async def update_one(
     service: ConsumerServiceDep,
     id: str,
     update: ConsumerPatch,
-) -> Consumer:
+) -> ConsumerOut:
     """Partially update a consumer override by document id (admin only)."""
     return await service.update_one({"id": id}, update)
 

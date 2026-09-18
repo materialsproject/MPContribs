@@ -7,7 +7,6 @@ from mpcontribs_api.dependencies import require_user
 from mpcontribs_api.domains._shared.types import FieldSelector
 from mpcontribs_api.domains.initiatives.dependencies import InitiativeServiceDep
 from mpcontribs_api.domains.initiatives.models import (
-    Initiative,
     InitiativeFilter,
     InitiativeIdentity,
     InitiativeIn,
@@ -19,7 +18,7 @@ from mpcontribs_api.pagination import CursorParams, Page
 router = APIRouter()
 
 
-@router.get("", response_model=None)
+@router.get("", response_model_exclude_unset=True)
 async def read_many(
     service: InitiativeServiceDep,
     pagination: Annotated[CursorParams, Depends()],
@@ -31,7 +30,7 @@ async def read_many(
     return await service.read_many(pagination=pagination, filter=filter, fields=selected)
 
 
-@router.get("/item", response_model=None)
+@router.get("/item", response_model_exclude_unset=True)
 async def read_one_by_identity(
     service: InitiativeServiceDep,
     identity: Annotated[InitiativeIdentity, Depends()],
@@ -42,12 +41,12 @@ async def read_one_by_identity(
     return await service.read_one(identity.as_dict(), fields=selected)
 
 
-@router.patch("/item", response_model=InitiativeOut, dependencies=[Depends(require_user)])
+@router.patch("/item", dependencies=[Depends(require_user)])
 async def update_one_by_identity(
     service: InitiativeServiceDep,
     identity: Annotated[InitiativeIdentity, Depends()],
     update: InitiativePatch,
-) -> Initiative:
+) -> InitiativeOut:
     """Partially update the initiative by its natural key ``slug`` (the uniform ``/item`` entrypoint)."""
     return await service.update_one(identity.as_dict(), update=update)
 
@@ -62,7 +61,7 @@ async def delete_one_by_identity(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router.get("/{slug}", response_model=None)
+@router.get("/{slug}", response_model_exclude_unset=True)
 async def read_one(
     service: InitiativeServiceDep,
     slug: str,
@@ -73,13 +72,11 @@ async def read_one(
     return await service.read_one({"slug": slug}, fields=selected)
 
 
-@router.post(
-    "", response_model=InitiativeOut, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_user)]
-)
+@router.post("", status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_user)])
 async def insert_one(
     service: InitiativeServiceDep,
     initiative: InitiativeIn,
-) -> Initiative:
+) -> InitiativeOut:
     """Create a new initiative owned by the caller.
 
     Starts unapproved and private. Rejected with 409 if the caller already owns the maximum number
@@ -88,12 +85,12 @@ async def insert_one(
     return await service.insert_one(data=initiative)
 
 
-@router.patch("/{slug}", response_model=InitiativeOut, dependencies=[Depends(require_user)])
+@router.patch("/{slug}", dependencies=[Depends(require_user)])
 async def update_one(
     service: InitiativeServiceDep,
     slug: str,
     update: InitiativePatch,
-) -> Initiative:
+) -> InitiativeOut:
     """Partially update the initiative identified by ``slug``.
 
     Requires manage rights (owner/collaborator/admin). ``is_approved`` is admin-only, and an

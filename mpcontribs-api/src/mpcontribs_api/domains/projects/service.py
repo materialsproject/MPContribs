@@ -9,7 +9,6 @@ from mpcontribs_api.domains._shared.models import DeleteResponse
 from mpcontribs_api.domains.initiatives.models import Initiative
 from mpcontribs_api.domains.initiatives.repository import MongoDbInitiativeRepository
 from mpcontribs_api.domains.projects.models import (
-    Project,
     ProjectFilter,
     ProjectIn,
     ProjectOut,
@@ -45,7 +44,7 @@ class ProjectService:
         """Return the single scoped project matching ``identifiers`` (``{"id": ...}``); 404 if absent."""
         return await self._projects.read_one(identifiers, fields)
 
-    async def upsert_one(self, identifiers: dict[str, Any], data: ProjectIn) -> Project:
+    async def upsert_one(self, identifiers: dict[str, Any], data: ProjectIn) -> ProjectOut:
         """Upsert a project by id, applying every write-policy decision before persisting.
 
         Update the document if the id exists, otherwise insert a new one under that id.
@@ -106,9 +105,10 @@ class ProjectService:
 
         if project.is_public and not project.is_approved:
             raise ValidationError("a project cannot be public until it is approved", id=id)
-        return await self._projects.replace_one(id, project)
+        doc = await self._projects.replace_one(id, project)
+        return ProjectOut.model_validate(doc, from_attributes=True)
 
-    async def update_one(self, identifiers: dict[str, Any], update: ProjectPatch) -> Project:
+    async def update_one(self, identifiers: dict[str, Any], update: ProjectPatch) -> ProjectOut:
         """Apply a project patch, enforcing approval rules and routing ``initiative`` changes.
 
         The approval rules (admin-only ``is_approved``, ``public ⇒ approved``) are checked against the
@@ -118,7 +118,8 @@ class ProjectService:
         await self._enforce_patch_rules(id, update)
 
         if "initiative" not in update.model_fields_set:
-            return await self._projects.update_one(identifiers, update)
+            doc = await self._projects.update_one(identifiers, update)
+            return ProjectOut.model_validate(doc, from_attributes=True)
 
         data = update.model_dump(exclude_unset=True)
         identifier = data.pop("initiative", None)
@@ -127,7 +128,8 @@ class ProjectService:
         ref = await self._resolve_initiative_assignment(project_id=id, identifier=identifier)
 
         # `initiative` is server derived, so ProjectPatch can't handle it (expects str), so hand it in extra_set
-        return await self._projects.update_one(identifiers, ProjectPatch(**data), extra_set={"initiative": ref})
+        doc = await self._projects.update_one(identifiers, ProjectPatch(**data), extra_set={"initiative": ref})
+        return ProjectOut.model_validate(doc, from_attributes=True)
 
     async def delete_one(self, identifiers: dict[str, Any]) -> DeleteResponse:
         """Delete a scoped project by id. Restricted to the owner or an admin.

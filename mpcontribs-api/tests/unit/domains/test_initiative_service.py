@@ -46,6 +46,9 @@ def _service(user: User, *, existing=None, unapproved: int = 0):
     # The service builds the stored document (document_model.from_input_model, which stamps owner)
     # before inserting; keep document_model a sync mock so it returns a document, not a coroutine.
     initiatives.document_model = MagicMock()
+    # insert_one/update_one now return the stored document; the service validates it into an
+    # InitiativeOut, so the mock must return an attribute-readable stand-in, not a bare AsyncMock.
+    initiatives.insert_one.return_value = _existing()
     initiatives.update_one.return_value = _existing()
     initiatives.delete_one.return_value = DeleteResponse(num_deleted=1)
     projects = AsyncMock()

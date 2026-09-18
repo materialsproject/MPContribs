@@ -8,7 +8,6 @@ from mpcontribs_api.dependencies import require_user
 from mpcontribs_api.domains._shared.types import FieldSelector
 from mpcontribs_api.domains.projects.dependencies import ProjectServiceDep
 from mpcontribs_api.domains.projects.models import (
-    Project,
     ProjectFilter,
     ProjectIn,
     ProjectOut,
@@ -19,7 +18,7 @@ from mpcontribs_api.pagination import CursorParams, Page
 router = APIRouter()
 
 
-@router.get("", response_model=None)
+@router.get("", response_model_exclude_unset=True)
 async def read_many(
     service: ProjectServiceDep,
     pagination: Annotated[CursorParams, Depends()],
@@ -41,7 +40,7 @@ async def read_many(
     return await service.read_many(filter=filter, pagination=pagination, fields=selected)
 
 
-@router.get("/search", response_model=None)
+@router.get("/search", response_model_exclude_unset=True)
 async def search(
     service: ProjectServiceDep,
     query: str,
@@ -61,7 +60,7 @@ async def search(
     return await service.search(query=query, limit=limit)
 
 
-@router.get("/{id}", response_model=None)
+@router.get("/{id}", response_model_exclude_unset=True)
 async def read_one(
     id: str,
     service: ProjectServiceDep,
@@ -82,12 +81,12 @@ async def read_one(
     return await service.read_one({"id": id}, fields=selected)
 
 
-@router.put("/{id}", response_model=ProjectOut, dependencies=[Depends(require_user)])
+@router.put("/{id}", dependencies=[Depends(require_user)])
 async def upsert_one(
     service: ProjectServiceDep,
     id: str,
     project: ProjectIn,
-) -> Project:
+) -> ProjectOut:
     """Upsert a project by provided id.
 
     Upsert: Update document if id is found, otherwise insert new document using id.
@@ -104,12 +103,12 @@ async def upsert_one(
     return await service.upsert_one({"id": id}, data=project)
 
 
-@router.patch("/{id}", response_model=ProjectOut, dependencies=[Depends(require_user)])
+@router.patch("/{id}", dependencies=[Depends(require_user)])
 async def update_one(
     service: ProjectServiceDep,
     id: str,
     update: ProjectPatch,
-) -> Project:
+) -> ProjectOut:
     """Partial update to project identified with 'id'.
 
     Note: overwrites fields with given values - arrays are not appended to.

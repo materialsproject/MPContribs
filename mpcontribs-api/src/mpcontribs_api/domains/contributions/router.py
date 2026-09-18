@@ -16,7 +16,6 @@ from mpcontribs_api.domains._shared.types import (
 )
 from mpcontribs_api.domains.contributions.dependencies import ContributionServiceDep
 from mpcontribs_api.domains.contributions.models import (
-    Contribution,
     ContributionFilter,
     ContributionIdentity,
     ContributionIn,
@@ -51,7 +50,7 @@ def _enforce_bulk_limit(contributions: list[ContributionIn]) -> None:
         )
 
 
-@router.get("", response_model=None)
+@router.get("", response_model_exclude_unset=True)
 async def read_many(
     service: ContributionServiceDep,
     pagination: Annotated[CursorParams, Depends()],
@@ -89,20 +88,20 @@ async def update_many(
 
 
 # TODO: Might want to take contributions in from request body and run model_validate_json on it (much faster)
-@router.post("", response_model=BulkWriteSummary[ContributionOut], dependencies=[Depends(require_user)])
+@router.post("", dependencies=[Depends(require_user)])
 async def insert_many(
     service: ContributionServiceDep,
     contributions: list[ContributionIn],
-) -> BulkWriteSummary[Contribution]:  # succeeded items rendered as ContributionOut via response_model
+) -> BulkWriteSummary[ContributionOut]:
     _enforce_bulk_limit(contributions)
     return await service.insert_many(contributions=contributions)
 
 
-@router.put("", response_model=BulkWriteSummary[ContributionOut], dependencies=[Depends(require_user)])
+@router.put("", dependencies=[Depends(require_user)])
 async def upsert_many(
     service: ContributionServiceDep,
     contributions: list[ContributionIn],
-) -> BulkWriteSummary[Contribution]:  # succeeded items rendered as ContributionOut via response_model
+) -> BulkWriteSummary[ContributionOut]:
     _enforce_bulk_limit(contributions)
     return await service.upsert_many(contributions=contributions)
 
@@ -135,7 +134,7 @@ async def download_contributions(
 
 
 # Declared before the ``/{id}`` routes so the literal ``item`` is never captured as an id.
-@router.get("/item", response_model=None)
+@router.get("/item", response_model_exclude_unset=True)
 async def read_one_by_identity(
     service: ContributionServiceDep,
     identity: Annotated[ContributionIdentity, Depends()],
@@ -155,18 +154,18 @@ async def delete_one_by_identity(
     return await service.delete_one(identity.as_dict())
 
 
-@router.patch("/item", response_model=ContributionOut, dependencies=[Depends(require_user)])
+@router.patch("/item", dependencies=[Depends(require_user)])
 async def update_one_by_identity(
     service: ContributionServiceDep,
     update: ContributionPatch,
     identity: Annotated[ContributionIdentity, Depends()],
     replace_data: bool = False,
-) -> Contribution:
+) -> ContributionOut:
     """Patch the single contribution addressed by its natural identity (409 if ambiguous)."""
     return await service.update_one(identity.as_dict(), update=update, replace_data=replace_data)
 
 
-@router.get("/search", response_model=None)
+@router.get("/search", response_model_exclude_unset=True)
 async def search(
     service: ContributionServiceDep,
     query: str,
@@ -195,7 +194,7 @@ async def delete_one(
     return await service.delete_one({"id": id})
 
 
-@router.get("/{id}", response_model=None)
+@router.get("/{id}", response_model_exclude_unset=True)
 async def read_one(
     service: ContributionServiceDep,
     id: str,
@@ -205,18 +204,13 @@ async def read_one(
     return await service.read_one({"id": id}, fields=selected)
 
 
-@router.put("/{id}", response_model=ContributionOut, dependencies=[Depends(require_user)])
-async def upsert_one(service: ContributionServiceDep, id: str, contribution: ContributionIn) -> Contribution:
-    # The by-id upsert resolves the server-owned ``unique_value`` and enforces the unapproved quota
-    # (see ``ContributionService.upsert_one``), which the generic identity upsert does not.
+@router.put("/{id}", dependencies=[Depends(require_user)])
+async def upsert_one(service: ContributionServiceDep, id: str, contribution: ContributionIn) -> ContributionOut:
     return await service.upsert_one({"id": id}, contribution)
 
 
-@router.patch("/{id}", response_model=ContributionOut, dependencies=[Depends(require_user)])
+@router.patch("/{id}", dependencies=[Depends(require_user)])
 async def update_one(
     service: ContributionServiceDep, id: str, update: ContributionPatch, replace_data: bool = False
-) -> Contribution:
-    # The by-id patch re-resolves ``unique_value`` and validates the identifier hierarchy against the
-    # merged state (see ``ContributionService.update_one``); ``?replace_data=true``
-    # overwrites the whole ``data`` dict instead of deep-merging.
+) -> ContributionOut:
     return await service.update_one({"id": id}, update=update, replace_data=replace_data)

@@ -14,13 +14,13 @@ from mpcontribs_api.domains._shared.types import (
     download_filename,
 )
 from mpcontribs_api.domains.tables.dependencies import TableServiceDep
-from mpcontribs_api.domains.tables.models import Table, TableFilter, TableIn, TableOut, TablePatch
+from mpcontribs_api.domains.tables.models import TableFilter, TableIn, TableOut, TablePatch
 from mpcontribs_api.pagination import CursorParams, Page
 
 router = APIRouter()
 
 
-@router.get("", response_model=None)
+@router.get("", response_model_exclude_unset=True)
 async def read_many(
     service: TableServiceDep,
     pagination: Annotated[CursorParams, Depends()],
@@ -31,7 +31,7 @@ async def read_many(
     return await service.read_many(filter=filter, fields=selected, pagination=pagination)
 
 
-@router.get("/item", response_model=None)
+@router.get("/item", response_model_exclude_unset=True)
 async def read_one_by_identity(
     service: TableServiceDep,
     identity: Annotated[ComponentIdentity, Depends()],
@@ -50,17 +50,17 @@ async def delete_one_by_identity(
     return await service.delete_one(identifiers=identity.as_dict())
 
 
-@router.patch("/item", response_model=TableOut, dependencies=[Depends(require_user)])
+@router.patch("/item", dependencies=[Depends(require_user)])
 async def update_one_by_identity(
     service: TableServiceDep,
     identity: Annotated[ComponentIdentity, Depends()],
     update: TablePatch,
-) -> Table:
+) -> TableOut:
     """Patch a single table addressed by its content ``md5`` (its natural key)."""
     return await service.update_one(identifiers=identity.as_dict(), update=update)
 
 
-@router.get("/{id}", response_model=None)
+@router.get("/{id}", response_model_exclude_unset=True)
 async def read_one(
     service: TableServiceDep,
     id: str,
@@ -98,11 +98,11 @@ async def download_table(
     )
 
 
-@router.post("", response_model=BulkWriteSummary[TableOut], dependencies=[Depends(require_writer)])
+@router.post("", dependencies=[Depends(require_writer)])
 async def insert_many(
     service: TableServiceDep,
     tables: list[TableIn],
-) -> BulkWriteSummary[Table]:  # succeeded items rendered as TableOut via response_model
+) -> BulkWriteSummary[TableOut]:
     return await service.insert_many(components=tables)
 
 
@@ -119,11 +119,11 @@ async def delete_one(service: TableServiceDep, id: str) -> ComponentDeleteRespon
     return await service.delete_one(identifiers={"id": id})
 
 
-@router.patch("/{id}", response_model=TableOut, dependencies=[Depends(require_user)])
+@router.patch("/{id}", dependencies=[Depends(require_user)])
 async def update_one(
     service: TableServiceDep,
     id: str,
     update: TablePatch,
-) -> Table:
+) -> TableOut:
     """Patch a single table addressed by its ``_id``."""
     return await service.update_one(identifiers={"id": id}, update=update)

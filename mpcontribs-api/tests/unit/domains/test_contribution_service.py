@@ -1201,22 +1201,22 @@ class TestUpsertContributionsAtomic:
 
     async def test_returns_repo_results_in_input_order(self):
         svc, contrib_repo, *_ = _make_service()
-        docs = [MagicMock(spec=Contribution, name=f"doc-{i}") for i in range(3)]
-        for doc in docs:
+        docs = [MagicMock(spec=Contribution) for _ in range(3)]
+        for i, doc in enumerate(docs):
             doc.project = "proj"  # real project so update_project can aggregate the affected set
-        returned = {}
+            doc.material_id = f"mp-{i}"  # distinct real id so the converted output models stay orderable
 
         async def _upsert(document):
-            doc = docs[int(document.material_id.split("-")[1])]
-            returned[document.material_id] = doc
-            return doc
+            return docs[int(document.material_id.split("-")[1])]
 
         contrib_repo.upsert_one.side_effect = _upsert
 
         contribs = [_contrib_in(identifier=f"mp-{i}") for i in range(3)]
         summary = await svc.upsert_many(contribs)
 
-        assert summary.succeeded == [returned["mp-0"], returned["mp-1"], returned["mp-2"]]
+        # succeeded now carries ContributionOut (internal fields stripped at the service boundary),
+        # so assert the input ordering by the surviving identity field rather than object identity.
+        assert [c.material_id for c in summary.succeeded] == ["mp-0", "mp-1", "mp-2"]
 
     async def test_empty_batch_returns_empty_summary(self):
         svc, contrib_repo, *_ = _make_service()

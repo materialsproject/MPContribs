@@ -9,7 +9,6 @@ from mpcontribs_api.domains._shared.models import DeleteResponse
 from mpcontribs_api.domains._shared.types import FieldSelector
 from mpcontribs_api.domains.project_groups.dependencies import ProjectGroupServiceDep
 from mpcontribs_api.domains.project_groups.models import (
-    ProjectGroup,
     ProjectGroupFilter,
     ProjectGroupIdentity,
     ProjectGroupIn,
@@ -22,7 +21,7 @@ from mpcontribs_api.pagination import CursorParams, Page
 router = APIRouter()
 
 
-@router.get("", response_model=None)
+@router.get("", response_model_exclude_unset=True)
 async def read_many(
     service: ProjectGroupServiceDep,
     pagination: Annotated[CursorParams, Depends()],
@@ -41,7 +40,7 @@ async def read_many(
     return await service.read_many(pagination=pagination, filter=filter, fields=selected)
 
 
-@router.get("/item", response_model=None)
+@router.get("/item", response_model_exclude_unset=True)
 async def read_one_by_identity(
     service: ProjectGroupServiceDep,
     identity: Annotated[ProjectGroupIdentity, Depends()],
@@ -58,13 +57,11 @@ async def read_one_by_identity(
     return await service.read_one(identity.as_dict(), fields=selected)
 
 
-@router.post(
-    "", response_model=ProjectGroupOut, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_user)]
-)
+@router.post("", status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_user)])
 async def insert_one(
     service: ProjectGroupServiceDep,
     project_group: ProjectGroupIn,
-) -> ProjectGroup:
+) -> ProjectGroupOut:
     """Insert a new project group.
 
     Each referenced project is verified against the projects collection (scoped to the caller);
@@ -77,12 +74,12 @@ async def insert_one(
     return await service.insert_one(project_group=project_group)
 
 
-@router.patch("/item", response_model=ProjectGroupOut, dependencies=[Depends(require_user)])
+@router.patch("/item", dependencies=[Depends(require_user)])
 async def update_one_by_identity(
     service: ProjectGroupServiceDep,
     identity: Annotated[ProjectGroupIdentity, Depends()],
     update: ProjectGroupPatch,
-) -> ProjectGroup:
+) -> ProjectGroupOut:
     """Partially update the project group identified by its ``name`` + ``owner`` natural key.
 
     Args:
@@ -173,7 +170,7 @@ async def delete_projects_by_id(
 
 # Primary-key CRUD, symmetric to the ``/item`` (name+owner) routes above. Declared after ``/item`` so
 # the literal path is never captured as an ``{id}``.
-@router.get("/{id}", response_model=None)
+@router.get("/{id}", response_model_exclude_unset=True)
 async def read_one(
     service: ProjectGroupServiceDep,
     id: str,
@@ -184,12 +181,12 @@ async def read_one(
     return await service.read_one({"id": id}, fields=selected)
 
 
-@router.patch("/{id}", response_model=ProjectGroupOut, dependencies=[Depends(require_user)])
+@router.patch("/{id}", dependencies=[Depends(require_user)])
 async def update_one(
     service: ProjectGroupServiceDep,
     id: str,
     update: ProjectGroupPatch,
-) -> ProjectGroup:
+) -> ProjectGroupOut:
     """Partially update the project group identified by its ``_id``."""
     return await service.update_one({"id": id}, update=update)
 

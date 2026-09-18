@@ -15,7 +15,6 @@ from mpcontribs_api.domains._shared.types import (
 )
 from mpcontribs_api.domains.structures.dependencies import StructureServiceDep
 from mpcontribs_api.domains.structures.models import (
-    Structure,
     StructureFilter,
     StructureIn,
     StructureOut,
@@ -26,7 +25,7 @@ from mpcontribs_api.pagination import CursorParams, Page
 router = APIRouter()
 
 
-@router.get("", response_model=None)
+@router.get("", response_model_exclude_unset=True)
 async def read_many(
     service: StructureServiceDep,
     pagination: Annotated[CursorParams, Depends()],
@@ -37,7 +36,7 @@ async def read_many(
     return await service.read_many(filter=filter, fields=selected, pagination=pagination)
 
 
-@router.get("/item", response_model=None)
+@router.get("/item", response_model_exclude_unset=True)
 async def read_one_by_identity(
     service: StructureServiceDep,
     identity: Annotated[ComponentIdentity, Depends()],
@@ -56,17 +55,17 @@ async def delete_one_by_identity(
     return await service.delete_one(identifiers=identity.as_dict())
 
 
-@router.patch("/item", response_model=StructureOut, dependencies=[Depends(require_user)])
+@router.patch("/item", dependencies=[Depends(require_user)])
 async def update_one_by_identity(
     service: StructureServiceDep,
     identity: Annotated[ComponentIdentity, Depends()],
     update: StructurePatch,
-) -> Structure:
+) -> StructureOut:
     """Patch a single structure addressed by its content ``md5`` (its natural key)."""
     return await service.update_one(identifiers=identity.as_dict(), update=update)
 
 
-@router.get("/{id}", response_model=None)
+@router.get("/{id}", response_model_exclude_unset=True)
 async def read_one(
     service: StructureServiceDep,
     id: str,
@@ -104,11 +103,11 @@ async def download_structure(
     )
 
 
-@router.post("", response_model=BulkWriteSummary[StructureOut], dependencies=[Depends(require_writer)])
+@router.post("", dependencies=[Depends(require_writer)])
 async def insert_many(
     service: StructureServiceDep,
     structures: list[StructureIn],
-) -> BulkWriteSummary[Structure]:
+) -> BulkWriteSummary[StructureOut]:
     return await service.insert_many(components=structures)
 
 
@@ -125,11 +124,11 @@ async def delete_one(service: StructureServiceDep, id: str) -> ComponentDeleteRe
     return await service.delete_one(identifiers={"id": id})
 
 
-@router.patch("/{id}", response_model=StructureOut, dependencies=[Depends(require_user)])
+@router.patch("/{id}", dependencies=[Depends(require_user)])
 async def update_one(
     service: StructureServiceDep,
     id: str,
     update: StructurePatch,
-) -> Structure:
+) -> StructureOut:
     """Patch a single structure addressed by its ``_id``."""
     return await service.update_one(identifiers={"id": id}, update=update)

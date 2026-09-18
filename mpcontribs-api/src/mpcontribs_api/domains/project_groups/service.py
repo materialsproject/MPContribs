@@ -7,7 +7,6 @@ from mpcontribs_api.domains._shared.bulk import BulkFailure, BulkWriteSummary
 from mpcontribs_api.domains._shared.models import DeleteResponse
 from mpcontribs_api.domains._shared.types import ShortStr
 from mpcontribs_api.domains.project_groups.models import (
-    ProjectGroup,
     ProjectGroupFilter,
     ProjectGroupIn,
     ProjectGroupOut,
@@ -49,7 +48,7 @@ class ProjectGroupService:
         self._groups = groups
         self._projects = projects
 
-    async def insert_one(self, project_group: ProjectGroupIn) -> ProjectGroup:
+    async def insert_one(self, project_group: ProjectGroupIn) -> ProjectGroupOut:
         """Insert a new group after verifying every referenced project exists and is visible.
 
         Non-admins are set as owner automatically, while admins can specify owners.
@@ -61,7 +60,8 @@ class ProjectGroupService:
         if missing:
             raise NotFoundError("One or more projects not found or not visible", ids=missing)
         document = self._groups.document_model.from_input_model(project_group)
-        return await self._groups.insert_one(document)
+        doc = await self._groups.insert_one(document)
+        return ProjectGroupOut.model_validate(doc, from_attributes=True)
 
     async def read_many(
         self, filter: ProjectGroupFilter, pagination: CursorParams, fields: frozenset[str] | None
@@ -83,14 +83,15 @@ class ProjectGroupService:
             filter.owner = self._user.username
         return await self._groups.delete_many(filter=filter)
 
-    async def update_one(self, identifiers: dict[str, Any], update: ProjectGroupPatch) -> ProjectGroup:
+    async def update_one(self, identifiers: dict[str, Any], update: ProjectGroupPatch) -> ProjectGroupOut:
         """Patch the single group matching ``identifiers`` (``{"name", "owner"}`` or ``{"id"}``)."""
         group = await self._groups.read_one(identifiers, fields=frozenset({"id", "owner"}))
         if group is None:
             raise NotFoundError("ProjectGroup not found", **identifiers)
         if not (self._user.is_admin(*ROOT_PATH) or group.owner == self._user.username):
             raise PermissionError(required_role="owner-or-admin")
-        return await self._groups.update_one(identifiers, update)
+        doc = await self._groups.update_one(identifiers, update)
+        return ProjectGroupOut.model_validate(doc, from_attributes=True)
 
     async def delete_one(self, identifiers: dict[str, Any]) -> DeleteResponse:
         """Delete the single group matching ``identifiers`` (``{"name", "owner"}`` or ``{"id"}``).

@@ -4,7 +4,6 @@ from mpcontribs_api.authz import INITIATIVE_PATH, ROOT_PATH, User
 from mpcontribs_api.config import ConsumerLimits, get_settings
 from mpcontribs_api.domains._shared.models import DeleteResponse
 from mpcontribs_api.domains.initiatives.models import (
-    Initiative,
     InitiativeFilter,
     InitiativeIn,
     InitiativeOut,
@@ -54,7 +53,7 @@ class InitiativeService:
         """Return the single scoped initiative matching ``identifiers`` (``{"slug": ...}``); 404 if absent."""
         return await self._initiatives.read_one(identifiers, fields)
 
-    async def insert_one(self, data: InitiativeIn) -> Initiative:
+    async def insert_one(self, data: InitiativeIn) -> InitiativeOut:
         """Create an initiative owned by the caller, enforcing the per-owner unapproved quota.
 
         ``owner`` is forced to the caller and the initiative starts unapproved and private. A
@@ -80,9 +79,10 @@ class InitiativeService:
         # The repository translates the unique-slug DuplicateKeyError into a ConflictError whose
         # context carries the slug (Initiative.identity_model.model_fields == {"slug"}).
         initiative = self._initiatives.document_model.from_input_model(data, owner=self._user.username)
-        return await self._initiatives.insert_one(initiative)
+        doc = await self._initiatives.insert_one(initiative)
+        return InitiativeOut.model_validate(doc, from_attributes=True)
 
-    async def update_one(self, identifiers: dict[str, Any], update: InitiativePatch) -> Initiative:
+    async def update_one(self, identifiers: dict[str, Any], update: InitiativePatch) -> InitiativeOut:
         """Patch a scoped initiative by ``slug``, enforcing manage rights and approval rules.
 
         - The caller must be able to *manage* the initiative (owner/collaborator/admin).
@@ -105,7 +105,8 @@ class InitiativeService:
         if resulting_public and not resulting_approved:
             raise ValidationError("an initiative cannot be public until it is approved", slug=slug)
 
-        return await self._initiatives.update_one(identifiers, update)
+        doc = await self._initiatives.update_one(identifiers, update)
+        return InitiativeOut.model_validate(doc, from_attributes=True)
 
     async def delete_one(self, identifiers: dict[str, Any]) -> DeleteResponse:
         """Delete a scoped initiative by ``slug``. Restricted to the owner or an admin.
