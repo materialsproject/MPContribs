@@ -9,7 +9,7 @@ from mpcontribs_api.domains.contributions.repository import (
     MongoDbContributionRepository,
 )
 from mpcontribs_api.domains.contributions.service import ContributionService
-from mpcontribs_api.domains.downloads.repository import MongoDbDownloadRepository
+from mpcontribs_api.domains.downloads.dependencies import DownloadServiceDep
 from mpcontribs_api.domains.downloads.service import DownloadService
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
 from mpcontribs_api.domains.structures.repository import MongoDbStructureRepository
@@ -20,6 +20,7 @@ async def get_contribution_service(
     user: UserDep,
     client: MongoClientDep,
     consumers: ConsumerServiceDep,
+    downloads: DownloadServiceDep,
     sqs: SQSDep,
     s3: S3Dep,
 ) -> ContributionService:
@@ -31,7 +32,7 @@ async def get_contribution_service(
         structures=MongoDbStructureRepository(user),
         attachments=MongoDbAttachmentRepository(user),
         tables=MongoDbTableRepository(user),
-        downloads=DownloadService(downloads=MongoDbDownloadRepository(user), sqs=sqs, s3=s3),
+        downloads=DownloadService(user, sqs=sqs, s3=s3),
         limits=await consumers.effective_limits(user.consumer_id),
     )
 

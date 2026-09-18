@@ -21,8 +21,8 @@ class DownloadService:
     the worker that streams the results to S3 and marks the job ``ready`` lives elsewhere.
     """
 
-    def __init__(self, downloads: MongoDbDownloadRepository, sqs: SQSClient, s3: S3Client) -> None:
-        self._downloads = downloads
+    def __init__(self, user: User, sqs: SQSClient, s3: S3Client) -> None:
+        self._downloads = MongoDbDownloadRepository(user)
         self._sqs = sqs
         self._s3 = s3
 
