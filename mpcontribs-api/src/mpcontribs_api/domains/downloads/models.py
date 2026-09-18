@@ -3,12 +3,12 @@ from enum import StrEnum
 from typing import ClassVar, Self
 
 from beanie import PydanticObjectId
-from pydantic import BaseModel, SerializeAsAny
+from pydantic import BaseModel
 from pymongo import ASCENDING, IndexModel
 
 from mpcontribs_api.config import get_settings
 from mpcontribs_api.domains._shared.filters import BaseFilter
-from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut, canonical_md5
+from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut, canonical_sha256
 from mpcontribs_api.domains._shared.types import DownloadFormat, Identity, ShortMimeFormat, download_filename
 from mpcontribs_api.projection import SparseFieldsModel
 
@@ -61,12 +61,10 @@ class Download(BaseDocumentWithInput[PydanticObjectId]):
     def build_s3_key(domain: str, fmt: DownloadFormat, query: dict) -> str:
         """Derive the deterministic S3 object key for a download request.
 
-        The digest covers the domain, format, and query — everything that changes the bytes of the
-        file. The query already carries the caller's access scope by the time it reaches here, so
-        two callers only share a cached object when they would see the same rows. The requester is
-        left off so a cached object is shareable across callers with the same scope.
+        Includes the query, which includes the user's scope. This guarantees that a cache hit only
+        occurs when users share the same scope, and thus do not risk leaking documents to each other.
         """
-        digest = canonical_md5({"domain": domain, "fmt": fmt.value, "query": query})
+        digest = canonical_sha256({"domain": domain, "fmt": fmt.value, "query": query})
         return download_filename(f"{domain}/{digest}", fmt, ShortMimeFormat.GZ)
 
     @classmethod
@@ -75,14 +73,13 @@ class Download(BaseDocumentWithInput[PydanticObjectId]):
         data: DownloadIn,
     ) -> Self:
         created_at = datetime.now(UTC)
-        query = data.filter.model_dump(mode="json", exclude_none=True)
         return cls.model_validate(
             obj={
                 "_id": PydanticObjectId(),
-                "s3_key": cls.build_s3_key(data.domain, data.fmt, query),
+                "s3_key": cls.build_s3_key(data.domain, data.fmt, data.query),
                 "status": data.status,
                 "requester": data.requester,
-                "query": query,
+                "query": data.query,
                 "domain": data.domain,
                 "fmt": data.fmt,
                 "created_at": created_at,
@@ -93,7 +90,9 @@ class Download(BaseDocumentWithInput[PydanticObjectId]):
 class DownloadIn(BaseModel):
     status: JobStatus
     requester: str
-    filter: SerializeAsAny[BaseFilter]
+    # The query the worker will excecute in collection 'domain' to get data to genertate download
+    # Should also include the user's scope directly.
+    query: dict
     domain: str
     fmt: DownloadFormat
 
