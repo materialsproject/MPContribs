@@ -1,0 +1,71 @@
+test_name: anonymous retrieval of contributions
+
+stages:
+  - name: get a contribution from a private project with all fields
+    skip: True
+    request:
+      url: "{tavern.env_vars.MP_CONTRIBS_API_URL}/contributions/"
+      method: GET
+      headers:
+        accept: application/json
+      params:
+        project: periodic_band_structures
+        per_page: 1
+        _limit: 1
+        _fields: _all
+    response:
+      status_code: 200
+      json:
+        data: []
+        has_more: false
+        total_count: 0
+        total_pages: 0
+
+  - name: get a contribution with all fields
+    skip: True
+    request:
+      url: "{tavern.env_vars.MP_CONTRIBS_API_URL}/contributions/"
+      method: GET
+      headers:
+        accept: application/json
+      params:
+        per_page: 1
+        _limit: 1
+        _fields: _all
+    response:
+      strict: false
+      status_code: 200
+      save:
+        json:
+          contrib_anon: "data[0]"
+
+  - name: retrieve single contribution with default fields
+    skip: True
+    request:
+      url: "{tavern.env_vars.MP_CONTRIBS_API_URL}/contributions/{contrib_anon.id:s}/"
+      method: GET
+      headers:
+        accept: application/json
+    response:
+      status_code: 200
+      json:
+        id: "{contrib_anon.id}"
+        project: "{contrib_anon.project}"
+        identifier: "{contrib_anon.identifier}"
+        formula: "{contrib_anon.formula}"
+        is_public: !bool "{contrib_anon.is_public}"
+        last_modified: "{contrib_anon.last_modified}"
+        needs_build: !bool "{contrib_anon.needs_build}"
+
+  - name: retrieve single contribution with all fields
+    skip: True
+    request:
+      url: "{tavern.env_vars.MP_CONTRIBS_API_URL}/contributions/{contrib_anon.id:s}/"
+      params:
+        _fields: _all
+      method: GET
+      headers:
+        accept: application/json
+    response:
+      status_code: 200
+      json: !force_original_structure "{contrib_anon}"
