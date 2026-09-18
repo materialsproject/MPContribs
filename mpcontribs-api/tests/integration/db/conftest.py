@@ -7,6 +7,7 @@ from mpcontribs_api.config import get_settings
 from mpcontribs_api.domains.attachments.models import Attachment
 from mpcontribs_api.domains.consumers.models import Consumer
 from mpcontribs_api.domains.contributions.models import Contribution
+from mpcontribs_api.domains.downloads.models import Download
 from mpcontribs_api.domains.initiatives.models import Initiative
 from mpcontribs_api.domains.project_groups.models import ProjectGroup
 from mpcontribs_api.domains.projects.models import Project
@@ -77,11 +78,21 @@ async def db(mongo_client):
     """
     settings = get_settings()
     database = mongo_client[settings.mongo.db_name]
-    for collection in ("projects", "contributions", "structures", "tables", "attachments"):
+    for collection in ("projects", "contributions", "structures", "tables", "attachments", "downloads"):
         await database.drop_collection(collection)
     await init_beanie(
         database=database,
-        document_models=[Project, ProjectGroup, Initiative, Contribution, Structure, Table, Attachment, Consumer],
+        document_models=[
+            Project,
+            ProjectGroup,
+            Initiative,
+            Contribution,
+            Structure,
+            Table,
+            Attachment,
+            Consumer,
+            Download,
+        ],
     )
     yield database
 
@@ -133,3 +144,10 @@ async def clean_consumers(db):
     await db["mp_consumers"].delete_many({})
     yield
     await db["mp_consumers"].delete_many({})
+
+
+@pytest_asyncio.fixture(autouse=True)
+async def clean_downloads(db):
+    await db["downloads"].delete_many({})
+    yield
+    await db["downloads"].delete_many({})

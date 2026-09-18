@@ -17,6 +17,7 @@ from mpcontribs_api.config import (
     get_settings,
 )
 from mpcontribs_api.domains.attachments.models import Attachment, AttachmentIn
+from mpcontribs_api.domains.contributions import service as service_module
 from mpcontribs_api.domains.contributions.models import (
     Contribution,
     ContributionFilter,
@@ -24,9 +25,7 @@ from mpcontribs_api.domains.contributions.models import (
     ContributionIn,
     ContributionPatch,
 )
-from mpcontribs_api.domains.contributions import service as service_module
 from mpcontribs_api.domains.contributions.service import ContributionService
-from mpcontribs_api.domains.contributions.stats import ProjectAggregate
 from mpcontribs_api.domains.structures.models import (
     Lattice,
     Site,
@@ -36,7 +35,7 @@ from mpcontribs_api.domains.structures.models import (
     StructureIn,
 )
 from mpcontribs_api.domains.tables.models import Attributes, Labels, Table, TableIn
-from mpcontribs_api.exceptions import ConflictError, NotFoundError, PermissionError, ValidationError
+from mpcontribs_api.exceptions import ConflictError, PermissionError, ValidationError
 
 pytestmark = pytest.mark.asyncio
 
@@ -1412,7 +1411,6 @@ class TestWriteAuthorization:
 from types import SimpleNamespace  # noqa: E402
 
 from mpcontribs_api.domains._shared.models import DeleteResponse  # noqa: E402
-from mpcontribs_api.domains.contributions.models import ContributionFilter  # noqa: E402
 from mpcontribs_api.pagination import Page  # noqa: E402
 
 

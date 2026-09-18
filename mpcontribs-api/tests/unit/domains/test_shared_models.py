@@ -8,14 +8,14 @@ from mpcontribs_api.domains._shared.models import (
     DeleteResponse,
     DocumentOut,
 )
-from mpcontribs_api.domains.attachments.models import Attachment, ComponentIdentity, AttachmentIn
+from mpcontribs_api.domains.attachments.models import Attachment, AttachmentIn, ComponentIdentity
 from mpcontribs_api.domains.consumers.models import Consumer, ConsumerIdentity
 from mpcontribs_api.domains.contributions.models import Contribution, ContributionIdentity
 from mpcontribs_api.domains.initiatives.models import Initiative, InitiativeIdentity
 from mpcontribs_api.domains.project_groups.models import ProjectGroup, ProjectGroupIdentity
 from mpcontribs_api.domains.projects.models import Project, ProjectIdentity, ProjectIn
-from mpcontribs_api.domains.structures.models import Structure, ComponentIdentity
-from mpcontribs_api.domains.tables.models import Table, ComponentIdentity
+from mpcontribs_api.domains.structures.models import ComponentIdentity, Structure
+from mpcontribs_api.domains.tables.models import ComponentIdentity, Table
 from mpcontribs_api.pagination import encode_cursor
 
 # ---------------------------------------------------------------------------

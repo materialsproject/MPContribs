@@ -1,3 +1,5 @@
+from unittest.mock import MagicMock
+
 import pytest
 
 from mpcontribs_api.authz import User
@@ -37,7 +39,7 @@ def _service(client, user: User) -> ContributionService:
         structures=MongoDbStructureRepository(user),
         attachments=MongoDbAttachmentRepository(user),
         tables=MongoDbTableRepository(user),
-        downloads=DownloadService(downloads=MongoDbDownloadRepository(user)),
+        downloads=DownloadService(downloads=MongoDbDownloadRepository(user), sqs=MagicMock(), s3=MagicMock()),
     )
 
 

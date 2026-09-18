@@ -1,7 +1,6 @@
 from beanie import PydanticObjectId
 
 from mpcontribs_api.domains._shared.filters import _normalize_query_values
-from mpcontribs_api.domains._shared.types import _nfkc_casefold
 from mpcontribs_api.domains.contributions.models import ContributionFilter
 from mpcontribs_api.domains.tables.models import TableFilter
 

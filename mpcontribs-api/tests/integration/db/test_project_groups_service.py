@@ -12,7 +12,7 @@ from mpcontribs_api.domains.project_groups.repository import MongoDbProjectGroup
 from mpcontribs_api.domains.project_groups.service import ProjectGroupService
 from mpcontribs_api.domains.projects.models import Project, ProjectIn
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
-from mpcontribs_api.exceptions import ConflictError, NotFoundError, PermissionError
+from mpcontribs_api.exceptions import NotFoundError, PermissionError
 
 pytestmark = [pytest.mark.db, pytest.mark.asyncio(loop_scope="session")]
 

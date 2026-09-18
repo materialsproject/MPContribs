@@ -1,5 +1,4 @@
 import pytest
-from mpcontribs_api.exceptions import ValidationError as AppValidationError
 from pydantic import ValidationError as PydanticValidationError
 
 from mpcontribs_api.domains.projects.models import (
@@ -13,6 +12,7 @@ from mpcontribs_api.domains.projects.models import (
     validate_column_limit,
 )
 from mpcontribs_api.exceptions import ValidationError
+from mpcontribs_api.exceptions import ValidationError as AppValidationError
 
 
 class TestUniqueColumnValidation:

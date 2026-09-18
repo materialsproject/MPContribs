@@ -29,6 +29,7 @@ import asyncio
 import time
 from collections.abc import Awaitable, Callable
 from typing import Any, TypeVar
+from unittest.mock import MagicMock
 
 import pytest
 import pytest_asyncio
@@ -89,7 +90,7 @@ def _contribution_service(client, user: User) -> ContributionService:
         structures=MongoDbStructureRepository(user),
         attachments=MongoDbAttachmentRepository(user),
         tables=MongoDbTableRepository(user),
-        downloads=DownloadService(downloads=MongoDbDownloadRepository(user)),
+        downloads=DownloadService(downloads=MongoDbDownloadRepository(user), sqs=MagicMock(), s3=MagicMock()),
     )
 
 

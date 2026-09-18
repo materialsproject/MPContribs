@@ -17,16 +17,17 @@ attachments submitted on a contribution would be dropped and never counted. Stru
 attachment counting is symmetric in the aggregation, so this still exercises the component path.
 """
 
+from unittest.mock import MagicMock
+
 import polars as pl
 import pytest
-from beanie import PydanticObjectId
 from pymatgen.core import Element
 
 from mpcontribs_api.authz import User
+from mpcontribs_api.domains.attachments.repository import MongoDbAttachmentRepository
 from mpcontribs_api.domains.contributions.models import ContributionFilter, ContributionIn
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
 from mpcontribs_api.domains.contributions.service import ContributionService
-from mpcontribs_api.domains.attachments.repository import MongoDbAttachmentRepository
 from mpcontribs_api.domains.downloads.repository import MongoDbDownloadRepository
 from mpcontribs_api.domains.downloads.service import DownloadService
 from mpcontribs_api.domains.projects.models import Column, Project, ProjectIn, Stats
@@ -59,7 +60,7 @@ def _service(client) -> ContributionService:
         structures=MongoDbStructureRepository(ADMIN),
         attachments=MongoDbAttachmentRepository(ADMIN),
         tables=MongoDbTableRepository(ADMIN),
-        downloads=DownloadService(downloads=MongoDbDownloadRepository(ADMIN)),
+        downloads=DownloadService(downloads=MongoDbDownloadRepository(ADMIN), sqs=MagicMock(), s3=MagicMock()),
     )
 
 

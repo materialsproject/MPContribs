@@ -34,7 +34,6 @@ def _mock_beanie_collection():
 # Header constants used across test modules
 # ---------------------------------------------------------------------------
 
-from mpcontribs_api.config import get_settings
 
 ANON_HEADERS: dict[str, str] = {}
 

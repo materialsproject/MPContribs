@@ -2,22 +2,22 @@ import pytest
 from pydantic import BaseModel
 from pydantic import ValidationError as PydanticValidationError
 
-from mpcontribs_api.exceptions import ValidationError as AppValidationError
 from mpcontribs_api.domains._shared.types import (
     CANONICAL_KEY_COERCION,
     DisplayStr,
     KeyOffense,
     NFKCStr,
     PrefixedEmail,
-    ShortStr,
     SearchStr,
-    coerce_key,
-    to_camel_case,
-    to_snake_case,
+    ShortStr,
     _validate_prefixed_email,
+    coerce_key,
     nfc_normalize,
     nfkc_normalize,
+    to_camel_case,
+    to_snake_case,
 )
+from mpcontribs_api.exceptions import ValidationError as AppValidationError
 
 # Unicode fixtures used across the normalization tests.
 OHM_SIGN = "Ω"  # U+2126, NFC-folds onto the Greek capital omega

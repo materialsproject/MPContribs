@@ -5,8 +5,6 @@ from beanie import PydanticObjectId
 from pydantic import ValidationError as PydanticValidationError
 
 from mpcontribs_api.authz import User
-from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
-
 from mpcontribs_api.domains._shared.types import Identity
 from mpcontribs_api.domains._shared.units import QuantityLeaf
 from mpcontribs_api.domains.contributions.models import (
@@ -18,7 +16,7 @@ from mpcontribs_api.domains.contributions.models import (
     ContributionPatch,
     extract_unique_value,
 )
-from mpcontribs_api.domains.contributions.pivot import expand_contribution
+from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
 from mpcontribs_api.exceptions import DataKeyError, ValidationError
 
 

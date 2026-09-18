@@ -14,7 +14,10 @@ These drive the real service against the dev DB. ``max_columns`` is monkeypatche
 column cap from the orthogonal per-project / per-contribution quotas.
 """
 
+from unittest.mock import MagicMock
+
 import pytest
+from beanie import PydanticObjectId
 
 from mpcontribs_api.authz import User
 from mpcontribs_api.config import get_settings
@@ -31,7 +34,6 @@ from mpcontribs_api.domains.projects.service import ProjectService
 from mpcontribs_api.domains.structures.repository import MongoDbStructureRepository
 from mpcontribs_api.domains.tables.repository import MongoDbTableRepository
 from mpcontribs_api.exceptions import ValidationError
-from beanie import PydanticObjectId
 
 pytestmark = [pytest.mark.db, pytest.mark.asyncio(loop_scope="session")]
 
@@ -49,7 +51,7 @@ def _service(client) -> ContributionService:
         structures=MongoDbStructureRepository(ADMIN),
         attachments=MongoDbAttachmentRepository(ADMIN),
         tables=MongoDbTableRepository(ADMIN),
-        downloads=DownloadService(downloads=MongoDbDownloadRepository(ADMIN)),
+        downloads=DownloadService(downloads=MongoDbDownloadRepository(ADMIN), sqs=MagicMock(), s3=MagicMock()),
     )
 
 

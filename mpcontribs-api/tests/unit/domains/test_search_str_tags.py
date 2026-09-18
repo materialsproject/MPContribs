@@ -16,8 +16,6 @@ import pytest
 from pydantic import TypeAdapter
 
 from mpcontribs_api.domains._shared.types import SearchStr
-from mpcontribs_api.domains.project_groups.models import ProjectGroupFilter
-from mpcontribs_api.domains.projects.models import ProjectFilter, ProjectIn, ProjectPatch
 
 _search = TypeAdapter(SearchStr)
 

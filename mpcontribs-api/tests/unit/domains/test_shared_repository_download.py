@@ -3,7 +3,7 @@ import gzip
 import io
 import json
 from collections.abc import AsyncIterable, AsyncIterator
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from types import SimpleNamespace
 from typing import Any
 from unittest.mock import MagicMock
@@ -270,7 +270,7 @@ class TestHashPayload:
     def test_datetime_filter_is_hashable(self):
         """Filters carrying a datetime hash without raising (see above)."""
         repo = _repo()
-        payload = {"filter": {"created__gte": datetime(2024, 1, 1, tzinfo=timezone.utc)}}
+        payload = {"filter": {"created__gte": datetime(2024, 1, 1, tzinfo=UTC)}}
         digest = repo._hash_payload(payload)
         assert len(digest) == 64
 

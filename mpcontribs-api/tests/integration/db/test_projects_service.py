@@ -8,8 +8,8 @@ from mpcontribs_api.domains.initiatives.repository import MongoDbInitiativeRepos
 from mpcontribs_api.domains.projects.models import Column, Project, ProjectFilter, ProjectIn, ProjectPatch, Stats
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
 from mpcontribs_api.domains.projects.service import ProjectService
-from mpcontribs_api.exceptions import PermissionError as AppPermissionError
 from mpcontribs_api.exceptions import ConflictError, NotFoundError, ValidationError
+from mpcontribs_api.exceptions import PermissionError as AppPermissionError
 from mpcontribs_api.pagination import CursorParams
 
 pytestmark = [pytest.mark.db, pytest.mark.asyncio(loop_scope="session")]
