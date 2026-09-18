@@ -4,6 +4,7 @@ from pymongo.asynchronous.client_session import AsyncClientSession
 from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_sqs.client import SQSClient
 
+from mpcontribs_api.authz import User
 from mpcontribs_api.config import get_settings
 from mpcontribs_api.domains.downloads.models import Download, DownloadIn, DownloadOut, JobStatus
 from mpcontribs_api.domains.downloads.repository import MongoDbDownloadRepository
@@ -26,23 +27,28 @@ class DownloadService:
         self._s3 = s3
 
     async def read_one(
-        self, s3_key: str, fields: frozenset[str], session: AsyncClientSession | None = None
+        self, user: User, s3_key: str, fields: frozenset[str] | None = None, session: AsyncClientSession | None = None
     ) -> DownloadOut | None:
-        identifiers = {"s3_key": s3_key}
+        identifiers = {"requester": user.requester_id, "s3_key": s3_key}
         return await self._downloads.read_one(identifiers=identifiers, fields=fields, session=session)
 
     async def queue_download(self, download_in: DownloadIn) -> DownloadOut:
-        """Persist a submitted download job and enqueue it for a worker to fulfil.
+        """Insert a Download document and add download job to queue if it is a new job.
 
-        The :class:`Download` document is the source of truth for job status; ``_enqueue`` only
-        signals a worker to pick it up. Returns the stored job so the caller can report its id.
+        If the job was created for the first time now, or if the previous job has the status `JobStatus.error`,
+        add the job to the queue, otherwise return the document.
         """
-        # TODO: Check Redis cache for s3_key first.
-        # If cache hit, generate presigned url immediately. If cache miss, add to mongo and SQS
         job = Download.from_input_model(download_in)
-        inserted = await self._downloads.insert_one(job)
-        await self._enqueue(inserted)
-        return DownloadOut.model_validate(inserted.model_dump())
+        stored, created = await self._downloads.insert_or_get(job)
+        # if the job is newly created, or is retrying a failed job, add it to the queue
+        if created:
+            await self._enqueue(stored)
+        elif stored.status == JobStatus.error:
+            claimed = await self._downloads.claim_error_for_retry(stored.id)
+            if claimed is not None:
+                stored = claimed
+                await self._enqueue(stored)
+        return DownloadOut.model_validate(stored.model_dump())
 
     async def _enqueue(self, download: Download) -> None:
         """Push the job into SQS for a worker to pick up.
@@ -55,14 +61,14 @@ class DownloadService:
             MessageBody=str(download.id),
         )
 
-    async def get_presigned_url(self, s3_key: str) -> str:
+    async def get_presigned_url(self, user: User, s3_key: str) -> str:
         """Genereates a presigned url to download content, if the file is ready.
 
         If the file is not ready, raise an error.
         """
-        bucket_name = "mpcontribs-dowloads"
+        bucket_name = get_settings().aws.s3.downloads_bucket
 
-        doc = await self.read_one(s3_key=s3_key, fields=frozenset(["status"]))
+        doc = await self.read_one(user=user, s3_key=s3_key, fields=frozenset(["status"]))
 
         if doc is None:
             raise NotFoundError(message="download not found", s3_key=s3_key)
