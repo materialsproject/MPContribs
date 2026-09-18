@@ -104,6 +104,17 @@ def canonical_md5(payload: Mapping[str, Any]) -> str:
     return hashlib.md5(normalized.encode("utf-8")).hexdigest()
 
 
+def canonical_sha256(payload: Mapping[str, Any]) -> str:
+    """SHA-256 hex digest of a content mapping, stable across processes/hosts.
+
+    ``default=str`` stringifies non-JSON values (ObjectId, datetime) that a Mongo query fragment may
+    carry, so the digest stays stable regardless of the value types embedded in ``payload``.
+    """
+    text = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False, default=str)
+    normalized = unicodedata.normalize("NFC", text)
+    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
+
+
 class ComponentIdentity(Identity):
     """Identity of a content-addressed component: its ``md5`` content hash.
 
