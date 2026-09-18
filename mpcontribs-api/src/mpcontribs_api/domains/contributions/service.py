@@ -137,7 +137,7 @@ class ContributionService:
         return await self._downloads.queue_download(download_in)
 
     async def delete_one(self, identifiers: dict[str, Any]) -> BulkDeleteSummary:
-        """Delete a single contribution and its child components, matchingdoc = doc =  ``identifiers``.
+        """Delete a single contribution and its child components.
 
         Accepts either the bare ``{"id": ...}`` form or the semantic
         ``{"project", "identifier", "version"}`` set. Cascades component deletion via
