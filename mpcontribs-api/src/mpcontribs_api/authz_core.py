@@ -239,6 +239,11 @@ class User(BaseModel):
     def is_anonymous(self) -> bool:
         return self.username is None
 
+    @property
+    def requester_id(self) -> str:
+        """Stable owner key for request-scoped resources: the gateway consumer id, or ``"anonymous"``."""
+        return self.consumer_id if self.consumer_id is not None else "anonymous"
+
     def is_admin(self, *path: str) -> bool:
         """Whether the caller holds :attr:`admin_role` at exactly ``path`` (e.g. a domain root)."""
         return self.admin_role is not None and not self.is_anonymous and self.role_for(*path) == self.admin_role
