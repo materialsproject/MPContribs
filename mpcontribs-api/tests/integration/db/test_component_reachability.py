@@ -113,11 +113,11 @@ class TestComponentQueueDownloadReachability:
         service = _service(PUBLIC_ONLY)
         await service.queue_download(filter=AttachmentFilter(), format=DownloadFormat.CSV)
 
-        download_in = service._downloads.queue_download.await_args.args[0]
-        assert download_in.domain == "attachments"
-        assert download_in.fmt == DownloadFormat.CSV
+        call = service._downloads.queue_download.await_args.kwargs
+        assert call["domain"] == "attachments"
+        assert call["fmt"] == DownloadFormat.CSV
         # The reachability gate lives in the query's `_id $in` clause.
-        allowed = download_in.query["$and"][1]["_id"]["$in"]
+        allowed = call["query"]["$and"][1]["_id"]["$in"]
         assert pub.id in allowed  # reachable via a public contribution
         assert priv.id not in allowed  # only a private contribution references it
         assert orphan.id not in allowed  # referenced by no contribution
@@ -132,7 +132,7 @@ class TestComponentQueueDownloadReachability:
         service = _service(admin)
         await service.queue_download(filter=AttachmentFilter(), format=DownloadFormat.JSONL)
 
-        allowed = service._downloads.queue_download.await_args.args[0].query["$and"][1]["_id"]["$in"]
+        allowed = service._downloads.queue_download.await_args.kwargs["query"]["$and"][1]["_id"]["$in"]
         assert pub.id in allowed and priv.id in allowed  # admin bypasses scope
 
     async def test_no_reachable_components_queues_empty_allow_list(self, db):
@@ -144,7 +144,7 @@ class TestComponentQueueDownloadReachability:
         service = _service(PUBLIC_ONLY)
         await service.queue_download(filter=AttachmentFilter(), format=DownloadFormat.JSONL)
 
-        allowed = service._downloads.queue_download.await_args.args[0].query["$and"][1]["_id"]["$in"]
+        allowed = service._downloads.queue_download.await_args.kwargs["query"]["$and"][1]["_id"]["$in"]
         assert allowed == []
 
     async def test_queued_ids_are_sorted_for_a_stable_s3_key(self, db):
@@ -157,7 +157,7 @@ class TestComponentQueueDownloadReachability:
         service = _service(PUBLIC_ONLY)
         await service.queue_download(filter=AttachmentFilter(), format=DownloadFormat.JSONL)
 
-        allowed = service._downloads.queue_download.await_args.args[0].query["$and"][1]["_id"]["$in"]
+        allowed = service._downloads.queue_download.await_args.kwargs["query"]["$and"][1]["_id"]["$in"]
         assert len(allowed) == len(atts)
         # ``build_s3_key`` hashes the id list as-is (canonicalization sorts dict keys, not list
         # elements), so a deterministic key depends on the ids being sorted here at the source.

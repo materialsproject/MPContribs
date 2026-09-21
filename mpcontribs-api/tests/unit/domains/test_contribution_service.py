@@ -1804,7 +1804,7 @@ class TestQueueDownload:
         await svc.queue_download(filter=filter, format=DownloadFormat.CSV)
 
         contrib_repo.build_download_query.assert_called_once_with(filter)
-        download_in = downloads.queue_download.await_args.args[0]
-        assert download_in.query == {"$and": [{"scoped": True}]}
-        assert download_in.domain == "contributions"
-        assert download_in.fmt == DownloadFormat.CSV
+        call = downloads.queue_download.await_args.kwargs
+        assert call["query"] == {"$and": [{"scoped": True}]}
+        assert call["domain"] == "contributions"
+        assert call["fmt"] == DownloadFormat.CSV
