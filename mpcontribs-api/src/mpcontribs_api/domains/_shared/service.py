@@ -14,7 +14,7 @@ from mpcontribs_api.domains._shared.types import DownloadFormat
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
 from mpcontribs_api.domains.downloads.models import DownloadIn, DownloadOut, JobStatus
 from mpcontribs_api.domains.downloads.service import DownloadService
-from mpcontribs_api.exceptions import NotFoundError
+from mpcontribs_api.exceptions import NotFoundError, PermissionError
 from mpcontribs_api.pagination import CursorParams, Page
 
 
@@ -145,13 +145,14 @@ class ComponentService[
         Since components don't carry a scope directly, we gather all in-scope components for the query and write them to
         the Download.
         """
+        if self._user.username is None:
+            raise PermissionError(required_role="authenticated")
         reachable = await self._contributions.referenced_component_ids(self._ref_field, scoped=True)
         base = self._components.build_download_query(filter)
-        # ``$and`` (rather than merging ``_id``) so a caller-supplied ``id__in`` filter is preserved.
-        query = {"$and": [base, {"_id": {"$in": list(reachable)}}]}
+        query = {"$and": [base, {"_id": {"$in": sorted(reachable)}}]}
         download_in = DownloadIn(
             status=JobStatus.submitted,
-            requester=self._user.requester_id,
+            requester=self._user.username,
             query=query,
             domain=self._ref_field,
             fmt=format,

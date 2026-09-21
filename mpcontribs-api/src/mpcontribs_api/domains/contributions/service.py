@@ -127,9 +127,11 @@ class ContributionService:
         return await self._contributions.read_many(pagination=pagination, filter=filter, fields=fields)
 
     async def queue_download(self, filter: ContributionFilter, format: DownloadFormat) -> DownloadOut:
+        if self._user.username is None:
+            raise PermissionError(required_role="authenticated")
         download_in = DownloadIn(
             status=JobStatus.submitted,
-            requester=self._user.requester_id,
+            requester=self._user.username,
             query=self._contributions.build_download_query(filter),
             domain="contributions",
             fmt=format,
