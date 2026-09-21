@@ -400,6 +400,22 @@ class TestComponentMutationsRequireAuth:
         assert r.status_code == 401
         table_service.update_one.assert_not_called()
 
+    def test_structure_download_anon_401(self, client, structure_service):
+        # Downloads are authenticated-only across every component domain.
+        r = client.post("/api/v1/structures/download", headers=FORCE_ANON_HEADERS)
+        assert r.status_code == 401
+        structure_service.queue_download.assert_not_called()
+
+    def test_table_download_anon_401(self, client, table_service):
+        r = client.post("/api/v1/tables/download", headers=FORCE_ANON_HEADERS)
+        assert r.status_code == 401
+        table_service.queue_download.assert_not_called()
+
+    def test_attachment_download_anon_401(self, client, attachment_service):
+        r = client.post("/api/v1/attachments/download", headers=FORCE_ANON_HEADERS)
+        assert r.status_code == 401
+        attachment_service.queue_download.assert_not_called()
+
     def test_structures_get_still_open_to_anon(self, client, structure_service):
         structure_service.read_many.return_value = Page(items=[], next_cursor=None)
         r = client.get("/api/v1/structures", headers=FORCE_ANON_HEADERS)

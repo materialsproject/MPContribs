@@ -435,6 +435,12 @@ class TestContributionMutationsRequireAuth:
         assert r.status_code == 401
         contribution_service.update_one.assert_not_called()
 
+    def test_download_anon_401(self, client, contribution_service):
+        # Downloads are authenticated-only: an anonymous caller cannot queue an export.
+        r = client.post("/api/v1/contributions/download", headers=FORCE_ANON_HEADERS)
+        assert r.status_code == 401
+        contribution_service.queue_download.assert_not_called()
+
     def test_get_collection_still_open_to_anon(self, client, contribution_service):
         from mpcontribs_api.pagination import Page
 

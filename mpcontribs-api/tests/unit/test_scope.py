@@ -57,6 +57,13 @@ class TestOwnedClause:
         # {owner: None} would wrongly match owner-less documents, so the clause drops out.
         assert Owned().to_query(ANON) is None
 
+    def test_requester_field_for_downloads(self):
+        # Downloads reuse Owned with a field override to scope tickets by the requesting user's
+        # username (stored as ``requester``). Downloads are authenticated-only, so the anonymous
+        # drop-out is never reached in practice but is asserted here for completeness.
+        assert Owned(field="requester").to_query(ALICE) == {"requester": "google:alice@example.com"}
+        assert Owned(field="requester").to_query(ANON) is None
+
 
 class TestGrantedClause:
     def test_membership_test_sorted(self):

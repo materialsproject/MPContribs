@@ -15,7 +15,7 @@ from mpcontribs_api.domains.contributions.models import ContributionFilter
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
 from mpcontribs_api.domains.downloads.models import DownloadIn, JobStatus
 from mpcontribs_api.domains.downloads.service import DownloadService
-from mpcontribs_api.exceptions import JobStatusError
+from mpcontribs_api.exceptions import JobStatusError, NotFoundError
 
 pytestmark = [pytest.mark.db, pytest.mark.asyncio(loop_scope="session")]
 
@@ -24,17 +24,22 @@ ADMIN = User(username="google:admin@example.com", groups=frozenset({"admin"}))
 ANON = User()
 
 
-def _service() -> tuple[DownloadService, MagicMock]:
-    """A DownloadService with an async-mocked SQS and S3 client, plus a handle on the SQS mock."""
+def _service(user: User | None = None) -> tuple[DownloadService, MagicMock]:
+    """A DownloadService with an async-mocked SQS and S3 client, plus a handle on the SQS mock.
+
+    ``user`` is the authenticated caller the service (and its read scope) is bound to; it defaults to
+    an arbitrary authenticated user, which is all the write path needs (``queue_download`` records
+    ``requester`` straight from the ``DownloadIn`` and is not scoped).
+    """
     sqs = MagicMock()
     sqs.send_message = AsyncMock()
-    service = DownloadService(user=User(), sqs=sqs, s3=MagicMock())
+    service = DownloadService(user=user or _owner("requester@example.com"), sqs=sqs, s3=MagicMock())
     return service, sqs
 
 
-def _user(requester: str) -> User:
-    """A caller whose ``requester_id`` resolves to ``requester``."""
-    return User(consumer_id=requester)
+def _owner(username: str) -> User:
+    """An authenticated caller who owns downloads recorded under ``requester == username``."""
+    return User(username=username)
 
 
 def _query(scope_user: User, **filter_kwargs) -> dict:
@@ -166,27 +171,42 @@ class TestRetryOnError:
 
 class TestReadAndFetch:
     async def test_read_one_is_scoped_to_the_caller(self, db):
-        service, _ = _service()
+        # The download is owned by ``consumer-a`` (requester == username); the service reads through
+        # the repo's owner scope, so only that user resolves the ticket — by its ``_id`` handle.
+        service, _ = _service(_owner("consumer-a"))
         created = await service.queue_download(_download_in("consumer-a"))
 
-        mine = await service.read_one(user=_user("consumer-a"), s3_key=created.s3_key)
+        mine = await service.read_one(download_id=created.id)
         assert mine is not None and mine.s3_key == created.s3_key
-        # Another caller derives the same s3_key but has no ticket of their own for it.
-        assert await service.read_one(user=_user("consumer-b"), s3_key=created.s3_key) is None
+        # Another caller cannot read it, even holding the id.
+        other, _ = _service(_owner("consumer-b"))
+        assert await other.read_one(download_id=created.id) is None
+
+    async def test_get_presigned_url_not_found_for_non_owner(self, db):
+        # A ready download of consumer-a's must not be fetchable by another user who knows its id.
+        service, _ = _service(_owner("consumer-a"))
+        created = await service.queue_download(_download_in("consumer-a"))
+        await db["downloads"].update_one(
+            {"requester": "consumer-a", "s3_key": created.s3_key},
+            {"$set": {"status": JobStatus.ready.value}},
+        )
+
+        other, _ = _service(_owner("consumer-b"))
+        with pytest.raises(NotFoundError):
+            await other.get_presigned_url(download_id=created.id)
 
     async def test_presigned_url_requires_ready_status(self, db):
-        service, _ = _service()
+        service, _ = _service(_owner("consumer-a"))
         created = await service.queue_download(_download_in("consumer-a"))
-        caller = _user("consumer-a")
 
         # Freshly submitted: not ready yet.
         with pytest.raises(JobStatusError):
-            await service.get_presigned_url(user=caller, s3_key=created.s3_key)
+            await service.get_presigned_url(download_id=created.id)
 
         await db["downloads"].update_one(
             {"requester": "consumer-a", "s3_key": created.s3_key},
             {"$set": {"status": JobStatus.ready.value}},
         )
         service._s3.generate_presigned_url = AsyncMock(return_value="https://signed.example/object")
-        url = await service.get_presigned_url(user=caller, s3_key=created.s3_key)
+        url = await service.get_presigned_url(download_id=created.id)
         assert url == "https://signed.example/object"

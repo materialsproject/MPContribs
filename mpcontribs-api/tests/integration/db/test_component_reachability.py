@@ -23,6 +23,10 @@ from mpcontribs_api.pagination import CursorParams
 pytestmark = [pytest.mark.db, pytest.mark.asyncio(loop_scope="session")]
 
 ANON = User()
+# Downloads are authenticated-only, but reachability is a *data*-scope question: an authenticated
+# user with no project grants sees exactly the public data an anonymous reader would, so this caller
+# exercises the public-only reachability path for the (auth-gated) download tests.
+PUBLIC_ONLY = User(username="viewer@example.com")
 
 
 def _service(user: User) -> ComponentService:
@@ -106,7 +110,7 @@ class TestComponentQueueDownloadReachability:
         await _contribution("mp-a", is_public=True, attachments=[pub])
         await _contribution("mp-b", is_public=False, attachments=[priv])
 
-        service = _service(ANON)
+        service = _service(PUBLIC_ONLY)
         await service.queue_download(filter=AttachmentFilter(), format=DownloadFormat.CSV)
 
         download_in = service._downloads.queue_download.await_args.args[0]
@@ -132,13 +136,29 @@ class TestComponentQueueDownloadReachability:
         assert pub.id in allowed and priv.id in allowed  # admin bypasses scope
 
     async def test_no_reachable_components_queues_empty_allow_list(self, db):
-        # An anonymous caller can reach nothing referenced only by a private contribution: the query
+        # A public-only caller can reach nothing referenced only by a private contribution: the query
         # carries an empty `_id $in []`, i.e. an empty export rather than the whole collection.
         att = await _attachment(30)
         await _contribution("mp-x", is_public=False, attachments=[att])
 
-        service = _service(ANON)
+        service = _service(PUBLIC_ONLY)
         await service.queue_download(filter=AttachmentFilter(), format=DownloadFormat.JSONL)
 
         allowed = service._downloads.queue_download.await_args.args[0].query["$and"][1]["_id"]["$in"]
         assert allowed == []
+
+    async def test_queued_ids_are_sorted_for_a_stable_s3_key(self, db):
+        # ``referenced_component_ids`` returns an unordered set; embedding it unsorted would make the
+        # hashed s3_key non-deterministic across processes and silently defeat download dedup. The
+        # query must carry the ids in a deterministic (sorted) order.
+        atts = [await _attachment(i) for i in range(40, 48)]
+        await _contribution("mp-sorted", is_public=True, attachments=atts)
+
+        service = _service(PUBLIC_ONLY)
+        await service.queue_download(filter=AttachmentFilter(), format=DownloadFormat.JSONL)
+
+        allowed = service._downloads.queue_download.await_args.args[0].query["$and"][1]["_id"]["$in"]
+        assert len(allowed) == len(atts)
+        # ``build_s3_key`` hashes the id list as-is (canonicalization sorts dict keys, not list
+        # elements), so a deterministic key depends on the ids being sorted here at the source.
+        assert allowed == sorted(allowed)
