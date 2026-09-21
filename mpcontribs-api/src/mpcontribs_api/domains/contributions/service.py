@@ -42,7 +42,7 @@ from mpcontribs_api.domains.contributions.models import (
 from mpcontribs_api.domains.contributions.pivot import expand_contribution
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
 from mpcontribs_api.domains.contributions.stats import iter_leaves
-from mpcontribs_api.domains.downloads.models import DownloadIn, DownloadOut, JobStatus
+from mpcontribs_api.domains.downloads.models import DownloadDomain, DownloadOut
 from mpcontribs_api.domains.downloads.service import DownloadService
 from mpcontribs_api.domains.projects.models import Column, Stats, validate_column_limit
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
@@ -127,16 +127,11 @@ class ContributionService:
         return await self._contributions.read_many(pagination=pagination, filter=filter, fields=fields)
 
     async def queue_download(self, filter: ContributionFilter, format: DownloadFormat) -> DownloadOut:
-        if self._user.username is None:
-            raise PermissionError(required_role="authenticated")
-        download_in = DownloadIn(
-            status=JobStatus.submitted,
-            requester=self._user.username,
+        return await self._downloads.queue_download(
             query=self._contributions.build_download_query(filter),
-            domain="contributions",
+            domain=DownloadDomain.contributions,
             fmt=format,
         )
-        return await self._downloads.queue_download(download_in)
 
     async def delete_one(self, identifiers: dict[str, Any]) -> BulkDeleteSummary:
         """Delete a single contribution and its child components.

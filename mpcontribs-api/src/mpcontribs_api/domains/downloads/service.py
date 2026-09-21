@@ -7,9 +7,16 @@ from types_aiobotocore_sqs.client import SQSClient
 
 from mpcontribs_api.authz import User
 from mpcontribs_api.config import get_settings
-from mpcontribs_api.domains.downloads.models import Download, DownloadIn, DownloadOut, JobStatus
+from mpcontribs_api.domains._shared.types import DownloadFormat
+from mpcontribs_api.domains.downloads.models import (
+    Download,
+    DownloadDomain,
+    DownloadIn,
+    DownloadOut,
+    JobStatus,
+)
 from mpcontribs_api.domains.downloads.repository import MongoDbDownloadRepository
-from mpcontribs_api.exceptions import JobStatusError, NotFoundError, S3Error
+from mpcontribs_api.exceptions import JobStatusError, NotFoundError, PermissionError, S3Error
 
 logger = structlog.get_logger(__name__)
 
@@ -23,6 +30,7 @@ class DownloadService:
     """
 
     def __init__(self, user: User, sqs: SQSClient, s3: S3Client) -> None:
+        self._user = user
         self._downloads = MongoDbDownloadRepository(user)
         self._sqs = sqs
         self._s3 = s3
@@ -40,7 +48,20 @@ class DownloadService:
         """
         return await self._downloads.read_one({"id": download_id}, fields=fields, session=session)
 
-    async def queue_download(self, download_in: DownloadIn) -> DownloadOut:
+    async def queue_download(self, query: dict, domain: DownloadDomain, fmt: DownloadFormat) -> DownloadOut:
+        """Assemble and enqueue a download job for the current user."""
+        if self._user.username is None:
+            raise PermissionError(required_role="authenticated")
+        download_in = DownloadIn(
+            status=JobStatus.submitted,
+            requester=self._user.username,
+            query=query,
+            domain=domain,
+            fmt=fmt,
+        )
+        return await self._submit(download_in)
+
+    async def _submit(self, download_in: DownloadIn) -> DownloadOut:
         """Insert a Download document and add download job to queue if it is a new job.
 
         If the job was created for the first time now, or if the previous job has the status `JobStatus.error`,
