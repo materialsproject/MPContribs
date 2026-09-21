@@ -150,9 +150,8 @@ class MongoDbRepository[
         identifiers: dict[str, Any],
         fields: frozenset[str] | None = None,
         session: AsyncClientSession | None = None,
-    ) -> TOut:
-        """Return the single scoped document matching ``identifiers``, projected to ``fields``.
-
+    ) -> TOut | None:
+        """Return the single scoped document matching ``identifiers`` (projected to ``fields``), or None.
         Args:
             identifiers (dict[str, Any]): identifier field values keyed by the model's natural key, or the bare
                 primary-key form ``{"id": <primary key>}``
@@ -165,14 +164,7 @@ class MongoDbRepository[
         # is returned as-is. Re-validating into the full ``out_model`` would resurrect every
         # unrequested field as ``None`` and bloat the response — mirror ``read_many``, which returns
         # projected docs directly.
-        existing = await self.document_model.find_one(self._scope, query, projection_model=projection, session=session)
-        if existing is None:
-            raise NotFoundError(
-                message=f"{self.document_model.__name__} not found for provided query",
-                identifiers=identifiers,
-                fields=fields,
-            )
-        return existing
+        return await self.document_model.find_one(self._scope, query, projection_model=projection, session=session)
 
     async def list_ids(self, filter: TFilter, session: AsyncClientSession | None = None) -> list[Any]:
         """Return just the ids of scoped documents matching ``filter``.

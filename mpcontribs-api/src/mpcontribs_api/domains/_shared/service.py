@@ -76,10 +76,7 @@ class ComponentService[
 
     async def _resolve_component_id(self, identifiers: dict[str, Any]) -> PydanticObjectId | None:
         """Return the component ``_id`` after finding it via identifiers, or None if absent."""
-        try:
-            existing = await self._components.read_one(identifiers, frozenset({"id"}))
-        except NotFoundError:
-            return None
+        existing = await self._components.read_one(identifiers, frozenset({"id"}))
         return existing.id if existing is not None else None
 
     async def read_one(self, identifiers: dict[str, Any], fields: frozenset[str] | None) -> TOut | None:

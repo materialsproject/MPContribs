@@ -42,10 +42,7 @@ class ProjectService:
 
     async def read_one(self, identifiers: dict[str, Any], fields: frozenset[str] | None) -> ProjectOut | None:
         """Return the single scoped project matching ``identifiers`` (``{"id": ...}``), or None when absent."""
-        try:
-            return await self._projects.read_one(identifiers, fields)
-        except NotFoundError:
-            return None
+        return await self._projects.read_one(identifiers, fields)
 
     async def upsert_one(self, identifiers: dict[str, Any], data: ProjectIn) -> ProjectOut:
         """Upsert a project by id, applying every write-policy decision before persisting.
@@ -141,9 +138,7 @@ class ProjectService:
         caller who can see it but does not own it gets a 403.
         """
         existing = await self._projects.read_one(identifiers)
-        if existing is None:
-            raise NotFoundError("Project not found", **identifiers)
-        if not (self._user.is_admin(*ROOT_PATH) or existing.owner == self._user.username):
+        if existing is not None and not (self._user.is_admin(*ROOT_PATH) or existing.owner == self._user.username):
             raise PermissionError(required_role="owner-or-admin")
         return await self._projects.delete_one(identifiers)
 
@@ -170,10 +165,6 @@ class ProjectService:
           project role grant) is not enough to write, mirroring ``upsert_one`` and ``delete_one``.
         - Only an admin may change ``is_approved``.
         - The resulting state must satisfy the ``is_public ⇒ is_approved`` condition.
-
-        Raises ``NotFoundError`` when the project is invisible to the caller or absent, so both the
-        plain and initiative-bearing patch paths reject unseen documents identically. A caller who
-        can see the project but does not own it gets a ``PermissionError`` (403).
         """
         data = update.model_dump(exclude_unset=True)
         if "is_approved" in data and not self._user.is_admin(*ROOT_PATH):
@@ -181,7 +172,7 @@ class ProjectService:
 
         existing = await self._projects.read_one({"id": id})
         if existing is None:
-            raise NotFoundError("Project not found", id=id)
+            return
         if not (self._user.is_admin(*ROOT_PATH) or existing.owner == self._user.username):
             raise PermissionError(required_role="owner-or-admin")
 

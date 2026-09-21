@@ -99,11 +99,13 @@ class TestInsert:
 
 
 class TestPatch:
-    async def test_missing_raises_not_found(self):
+    async def test_missing_delegates_not_found_to_repo(self):
+        # The service no longer 404s on a None read; the scoped ``update_one`` raises it.
         svc, initiatives = _service(ADMIN, existing=None)
+        initiatives.update_one.side_effect = NotFoundError("Initiative not found")
         with pytest.raises(NotFoundError):
             await svc.update_one({"slug": "init-1"}, InitiativePatch(name="new-name"))
-        initiatives.update_one.assert_not_called()
+        initiatives.update_one.assert_awaited_once()
 
     async def test_unmanaged_caller_raises_permission(self):
         # A stranger who can see the initiative still cannot manage it.
@@ -142,11 +144,13 @@ class TestPatch:
 
 
 class TestDelete:
-    async def test_missing_raises_not_found(self):
+    async def test_missing_delegates_not_found_to_repo(self):
+        # The service no longer 404s on a None read; the scoped ``delete_one`` raises it.
         svc, initiatives = _service(ALICE, existing=None)
+        initiatives.delete_one.side_effect = NotFoundError("Initiative not found")
         with pytest.raises(NotFoundError):
             await svc.delete_one({"slug": "init-1"})
-        initiatives.delete_one.assert_not_called()
+        initiatives.delete_one.assert_awaited_once()
 
     async def test_collaborator_cannot_delete(self):
         # Collaborators may manage/patch but not dissolve — delete needs owner or admin.

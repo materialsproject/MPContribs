@@ -317,8 +317,7 @@ class TestGetContributionById:
         assert result.material_id == "get-id"
 
     async def test_missing_id_raises_not_found(self, db):
-        with pytest.raises(NotFoundError):
-            await _repo(ADMIN).read_one({"id": PydanticObjectId()}, fields=None)
+        assert await _repo(ADMIN).read_one({"id": PydanticObjectId()}, fields=None) is None
 
     async def test_admin_can_get_private_doc(self, db):
         doc = await _insert(identifier="get-priv", is_public=False)
@@ -327,8 +326,7 @@ class TestGetContributionById:
 
     async def test_anon_cannot_get_private_doc(self, db):
         doc = await _insert(identifier="get-anon-priv", is_public=False)
-        with pytest.raises(NotFoundError):
-            await _repo(ANON).read_one({"id": doc.id}, fields=None)
+        assert await _repo(ANON).read_one({"id": doc.id}, fields=None) is None
 
     async def test_anon_can_get_public_doc(self, db):
         doc = await _insert(identifier="get-anon-pub", is_public=True)
@@ -359,13 +357,11 @@ class TestGetContributionBySemanticIdentifiers:
 
     async def test_missing_combination_raises_not_found(self, db):
         await _insert(project="miss-proj", identifier="miss-id")
-        with pytest.raises(NotFoundError):
-            await _repo(ADMIN).read_one(_identity(project="miss-proj", material_id="wrong-id"), fields=None)
+        assert await _repo(ADMIN).read_one(_identity(project="miss-proj", material_id="wrong-id"), fields=None) is None
 
     async def test_scope_prevents_anon_finding_private(self, db):
         await _insert(project="anon-scope", identifier="priv-doc", is_public=False)
-        with pytest.raises(NotFoundError):
-            await _repo(ANON).read_one(_identity(project="anon-scope", material_id="priv-doc"), fields=None)
+        assert await _repo(ANON).read_one(_identity(project="anon-scope", material_id="priv-doc"), fields=None) is None
 
     async def test_scope_allows_anon_finding_public(self, db):
         await _insert(project="anon-scope-pub", identifier="pub-doc", is_public=True)

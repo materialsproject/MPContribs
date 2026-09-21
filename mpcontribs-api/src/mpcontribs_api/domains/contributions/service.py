@@ -116,10 +116,7 @@ class ContributionService:
         ``{"project", "identifier", "version"}`` set, resolved by the base ``_identifier_query``.
         An ambiguous natural identity still raises ``ConflictError``.
         """
-        try:
-            return await self._contributions.read_one(identifiers, fields)
-        except NotFoundError:
-            return None
+        return await self._contributions.read_one(identifiers, fields)
 
     async def read_many(
         self, pagination: CursorParams, filter: ContributionFilter, fields: frozenset[str] | None
@@ -174,10 +171,7 @@ class ContributionService:
         be read in the current scope (existence/permission is enforced on insert, not here). The
         caller turns the count into a remaining allowance against the cap.
         """
-        try:
-            project = await self._projects.read_one({"id": project_id}, frozenset({"is_approved"}))
-        except NotFoundError:
-            return None
+        project = await self._projects.read_one({"id": project_id}, frozenset({"is_approved"}))
         if not project or project.is_approved:
             return None
         # Soft limit: this count feeds a non-atomic check-then-write, so concurrent writes to the
@@ -892,11 +886,8 @@ class ContributionService:
         self._user.require_write(*PROJECT_PATH, contribution.project)
         validate_data_depth(contribution.data, self._limits.contribution.max_data_depth)
         await self._enforce_column_limit(contribution.project, contribution.data)
-        try:
-            existing = await self._contributions.read_one(identifiers, None)
-        except NotFoundError:
-            # No document at this id yet: the upsert will insert, so enforce the unapproved-project cap.
-            existing = None
+        # No document at this id yet: the upsert will insert, so enforce the unapproved-project cap.
+        existing = await self._contributions.read_one(identifiers, None)
         if existing is None:
             stored = await self._unapproved_stored_count(contribution.project)
             cap = self._limits.contribution.max_per_unapproved_project
@@ -945,9 +936,8 @@ class ContributionService:
             identifiers = {"id": str(existing.id)}
         if not self._user.is_admin(*ROOT_PATH):
             target = await self._contributions.read_one(identifiers, frozenset({"id", "project"}))
-            if target is None:
-                raise NotFoundError("contribution not found", identifiers=identifiers)
-            self._user.require_write(*PROJECT_PATH, target.project)
+            if target is not None:
+                self._user.require_write(*PROJECT_PATH, target.project)
         set_fields = update.model_dump(exclude_unset=True)
         touches_unique = "data" in set_fields or "project" in set_fields
         touches_identity = bool(ContributionIdentity.HIERARCHY_FIELDS & set_fields.keys())
@@ -959,7 +949,9 @@ class ContributionService:
             validate_contribution_data(set_fields["data"])
 
         existing = await self._contributions.read_one(identifiers, None)
-        if existing is None or existing.project is None:
+        if existing is None:
+            return await self._contributions.update_one(identifiers, update)
+        if existing.project is None:
             raise NotFoundError("contribution not found", identifiers=identifiers)
 
         if touches_identity:

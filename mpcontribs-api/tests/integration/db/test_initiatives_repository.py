@@ -18,7 +18,7 @@ from mpcontribs_api.domains.initiatives.models import (
     InitiativePatch,
 )
 from mpcontribs_api.domains.initiatives.repository import MongoDbInitiativeRepository
-from mpcontribs_api.exceptions import ConflictError, NotFoundError
+from mpcontribs_api.exceptions import ConflictError
 from mpcontribs_api.pagination import CursorParams
 
 # Share the session event loop (see the projects repo test for why).
@@ -115,10 +115,8 @@ class TestReadScope:
         assert await _repo(ALICE).read_one({"slug": "scoped-priv"}, fields=None) is not None  # owner
         assert await _repo(ADMIN).read_one({"slug": "scoped-priv"}, fields=None) is not None  # admin
         assert await _repo(_collaborator("scoped-priv")).read_one({"slug": "scoped-priv"}, fields=None) is not None
-        with pytest.raises(NotFoundError):  # anon
-            await _repo(ANON).read_one({"slug": "scoped-priv"}, fields=None)
-        with pytest.raises(NotFoundError):  # unrelated user
-            await _repo(BOB).read_one({"slug": "scoped-priv"}, fields=None)
+        assert await _repo(ANON).read_one({"slug": "scoped-priv"}, fields=None) is None  # anon
+        assert await _repo(BOB).read_one({"slug": "scoped-priv"}, fields=None) is None  # unrelated user
 
     async def test_public_approved_visible_to_anon(self, db):
         await _insert("scoped-pub", ALICE)

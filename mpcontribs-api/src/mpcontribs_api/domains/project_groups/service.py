@@ -71,10 +71,7 @@ class ProjectGroupService:
 
     async def read_one(self, identifiers: dict[str, Any], fields: frozenset[str] | None) -> ProjectGroupOut | None:
         """Return the group matching ``identifiers`` (``{"name", "owner"}`` or ``{"id"}``), or None when absent."""
-        try:
-            return await self._groups.read_one(identifiers, fields)
-        except NotFoundError:
-            return None
+        return await self._groups.read_one(identifiers, fields)
 
     async def delete_many(self, filter: ProjectGroupFilter) -> DeleteResponse:
         """Bulk-delete scoped project groups matching ``filter``, restricted to the caller's own.
@@ -89,9 +86,7 @@ class ProjectGroupService:
     async def update_one(self, identifiers: dict[str, Any], update: ProjectGroupPatch) -> ProjectGroupOut:
         """Patch the single group matching ``identifiers`` (``{"name", "owner"}`` or ``{"id"}``)."""
         group = await self._groups.read_one(identifiers, fields=frozenset({"id", "owner"}))
-        if group is None:
-            raise NotFoundError("ProjectGroup not found", **identifiers)
-        if not (self._user.is_admin(*ROOT_PATH) or group.owner == self._user.username):
+        if group is not None and not (self._user.is_admin(*ROOT_PATH) or group.owner == self._user.username):
             raise PermissionError(required_role="owner-or-admin")
         doc = await self._groups.update_one(identifiers, update)
         return ProjectGroupOut.model_validate(doc, from_attributes=True)
@@ -104,9 +99,7 @@ class ProjectGroupService:
         but does not own it gets a 403 rather than a silent no-op.
         """
         group = await self._groups.read_one(identifiers, fields=frozenset({"id", "owner"}))
-        if group is None:
-            raise NotFoundError("ProjectGroup not found", **identifiers)
-        if not (self._user.is_admin(*ROOT_PATH) or group.owner == self._user.username):
+        if group is not None and not (self._user.is_admin(*ROOT_PATH) or group.owner == self._user.username):
             raise PermissionError(required_role="owner-or-admin")
         return await self._groups.delete_one(identifiers)
 

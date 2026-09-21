@@ -63,14 +63,12 @@ class TestGetOne:
         assert found.owner == ALICE_EMAIL
 
     async def test_absent_raises_not_found(self, db):
-        with pytest.raises(NotFoundError):
-            await _repo(ADMIN).read_one({"name": "missing", "owner": ALICE_EMAIL}, fields=None)
+        assert await _repo(ADMIN).read_one({"name": "missing", "owner": ALICE_EMAIL}, fields=None) is None
 
     async def test_out_of_scope_raises_not_found(self, db):
         # Alice's private group is invisible to an anonymous caller.
         await _insert("group-priv")
-        with pytest.raises(NotFoundError):
-            await _repo(ANON).read_one({"name": "group-priv", "owner": ALICE_EMAIL}, fields=None)
+        assert await _repo(ANON).read_one({"name": "group-priv", "owner": ALICE_EMAIL}, fields=None) is None
 
 
 # ---------------------------------------------------------------------------
@@ -92,15 +90,13 @@ class TestGroupRoleScope:
 
     async def test_without_role_not_visible(self, db):
         await _insert("role-none")
-        with pytest.raises(NotFoundError):
-            await _repo(BOB).read_one({"name": "role-none", "owner": ALICE_EMAIL}, fields=None)
+        assert await _repo(BOB).read_one({"name": "role-none", "owner": ALICE_EMAIL}, fields=None) is None
 
     async def test_malformed_role_is_ignored(self, db):
         await _insert("role-bad")
         member = User(username="google:carol@example.com", groups=["mpcontribs:project-groups/not-an-oid=owner"])
         # A malformed role id must not raise; it simply grants nothing (so the group is not found).
-        with pytest.raises(NotFoundError):
-            await _repo(member).read_one({"name": "role-bad", "owner": ALICE_EMAIL}, fields=None)
+        assert await _repo(member).read_one({"name": "role-bad", "owner": ALICE_EMAIL}, fields=None) is None
 
     async def test_role_appears_in_listing(self, db):
         group = await _insert("role-list")

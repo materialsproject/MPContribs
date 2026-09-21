@@ -52,8 +52,7 @@ class TestInsertAndLookup:
             await _insert(ConsumerIn(consumer_id="kong-dup"))
 
     async def test_lookup_missing_raises_not_found(self, db):
-        with pytest.raises(NotFoundError):
-            await _repo().read_one({"consumer_id": "kong-absent"})
+        assert await _repo().read_one({"consumer_id": "kong-absent"}) is None
 
     async def test_partial_override_stores_only_set_leaves(self, db):
         # Admin overrides only max_projects; the stored override is sparse — untouched limits are NOT
@@ -86,8 +85,7 @@ class TestGetByDocumentId:
     async def test_missing_raises_not_found(self, db):
         from beanie import PydanticObjectId
 
-        with pytest.raises(NotFoundError):
-            await _repo().read_one({"id": PydanticObjectId()}, None)
+        assert await _repo().read_one({"id": PydanticObjectId()}, None) is None
 
 
 # ---------------------------------------------------------------------------
@@ -141,8 +139,7 @@ class TestDeleteConsumer:
     async def test_delete_removes_override(self, db):
         created = await _insert(ConsumerIn(consumer_id="kong-del"))
         await _repo().delete_one({"id": created.id})
-        with pytest.raises(NotFoundError):
-            await _repo().read_one({"consumer_id": "kong-del"})
+        assert await _repo().read_one({"consumer_id": "kong-del"}) is None
 
     async def test_delete_missing_raises_not_found(self, db):
         from beanie import PydanticObjectId
