@@ -114,7 +114,7 @@ class ContributionService:
 
         Accepts either the bare ``{"id": ...}`` form or the semantic
         ``{"project", "identifier", "version"}`` set, resolved by the base ``_identifier_query``.
-        An ambiguous natural identity still raises ``ConflictError``.
+        An ambiguous natural identity raises ``ConflictError``.
         """
         return await self._contributions.read_one(identifiers, fields)
 

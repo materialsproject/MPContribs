@@ -160,10 +160,6 @@ class MongoDbRepository[
         """
         query = self._identifier_query(identifiers)
         projection = self.out_model.projection(fields)
-        # ``find_one`` already materializes the projection model (only the requested fields), so it
-        # is returned as-is. Re-validating into the full ``out_model`` would resurrect every
-        # unrequested field as ``None`` and bloat the response — mirror ``read_many``, which returns
-        # projected docs directly.
         return await self.document_model.find_one(self._scope, query, projection_model=projection, session=session)
 
     async def list_ids(self, filter: TFilter, session: AsyncClientSession | None = None) -> list[Any]:

@@ -305,9 +305,7 @@ class MongoDbContributionRepository(
                 "identifiers match more than one contribution; supply unique_value to disambiguate",
                 identifiers=identifiers,
             )
-        if not docs:
-            return None
-        return docs[0]
+        return None if not docs else docs[0]
 
     async def upsert_by_id(
         self,
