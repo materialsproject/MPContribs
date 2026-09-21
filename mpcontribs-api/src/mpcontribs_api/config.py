@@ -262,6 +262,20 @@ class MPContribsSettings(BaseModel):
         description="Number of seconds to hold a download in S3 as a cached object.",
     )
 
+    downloads_stale_after: int = Field(
+        default=300,  # 5 minutes
+        description="Seconds a download may sit in 'submitted' before a re-request reclaims it as a "
+        "presumed-dead worker and re-enqueues it. Must exceed the worker's longest expected run so a "
+        "still-running job isn't re-enqueued.",
+    )
+
+    downloads_max_retry_age: int = Field(
+        default=86_400,  # One day
+        description="Max seconds since a download's original_time that it may still be reclaimed for "
+        "retry. Past this, a re-request is refused rather than re-enqueued, so a perpetually-failing "
+        "request stops being retried and eventually TTL-expires.",
+    )
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(

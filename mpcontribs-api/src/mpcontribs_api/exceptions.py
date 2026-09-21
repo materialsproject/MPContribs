@@ -106,6 +106,12 @@ class JobStatusError(AppError):
     log_level = logging.INFO
 
 
+class DownloadRetryExhaustedError(AppError):
+    status_code = 409
+    error_code = "download_retry_exhausted"
+    log_level = logging.WARNING
+
+
 class AwsError(AppError):
     status_code = 500
     error_code = "aws_error"
