@@ -1,6 +1,7 @@
-from fastapi import APIRouter
+from beanie import PydanticObjectId
+from fastapi import APIRouter, Depends
 
-from mpcontribs_api.dependencies import UserDep
+from mpcontribs_api.dependencies import require_user
 from mpcontribs_api.domains._shared.types import FieldSelector
 from mpcontribs_api.domains.downloads.dependencies import DownloadServiceDep
 from mpcontribs_api.domains.downloads.models import DownloadOut
@@ -8,21 +9,19 @@ from mpcontribs_api.domains.downloads.models import DownloadOut
 router = APIRouter()
 
 
-@router.get("/{s3_key}")
+@router.get("/{id}", dependencies=[Depends(require_user)])
 async def read_one(
     service: DownloadServiceDep,
-    user: UserDep,
-    s3_key: str,
+    id: PydanticObjectId,
     fields: FieldSelector = None,
 ) -> DownloadOut | None:
     selected = DownloadOut.parse_fields(fields)
-    return await service.read_one(user=user, s3_key=s3_key, fields=selected)
+    return await service.read_one(download_id=id, fields=selected)
 
 
-@router.get(path="{s3_key}/content")
+@router.get("/{id}/content", dependencies=[Depends(require_user)])
 async def get_presigned_url(
     service: DownloadServiceDep,
-    user: UserDep,
-    s3_key: str,
+    id: PydanticObjectId,
 ) -> str:
-    return await service.get_presigned_url(user=user, s3_key=s3_key)
+    return await service.get_presigned_url(download_id=id)

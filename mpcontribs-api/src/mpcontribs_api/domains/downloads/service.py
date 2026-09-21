@@ -1,4 +1,5 @@
 import structlog
+from beanie import PydanticObjectId
 from botocore.exceptions import ClientError
 from pymongo.asynchronous.client_session import AsyncClientSession
 from types_aiobotocore_s3 import S3Client
@@ -27,10 +28,17 @@ class DownloadService:
         self._s3 = s3
 
     async def read_one(
-        self, user: User, s3_key: str, fields: frozenset[str] | None = None, session: AsyncClientSession | None = None
+        self,
+        download_id: PydanticObjectId,
+        fields: frozenset[str] | None = None,
+        session: AsyncClientSession | None = None,
     ) -> DownloadOut | None:
-        identifiers = {"requester": user.requester_id, "s3_key": s3_key}
-        return await self._downloads.read_one(identifiers=identifiers, fields=fields, session=session)
+        """Return the caller's download by id, or ``None`` if it isn't theirs.
+
+        The repository read scope restricts results to the requesting user's own downloads
+        (``requester == username``), so another user's id resolves to ``None``.
+        """
+        return await self._downloads.read_one({"id": download_id}, fields=fields, session=session)
 
     async def queue_download(self, download_in: DownloadIn) -> DownloadOut:
         """Insert a Download document and add download job to queue if it is a new job.
@@ -61,32 +69,35 @@ class DownloadService:
             MessageBody=str(download.id),
         )
 
-    async def get_presigned_url(self, user: User, s3_key: str) -> str:
-        """Genereates a presigned url to download content, if the file is ready.
+    async def get_presigned_url(self, download_id: PydanticObjectId) -> str:
+        """Generate a presigned url to download content, if the caller's file is ready.
 
-        If the file is not ready, raise an error.
+        Raises ``NotFoundError`` when the download isn't the caller's (or doesn't exist) and
+        ``JobStatusError`` when the job isn't ``ready`` yet.
         """
         bucket_name = get_settings().aws.s3.downloads_bucket
 
-        doc = await self.read_one(user=user, s3_key=s3_key, fields=frozenset(["status"]))
+        doc = await self.read_one(download_id=download_id, fields=frozenset(["status", "s3_key"]))
 
         if doc is None:
-            raise NotFoundError(message="download not found", s3_key=s3_key)
+            raise NotFoundError(message="download not found", download_id=str(download_id))
         if doc.status != JobStatus.ready:
-            raise JobStatusError(message="download status not 'ready'", s3_key=s3_key, status=doc.status)
+            raise JobStatusError(message="download status not 'ready'", download_id=str(download_id), status=doc.status)
+        if doc.s3_key is None:
+            raise NotFoundError(message="download has no s3_key", download_id=str(download_id))
 
         try:
             url = await self._s3.generate_presigned_url(
                 ClientMethod="get_object",
                 Params={
                     "Bucket": bucket_name,
-                    "Key": s3_key,
+                    "Key": doc.s3_key,
                 },
                 ExpiresIn=get_settings().aws.s3.expires_in,
             )
         except ClientError as err:
             raise S3Error(
-                message="error generating presigned url for object", object_key=s3_key, bucket=bucket_name
+                message="error generating presigned url for object", object_key=doc.s3_key, bucket=bucket_name
             ) from err
 
         return url

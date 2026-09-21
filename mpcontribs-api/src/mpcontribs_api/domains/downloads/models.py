@@ -22,7 +22,7 @@ class JobStatus(StrEnum):
 class DownloadIdentity(Identity):
     """Natural key of a download doc in MongoDB.
 
-    `requester` is the `consumer_id` of the user that requested the download.
+    `requester` is the `username` of the (authenticated) user that requested the downloads
     `s3_key` is the stable hash of the file generated.
 
     Field order is the compound-index column order.

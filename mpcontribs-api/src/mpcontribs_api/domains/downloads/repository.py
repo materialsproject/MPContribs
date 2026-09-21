@@ -11,18 +11,19 @@ from mpcontribs_api.domains.downloads.models import (
     DownloadPatch,
     JobStatus,
 )
-from mpcontribs_api.scope import Scope
+from mpcontribs_api.scope import Owned, Scope
 
 
 class MongoDbDownloadRepository(MongoDbRepository[Download, DownloadIn, DownloadOut, DownloadFilter, DownloadPatch]):
     """Repository for download-job documents.
 
     MongoDB tracks download requests per-user, while S3 holds a single physical copy per s3_key.
+    A download is owned by its ``requester`` (the requesting user's username).
     """
 
     document_model = Download
     out_model = DownloadOut
-    read_scope = Scope()
+    read_scope = Scope(Owned(field="requester"))
 
     async def insert_or_get(
         self, document: Download, session: AsyncClientSession | None = None
