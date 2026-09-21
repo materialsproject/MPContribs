@@ -24,9 +24,9 @@ boltons==26.2.0
     # via
     #   mpcontribs-client
     #   mpcontribs-portal (MPContribs/mpcontribs-portal/pyproject.toml)
-boto3==1.43.97
+boto3==1.43.99
     # via mpcontribs-portal (MPContribs/mpcontribs-portal/pyproject.toml)
-botocore==1.43.97
+botocore==1.43.99
     # via
     #   boto3
     #   s3transfer
@@ -228,7 +228,7 @@ packaging==26.3
     #   plotly
 palettable==3.3.3
     # via pymatgen-core
-pandas==3.0.5
+pandas==3.0.6
     # via
     #   -r python/requirements.txt
     #   mpcontribs-client
@@ -243,7 +243,7 @@ pillow==12.3.0
     # via matplotlib
 pint==0.25.3
     # via mpcontribs-client
-platformdirs==4.11.9
+platformdirs==4.11.11
     # via
     #   jupyter-core
     #   pint
@@ -274,7 +274,7 @@ pymatgen-core==2026.8.30
     # via pymatgen
 pymongo==4.18.1
     # via mpcontribs-client
-pyparsing==3.3.2
+pyparsing==3.3.3
     # via
     #   bibtexparser
     #   matplotlib
@@ -406,7 +406,7 @@ urllib3==2.8.0
     # via
     #   botocore
     #   requests
-wcwidth==0.8.3
+wcwidth==0.8.4
     # via prompt-toolkit
 webcolors==25.10.0
     # via jsonschema

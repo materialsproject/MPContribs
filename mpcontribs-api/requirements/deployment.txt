@@ -38,9 +38,9 @@ blinker==1.9.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
 boltons==26.2.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
-boto3==1.43.97
+boto3==1.43.99
     # via flask-mongorest-mpcontribs
-botocore==1.43.97
+botocore==1.43.99
     # via
     #   boto3
     #   s3transfer
@@ -313,7 +313,7 @@ packaging==26.3
     #   plotly
 palettable==3.3.3
     # via pymatgen-core
-pandas==3.0.5
+pandas==3.0.6
     # via
     #   -r python/requirements.txt
     #   pymatgen-core
@@ -327,7 +327,7 @@ pillow==12.3.0
     # via matplotlib
 pint==0.25.3
     # via mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
-platformdirs==4.11.9
+platformdirs==4.11.11
     # via
     #   jupyter-core
     #   pint
@@ -362,13 +362,14 @@ pymatgen==2026.5.4
     # via mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
 pymatgen-core==2026.8.30
     # via pymatgen
-pymongo==4.18.1
+pymongo==4.17.0
     # via
     #   flask-mongorest-mpcontribs
     #   mongoengine
+    #   mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
 pyopenssl==26.4.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
-pyparsing==3.3.2
+pyparsing==3.3.3
     # via
     #   bibtexparser
     #   matplotlib
@@ -525,7 +526,7 @@ urllib3==2.8.0
     # via
     #   botocore
     #   requests
-wcwidth==0.8.3
+wcwidth==0.8.4
     # via prompt-toolkit
 webcolors==25.10.0
     # via jsonschema
