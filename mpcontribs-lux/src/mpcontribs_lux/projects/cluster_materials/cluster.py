@@ -15,6 +15,8 @@ from pydantic import (
 )
 from pymatgen.core import Element
 
+from mpcontribs_lux.registry import LuxRegistry, SchemaType
+
 
 def _validate_elements(value: str) -> str:
     """Validate and canonicalize comma-separated element symbols."""
@@ -36,6 +38,9 @@ CommaSeparatedElements = Annotated[
 _MODEL_CONFIG = ConfigDict(extra="forbid", allow_inf_nan=False)
 
 
+@LuxRegistry.register_schema(
+    project_name="cluster_materials", schema_type=SchemaType.table
+)
 class Cluster(BaseModel):
     """Properties of one row in a contribution's ``clusters`` table."""
 
@@ -60,8 +65,7 @@ class Cluster(BaseModel):
     )
     elements: CommaSeparatedElements = Field(
         description=(
-            "Comma-separated element symbols in site order for this cluster "
-            "instance."
+            "Comma-separated element symbols in site order for this cluster instance."
         ),
     )
     isExtended: bool = Field(

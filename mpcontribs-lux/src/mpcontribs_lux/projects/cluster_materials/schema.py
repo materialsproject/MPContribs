@@ -17,6 +17,8 @@ from pydantic import (
 )
 from pymatgen.core import Element
 
+from mpcontribs_lux.registry import LuxRegistry, SchemaType
+
 from .cluster import Cluster
 from .cluster_point_group import ClusterPointGroup
 
@@ -119,6 +121,9 @@ class FlatBandProperties(BaseModel):
         return self
 
 
+@LuxRegistry.register_schema(
+    project_name="cluster_materials", schema_type=SchemaType.contribution
+)
 class ClusterMaterial(BaseModel):
     """Main data fields for one Cluster Materials contribution."""
 

@@ -7,6 +7,7 @@ from typing import Annotated
 from emmet.core.mpid import MPID
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
+from mpcontribs_lux.registry import LuxRegistry, SchemaType
 
 ClusterLabel = Annotated[
     str,
@@ -16,6 +17,9 @@ ClusterLabel = Annotated[
 _MODEL_CONFIG = ConfigDict(extra="forbid", allow_inf_nan=False)
 
 
+@LuxRegistry.register_schema(
+    project_name="cluster_materials", schema_type=SchemaType.table
+)
 class ClusterPointGroup(BaseModel):
     """Point-group assignment for one row in ``clusterPointGroups``."""
 
