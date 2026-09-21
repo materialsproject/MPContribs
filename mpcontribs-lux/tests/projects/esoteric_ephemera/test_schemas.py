@@ -2,7 +2,6 @@
 
 import gzip
 import json
-from pathlib import Path
 
 import numpy as np
 import pytest
@@ -22,7 +21,7 @@ def task_doc(test_data_dir) -> TaskDoc:
 
 def test_matpes_doc_from_task_doc(test_dir, task_doc):
 
-    from mpcontribs.lux.projects.esoteric_ephemera.schemas import MatPESTrainDoc
+    from mpcontribs_lux.projects.esoteric_ephemera.schemas import MatPESTrainDoc
 
     matpes_train_docs = MatPESTrainDoc.from_task_doc(task_doc)
 

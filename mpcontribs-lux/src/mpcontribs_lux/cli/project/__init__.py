@@ -1,6 +1,6 @@
 import click
 
-from mpcontribs.lux.cli.project.scaffold import scaffold
+from mpcontribs_lux.cli.project.scaffold import scaffold
 
 
 @click.group()

@@ -2,8 +2,8 @@ import pathlib
 
 import click
 
-from mpcontribs.lux.cli.display.tree import visualize_scaffold
-from mpcontribs.lux.cli.project.utils import build_scaffold
+from mpcontribs_lux.cli.display.tree import visualize_scaffold
+from mpcontribs_lux.cli.project.utils import build_scaffold
 
 
 @click.command()
@@ -39,7 +39,7 @@ def scaffold(
     projects = set(projects)
 
     click.echo(
-        "The following project scaffold will be created in 'mpcontribs-lux.mpcontribs.projects':"
+        "The following project scaffold will be created in 'mpcontribs_lux.projects':"
     )
     visualize_scaffold(
         user_space,
@@ -68,5 +68,5 @@ def scaffold(
             extra_reqs,
         )
         click.echo(
-            f"Project scaffold created at 'mpcontribs-lux.mpcontribs.projects.{user_space}'!"
+            f"Project scaffold created at 'mpcontribs_lux.projects.{user_space}'!"
         )

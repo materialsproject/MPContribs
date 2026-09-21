@@ -6,7 +6,7 @@ from rich.markup import escape
 from rich.text import Text
 from rich.tree import Tree
 
-from mpcontribs.lux.cli.project.utils import build_scaffold
+from mpcontribs_lux.cli.project.utils import build_scaffold
 
 
 # github.com/textualize/rich/blob/master/examples/tree.py

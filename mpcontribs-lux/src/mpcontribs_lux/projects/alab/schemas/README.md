@@ -1,6 +1,6 @@
 # A_Lab mpcontribs-lux schema — drop-in update
 
-Validated replacement for `mpcontribs-lux/mpcontribs/lux/projects/alab/schemas/`, matching the current A-Lab pipeline's semi-nested contribution model (see `MODEL_SPEC.md` in the main repo).
+Validated replacement for `mpcontribs-lux/src/mpcontribs_lux/projects/alab/schemas/`, matching the current A-Lab pipeline's semi-nested contribution model (see `MODEL_SPEC.md` in the main repo).
 
 ## Files
 

@@ -28,10 +28,10 @@ When you're ready to make your data public, you will also have to make a public 
 
 Schemas are important for ensuring accessibility, interoperability, and reproducibility, and for ensuring that you are fully aware of possible errors in your dataset.
 
-If you are not comfortable mimicking the example `pydantic` schemas in `mpcontribs.lux.projects.examples`, you can either use the schema autogeneration features in `mpcontribs.lux.autogen`:
+If you are not comfortable mimicking the example `pydantic` schemas in `mpcontribs_lux.projects.examples`, you can either use the schema autogeneration features in `mpcontribs_lux.autogen`:
 
 ```py
-from mpcontribs.lux.autogen import SchemaGenerator
+from mpcontribs_lux.autogen import SchemaGenerator
 
 schema_gen = SchemaGenerator(file_name = "/path/to/some/csv/or/json/file")
 pydantic_model = schema_gen.pydantic_schema

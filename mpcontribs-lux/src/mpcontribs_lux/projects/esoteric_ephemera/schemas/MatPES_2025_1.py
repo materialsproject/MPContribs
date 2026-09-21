@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 
 from emmet.core.types.typing import IdentifierType
 
-from mpcontribs.lux.projects.esoteric_ephemera.schemas.base import MLTrainDoc
+from mpcontribs_lux.projects.esoteric_ephemera.schemas.base import MLTrainDoc
 
 
 class MatPESProvenanceDoc(BaseModel):

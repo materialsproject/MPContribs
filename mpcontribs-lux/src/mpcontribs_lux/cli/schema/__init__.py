@@ -1,6 +1,6 @@
 import click
 
-from mpcontribs.lux.cli.schema.autogen import autogen
+from mpcontribs_lux.cli.schema.autogen import autogen
 
 
 @click.group()

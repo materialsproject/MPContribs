@@ -7,7 +7,7 @@ from pathlib import Path
 import sys
 from tempfile import NamedTemporaryFile
 
-from mpcontribs.lux.autogen import SchemaGenerator
+from mpcontribs_lux.autogen import SchemaGenerator
 
 
 def dynamically_load_module_from_path(path: Path, module_name: str):

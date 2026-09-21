@@ -2,7 +2,7 @@
 
 from pydantic import Field
 
-from mpcontribs.lux.projects.esoteric_ephemera.schemas.MatPES_2025_1 import (
+from mpcontribs_lux.projects.esoteric_ephemera.schemas.MatPES_2025_1 import (
     MatPESTrainDoc,
 )
 

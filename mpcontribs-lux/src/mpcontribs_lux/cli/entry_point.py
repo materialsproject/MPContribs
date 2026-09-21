@@ -1,7 +1,7 @@
 import click
 
-from mpcontribs.lux.cli.project import project
-from mpcontribs.lux.cli.schema import schema
+from mpcontribs_lux.cli.project import project
+from mpcontribs_lux.cli.schema import schema
 
 
 @click.group()

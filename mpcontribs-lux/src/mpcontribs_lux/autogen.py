@@ -8,7 +8,7 @@ import pandas as pd
 from pathlib import Path
 from pydantic import BaseModel, Field, model_validator, create_model
 
-from mpcontribs.lux._types import ComplexType, NullableComplexType
+from mpcontribs_lux._types import ComplexType, NullableComplexType
 
 
 class FileFormat(StrEnum):
@@ -100,7 +100,7 @@ class SchemaGenerator(BaseModel):
                         self.file_name, orient=orient, lines=self.fmt == "jsonl"
                     )
                     break
-                except Exception as exc:
+                except Exception:
                     continue
             else:
                 raise ValueError(
@@ -148,7 +148,7 @@ class SchemaGenerator(BaseModel):
 from pydantic import BaseModel, Field
 
 from emmet.core.types.typing import NullableDateTimeType, DateTimeType
-from mpcontribs.lux._types import ComplexType, NullableComplexType
+from mpcontribs_lux._types import ComplexType, NullableComplexType
 
 class {model_name or pydantic_model.__name__}(BaseModel):
 """

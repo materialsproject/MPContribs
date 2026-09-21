@@ -72,4 +72,4 @@ jobs:
           cd mpcontribs-lux
           python${{ matrix.python-version }} -m pip install -r requirements/requirements-${{ matrix.os }}_py${{ matrix.python-version }}_extras.txt
           python${{ matrix.python-version }} -m pip install -e .
-          python${{ matrix.python-version }} -m pytest -n auto -x --cov=mpcontribs/lux --cov-report=xml
+          python${{ matrix.python-version }} -m pytest -n auto -x --cov=mpcontribs_lux --cov-report=xml
