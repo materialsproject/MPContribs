@@ -19,6 +19,15 @@ class JobStatus(StrEnum):
     error = "error"
 
 
+class DownloadDomain(StrEnum):
+    """The downloadable domains."""
+
+    contributions = "contributions"
+    structures = "structures"
+    tables = "tables"
+    attachments = "attachments"
+
+
 class DownloadIdentity(Identity):
     """Natural key of a download doc in MongoDB.
 
@@ -38,7 +47,7 @@ class Download(BaseDocumentWithInput[PydanticObjectId]):
     status: JobStatus
     requester: str
     query: dict
-    domain: str
+    domain: DownloadDomain
     fmt: DownloadFormat
     rows_written: int = 0
     bytes_written: int = 0
@@ -58,7 +67,7 @@ class Download(BaseDocumentWithInput[PydanticObjectId]):
         ]
 
     @staticmethod
-    def build_s3_key(domain: str, fmt: DownloadFormat, query: dict) -> str:
+    def build_s3_key(domain: DownloadDomain, fmt: DownloadFormat, query: dict) -> str:
         """Derive the deterministic S3 object key for a download request.
 
         Includes the query, which includes the user's scope. This guarantees that a cache hit only
@@ -93,7 +102,7 @@ class DownloadIn(BaseModel):
     # The query the worker will excecute in collection 'domain' to get data to genertate download
     # Should also include the user's scope directly.
     query: dict
-    domain: str
+    domain: DownloadDomain
     fmt: DownloadFormat
 
 
@@ -102,7 +111,7 @@ class DownloadOut(DocumentOut):
     status: JobStatus | None = None
     requester: str | None = None
     query: dict | None = None
-    domain: str | None = None
+    domain: DownloadDomain | None = None
     fmt: DownloadFormat | None = None
     rows_written: int = 0
     bytes_written: int = 0
