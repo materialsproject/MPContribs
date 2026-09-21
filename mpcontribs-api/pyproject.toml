@@ -59,6 +59,7 @@ dependencies = [
     "uncertainties",
     "websocket_client",
     "zstandard",
+    "pymongo>=4.10.1,<4.18.0", #https://github.com/DataDog/dd-trace-py/issues/20119
 ]
 
 [project.urls]
