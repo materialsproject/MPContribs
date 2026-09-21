@@ -80,11 +80,14 @@ def _service(user: User, *, existing=None, scoped=None, count: int = 0, limits: 
 
 
 class TestDelete:
-    async def test_missing_raises_not_found(self):
+    async def test_missing_delegates_not_found_to_repo(self):
+        # Absence is not decided in the service: it delegates to the scoped ``delete_one``, which
+        # raises the 404. The service must not short-circuit on the None read.
         svc, projects, _ = _service(ALICE, scoped=None)
+        projects.delete_one.side_effect = NotFoundError("Project not found")
         with pytest.raises(NotFoundError):
             await svc.delete_one({"id": "proj-1"})
-        projects.delete_one.assert_not_called()
+        projects.delete_one.assert_awaited_once_with({"id": "proj-1"})
 
     async def test_non_owner_raises_permission(self):
         svc, projects, _ = _service(BOB, scoped=_project(owner=ALICE_EMAIL))
@@ -174,11 +177,13 @@ class TestPatch:
             await svc.update_one({"id": "proj-1"}, ProjectPatch(is_approved=True))
         projects.update_one.assert_not_called()
 
-    async def test_missing_raises_not_found(self):
+    async def test_missing_delegates_not_found_to_repo(self):
+        # ``_enforce_patch_rules`` no longer 404s on a None read; the scoped ``update_one`` does.
         svc, projects, _ = _service(ADMIN, scoped=None)
+        projects.update_one.side_effect = NotFoundError("Project not found")
         with pytest.raises(NotFoundError):
             await svc.update_one({"id": "proj-1"}, ProjectPatch(title="new-title"))
-        projects.update_one.assert_not_called()
+        projects.update_one.assert_awaited_once()
 
     async def test_public_on_unapproved_raises_validation(self):
         svc, projects, _ = _service(ADMIN, scoped=_project(is_approved=False, is_public=False))

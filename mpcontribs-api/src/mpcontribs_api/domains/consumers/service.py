@@ -2,7 +2,6 @@ from typing import Any
 
 from mpcontribs_api.config import ConsumerLimits, get_settings
 from mpcontribs_api.domains.consumers.models import (
-    Consumer,
     ConsumerFilter,
     ConsumerIn,
     ConsumerOut,
@@ -27,6 +26,7 @@ class ConsumerService:
         if consumer_id is None:
             return defaults
         override = await self._consumer.read_one({"consumer_id": consumer_id}, fields=None)
+        # No stored override for this consumer: fall back to the global defaults.
         if override is None or override.settings is None:
             return defaults
         return override.settings.resolve(defaults)
@@ -37,15 +37,17 @@ class ConsumerService:
         return await self._consumer.read_many(filter=filter, pagination=pagination, fields=fields)
 
     async def read_one(self, identifiers: dict[str, Any], fields: frozenset[str] | None) -> ConsumerOut | None:
-        """Read one override by its identity — the bare ``{"id": ...}`` or ``{"consumer_id": ...}``."""
+        """Read one override by ``{"id": ...}`` or ``{"consumer_id": ...}``; None when absent."""
         return await self._consumer.read_one(identifiers=identifiers, fields=fields)
 
-    async def insert_one(self, consumer: ConsumerIn) -> Consumer:
+    async def insert_one(self, consumer: ConsumerIn) -> ConsumerOut:
         document = self._consumer.document_model.from_input_model(consumer)
-        return await self._consumer.insert_one(document)
+        doc = await self._consumer.insert_one(document)
+        return ConsumerOut.model_validate(doc, from_attributes=True)
 
-    async def update_one(self, identifiers: dict[str, Any], update: ConsumerPatch) -> Consumer:
-        return await self._consumer.update_one(identifiers=identifiers, update=update)
+    async def update_one(self, identifiers: dict[str, Any], update: ConsumerPatch) -> ConsumerOut:
+        doc = await self._consumer.update_one(identifiers=identifiers, update=update)
+        return ConsumerOut.model_validate(doc, from_attributes=True)
 
     async def delete_one(self, identifiers: dict[str, Any]) -> None:
         await self._consumer.delete_one(identifiers=identifiers)

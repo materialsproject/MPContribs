@@ -141,8 +141,7 @@ class TestGetProjectById:
         assert result.id == "get-by-id"
 
     async def test_returns_none_for_missing_id(self, db):
-        result = await _repo(ADMIN).read_one({"id": "does-not-exist"}, fields=None)
-        assert result is None
+        assert await _repo(ADMIN).read_one({"id": "does-not-exist"}, fields=None) is None
 
     async def test_admin_can_get_private_project(self, db):
         await _insert("get-priv", is_public=False)
@@ -151,8 +150,7 @@ class TestGetProjectById:
 
     async def test_anon_cannot_get_private_project(self, db):
         await _insert("get-priv-anon", is_public=False)
-        result = await _repo(ANON).read_one({"id": "get-priv-anon"}, fields=None)
-        assert result is None
+        assert await _repo(ANON).read_one({"id": "get-priv-anon"}, fields=None) is None
 
 
 # ---------------------------------------------------------------------------

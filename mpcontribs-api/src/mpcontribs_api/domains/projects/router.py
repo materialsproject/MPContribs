@@ -13,18 +13,18 @@ from mpcontribs_api.domains.projects.models import (
     ProjectOut,
     ProjectPatch,
 )
-from mpcontribs_api.pagination import CursorParams
+from mpcontribs_api.pagination import CursorParams, Page
 
 router = APIRouter()
 
 
-@router.get("")
+@router.get("", response_model_exclude_unset=True)
 async def read_many(
     service: ProjectServiceDep,
     pagination: Annotated[CursorParams, Depends()],
     filter: ProjectFilter = FilterDepends(ProjectFilter),
     fields: FieldSelector = None,
-):
+) -> Page[ProjectOut]:
     """Return paginated projects matching a filter.
 
     Args:
@@ -40,12 +40,12 @@ async def read_many(
     return await service.read_many(filter=filter, pagination=pagination, fields=selected)
 
 
-@router.get("/search")
+@router.get("/search", response_model_exclude_unset=True)
 async def search(
     service: ProjectServiceDep,
     query: str,
     limit: int = 10,
-):
+) -> list[ProjectOut]:
     """Full-text search across projects.
 
     Declared before ``/{id}`` so the literal ``search`` segment is never captured as a project id.
@@ -60,13 +60,13 @@ async def search(
     return await service.search(query=query, limit=limit)
 
 
-@router.get("/{id}")
+@router.get("/{id}", response_model_exclude_unset=True)
 async def read_one(
     id: str,
     service: ProjectServiceDep,
     fields: FieldSelector = None,
-):
-    """Gets a single project by its ID.
+) -> ProjectOut | None:
+    """Gets a single project by its ID, or None when no in-scope project matches.
 
     Args:
         id (str): the id of the project to retrieve
@@ -81,12 +81,12 @@ async def read_one(
     return await service.read_one({"id": id}, fields=selected)
 
 
-@router.put("/{id}", response_model=ProjectOut, dependencies=[Depends(require_user)])
+@router.put("/{id}", dependencies=[Depends(require_user)])
 async def upsert_one(
     service: ProjectServiceDep,
     id: str,
     project: ProjectIn,
-):
+) -> ProjectOut:
     """Upsert a project by provided id.
 
     Upsert: Update document if id is found, otherwise insert new document using id.
@@ -103,12 +103,12 @@ async def upsert_one(
     return await service.upsert_one({"id": id}, data=project)
 
 
-@router.patch("/{id}", response_model=ProjectOut, dependencies=[Depends(require_user)])
+@router.patch("/{id}", dependencies=[Depends(require_user)])
 async def update_one(
     service: ProjectServiceDep,
     id: str,
     update: ProjectPatch,
-):
+) -> ProjectOut:
     """Partial update to project identified with 'id'.
 
     Note: overwrites fields with given values - arrays are not appended to.
@@ -134,7 +134,7 @@ async def update_one(
 async def delete_one(
     service: ProjectServiceDep,
     id: str,
-):
+) -> Response:
     """Deletes a project matching id.
 
     Args:

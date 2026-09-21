@@ -46,6 +46,9 @@ def _service(user: User, *, existing=None, unapproved: int = 0):
     # The service builds the stored document (document_model.from_input_model, which stamps owner)
     # before inserting; keep document_model a sync mock so it returns a document, not a coroutine.
     initiatives.document_model = MagicMock()
+    # insert_one/update_one now return the stored document; the service validates it into an
+    # InitiativeOut, so the mock must return an attribute-readable stand-in, not a bare AsyncMock.
+    initiatives.insert_one.return_value = _existing()
     initiatives.update_one.return_value = _existing()
     initiatives.delete_one.return_value = DeleteResponse(num_deleted=1)
     projects = AsyncMock()
@@ -96,11 +99,13 @@ class TestInsert:
 
 
 class TestPatch:
-    async def test_missing_raises_not_found(self):
+    async def test_missing_delegates_not_found_to_repo(self):
+        # The service no longer 404s on a None read; the scoped ``update_one`` raises it.
         svc, initiatives = _service(ADMIN, existing=None)
+        initiatives.update_one.side_effect = NotFoundError("Initiative not found")
         with pytest.raises(NotFoundError):
             await svc.update_one({"slug": "init-1"}, InitiativePatch(name="new-name"))
-        initiatives.update_one.assert_not_called()
+        initiatives.update_one.assert_awaited_once()
 
     async def test_unmanaged_caller_raises_permission(self):
         # A stranger who can see the initiative still cannot manage it.
@@ -139,11 +144,13 @@ class TestPatch:
 
 
 class TestDelete:
-    async def test_missing_raises_not_found(self):
+    async def test_missing_delegates_not_found_to_repo(self):
+        # The service no longer 404s on a None read; the scoped ``delete_one`` raises it.
         svc, initiatives = _service(ALICE, existing=None)
+        initiatives.delete_one.side_effect = NotFoundError("Initiative not found")
         with pytest.raises(NotFoundError):
             await svc.delete_one({"slug": "init-1"})
-        initiatives.delete_one.assert_not_called()
+        initiatives.delete_one.assert_awaited_once()
 
     async def test_collaborator_cannot_delete(self):
         # Collaborators may manage/patch but not dissolve — delete needs owner or admin.

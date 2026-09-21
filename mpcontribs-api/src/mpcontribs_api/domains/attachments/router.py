@@ -13,36 +13,42 @@ from mpcontribs_api.domains._shared.types import (
     download_filename,
 )
 from mpcontribs_api.domains.attachments.dependencies import AttachmentServiceDep
-from mpcontribs_api.domains.attachments.models import AttachmentFilter, AttachmentOut, AttachmentPatch
-from mpcontribs_api.pagination import CursorParams
+from mpcontribs_api.domains.attachments.models import (
+    AttachmentFilter,
+    AttachmentOut,
+    AttachmentPatch,
+)
+from mpcontribs_api.pagination import CursorParams, Page
 
 router = APIRouter()
 
 
-@router.get("")
+@router.get("", response_model_exclude_unset=True)
 async def read_many(
     service: AttachmentServiceDep,
     pagination: Annotated[CursorParams, Depends()],
     filter: AttachmentFilter = FilterDepends(AttachmentFilter),
     fields: FieldSelector = None,
-):
+) -> Page[AttachmentOut]:
     selected = AttachmentOut.parse_fields(fields)
     return await service.read_many(filter=filter, fields=selected, pagination=pagination)
 
 
-@router.get("/item")
+@router.get("/item", response_model_exclude_unset=True)
 async def read_one_by_identity(
     service: AttachmentServiceDep,
     identity: Annotated[ComponentIdentity, Depends()],
     fields: FieldSelector = None,
-):
-    """Return a single attachment addressed by its content ``md5`` (its natural key)."""
+) -> AttachmentOut | None:
+    """Return the attachment addressed by its content ``md5`` (its natural key), or None when none matches."""
     selected = AttachmentOut.parse_fields(fields)
     return await service.read_one(identifiers=identity.as_dict(), fields=selected)
 
 
 @router.delete("/item", response_model=ComponentDeleteResponse, dependencies=[Depends(require_user)])
-async def delete_one_by_identity(service: AttachmentServiceDep, identity: Annotated[ComponentIdentity, Depends()]):
+async def delete_one_by_identity(
+    service: AttachmentServiceDep, identity: Annotated[ComponentIdentity, Depends()]
+) -> ComponentDeleteResponse:
     """Delete a single attachment addressed by its content ``md5`` (its natural key)."""
     return await service.delete_one(identifiers=identity.as_dict())
 
@@ -52,18 +58,18 @@ async def update_one_by_identity(
     service: AttachmentServiceDep,
     identity: Annotated[ComponentIdentity, Depends()],
     update: AttachmentPatch,
-):
+) -> AttachmentOut:
     """Patch a single attachment addressed by its content ``md5`` (its natural key)."""
     return await service.update_one(identifiers=identity.as_dict(), update=update)
 
 
-@router.get("/{id}")
+@router.get("/{id}", response_model_exclude_unset=True)
 async def read_one(
     service: AttachmentServiceDep,
     id: str,
     fields: FieldSelector = None,
-):
-    """Return a single attachment addressed by its ``_id``."""
+) -> AttachmentOut | None:
+    """Return the attachment addressed by its ``_id``, or None when none matches."""
     selected = AttachmentOut.parse_fields(fields)
     return await service.read_one(identifiers={"id": id}, fields=selected)
 
@@ -96,12 +102,14 @@ async def download_attachment(
 
 
 @router.delete("", response_model=ComponentDeleteResponse, dependencies=[Depends(require_user)])
-async def delete_many(service: AttachmentServiceDep, filter: AttachmentFilter = FilterDepends(AttachmentFilter)):
+async def delete_many(
+    service: AttachmentServiceDep, filter: AttachmentFilter = FilterDepends(AttachmentFilter)
+) -> ComponentDeleteResponse:
     return await service.delete_many(filter=filter)
 
 
 @router.delete("/{id}", response_model=ComponentDeleteResponse, dependencies=[Depends(require_user)])
-async def delete_one(service: AttachmentServiceDep, id: str):
+async def delete_one(service: AttachmentServiceDep, id: str) -> ComponentDeleteResponse:
     """Delete a single attachment addressed by its ``_id``."""
     return await service.delete_one(identifiers={"id": id})
 
@@ -111,6 +119,6 @@ async def update_one(
     service: AttachmentServiceDep,
     id: str,
     update: AttachmentPatch,
-):
+) -> AttachmentOut:
     """Patch a single attachment addressed by its ``_id``."""
     return await service.update_one(identifiers={"id": id}, update=update)

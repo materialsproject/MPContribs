@@ -158,15 +158,12 @@ class TestGetProjectById:
         assert body["id"] == "mp-sample"
         assert body["title"] == "Sample Project"
 
-    def test_not_found_returns_404(self, client, project_service):
-        project_service.read_one.side_effect = NotFoundError("project not found")
+    def test_not_found_returns_200_null(self, client, project_service):
+        # A read that matches nothing is an empty 200 (null body), not a 404.
+        project_service.read_one.return_value = None
         r = client.get("/api/v1/projects/nonexistent", headers=AUTHED_HEADERS)
-        assert r.status_code == 404
-
-    def test_not_found_error_code(self, client, project_service):
-        project_service.read_one.side_effect = NotFoundError("project not found")
-        body = client.get("/api/v1/projects/nonexistent", headers=AUTHED_HEADERS).json()
-        assert body["error"]["code"] == "not_found"
+        assert r.status_code == 200
+        assert r.json() is None
 
     def test_id_forwarded_to_service(self, client, project_service):
         project_service.read_one.return_value = SAMPLE_PROJECT

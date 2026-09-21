@@ -14,36 +14,38 @@ from mpcontribs_api.domains._shared.types import (
     download_filename,
 )
 from mpcontribs_api.domains.tables.dependencies import TableServiceDep
-from mpcontribs_api.domains.tables.models import Table, TableFilter, TableIn, TableOut, TablePatch
-from mpcontribs_api.pagination import CursorParams
+from mpcontribs_api.domains.tables.models import TableFilter, TableIn, TableOut, TablePatch
+from mpcontribs_api.pagination import CursorParams, Page
 
 router = APIRouter()
 
 
-@router.get("")
+@router.get("", response_model_exclude_unset=True)
 async def read_many(
     service: TableServiceDep,
     pagination: Annotated[CursorParams, Depends()],
     filter: TableFilter = FilterDepends(TableFilter),
     fields: FieldSelector = None,
-):
+) -> Page[TableOut]:
     selected = TableOut.parse_fields(fields)
     return await service.read_many(filter=filter, fields=selected, pagination=pagination)
 
 
-@router.get("/item")
+@router.get("/item", response_model_exclude_unset=True)
 async def read_one_by_identity(
     service: TableServiceDep,
     identity: Annotated[ComponentIdentity, Depends()],
     fields: FieldSelector = None,
-):
-    """Return a single table addressed by its content ``md5`` (its natural key)."""
+) -> TableOut | None:
+    """Return the table addressed by its content ``md5`` (its natural key), or None when none matches."""
     selected = TableOut.parse_fields(fields)
     return await service.read_one(identifiers=identity.as_dict(), fields=selected)
 
 
 @router.delete("/item", response_model=ComponentDeleteResponse, dependencies=[Depends(require_user)])
-async def delete_one_by_identity(service: TableServiceDep, identity: Annotated[ComponentIdentity, Depends()]):
+async def delete_one_by_identity(
+    service: TableServiceDep, identity: Annotated[ComponentIdentity, Depends()]
+) -> ComponentDeleteResponse:
     """Delete a single table addressed by its content ``md5`` (its natural key)."""
     return await service.delete_one(identifiers=identity.as_dict())
 
@@ -53,18 +55,18 @@ async def update_one_by_identity(
     service: TableServiceDep,
     identity: Annotated[ComponentIdentity, Depends()],
     update: TablePatch,
-):
+) -> TableOut:
     """Patch a single table addressed by its content ``md5`` (its natural key)."""
     return await service.update_one(identifiers=identity.as_dict(), update=update)
 
 
-@router.get("/{id}")
+@router.get("/{id}", response_model_exclude_unset=True)
 async def read_one(
     service: TableServiceDep,
     id: str,
     fields: FieldSelector = None,
-):
-    """Return a single table addressed by its ``_id``."""
+) -> TableOut | None:
+    """Return the table addressed by its ``_id``, or None when none matches."""
     selected = TableOut.parse_fields(fields)
     return await service.read_one(identifiers={"id": id}, fields=selected)
 
@@ -96,21 +98,23 @@ async def download_table(
     )
 
 
-@router.post("", response_model=BulkWriteSummary[Table], dependencies=[Depends(require_writer)])
+@router.post("", dependencies=[Depends(require_writer)])
 async def insert_many(
     service: TableServiceDep,
     tables: list[TableIn],
-):
+) -> BulkWriteSummary[TableOut]:
     return await service.insert_many(components=tables)
 
 
 @router.delete("", response_model=ComponentDeleteResponse, dependencies=[Depends(require_user)])
-async def delete_many(service: TableServiceDep, filter: TableFilter = FilterDepends(TableFilter)):
+async def delete_many(
+    service: TableServiceDep, filter: TableFilter = FilterDepends(TableFilter)
+) -> ComponentDeleteResponse:
     return await service.delete_many(filter=filter)
 
 
 @router.delete("/{id}", response_model=ComponentDeleteResponse, dependencies=[Depends(require_user)])
-async def delete_one(service: TableServiceDep, id: str):
+async def delete_one(service: TableServiceDep, id: str) -> ComponentDeleteResponse:
     """Delete a single table addressed by its ``_id``"""
     return await service.delete_one(identifiers={"id": id})
 
@@ -120,6 +124,6 @@ async def update_one(
     service: TableServiceDep,
     id: str,
     update: TablePatch,
-):
+) -> TableOut:
     """Patch a single table addressed by its ``_id``."""
     return await service.update_one(identifiers={"id": id}, update=update)

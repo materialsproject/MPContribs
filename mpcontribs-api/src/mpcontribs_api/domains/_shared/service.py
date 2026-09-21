@@ -79,11 +79,12 @@ class ComponentService[
         existing = await self._components.read_one(identifiers, frozenset({"id"}))
         return existing.id if existing is not None else None
 
-    async def read_one(self, identifiers: dict[str, Any], fields: frozenset[str] | None) -> TDoc | TOut | None:
+    async def read_one(self, identifiers: dict[str, Any], fields: frozenset[str] | None) -> TOut | None:
         """Find a single component matching ``identifiers``, gated by contribution reachability.
 
-        Returns ``None``  when no in-scope contribution references the component.
         Accepts either the bare ``{"id": ...}`` form or the content-hash ``{"md5": ...}`` form.
+
+        Returns None when the component is absent, or when no in-scope contribution references it.
         """
         oid = await self._resolve_component_id(identifiers)
         if oid is None or not await self._contributions.referenced_component_ids(self._ref_field, [oid], scoped=True):
@@ -94,7 +95,7 @@ class ComponentService[
         self,
         components: list[TIn],
         session: AsyncClientSession | None = None,
-    ) -> BulkWriteSummary[TDoc]:
+    ) -> BulkWriteSummary[TOut]:
         """Bulk-insert components (deduplicated by content hash), reporting per-item outcomes."""
         build_failures: list[BulkFailure] = []
         origins: list[int] = []  # original input index for each successfully built document
@@ -122,9 +123,10 @@ class ComponentService[
 
         succeeded = [doc for _, doc in sorted(successes, key=lambda pair: pair[0])]
         failed = sorted(failures, key=lambda failure: failure.index)
-        return BulkWriteSummary[TDoc](total=len(components), succeeded=succeeded, failed=failed)
+        out = [self._components.out_model.model_validate(doc, from_attributes=True) for doc in succeeded]
+        return BulkWriteSummary[TOut](total=len(components), succeeded=out, failed=failed)
 
-    async def update_one(self, identifiers: dict[str, Any], update: TPatch) -> TDoc:
+    async def update_one(self, identifiers: dict[str, Any], update: TPatch) -> TOut:
         """Partially update a component matching ``identifiers``, gated by contribution reachability.
 
         Accepts either the bare ``{"id": ...}`` form or the content-hash ``{"md5": ...}`` form.
@@ -135,7 +137,8 @@ class ComponentService[
         oid = await self._resolve_component_id(identifiers)
         if oid is None or not await self._contributions.referenced_component_ids(self._ref_field, [oid], scoped=True):
             raise NotFoundError(f"{self._components.document_model.__name__} not found", **identifiers)
-        return await self._components.update_one(identifiers, update)
+        doc = await self._components.update_one(identifiers, update)
+        return self._components.out_model.model_validate(doc, from_attributes=True)
 
     async def download(
         self,

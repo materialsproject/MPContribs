@@ -14,36 +14,43 @@ from mpcontribs_api.domains._shared.types import (
     download_filename,
 )
 from mpcontribs_api.domains.structures.dependencies import StructureServiceDep
-from mpcontribs_api.domains.structures.models import StructureFilter, StructureIn, StructureOut, StructurePatch
-from mpcontribs_api.pagination import CursorParams
+from mpcontribs_api.domains.structures.models import (
+    StructureFilter,
+    StructureIn,
+    StructureOut,
+    StructurePatch,
+)
+from mpcontribs_api.pagination import CursorParams, Page
 
 router = APIRouter()
 
 
-@router.get("")
+@router.get("", response_model_exclude_unset=True)
 async def read_many(
     service: StructureServiceDep,
     pagination: Annotated[CursorParams, Depends()],
     filter: StructureFilter = FilterDepends(StructureFilter),
     fields: FieldSelector = None,
-):
+) -> Page[StructureOut]:
     selected = StructureOut.parse_fields(fields)
     return await service.read_many(filter=filter, fields=selected, pagination=pagination)
 
 
-@router.get("/item")
+@router.get("/item", response_model_exclude_unset=True)
 async def read_one_by_identity(
     service: StructureServiceDep,
     identity: Annotated[ComponentIdentity, Depends()],
     fields: FieldSelector = None,
-):
-    """Return a single structure addressed by its content ``md5`` (its natural key)."""
+) -> StructureOut | None:
+    """Return the structure addressed by its content ``md5`` (its natural key), or None when none matches."""
     selected = StructureOut.parse_fields(fields)
     return await service.read_one(identifiers=identity.as_dict(), fields=selected)
 
 
 @router.delete("/item", response_model=ComponentDeleteResponse, dependencies=[Depends(require_user)])
-async def delete_one_by_identity(service: StructureServiceDep, identity: Annotated[ComponentIdentity, Depends()]):
+async def delete_one_by_identity(
+    service: StructureServiceDep, identity: Annotated[ComponentIdentity, Depends()]
+) -> ComponentDeleteResponse:
     """Delete a single structure addressed by its content ``md5`` (its natural key)."""
     return await service.delete_one(identifiers=identity.as_dict())
 
@@ -53,18 +60,18 @@ async def update_one_by_identity(
     service: StructureServiceDep,
     identity: Annotated[ComponentIdentity, Depends()],
     update: StructurePatch,
-):
+) -> StructureOut:
     """Patch a single structure addressed by its content ``md5`` (its natural key)."""
     return await service.update_one(identifiers=identity.as_dict(), update=update)
 
 
-@router.get("/{id}")
+@router.get("/{id}", response_model_exclude_unset=True)
 async def read_one(
     service: StructureServiceDep,
     id: str,
     fields: FieldSelector = None,
-):
-    """Return a single structure addressed by its ``_id``."""
+) -> StructureOut | None:
+    """Return the structure addressed by its ``_id``, or None when none matches."""
     selected = StructureOut.parse_fields(fields)
     return await service.read_one(identifiers={"id": id}, fields=selected)
 
@@ -96,21 +103,23 @@ async def download_structure(
     )
 
 
-@router.post("", response_model=BulkWriteSummary[StructureOut], dependencies=[Depends(require_writer)])
+@router.post("", dependencies=[Depends(require_writer)])
 async def insert_many(
     service: StructureServiceDep,
     structures: list[StructureIn],
-):
+) -> BulkWriteSummary[StructureOut]:
     return await service.insert_many(components=structures)
 
 
 @router.delete("", response_model=ComponentDeleteResponse, dependencies=[Depends(require_user)])
-async def delete_many(service: StructureServiceDep, filter: StructureFilter = FilterDepends(StructureFilter)):
+async def delete_many(
+    service: StructureServiceDep, filter: StructureFilter = FilterDepends(StructureFilter)
+) -> ComponentDeleteResponse:
     return await service.delete_many(filter=filter)
 
 
 @router.delete("/{id}", response_model=ComponentDeleteResponse, dependencies=[Depends(require_user)])
-async def delete_one(service: StructureServiceDep, id: str):
+async def delete_one(service: StructureServiceDep, id: str) -> ComponentDeleteResponse:
     """Delete a single structure addressed by its ``_id``."""
     return await service.delete_one(identifiers={"id": id})
 
@@ -120,6 +129,6 @@ async def update_one(
     service: StructureServiceDep,
     id: str,
     update: StructurePatch,
-):
+) -> StructureOut:
     """Patch a single structure addressed by its ``_id``."""
     return await service.update_one(identifiers={"id": id}, update=update)

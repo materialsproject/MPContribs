@@ -61,16 +61,14 @@ class TestComponentReadReachability:
 
     async def test_get_by_id_hides_unreachable_component(self, db):
         att = await _attachment(2)
-        # Referenced only by a private contribution -> anonymous cannot reach it.
+        # Referenced only by a private contribution -> anonymous cannot reach it, so it reads as None.
         await _contribution("mp-priv", is_public=False, attachments=[att])
-        result = await _service(ANON).read_one({"id": str(att.id)}, fields=None)
-        assert result is None
+        assert await _service(ANON).read_one({"id": str(att.id)}, fields=None) is None
 
     async def test_get_by_id_hides_orphan_component(self, db):
-        # No contribution references this attachment at all.
+        # No contribution references this attachment at all, so it reads as None.
         att = await _attachment(3)
-        result = await _service(ANON).read_one({"id": str(att.id)}, fields=None)
-        assert result is None
+        assert await _service(ANON).read_one({"id": str(att.id)}, fields=None) is None
 
     async def test_get_many_only_lists_reachable(self, db):
         pub = await _attachment(10)

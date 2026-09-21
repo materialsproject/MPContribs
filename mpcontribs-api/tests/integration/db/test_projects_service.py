@@ -209,7 +209,9 @@ class TestUpsertAuthorization:
 
     async def test_new_project_sets_owner_to_caller(self, db):
         # Body carries a foreign owner; the authenticated caller's identity must win on insert.
-        await _service(BOB).upsert_one({"id": "svc-auth-newowner"}, data=_project_in("svc-auth-newowner", owner=ALICE_EMAIL))
+        await _service(BOB).upsert_one(
+            {"id": "svc-auth-newowner"}, data=_project_in("svc-auth-newowner", owner=ALICE_EMAIL)
+        )
         found = await Project.find_one(Project.id == "svc-auth-newowner")
         assert found.owner == BOB_EMAIL
 

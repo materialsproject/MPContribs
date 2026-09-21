@@ -7,7 +7,7 @@ from beanie import PydanticObjectId
 from mpcontribs_api.domains._shared.bulk import BulkFailure
 from mpcontribs_api.domains._shared.models import ComponentDeleteResponse, DeleteResponse
 from mpcontribs_api.domains._shared.service import ComponentService
-from mpcontribs_api.domains.attachments.models import Attachment, AttachmentFilter
+from mpcontribs_api.domains.attachments.models import Attachment, AttachmentFilter, AttachmentOut
 from mpcontribs_api.exceptions import NotFoundError
 
 pytestmark = pytest.mark.asyncio
@@ -46,6 +46,9 @@ def _make_service(
     ``referenced`` for unscoped checks (global integrity), keyed off the ``scoped`` kwarg.
     """
     components = AsyncMock(name="components")
+    # The service converts stored documents to the repo's out_model at its boundary; expose the real
+    # AttachmentOut so model_validate produces genuine output models rather than nested mocks.
+    components.out_model = AttachmentOut
     components.list_ids = AsyncMock(return_value=candidate_ids)
     components.delete_many = AsyncMock(side_effect=lambda filter: DeleteResponse(num_deleted=len(filter.id__in)))
     components.delete_one = AsyncMock(return_value=DeleteResponse(num_deleted=1))
@@ -70,9 +73,7 @@ def _make_service(
 
 async def test_delete_reachable_and_unreferenced_deletes_all():
     a, b = _oid(), _oid()
-    svc, components, contributions = _make_service(
-        candidate_ids=[a, b], reachable={a, b}, referenced=set()
-    )
+    svc, components, contributions = _make_service(candidate_ids=[a, b], reachable={a, b}, referenced=set())
 
     result = await svc.delete_many(AttachmentFilter())
 
@@ -173,6 +174,7 @@ async def test_delete_by_id_reachable_and_unreferenced_deletes():
 def _make_read_service(*, reachable: set[PydanticObjectId]) -> tuple[ComponentService, AsyncMock, AsyncMock]:
     """ComponentService whose contribution repo reports `reachable` ids as in-scope."""
     components = AsyncMock(name="components")
+    components.out_model = AttachmentOut
     components.read_one = _id_resolving_get_one()
 
     contributions = AsyncMock(name="contributions")
@@ -189,14 +191,12 @@ def _make_read_service(*, reachable: set[PydanticObjectId]) -> tuple[ComponentSe
 
 
 async def test_get_by_id_unreachable_returns_none():
-    # The id is resolved through the repo, but an unreachable component still yields None (and the
+    # The id is resolved through the repo, but an unreachable component reads as None (and the
     # full-fields fetch is skipped once the reachability gate fails).
     oid = _oid()
     svc, components, _ = _make_read_service(reachable=set())
 
-    result = await svc.read_one({"id": str(oid)}, fields=None)
-
-    assert result is None
+    assert await svc.read_one({"id": str(oid)}, fields=None) is None
     components.read_one.assert_awaited_once()
 
 
@@ -237,11 +237,13 @@ async def test_patch_by_id_unreachable_raises_not_found():
 async def test_patch_by_id_reachable_patches():
     oid = _oid()
     svc, components, _ = _make_read_service(reachable={oid})
-    components.update_one = AsyncMock(return_value="patched")
+    components.update_one = AsyncMock(return_value=SimpleNamespace(id=oid, name="patched.png"))
 
     result = await svc.update_one({"id": str(oid)}, update=MagicMock())
 
-    assert result == "patched"
+    # The service returns the patched document as an output model (converted at the boundary).
+    assert isinstance(result, AttachmentOut)
+    assert result.name == "patched.png"
     components.update_one.assert_awaited_once()
 
 
@@ -252,8 +254,10 @@ async def test_patch_by_id_reachable_patches():
 
 async def test_insert_many_assembles_summary_sorted_by_index():
     svc, components, _ = _make_service(candidate_ids=[], reachable=set(), referenced=set())
-    # spec=Attachment so the docs satisfy BulkWriteSummary's Component-typed ``succeeded`` field.
-    doc_a, doc_b = MagicMock(spec=Attachment), MagicMock(spec=Attachment)
+    # Distinct names so the converted output models stay orderable (succeeded holds AttachmentOut,
+    # not the input documents, since the service strips internal fields at its boundary).
+    doc_a = SimpleNamespace(id=_oid(), name="a.png")
+    doc_b = SimpleNamespace(id=_oid(), name="b.png")
     failure = BulkFailure(index=1, error_code="conflict", message="dup")
     # Repo reports successes out of order and one per-item failure; the service orders by input index.
     components.insert_many = AsyncMock(return_value=([(2, doc_b), (0, doc_a)], [failure]))
@@ -261,17 +265,17 @@ async def test_insert_many_assembles_summary_sorted_by_index():
     summary = await svc.insert_many(components=["in0", "in1", "in2"])
 
     assert summary.total == 3
-    assert summary.succeeded == [doc_a, doc_b]  # index 0 then index 2
+    assert [s.name for s in summary.succeeded] == ["a.png", "b.png"]  # index 0 then index 2
     assert [f.index for f in summary.failed] == [1]
 
 
 async def test_insert_many_all_succeed():
     svc, components, _ = _make_service(candidate_ids=[], reachable=set(), referenced=set())
-    doc = MagicMock(spec=Attachment)
+    doc = SimpleNamespace(id=_oid(), name="only.png")
     components.insert_many = AsyncMock(return_value=([(0, doc)], []))
 
     summary = await svc.insert_many(components=["only"])
 
     assert summary.total == 1
-    assert summary.succeeded == [doc]
+    assert [s.name for s in summary.succeeded] == ["only.png"]
     assert summary.failed == []

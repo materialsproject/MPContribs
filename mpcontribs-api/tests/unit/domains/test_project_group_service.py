@@ -47,6 +47,10 @@ def _make_service(group: ProjectGroupOut | None, *, visible_projects: set[str] |
     # The service builds the stored document (document_model.from_input_model) before inserting;
     # keep document_model a sync mock so from_input_model returns a document, not a coroutine.
     groups.document_model = MagicMock()
+    # insert_one/update_one now return the stored document, which the service validates into a
+    # ProjectGroupOut; give the mock an attribute-readable stand-in rather than a bare AsyncMock.
+    groups.insert_one.return_value = _group()
+    groups.update_one.return_value = _group()
     groups.add_project_refs.return_value = group
     groups.delete_project_refs.return_value = group
 
@@ -80,10 +84,13 @@ class TestInsert_one:
 
     async def test_all_projects_valid_insert_ones(self):
         service, groups, _ = _make_service(None, visible_projects={"mp-1", "mp-2"})
-        groups.insert_one.return_value = "stored"
+        stored = _group()
+        groups.insert_one.return_value = stored
         payload = self._payload(["mp-1", "mp-2"])
         result = await service.insert_one(payload)
-        assert result == "stored"
+        # The service returns the stored group as an output model (id preserved through conversion).
+        assert isinstance(result, ProjectGroupOut)
+        assert result.id == stored.id
         # The service converts the payload to a document, then inserts that document.
         groups.document_model.from_input_model.assert_called_once_with(payload)
         groups.insert_one.assert_awaited_once_with(groups.document_model.from_input_model.return_value)
@@ -97,7 +104,6 @@ class TestInsert_one:
 
     async def test_projects_validated_in_single_batched_call(self):
         service, groups, projects = _make_service(None, visible_projects={"mp-1", "mp-2", "mp-3"})
-        groups.insert_one.return_value = "stored"
         await service.insert_one(self._payload(["mp-1", "mp-2", "mp-3"]))
         # One lookup for the whole batch, not one query per project id.
         projects.existing_ids.assert_awaited_once_with(["mp-1", "mp-2", "mp-3"], scoped=True)

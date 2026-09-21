@@ -31,7 +31,9 @@ BOB_EMAIL = "google:bob@example.com"
 
 
 def _service(user: User = ADMIN) -> ProjectGroupService:
-    return ProjectGroupService(user=user, groups=MongoDbProjectGroupRepository(user), projects=MongoDbProjectRepository(user))
+    return ProjectGroupService(
+        user=user, groups=MongoDbProjectGroupRepository(user), projects=MongoDbProjectRepository(user)
+    )
 
 
 def _role_user(group_id, username: str = "google:carol@example.com") -> User:

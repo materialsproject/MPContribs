@@ -204,9 +204,7 @@ class TestGetContributions:
     async def test_admin_sees_private_and_public(self, db):
         p = await _insert(identifier="ga-pub", is_public=True)
         pr = await _insert(identifier="ga-priv", is_public=False)
-        page = await _repo(ADMIN).read_many(
-            pagination=CursorParams(), filter=_noop_filter(), fields=None
-        )
+        page = await _repo(ADMIN).read_many(pagination=CursorParams(), filter=_noop_filter(), fields=None)
         ids = {str(c.id) for c in page.items}
         assert str(p.id) in ids
         assert str(pr.id) in ids
@@ -214,9 +212,7 @@ class TestGetContributions:
     async def test_anonymous_sees_only_public(self, db):
         pub = await _insert(identifier="anon-pub", is_public=True)
         priv = await _insert(identifier="anon-priv", is_public=False)
-        page = await _repo(ANON).read_many(
-            pagination=CursorParams(), filter=_noop_filter(), fields=None
-        )
+        page = await _repo(ANON).read_many(pagination=CursorParams(), filter=_noop_filter(), fields=None)
         ids = {str(c.id) for c in page.items}
         assert str(pub.id) in ids
         assert str(priv.id) not in ids
@@ -224,35 +220,27 @@ class TestGetContributions:
     async def test_authenticated_non_admin_sees_public(self, db):
         pub = await _insert(identifier="alice-pub", is_public=True)
         priv = await _insert(identifier="alice-priv", is_public=False)
-        page = await _repo(ALICE).read_many(
-            pagination=CursorParams(), filter=_noop_filter(), fields=None
-        )
+        page = await _repo(ALICE).read_many(pagination=CursorParams(), filter=_noop_filter(), fields=None)
         ids = {str(c.id) for c in page.items}
         assert str(pub.id) in ids
         assert str(priv.id) not in ids
 
     async def test_response_is_page_shape(self, db):
         await _insert(identifier="pg-shape")
-        page = await _repo(ADMIN).read_many(
-            pagination=CursorParams(), filter=_noop_filter(), fields=None
-        )
+        page = await _repo(ADMIN).read_many(pagination=CursorParams(), filter=_noop_filter(), fields=None)
         assert hasattr(page, "items")
         assert hasattr(page, "next_cursor")
 
     async def test_limit_respected(self, db):
         for i in range(5):
             await _insert(identifier=f"lim-{i:02d}", is_public=True)
-        page = await _repo(ADMIN).read_many(
-            pagination=CursorParams(limit=3), filter=_noop_filter(), fields=None
-        )
+        page = await _repo(ADMIN).read_many(pagination=CursorParams(limit=3), filter=_noop_filter(), fields=None)
         assert len(page.items) <= 3
 
     async def test_cursor_paginates_forward(self, db):
         for i in range(4):
             await _insert(identifier=f"cur-{i:02d}", is_public=True)
-        p1 = await _repo(ADMIN).read_many(
-            pagination=CursorParams(limit=2), filter=_noop_filter(), fields=None
-        )
+        p1 = await _repo(ADMIN).read_many(pagination=CursorParams(limit=2), filter=_noop_filter(), fields=None)
         assert p1.next_cursor is not None
         p2 = await _repo(ADMIN).read_many(
             pagination=CursorParams(limit=2, cursor=p1.next_cursor), filter=_noop_filter(), fields=None
@@ -279,17 +267,13 @@ class TestGetContributions:
     async def test_next_cursor_none_on_last_page(self, db):
         for i in range(2):
             await _insert(identifier=f"last-pg-{i:02d}", is_public=True)
-        page = await _repo(ADMIN).read_many(
-            pagination=CursorParams(limit=100), filter=_noop_filter(), fields=None
-        )
+        page = await _repo(ADMIN).read_many(pagination=CursorParams(limit=100), filter=_noop_filter(), fields=None)
         assert page.next_cursor is None
 
     async def test_projection_returns_only_requested_fields(self, db):
         await _insert(identifier="proj-fields", is_public=True)
         fields = ContributionOut.parse_fields(["formula"])
-        page = await _repo(ADMIN).read_many(
-            pagination=CursorParams(), filter=_noop_filter(), fields=fields
-        )
+        page = await _repo(ADMIN).read_many(pagination=CursorParams(), filter=_noop_filter(), fields=fields)
         assert len(page.items) >= 1
         item = page.items[0]
         assert item.formula is not None
@@ -299,9 +283,7 @@ class TestGetContributions:
         await _insert(identifier="flt-fe", formula="Fe2O3", is_public=True)
         await _insert(identifier="flt-li", formula="Li2O", is_public=True)
         f = ContributionFilter(formula="Fe2O3")
-        page = await _repo(ADMIN).read_many(
-            pagination=CursorParams(), filter=f, fields=None
-        )
+        page = await _repo(ADMIN).read_many(pagination=CursorParams(), filter=f, fields=None)
         formulas = {c.formula for c in page.items}
         assert formulas == {"Fe2O3"}
 
@@ -309,9 +291,7 @@ class TestGetContributions:
         await _insert(identifier="ilike-abc", is_public=True)
         await _insert(identifier="ilike-xyz", is_public=True)
         f = ContributionFilter(material_id__ilike="ilike-a")
-        page = await _repo(ADMIN).read_many(
-            pagination=CursorParams(), filter=f, fields=None
-        )
+        page = await _repo(ADMIN).read_many(pagination=CursorParams(), filter=f, fields=None)
         identifiers = {c.material_id for c in page.items}
         assert "ilike-abc" in identifiers
         assert "ilike-xyz" not in identifiers
@@ -320,10 +300,9 @@ class TestGetContributions:
         await _insert(identifier="pub-only-pub", is_public=True)
         await _insert(identifier="pub-only-priv", is_public=False)
         f = ContributionFilter(is_public=True)
-        page = await _repo(ADMIN).read_many(
-            pagination=CursorParams(), filter=f, fields=None
-        )
+        page = await _repo(ADMIN).read_many(pagination=CursorParams(), filter=f, fields=None)
         assert all(c.is_public is True for c in page.items)
+
 
 # ---------------------------------------------------------------------------
 # read_one (by id)
@@ -338,8 +317,7 @@ class TestGetContributionById:
         assert result.material_id == "get-id"
 
     async def test_returns_none_for_missing_id(self, db):
-        result = await _repo(ADMIN).read_one({"id": PydanticObjectId()}, fields=None)
-        assert result is None
+        assert await _repo(ADMIN).read_one({"id": PydanticObjectId()}, fields=None) is None
 
     async def test_admin_can_get_private_doc(self, db):
         doc = await _insert(identifier="get-priv", is_public=False)
@@ -348,8 +326,7 @@ class TestGetContributionById:
 
     async def test_anon_cannot_get_private_doc(self, db):
         doc = await _insert(identifier="get-anon-priv", is_public=False)
-        result = await _repo(ANON).read_one({"id": doc.id}, fields=None)
-        assert result is None
+        assert await _repo(ANON).read_one({"id": doc.id}, fields=None) is None
 
     async def test_anon_can_get_public_doc(self, db):
         doc = await _insert(identifier="get-anon-pub", is_public=True)
@@ -380,13 +357,11 @@ class TestGetContributionBySemanticIdentifiers:
 
     async def test_returns_none_for_missing_combination(self, db):
         await _insert(project="miss-proj", identifier="miss-id")
-        result = await _repo(ADMIN).read_one(_identity(project="miss-proj", material_id="wrong-id"), fields=None)
-        assert result is None
+        assert await _repo(ADMIN).read_one(_identity(project="miss-proj", material_id="wrong-id"), fields=None) is None
 
     async def test_scope_prevents_anon_finding_private(self, db):
         await _insert(project="anon-scope", identifier="priv-doc", is_public=False)
-        result = await _repo(ANON).read_one(_identity(project="anon-scope", material_id="priv-doc"), fields=None)
-        assert result is None
+        assert await _repo(ANON).read_one(_identity(project="anon-scope", material_id="priv-doc"), fields=None) is None
 
     async def test_scope_allows_anon_finding_public(self, db):
         await _insert(project="anon-scope-pub", identifier="pub-doc", is_public=True)
@@ -404,9 +379,7 @@ class TestGetContributionBySemanticIdentifiers:
         # A partial identity (a subset of the composite key) is accepted, as long as it satisfies the
         # hierarchy, and resolves the single matching row.
         await _insert(project="partial-proj", identifier="partial-id", chemical_system_id="Fe-O")
-        result = await _repo(ADMIN).read_one(
-            {"project": "partial-proj", "chemical_system_id": "Fe-O"}, fields=None
-        )
+        result = await _repo(ADMIN).read_one({"project": "partial-proj", "chemical_system_id": "Fe-O"}, fields=None)
         assert result is not None
         assert result.material_id == "partial-id"
 

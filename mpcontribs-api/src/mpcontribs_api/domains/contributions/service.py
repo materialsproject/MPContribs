@@ -109,13 +109,12 @@ class ContributionService:
             "tables": self._tables,
         }
 
-    async def read_one(
-        self, identifiers: dict[str, Any], fields: frozenset[str] | None
-    ) -> Contribution | ContributionOut | None:
-        """Return the single scoped contribution matching ``identifiers``.
+    async def read_one(self, identifiers: dict[str, Any], fields: frozenset[str] | None) -> ContributionOut | None:
+        """Return the single scoped contribution matching ``identifiers``, or None when none matches.
 
         Accepts either the bare ``{"id": ...}`` form or the semantic
         ``{"project", "identifier", "version"}`` set, resolved by the base ``_identifier_query``.
+        An ambiguous natural identity raises ``ConflictError``.
         """
         return await self._contributions.read_one(identifiers, fields)
 
@@ -180,7 +179,7 @@ class ContributionService:
     async def insert_many(
         self,
         contributions: list[ContributionIn],
-    ) -> BulkWriteSummary[Contribution]:
+    ) -> BulkWriteSummary[ContributionOut]:
         """Atomic bulk insert contributions, atomically per top-level contribution.
 
         Contributions carrying no components are inserted in one ``insert_many`` (no transaction);
@@ -195,10 +194,10 @@ class ContributionService:
             contributions: contributions to insert; may include nested structures/tables/attachments
 
         Returns:
-            BulkWriteSummary[Contribution]: per-item outcome, sized to ``len(contributions)``
+            BulkWriteSummary[ContributionOut]: per-item outcome, sized to ``len(contributions)``
         """
         if not contributions:
-            return BulkWriteSummary[Contribution](total=0, succeeded=[], failed=[])
+            return BulkWriteSummary[ContributionOut](total=0, succeeded=[], failed=[])
 
         failures, plan = await self._split_contributions(contributions, is_upsert=False)
         no_comp = [item for item in plan if not item.contribution.has_components()]
@@ -213,7 +212,8 @@ class ContributionService:
             key=lambda f: f.index,
         )
         await self.update_project({doc.project for doc in succeeded})
-        return BulkWriteSummary[Contribution](total=len(contributions), succeeded=succeeded, failed=failed)
+        out = [ContributionOut.model_validate(doc, from_attributes=True) for doc in succeeded]
+        return BulkWriteSummary[ContributionOut](total=len(contributions), succeeded=out, failed=failed)
 
     def _expand_batch(
         self,
@@ -720,7 +720,7 @@ class ContributionService:
         return inserted
 
     # TODO: Allow components to be upserted
-    async def upsert_many(self, contributions: list[ContributionIn]) -> BulkWriteSummary[Contribution]:
+    async def upsert_many(self, contributions: list[ContributionIn]) -> BulkWriteSummary[ContributionOut]:
         """Upsert contributions by their identifying fields, reporting per-item outcomes.
 
         Components (structures, tables, attachments) must be managed via their respective
@@ -738,13 +738,13 @@ class ContributionService:
             contributions: contributions to upsert; must not include nested components
 
         Returns:
-            BulkWriteSummary[Contribution]: per-item outcome, sized to ``len(contributions)``
+            BulkWriteSummary[ContributionOut]: per-item outcome, sized to ``len(contributions)``
 
         Raises:
             ValidationError: if any contribution in the batch carries components
         """
         if not contributions:
-            return BulkWriteSummary[Contribution](total=0, succeeded=[], failed=[])
+            return BulkWriteSummary[ContributionOut](total=0, succeeded=[], failed=[])
 
         indices_with_components = [i for i, c in enumerate(contributions) if c.has_components()]
         if indices_with_components:
@@ -776,7 +776,8 @@ class ContributionService:
         succeeded = [r for r in results if not isinstance(r, BulkFailure)]
         failed = failures + [r for r in results if isinstance(r, BulkFailure)]
         await self.update_project({doc.project for doc in succeeded})
-        return BulkWriteSummary[Contribution](total=len(contributions), succeeded=succeeded, failed=failed)
+        out = [ContributionOut.model_validate(doc, from_attributes=True) for doc in succeeded]
+        return BulkWriteSummary[ContributionOut](total=len(contributions), succeeded=out, failed=failed)
 
     async def update_many(
         self,
@@ -847,7 +848,7 @@ class ContributionService:
         async def _patch_one(index: int, oid: PydanticObjectId) -> Contribution | BulkFailure:
             async with sem:
                 try:
-                    return await self.update_one({"id": str(oid)}, update, replace_data=replace_data)
+                    return await self._update_one_doc({"id": str(oid)}, update, replace_data=replace_data)
                 except Exception as exc:
                     logger.info("bulk_patch_item_failed", id=str(oid))
                     return bulk_failure_from_exception(index, {"id": str(oid)}, exc)
@@ -872,7 +873,7 @@ class ContributionService:
             return None
         return extract_unique_value(data, unique_column)
 
-    async def upsert_one(self, identifiers: dict[str, Any], contribution: ContributionIn) -> Contribution:
+    async def upsert_one(self, identifiers: dict[str, Any], contribution: ContributionIn) -> ContributionOut:
         """Upsert the single scoped contribution matching ``identifiers``, resolving ``unique_value``.
 
         The router upserts by ``{"id": ...}``. The server-owned ``unique_value`` (from the project's
@@ -882,6 +883,7 @@ class ContributionService:
         self._user.require_write(*PROJECT_PATH, contribution.project)
         validate_data_depth(contribution.data, self._limits.contribution.max_data_depth)
         await self._enforce_column_limit(contribution.project, contribution.data)
+        # No document at this id yet: the upsert will insert, so enforce the unapproved-project cap.
         existing = await self._contributions.read_one(identifiers, None)
         if existing is None:
             stored = await self._unapproved_stored_count(contribution.project)
@@ -893,9 +895,21 @@ class ContributionService:
                     max_allowed=cap,
                 )
         unique_value = await self._resolve_unique_value(contribution.project, contribution.data)
-        return await self._contributions.upsert_by_id(identifiers["id"], contribution, unique_value)
+        doc = await self._contributions.upsert_by_id(identifiers["id"], contribution, unique_value)
+        return ContributionOut.model_validate(doc, from_attributes=True)
 
     async def update_one(
+        self, identifiers: dict[str, Any], update: ContributionPatch, *, replace_data: bool = False
+    ) -> ContributionOut:
+        """Partially update the single scoped contribution matching ``identifiers``, returning the output model.
+
+        Thin output-boundary wrapper over :meth:`_update_one_doc`; the internal bulk-patch path calls
+        ``_update_one_doc`` directly to keep working with the stored document.
+        """
+        doc = await self._update_one_doc(identifiers, update, replace_data=replace_data)
+        return ContributionOut.model_validate(doc, from_attributes=True)
+
+    async def _update_one_doc(
         self, identifiers: dict[str, Any], update: ContributionPatch, *, replace_data: bool = False
     ) -> Contribution:
         """Partially update the single scoped contribution matching ``identifiers``.
@@ -919,9 +933,8 @@ class ContributionService:
             identifiers = {"id": str(existing.id)}
         if not self._user.is_admin(*ROOT_PATH):
             target = await self._contributions.read_one(identifiers, frozenset({"id", "project"}))
-            if target is None:
-                raise NotFoundError("contribution not found", identifiers=identifiers)
-            self._user.require_write(*PROJECT_PATH, target.project)
+            if target is not None:
+                self._user.require_write(*PROJECT_PATH, target.project)
         set_fields = update.model_dump(exclude_unset=True)
         touches_unique = "data" in set_fields or "project" in set_fields
         touches_identity = bool(ContributionIdentity.HIERARCHY_FIELDS & set_fields.keys())
@@ -933,7 +946,9 @@ class ContributionService:
             validate_contribution_data(set_fields["data"])
 
         existing = await self._contributions.read_one(identifiers, None)
-        if existing is None or existing.project is None:
+        if existing is None:
+            return await self._contributions.update_one(identifiers, update)
+        if existing.project is None:
             raise NotFoundError("contribution not found", identifiers=identifiers)
 
         if touches_identity:

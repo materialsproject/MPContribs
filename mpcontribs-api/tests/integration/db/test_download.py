@@ -118,9 +118,7 @@ class TestDownloadFiltering:
     async def test_filter_limits_returned_rows(self, db):
         await _insert("pub-proj", "keep-me", is_public=True)
         await _insert("pub-proj", "drop-me", is_public=True)
-        rows = _parse_jsonl(
-            await _download_bytes(_repo(ADMIN), filter=ContributionFilter(material_id="keep-me"))
-        )
+        rows = _parse_jsonl(await _download_bytes(_repo(ADMIN), filter=ContributionFilter(material_id="keep-me")))
         assert {r["material_id"] for r in rows} == {"keep-me"}
 
     async def test_empty_result_is_valid_empty_gzip(self, db):

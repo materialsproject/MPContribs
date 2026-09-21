@@ -62,15 +62,13 @@ class TestGetOne:
         assert found.name == "group-a"
         assert found.owner == ALICE_EMAIL
 
-    async def test_returns_none_when_absent(self, db):
-        found = await _repo(ADMIN).read_one({"name": "missing", "owner": ALICE_EMAIL}, fields=None)
-        assert found is None
+    async def test_absent_returns_none(self, db):
+        assert await _repo(ADMIN).read_one({"name": "missing", "owner": ALICE_EMAIL}, fields=None) is None
 
     async def test_out_of_scope_returns_none(self, db):
         # Alice's private group is invisible to an anonymous caller.
         await _insert("group-priv")
-        found = await _repo(ANON).read_one({"name": "group-priv", "owner": ALICE_EMAIL}, fields=None)
-        assert found is None
+        assert await _repo(ANON).read_one({"name": "group-priv", "owner": ALICE_EMAIL}, fields=None) is None
 
 
 # ---------------------------------------------------------------------------
@@ -92,15 +90,13 @@ class TestGroupRoleScope:
 
     async def test_without_role_not_visible(self, db):
         await _insert("role-none")
-        found = await _repo(BOB).read_one({"name": "role-none", "owner": ALICE_EMAIL}, fields=None)
-        assert found is None
+        assert await _repo(BOB).read_one({"name": "role-none", "owner": ALICE_EMAIL}, fields=None) is None
 
     async def test_malformed_role_is_ignored(self, db):
         await _insert("role-bad")
         member = User(username="google:carol@example.com", groups=["mpcontribs:project-groups/not-an-oid=owner"])
-        # A malformed role id must not raise; it simply grants nothing.
-        found = await _repo(member).read_one({"name": "role-bad", "owner": ALICE_EMAIL}, fields=None)
-        assert found is None
+        # A malformed role id must not raise; it simply grants nothing (so the group is not found).
+        assert await _repo(member).read_one({"name": "role-bad", "owner": ALICE_EMAIL}, fields=None) is None
 
     async def test_role_appears_in_listing(self, db):
         group = await _insert("role-list")
@@ -147,7 +143,9 @@ class TestDeleteOne:
 class TestPatchOne:
     async def test_updates_field(self, db):
         await _insert("patch-a", description="before")
-        updated = await _repo(ADMIN).update_one({"name": "patch-a", "owner": ALICE_EMAIL}, ProjectGroupPatch(description="after"))
+        updated = await _repo(ADMIN).update_one(
+            {"name": "patch-a", "owner": ALICE_EMAIL}, ProjectGroupPatch(description="after")
+        )
         assert updated.description == "after"
 
     async def test_absent_raises_not_found(self, db):
@@ -165,16 +163,12 @@ class TestDeleteByFilter:
         await _insert("bulk-1")
         await _insert("bulk-2")
         await _insert("other", owner="google:bob@example.com")
-        result = await _repo(ADMIN).delete_many(
-            filter=ProjectGroupFilter(owner=ALICE_EMAIL)
-        )
+        result = await _repo(ADMIN).delete_many(filter=ProjectGroupFilter(owner=ALICE_EMAIL))
         assert result.num_deleted == 2
         assert await ProjectGroup.find_one(ProjectGroup.owner == "google:bob@example.com") is not None
 
     async def test_no_match_returns_zero(self, db):
-        result = await _repo(ADMIN).delete_many(
-            filter=ProjectGroupFilter(owner="google:nobody@example.com")
-        )
+        result = await _repo(ADMIN).delete_many(filter=ProjectGroupFilter(owner="google:nobody@example.com"))
         assert result.num_deleted == 0
 
 

@@ -283,6 +283,9 @@ class MongoDbContributionRepository(
             fields: fields to project; if None the full document is returned
             session: optional client session for transactions
 
+        Returns:
+            The matching contribution, or ``None`` if no in-scope contribution matches.
+
         Raises:
             ConflictError: if more than one in-scope contribution matches a partial identity
         """
@@ -302,7 +305,7 @@ class MongoDbContributionRepository(
                 "identifiers match more than one contribution; supply unique_value to disambiguate",
                 identifiers=identifiers,
             )
-        return docs[0] if docs else None
+        return None if not docs else docs[0]
 
     async def upsert_by_id(
         self,

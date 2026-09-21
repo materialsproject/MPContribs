@@ -85,8 +85,7 @@ class TestGetByDocumentId:
     async def test_missing_returns_none(self, db):
         from beanie import PydanticObjectId
 
-        result = await _repo().read_one({"id": PydanticObjectId()}, None)
-        assert result is None
+        assert await _repo().read_one({"id": PydanticObjectId()}, None) is None
 
 
 # ---------------------------------------------------------------------------
@@ -113,7 +112,9 @@ class TestPatchConsumer:
 
     async def test_empty_patch_returns_existing_unchanged(self, db):
         created = await _insert(
-            ConsumerIn(consumer_id="kong-noop", settings=ConsumerSettings(project=ConsumerProjectSettings(max_projects=4)))
+            ConsumerIn(
+                consumer_id="kong-noop", settings=ConsumerSettings(project=ConsumerProjectSettings(max_projects=4))
+            )
         )
         result = await _repo().update_one({"id": created.id}, update=ConsumerPatch())
         assert result.consumer_id == "kong-noop"
@@ -229,7 +230,9 @@ class TestEffectiveLimits:
 
     async def test_stored_override_is_returned(self, db):
         await _insert(
-            ConsumerIn(consumer_id="kong-eff", settings=ConsumerSettings(project=ConsumerProjectSettings(max_projects=42)))
+            ConsumerIn(
+                consumer_id="kong-eff", settings=ConsumerSettings(project=ConsumerProjectSettings(max_projects=42))
+            )
         )
         user = User(consumer_id="kong-eff", username="google:alice@example.com", groups=frozenset())
         limits = await _service(user).effective_limits(user.consumer_id)

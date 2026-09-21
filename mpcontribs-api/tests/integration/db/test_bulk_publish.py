@@ -104,9 +104,7 @@ class TestSinglePublish:
     async def test_patch_by_id_publishes_single_contribution(self, db, mongo_client):
         a = await _insert(PROJ_A, "c1", is_public=False)
 
-        result = await _service(mongo_client, ALICE).update_one(
-            {"id": str(a.id)}, ContributionPatch(is_public=True)
-        )
+        result = await _service(mongo_client, ALICE).update_one({"id": str(a.id)}, ContributionPatch(is_public=True))
 
         assert result.is_public is True
         assert await _is_public(a.id) is True

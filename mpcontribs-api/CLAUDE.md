@@ -16,12 +16,10 @@ just fmt
 uv run pytest
 
 # Run tests by marker
-uv run pytest -m base
-uv run pytest -m extra
+just test u
+just test i
 
-# Run tests in parallel
-uv run pytest -n auto
-
+# DO NOT RUN 'just test d'
 # Type check
 uv run basedpyright
 ```

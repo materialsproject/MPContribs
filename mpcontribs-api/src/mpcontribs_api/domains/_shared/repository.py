@@ -151,8 +151,7 @@ class MongoDbRepository[
         fields: frozenset[str] | None = None,
         session: AsyncClientSession | None = None,
     ) -> TOut | None:
-        """Return the single scoped document matching ``identifiers``, projected to ``fields``.
-
+        """Return the single scoped document matching ``identifiers`` (projected to ``fields``), or None.
         Args:
             identifiers (dict[str, Any]): identifier field values keyed by the model's natural key, or the bare
                 primary-key form ``{"id": <primary key>}``
@@ -161,7 +160,7 @@ class MongoDbRepository[
         """
         query = self._identifier_query(identifiers)
         projection = self.out_model.projection(fields)
-        return await self.document_model.find_one(self._scope, query, projection_model=projection, session=session)  # pyright: ignore[reportArgumentType]
+        return await self.document_model.find_one(self._scope, query, projection_model=projection, session=session)
 
     async def list_ids(self, filter: TFilter, session: AsyncClientSession | None = None) -> list[Any]:
         """Return just the ids of scoped documents matching ``filter``.
