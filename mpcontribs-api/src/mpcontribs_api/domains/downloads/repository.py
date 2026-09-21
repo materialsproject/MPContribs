@@ -1,3 +1,5 @@
+from datetime import UTC, datetime
+
 from beanie import PydanticObjectId
 from pymongo import ReturnDocument
 from pymongo.asynchronous.client_session import AsyncClientSession
@@ -57,13 +59,28 @@ class MongoDbDownloadRepository(MongoDbRepository[Download, DownloadIn, Download
             return document, True
         return self.document_model.model_validate(before), False
 
-    async def claim_error_for_retry(self, id: PydanticObjectId) -> Download | None:
-        """Atomically flip a failed document back to ``submitted`` for one retrying caller."""
+    async def claim_for_retry(self, id: PydanticObjectId, stale_cutoff: datetime) -> Download | None:
+        """Atomically reclaim a failed or stale-submitted job for one retrying caller.
+
+        Resets a doc in error or hung submitted state and before the stale_cutoff window by
+        resetting job_status to submitted (if in error) and bumps created_at.
+        """
         collection = self.document_model.get_pymongo_collection()
         updated = await collection.find_one_and_update(
-            {"_id": id, "status": JobStatus.error.value},
             {
-                "$set": {"status": JobStatus.submitted.value, "rows_written": 0, "bytes_written": 0},
+                "_id": id,
+                "$or": [
+                    {"status": JobStatus.error.value},
+                    {"status": JobStatus.submitted.value, "created_at": {"$lt": stale_cutoff}},
+                ],
+            },
+            {
+                "$set": {
+                    "status": JobStatus.submitted.value,
+                    "created_at": datetime.now(UTC),
+                    "rows_written": 0,
+                    "bytes_written": 0,
+                },
                 "$unset": {"error": ""},
             },
             return_document=ReturnDocument.AFTER,

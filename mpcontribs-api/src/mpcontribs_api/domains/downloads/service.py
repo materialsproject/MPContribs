@@ -1,3 +1,5 @@
+from datetime import UTC, datetime, timedelta
+
 import structlog
 from beanie import PydanticObjectId
 from botocore.exceptions import ClientError
@@ -16,9 +18,20 @@ from mpcontribs_api.domains.downloads.models import (
     JobStatus,
 )
 from mpcontribs_api.domains.downloads.repository import MongoDbDownloadRepository
-from mpcontribs_api.exceptions import JobStatusError, NotFoundError, PermissionError, S3Error
+from mpcontribs_api.exceptions import (
+    DownloadRetryExhaustedError,
+    JobStatusError,
+    NotFoundError,
+    PermissionError,
+    S3Error,
+)
 
 logger = structlog.get_logger(__name__)
+
+
+def _as_utc(dt: datetime) -> datetime:
+    """Treat a stored (naive-UTC, per the non-tz-aware Mongo client) datetime as tz-aware UTC."""
+    return dt if dt.tzinfo is not None else dt.replace(tzinfo=UTC)
 
 
 class DownloadService:
@@ -62,18 +75,45 @@ class DownloadService:
         return await self._submit(download_in)
 
     async def _submit(self, download_in: DownloadIn) -> DownloadOut:
-        """Insert a Download document and add download job to queue if it is a new job.
+        """Insert a Download document and add the download job to the queue if it needs running.
 
-        If the job was created for the first time now, or if the previous job has the status `JobStatus.error`,
-        add the job to the queue, otherwise return the document.
+        A job is (re-)enqueued when it is:
+
+        - newly created (first submission), or
+        - ``error`` or
+        - ``submitted`` but stale (older than ``downloads_stale_after``).
+
+        A newly submitted job and a ready job are returned. A reclaimable job whose original_time is older
+        than downloads_max_retry_age is refused, so perpetually failing requests stop being re-enqueued.
         """
         job = Download.from_input_model(download_in)
         stored, created = await self._downloads.insert_or_get(job)
-        # if the job is newly created, or is retrying a failed job, add it to the queue
         if created:
             await self._enqueue(stored)
-        elif stored.status == JobStatus.error:
-            claimed = await self._downloads.claim_error_for_retry(stored.id)
+            return DownloadOut.model_validate(stored.model_dump())
+        if stored.status == JobStatus.ready:
+            return DownloadOut.model_validate(stored.model_dump())  # cache hit
+
+        now = datetime.now(UTC)
+        settings = get_settings().mpcontribs
+        # Mongo returns naive UTC datetimes; make them aware so they can be compared against the tz-aware ``now``.
+        created_at = _as_utc(stored.created_at)
+        original_time = _as_utc(stored.original_time)
+        is_error = stored.status == JobStatus.error
+        is_stale = stored.status == JobStatus.submitted and (
+            now - created_at > timedelta(seconds=settings.downloads_stale_after)
+        )
+        if is_error or is_stale:
+            # Abuse/robustness guard: refuse to keep retrying a ticket that has been failing since
+            # longer ago than the cap.
+            if now - original_time > timedelta(seconds=settings.downloads_max_retry_age):
+                raise DownloadRetryExhaustedError(
+                    message="download has exceeded its max retry age; not re-enqueued",
+                    download_id=str(stored.id),
+                    error=stored.error,
+                )
+            stale_cutoff = now - timedelta(seconds=settings.downloads_stale_after)
+            claimed = await self._downloads.claim_for_retry(stored.id, stale_cutoff)
             if claimed is not None:
                 stored = claimed
                 await self._enqueue(stored)

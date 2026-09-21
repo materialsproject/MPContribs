@@ -8,6 +8,8 @@ and enqueueing only on a genuinely new (or retried) ticket, per-requester isolat
 authenticated user, so a submission "as" a given requester binds the service to that user.
 """
 
+import asyncio
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -18,7 +20,12 @@ from mpcontribs_api.domains.contributions.models import ContributionFilter
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
 from mpcontribs_api.domains.downloads.models import DownloadDomain, DownloadOut, JobStatus
 from mpcontribs_api.domains.downloads.service import DownloadService
-from mpcontribs_api.exceptions import JobStatusError, NotFoundError, PermissionError
+from mpcontribs_api.exceptions import (
+    DownloadRetryExhaustedError,
+    JobStatusError,
+    NotFoundError,
+    PermissionError,
+)
 
 pytestmark = [pytest.mark.db, pytest.mark.asyncio(loop_scope="session")]
 
@@ -158,11 +165,16 @@ class TestRetryOnError:
         created = await _queue(service)
         assert sqs.send_message.await_count == 1
 
-        # Simulate a worker failure on the ticket.
+        # Simulate a worker failure on the ticket, and age its clock so the retry's ``created_at``
+        # bump is observable (#11: a re-run must restart the TTL clock, not inherit the old one).
+        stale_clock = datetime.now(UTC) - timedelta(hours=6)
         await db["downloads"].update_one(
             {"requester": "consumer-a", "s3_key": created.s3_key},
-            {"$set": {"status": JobStatus.error.value, "error": "boom", "rows_written": 3}},
+            {"$set": {"status": JobStatus.error.value, "error": "boom", "rows_written": 3, "created_at": stale_clock}},
         )
+        before = await db["downloads"].find_one({"requester": "consumer-a", "s3_key": created.s3_key})
+        assert before is not None
+        original_time_before = before["original_time"]
 
         retried = await _queue(service)
 
@@ -174,6 +186,29 @@ class TestRetryOnError:
         assert stored["status"] == JobStatus.submitted.value
         assert stored.get("error") is None  # prior failure cleared
         assert stored["rows_written"] == 0
+        # #11: TTL/retry clock restarted, so a re-run can't expire mid-flight...
+        assert stored["created_at"] > before["created_at"]
+        # ...while the immutable birth time is preserved across the retry.
+        assert stored["original_time"] == original_time_before
+
+    async def test_original_time_is_set_once_and_survives_retry(self, db):
+        # At insert, birth time and TTL clock start equal.
+        service, _ = _service(_owner("consumer-a"))
+        created = await _queue(service)
+        fresh = await db["downloads"].find_one({"requester": "consumer-a", "s3_key": created.s3_key})
+        assert fresh is not None
+        assert fresh["original_time"] == fresh["created_at"]
+
+        # After an errored retry, created_at has moved but original_time has not.
+        await db["downloads"].update_one(
+            {"requester": "consumer-a", "s3_key": created.s3_key},
+            {"$set": {"status": JobStatus.error.value, "created_at": datetime.now(UTC) - timedelta(hours=1)}},
+        )
+        await _queue(service)
+        after = await db["downloads"].find_one({"requester": "consumer-a", "s3_key": created.s3_key})
+        assert after is not None
+        assert after["original_time"] == fresh["original_time"]
+        assert after["created_at"] > after["original_time"]
 
     async def test_ready_ticket_is_returned_without_re_enqueue(self, db):
         service, sqs = _service(_owner("consumer-a"))
@@ -187,6 +222,129 @@ class TestRetryOnError:
 
         assert again.status == JobStatus.ready
         assert sqs.send_message.await_count == 1  # unchanged: no work to do
+
+
+class TestStaleSubmittedReclaim:
+    """#10: a job stuck in ``submitted`` (dead worker / lost message) self-heals on re-request,
+    but a fresh ``submitted`` job (a worker plausibly still running it) is left alone."""
+
+    async def test_stale_submitted_is_reclaimed_and_re_enqueued(self, db):
+        service, sqs = _service(_owner("consumer-a"))
+        created = await _queue(service)
+        assert sqs.send_message.await_count == 1
+
+        # Presumed-dead worker: the ticket has sat in ``submitted`` well past the staleness window.
+        await db["downloads"].update_one(
+            {"requester": "consumer-a", "s3_key": created.s3_key},
+            {"$set": {"created_at": datetime.now(UTC) - timedelta(hours=1)}},
+        )
+        before = await db["downloads"].find_one({"requester": "consumer-a", "s3_key": created.s3_key})
+        assert before is not None
+
+        reclaimed = await _queue(service)
+
+        assert reclaimed.status == JobStatus.submitted
+        assert sqs.send_message.await_count == 2  # re-enqueued
+        assert await db["downloads"].count_documents({}) == 1  # still one ticket
+        stored = await db["downloads"].find_one({"requester": "consumer-a", "s3_key": created.s3_key})
+        assert stored is not None
+        assert stored["created_at"] > before["created_at"]  # clock bumped
+
+    async def test_fresh_submitted_is_left_alone(self, db):
+        # A just-created ``submitted`` ticket (recent created_at) is a worker still plausibly running
+        # it: re-request returns it unchanged and does not re-enqueue.
+        service, sqs = _service(_owner("consumer-a"))
+        created = await _queue(service)
+        assert sqs.send_message.await_count == 1
+
+        again = await _queue(service)
+
+        assert again.status == JobStatus.submitted
+        assert again.id == created.id
+        assert sqs.send_message.await_count == 1  # unchanged: still in flight
+
+    async def test_only_one_of_two_racing_callers_reclaims(self, db):
+        # Dedup under contention (P4 #15): two callers race to reclaim one stale ``submitted`` ticket;
+        # the atomic created_at bump lets exactly one win, so the job is enqueued only once more.
+        seed, _ = _service(_owner("consumer-a"))
+        created = await _queue(seed)
+        await db["downloads"].update_one(
+            {"requester": "consumer-a", "s3_key": created.s3_key},
+            {"$set": {"created_at": datetime.now(UTC) - timedelta(hours=1)}},
+        )
+
+        service_a, sqs_a = _service(_owner("consumer-a"))
+        service_b, sqs_b = _service(_owner("consumer-a"))
+        await asyncio.gather(_queue(service_a), _queue(service_b))
+
+        assert sqs_a.send_message.await_count + sqs_b.send_message.await_count == 1
+        assert await db["downloads"].count_documents({}) == 1
+
+
+class TestMaxRetryAge:
+    """The age cap refuses to keep retrying a perpetually-failing ticket, measured on the immutable
+    ``original_time`` so a bumped ``created_at`` can't hide the true age. It must not fire on an
+    in-flight fresh ``submitted`` ticket."""
+
+    async def test_errored_ticket_past_max_age_is_refused(self, db):
+        service, sqs = _service(_owner("consumer-a"))
+        created = await _queue(service)
+        assert sqs.send_message.await_count == 1
+
+        # Errored, and failing since longer ago than the default 1-day cap.
+        await db["downloads"].update_one(
+            {"requester": "consumer-a", "s3_key": created.s3_key},
+            {
+                "$set": {
+                    "status": JobStatus.error.value,
+                    "error": "boom",
+                    "original_time": datetime.now(UTC) - timedelta(days=2),
+                }
+            },
+        )
+
+        with pytest.raises(DownloadRetryExhaustedError):
+            await _queue(service)
+
+        assert sqs.send_message.await_count == 1  # not re-enqueued
+        stored = await db["downloads"].find_one({"requester": "consumer-a", "s3_key": created.s3_key})
+        assert stored is not None
+        assert stored["status"] == JobStatus.error.value  # left as-is, not flipped to submitted
+
+    async def test_errored_ticket_within_max_age_still_retries(self, db):
+        # Boundary: an errored ticket whose original_time is inside the cap still re-enqueues.
+        service, sqs = _service(_owner("consumer-a"))
+        created = await _queue(service)
+        await db["downloads"].update_one(
+            {"requester": "consumer-a", "s3_key": created.s3_key},
+            {
+                "$set": {
+                    "status": JobStatus.error.value,
+                    "original_time": datetime.now(UTC) - timedelta(hours=12),
+                    "created_at": datetime.now(UTC) - timedelta(hours=12),
+                }
+            },
+        )
+
+        retried = await _queue(service)
+
+        assert retried.status == JobStatus.submitted
+        assert sqs.send_message.await_count == 2
+
+    async def test_fresh_in_flight_submitted_is_not_refused(self, db):
+        # A worker still running the job looks ``submitted`` with a recent created_at even if the
+        # ticket was first submitted long ago: the age cap must not deny the in-progress download.
+        service, sqs = _service(_owner("consumer-a"))
+        created = await _queue(service)
+        await db["downloads"].update_one(
+            {"requester": "consumer-a", "s3_key": created.s3_key},
+            {"$set": {"original_time": datetime.now(UTC) - timedelta(days=2)}},  # old birth, fresh clock
+        )
+
+        again = await _queue(service)  # must not raise
+
+        assert again.status == JobStatus.submitted
+        assert sqs.send_message.await_count == 1  # not re-enqueued (still in flight)
 
 
 class TestReadAndFetch:
