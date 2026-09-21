@@ -11,6 +11,8 @@ Maps to: experiments.parquet (released)
 
 from pydantic import BaseModel, Field
 
+from mpcontribs_lux.registry import LuxRegistry, SchemaType
+
 
 class HeatingSummary(BaseModel, extra="forbid"):
     """Nested data.heating group -- only these 4 fields survive at the
@@ -46,6 +48,7 @@ class PowderRecoverySummary(BaseModel, extra="forbid"):
     )
 
 
+@LuxRegistry.register_schema(project_name="A_Lab", schema_type=SchemaType.contribution)
 class Experiment(BaseModel, extra="forbid"):
     """
     experimentType, experimentSubgroup, lastUpdated, and status exist in

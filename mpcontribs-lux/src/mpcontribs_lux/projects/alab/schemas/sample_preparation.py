@@ -11,6 +11,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from mpcontribs_lux.registry import LuxRegistry, SchemaType
+
 from .timing import Timing
 
 
@@ -20,6 +22,7 @@ class DoseTiming(Timing):
     )
 
 
+@LuxRegistry.register_schema(project_name="A_Lab", schema_type=SchemaType.table)
 class SamplePreparation(BaseModel, extra="forbid"):
     """
     Single powder dose event. Each experiment can have multiple doses

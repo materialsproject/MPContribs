@@ -11,9 +11,12 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from mpcontribs_lux.registry import LuxRegistry, SchemaType
+
 from .timing import Timing
 
 
+@LuxRegistry.register_schema(project_name="A_Lab", schema_type=SchemaType.table)
 class Characterization(BaseModel, extra="forbid"):
     """
     Single XRD data point. Each experiment can have ~8000 points

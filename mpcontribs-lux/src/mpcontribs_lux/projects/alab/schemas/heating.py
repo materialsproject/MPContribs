@@ -14,9 +14,12 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from mpcontribs_lux.registry import LuxRegistry, SchemaType
+
 from .timing import Timing
 
 
+@LuxRegistry.register_schema(project_name="A_Lab", schema_type=SchemaType.table)
 class Heating(BaseModel, extra="forbid"):
     """
     Single temperature-log reading. Each experiment can have thousands of
