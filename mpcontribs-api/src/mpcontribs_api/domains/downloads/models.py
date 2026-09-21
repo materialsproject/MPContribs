@@ -52,7 +52,10 @@ class Download(BaseDocumentWithInput[PydanticObjectId]):
     rows_written: int = 0
     bytes_written: int = 0
     error: str | None = None
+    # gets reset when retrying failed/hung downloads
     created_at: datetime
+    # tracks original posting time so we can observe long-running tasks
+    original_time: datetime
 
     class Settings:
         name = "downloads"
@@ -92,6 +95,7 @@ class Download(BaseDocumentWithInput[PydanticObjectId]):
                 "domain": data.domain,
                 "fmt": data.fmt,
                 "created_at": created_at,
+                "original_time": created_at,
             }
         )
 
@@ -117,6 +121,7 @@ class DownloadOut(DocumentOut):
     bytes_written: int = 0
     error: str | None = None
     created_at: datetime | None = None
+    original_time: datetime | None = None
 
 
 class DownloadPatch(SparseFieldsModel):
@@ -142,3 +147,6 @@ class DownloadFilter(BaseFilter):
     created_at: datetime | None = None
     created_at__lte: datetime | None = None
     created_at__gte: datetime | None = None
+    original_time: datetime | None = None
+    original_time__lte: datetime | None = None
+    original_time__gte: datetime | None = None
