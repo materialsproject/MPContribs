@@ -62,10 +62,10 @@ class TestGetOne:
         assert found.name == "group-a"
         assert found.owner == ALICE_EMAIL
 
-    async def test_absent_raises_not_found(self, db):
+    async def test_absent_returns_none(self, db):
         assert await _repo(ADMIN).read_one({"name": "missing", "owner": ALICE_EMAIL}, fields=None) is None
 
-    async def test_out_of_scope_raises_not_found(self, db):
+    async def test_out_of_scope_returns_none(self, db):
         # Alice's private group is invisible to an anonymous caller.
         await _insert("group-priv")
         assert await _repo(ANON).read_one({"name": "group-priv", "owner": ALICE_EMAIL}, fields=None) is None

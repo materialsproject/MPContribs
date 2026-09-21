@@ -140,7 +140,7 @@ class TestGetProjectById:
         assert result is not None
         assert result.id == "get-by-id"
 
-    async def test_missing_id_raises_not_found(self, db):
+    async def test_returns_none_for_missing_id(self, db):
         assert await _repo(ADMIN).read_one({"id": "does-not-exist"}, fields=None) is None
 
     async def test_admin_can_get_private_project(self, db):

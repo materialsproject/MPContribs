@@ -316,7 +316,7 @@ class TestGetContributionById:
         assert result is not None
         assert result.material_id == "get-id"
 
-    async def test_missing_id_raises_not_found(self, db):
+    async def test_returns_none_for_missing_id(self, db):
         assert await _repo(ADMIN).read_one({"id": PydanticObjectId()}, fields=None) is None
 
     async def test_admin_can_get_private_doc(self, db):
@@ -355,7 +355,7 @@ class TestGetContributionBySemanticIdentifiers:
         assert result.project == "find-proj"
         assert result.material_id == "find-id"
 
-    async def test_missing_combination_raises_not_found(self, db):
+    async def test_returns_none_for_missing_combination(self, db):
         await _insert(project="miss-proj", identifier="miss-id")
         assert await _repo(ADMIN).read_one(_identity(project="miss-proj", material_id="wrong-id"), fields=None) is None
 
