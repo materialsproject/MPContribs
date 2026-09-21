@@ -155,10 +155,7 @@ class ContributionService:
         if set(identifiers) == {"id"}:
             filter = ContributionFilter(id=identifiers["id"])
         else:
-            try:
-                existing = await self._contributions.read_one(identifiers, frozenset({"id"}))
-            except NotFoundError:
-                return BulkDeleteSummary(num_deleted=0, num_children_deleted=0)
+            existing = await self._contributions.read_one(identifiers, frozenset({"id"}))
             if existing is None:
                 return BulkDeleteSummary(num_deleted=0, num_children_deleted=0)
             filter = ContributionFilter(id=existing.id)
