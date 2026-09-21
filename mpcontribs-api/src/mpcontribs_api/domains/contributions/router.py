@@ -104,7 +104,7 @@ async def upsert_many(
     return await service.upsert_many(contributions=contributions)
 
 
-@router.post("/download")
+@router.post("/download", dependencies=[Depends(require_user)])
 async def download(
     service: ContributionServiceDep,
     filter: ContributionFilter = FilterDepends(Filter=ContributionFilter),

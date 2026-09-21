@@ -63,7 +63,7 @@ async def read_one(
     return await service.read_one(identifiers={"id": id}, fields=selected)
 
 
-@router.post("/download")
+@router.post("/download", dependencies=[Depends(require_user)])
 async def download_table(
     service: TableServiceDep,
     filter: TableFilter = FilterDepends(TableFilter),
