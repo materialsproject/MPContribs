@@ -19,12 +19,12 @@ from types_aiobotocore_s3 import S3Client
 from mpcontribs_api.authz import PROJECT_PATH, ROOT_PATH, User
 from mpcontribs_api.config import ConsumerLimits, MongoSettings, get_settings
 from mpcontribs_api.domains._shared.bulk import (
-    BulkDeleteSummary,
     BulkFailure,
     BulkUpdateSummary,
     BulkWriteSummary,
     bulk_failure_from_exception,
 )
+from mpcontribs_api.domains._shared.models import DeleteResult
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
 from mpcontribs_api.domains._shared.types import DownloadFormat, ShortMimeFormat
 from mpcontribs_api.domains._shared.units import QuantityLeaf
@@ -144,7 +144,7 @@ class ContributionService:
             bucket_name="contributions",
         )
 
-    async def delete_one(self, identifiers: dict[str, Any]) -> BulkDeleteSummary:
+    async def delete_one(self, identifiers: dict[str, Any]) -> DeleteResult:
         """Delete a single contribution and its child components, matching ``identifiers``.
 
         Accepts either the bare ``{"id": ...}`` form or the semantic
@@ -157,7 +157,7 @@ class ContributionService:
         else:
             existing = await self._contributions.read_one(identifiers, frozenset({"id"}))
             if existing is None:
-                return BulkDeleteSummary(num_deleted=0, num_children_deleted=0)
+                return DeleteResult(num_deleted=0, num_children_deleted=0)
             filter = ContributionFilter(id=existing.id)
         return await self.delete_many(filter)
 
@@ -1013,7 +1013,7 @@ class ContributionService:
         "attachments": AttachmentFilter,
     }
 
-    async def delete_many(self, filter: ContributionFilter) -> BulkDeleteSummary:
+    async def delete_many(self, filter: ContributionFilter) -> DeleteResult:
         """Delete contributions matching ``filter`` and all of their child components.
 
         Doesn't guarantee complete atomicity, but prevents orphaned children by deleting components first.
@@ -1023,7 +1023,7 @@ class ContributionService:
 
 
         Returns:
-            BulkDeleteSummary: a summary of how many documents and child documents were deleted
+            DeleteResult: a summary of how many documents and child documents were deleted
         """
         if not self._user.is_admin(*ROOT_PATH):
             filter = filter.model_copy(update={"project__in": sorted(self._user.writable(*PROJECT_PATH))})
@@ -1056,7 +1056,7 @@ class ContributionService:
             if not page.items:
                 break
         await self.update_project(affected_projects)
-        return BulkDeleteSummary(num_deleted=num_deleted_contributions, num_children_deleted=num_deleted_components)
+        return DeleteResult(num_deleted=num_deleted_contributions, num_children_deleted=num_deleted_components)
 
     async def update_project(self, project_ids: Iterable[str]) -> None:
         """Recompute ``Project.stats``/``Project.columns`` from current contributions, per project.

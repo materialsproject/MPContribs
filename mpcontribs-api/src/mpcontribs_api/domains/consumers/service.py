@@ -8,6 +8,7 @@ from mpcontribs_api.domains.consumers.models import (
     ConsumerPatch,
 )
 from mpcontribs_api.domains.consumers.repository import MongoDbConsumerRepository
+from mpcontribs_api.domains._shared.models import DeleteResult
 from mpcontribs_api.pagination import CursorParams, Page
 
 
@@ -49,5 +50,5 @@ class ConsumerService:
         doc = await self._consumer.update_one(identifiers=identifiers, update=update)
         return ConsumerOut.model_validate(doc, from_attributes=True)
 
-    async def delete_one(self, identifiers: dict[str, Any]) -> None:
-        await self._consumer.delete_one(identifiers=identifiers)
+    async def delete_one(self, identifiers: dict[str, Any]) -> DeleteResult:
+        return await self._consumer.delete_one(identifiers=identifiers)

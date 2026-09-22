@@ -2,6 +2,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
+from mpcontribs_api.domains._shared.models import DeleteResult
 from mpcontribs_api.domains.consumers.dependencies import get_consumer_service
 from mpcontribs_api.domains.consumers.models import (
     ConsumerContributionSettings,
@@ -117,8 +118,9 @@ class TestConsumerRoutesAdminAllowed:
         assert r.status_code == 200
         consumer_service.update_one.assert_called_once()
 
-    def test_admin_delete_returns_204(self, client, consumer_service):
-        consumer_service.delete_one.return_value = None
+    def test_admin_delete_returns_200(self, client, consumer_service):
+        consumer_service.delete_one.return_value = DeleteResult(num_deleted=1)
         r = client.delete("/api/v1/admin/consumers/507f1f77bcf86cd799439011", headers=ADMIN_HEADERS)
-        assert r.status_code == 204
+        assert r.status_code == 200
+        assert r.json() == {"num_deleted": 1, "num_children_deleted": 0, "num_skipped": 0, "referenced_ids": []}
         consumer_service.delete_one.assert_called_once()

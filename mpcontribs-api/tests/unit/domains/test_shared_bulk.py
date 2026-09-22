@@ -1,7 +1,6 @@
 from beanie import PydanticObjectId
 
 from mpcontribs_api.domains._shared.bulk import (
-    BulkDeleteSummary,
     BulkFailure,
     BulkWriteSummary,
     bulk_failure_from_exception,
@@ -60,22 +59,6 @@ class TestBulkWriteSummary:
             "succeeded": [],
             "failed": [{"index": 0, "identifier": None, "error_code": "conflict", "message": "dup"}],
         }
-
-
-# ---------------------------------------------------------------------------
-# BulkDeleteSummary
-# ---------------------------------------------------------------------------
-
-
-class TestBulkDeleteSummary:
-    def test_fields(self):
-        summary = BulkDeleteSummary(num_deleted=5, num_children_deleted=12)
-        assert summary.num_deleted == 5
-        assert summary.num_children_deleted == 12
-
-    def test_zero_counts(self):
-        summary = BulkDeleteSummary(num_deleted=0, num_children_deleted=0)
-        assert summary.model_dump() == {"num_deleted": 0, "num_children_deleted": 0}
 
 
 # ---------------------------------------------------------------------------

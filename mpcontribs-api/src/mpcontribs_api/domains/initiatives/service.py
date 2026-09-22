@@ -2,7 +2,7 @@ from typing import Any
 
 from mpcontribs_api.authz import INITIATIVE_PATH, ROOT_PATH, User
 from mpcontribs_api.config import ConsumerLimits, get_settings
-from mpcontribs_api.domains._shared.models import DeleteResponse
+from mpcontribs_api.domains._shared.models import DeleteResult
 from mpcontribs_api.domains.initiatives.models import (
     InitiativeFilter,
     InitiativeIn,
@@ -107,7 +107,7 @@ class InitiativeService:
         doc = await self._initiatives.update_one(identifiers, update)
         return InitiativeOut.model_validate(doc, from_attributes=True)
 
-    async def delete_one(self, identifiers: dict[str, Any]) -> DeleteResponse:
+    async def delete_one(self, identifiers: dict[str, Any]) -> DeleteResult:
         """Delete a scoped initiative by ``slug``. Restricted to the owner or an admin.
 
         Collaborators may contribute projects but may not delete. A caller who cannot

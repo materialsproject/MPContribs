@@ -5,7 +5,7 @@ from bson import DBRef, ObjectId
 
 from mpcontribs_api.authz import INITIATIVE_PATH, ROOT_PATH, User
 from mpcontribs_api.config import ConsumerLimits, get_settings
-from mpcontribs_api.domains._shared.models import DeleteResponse
+from mpcontribs_api.domains._shared.models import DeleteResult
 from mpcontribs_api.domains.initiatives.models import Initiative
 from mpcontribs_api.domains.initiatives.repository import MongoDbInitiativeRepository
 from mpcontribs_api.domains.projects.models import (
@@ -131,7 +131,7 @@ class ProjectService:
         doc = await self._projects.update_one(identifiers, ProjectPatch(**data), extra_set={"initiative": ref})
         return ProjectOut.model_validate(doc, from_attributes=True)
 
-    async def delete_one(self, identifiers: dict[str, Any]) -> DeleteResponse:
+    async def delete_one(self, identifiers: dict[str, Any]) -> DeleteResult:
         """Delete a scoped project by id. Restricted to the owner or an admin.
 
         Project must be deleted by an owner or admin. A caller who cannot see the project gets a 404; a

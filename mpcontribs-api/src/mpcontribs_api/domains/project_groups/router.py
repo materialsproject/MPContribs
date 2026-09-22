@@ -1,11 +1,11 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, status
 from fastapi_filter import FilterDepends
 
 from mpcontribs_api.dependencies import require_user
 from mpcontribs_api.domains._shared.bulk import BulkWriteSummary
-from mpcontribs_api.domains._shared.models import DeleteResponse
+from mpcontribs_api.domains._shared.models import DeleteResult
 from mpcontribs_api.domains._shared.types import FieldSelector
 from mpcontribs_api.domains.project_groups.dependencies import ProjectGroupServiceDep
 from mpcontribs_api.domains.project_groups.models import (
@@ -90,11 +90,11 @@ async def update_one_by_identity(
     return await service.update_one(identity.as_dict(), update=update)
 
 
-@router.delete("/item", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_user)])
+@router.delete("/item", dependencies=[Depends(require_user)])
 async def delete_one_by_identity(
     service: ProjectGroupServiceDep,
     identity: Annotated[ProjectGroupIdentity, Depends()],
-) -> Response:
+) -> DeleteResult:
     """Delete the single project group identified by its ``name`` + ``owner`` natural key.
 
     Raises 404 if no such group is visible to the caller, 409 if the identifiers are ambiguous.
@@ -103,15 +103,14 @@ async def delete_one_by_identity(
         service (ProjectGroupServiceDep): the project group service we depend on
         identity (ProjectGroupIdentity): the group's natural key (``name`` + ``owner``) query params
     """
-    await service.delete_one(identity.as_dict())
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+    return await service.delete_one(identity.as_dict())
 
 
-@router.delete("", response_model=DeleteResponse, dependencies=[Depends(require_user)])
+@router.delete("", dependencies=[Depends(require_user)])
 async def delete_many(
     service: ProjectGroupServiceDep,
     filter: ProjectGroupFilter = FilterDepends(ProjectGroupFilter),
-) -> DeleteResponse:
+) -> DeleteResult:
     """Bulk-delete every project group matching ``filter`` (e.g. all with a given owner).
 
     Args:
@@ -191,11 +190,10 @@ async def update_one(
     return await service.update_one({"id": id}, update=update)
 
 
-@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_user)])
+@router.delete("/{id}", dependencies=[Depends(require_user)])
 async def delete_one(
     service: ProjectGroupServiceDep,
     id: str,
-) -> Response:
+) -> DeleteResult:
     """Delete the project group identified by its ``_id``. Restricted to its owner or an admin."""
-    await service.delete_one({"id": id})
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+    return await service.delete_one({"id": id})

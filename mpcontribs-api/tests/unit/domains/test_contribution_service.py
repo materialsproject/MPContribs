@@ -1408,7 +1408,7 @@ class TestWriteAuthorization:
 
 from types import SimpleNamespace  # noqa: E402
 
-from mpcontribs_api.domains._shared.models import DeleteResponse  # noqa: E402
+from mpcontribs_api.domains._shared.models import DeleteResult  # noqa: E402
 from mpcontribs_api.domains.contributions.models import ContributionFilter  # noqa: E402
 from mpcontribs_api.pagination import Page  # noqa: E402
 
@@ -1522,7 +1522,7 @@ class TestDeleteContributionsSinglePage:
         def _make_child_recorder(name):
             async def _record(ids, *a, **k):
                 order.append(name)
-                return DeleteResponse(num_deleted=1)
+                return DeleteResult(num_deleted=1)
 
             return _record
 
@@ -1550,7 +1550,7 @@ class TestDeleteContributionsSinglePage:
         s1, s2 = _oid(), _oid()
         doc = _contrib_doc(structures=[s1, s2])
         contrib_repo.read_many.side_effect = [_page([doc]), _page([])]
-        struct_repo.delete_many.return_value = DeleteResponse(num_deleted=2)
+        struct_repo.delete_many.return_value = DeleteResult(num_deleted=2)
         contrib_repo.delete_many.side_effect = [_delete_result(1), _delete_result(0)]
 
         await svc.delete_many(_noop_filter())
@@ -1562,9 +1562,9 @@ class TestDeleteContributionsSinglePage:
         svc, contrib_repo, struct_repo, table_repo, attach_repo, _ = _make_service()
         doc = _contrib_doc(structures=[_oid()], tables=[_oid(), _oid()], attachments=[_oid()])
         contrib_repo.read_many.side_effect = [_page([doc]), _page([])]
-        struct_repo.delete_many.return_value = DeleteResponse(num_deleted=1)
-        table_repo.delete_many.return_value = DeleteResponse(num_deleted=2)
-        attach_repo.delete_many.return_value = DeleteResponse(num_deleted=1)
+        struct_repo.delete_many.return_value = DeleteResult(num_deleted=1)
+        table_repo.delete_many.return_value = DeleteResult(num_deleted=2)
+        attach_repo.delete_many.return_value = DeleteResult(num_deleted=1)
         contrib_repo.delete_many.side_effect = [_delete_result(1), _delete_result(0)]
 
         summary = await svc.delete_many(_noop_filter())
@@ -1610,7 +1610,7 @@ class TestDeleteContributionsMultiPage:
             _page([_contrib_doc(structures=[_oid()])]),
             _page([]),
         ]
-        struct_repo.delete_many.return_value = DeleteResponse(num_deleted=1)
+        struct_repo.delete_many.return_value = DeleteResult(num_deleted=1)
         contrib_repo.delete_many.side_effect = [
             _delete_result(1),
             _delete_result(1),

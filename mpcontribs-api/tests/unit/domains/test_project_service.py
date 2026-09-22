@@ -6,7 +6,7 @@ from bson import DBRef
 
 from mpcontribs_api.authz import User
 from mpcontribs_api.config import ConsumerLimits, ConsumerProjectLimits
-from mpcontribs_api.domains._shared.models import DeleteResponse
+from mpcontribs_api.domains._shared.models import DeleteResult
 from mpcontribs_api.domains.initiatives.models import InitiativeIn
 from mpcontribs_api.domains.projects.models import Column, Project, ProjectIn, ProjectPatch, Stats
 from mpcontribs_api.domains.projects.service import ProjectService
@@ -68,7 +68,7 @@ def _service(user: User, *, existing=None, scoped=None, count: int = 0, limits: 
     # PUT does a full-replace-by-id (repo.replace_one(id, doc)); return the doc it was handed.
     projects.replace_one.side_effect = lambda id, doc, **kw: doc
     projects.update_one.return_value = _project()
-    projects.delete_one.return_value = DeleteResponse(num_deleted=1)
+    projects.delete_one.return_value = DeleteResult(num_deleted=1)
     initiatives = AsyncMock()
     svc = ProjectService(user=user, projects=projects, initiatives=initiatives, limits=limits)
     return svc, projects, initiatives

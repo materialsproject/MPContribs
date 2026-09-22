@@ -1,11 +1,11 @@
 import pytest
 from beanie import PydanticObjectId
-from pymongo.results import DeleteResult
+from pymongo.results import DeleteResult as MongoDeleteResult
 
 from mpcontribs_api.domains._shared.models import (
     BaseDocumentWithInput,
     ComponentIdentity,
-    DeleteResponse,
+    DeleteResult,
     DocumentOut,
 )
 from mpcontribs_api.domains.attachments.models import Attachment, ComponentIdentity, AttachmentIn
@@ -170,19 +170,24 @@ class TestDocumentIdentityRoundTrips:
 
 
 # ---------------------------------------------------------------------------
-# DeleteResponse.from_delete_result
+# DeleteResult.from_delete_result
 # ---------------------------------------------------------------------------
 
 
-class TestDeleteResponse:
+class TestDeleteResult:
     def test_from_delete_result(self):
-        result = DeleteResult({"n": 3}, acknowledged=True)
-        assert DeleteResponse.from_delete_result(result).num_deleted == 3
+        result = MongoDeleteResult({"n": 3}, acknowledged=True)
+        assert DeleteResult.from_delete_result(result).num_deleted == 3
 
     def test_zero_deleted(self):
-        result = DeleteResult({"n": 0}, acknowledged=True)
-        assert DeleteResponse.from_delete_result(result).num_deleted == 0
+        result = MongoDeleteResult({"n": 0}, acknowledged=True)
+        assert DeleteResult.from_delete_result(result).num_deleted == 0
 
     def test_serialization_shape(self):
-        result = DeleteResult({"n": 7}, acknowledged=True)
-        assert DeleteResponse.from_delete_result(result).model_dump() == {"num_deleted": 7}
+        result = MongoDeleteResult({"n": 7}, acknowledged=True)
+        assert DeleteResult.from_delete_result(result).model_dump() == {
+            "num_deleted": 7,
+            "num_children_deleted": 0,
+            "num_skipped": 0,
+            "referenced_ids": [],
+        }

@@ -5,7 +5,7 @@ import pytest
 from beanie import PydanticObjectId
 
 from mpcontribs_api.domains._shared.bulk import BulkFailure
-from mpcontribs_api.domains._shared.models import ComponentDeleteResponse, DeleteResponse
+from mpcontribs_api.domains._shared.models import DeleteResult
 from mpcontribs_api.domains._shared.service import ComponentService
 from mpcontribs_api.domains.attachments.models import Attachment, AttachmentFilter, AttachmentOut
 from mpcontribs_api.exceptions import NotFoundError
@@ -50,8 +50,8 @@ def _make_service(
     # AttachmentOut so model_validate produces genuine output models rather than nested mocks.
     components.out_model = AttachmentOut
     components.list_ids = AsyncMock(return_value=candidate_ids)
-    components.delete_many = AsyncMock(side_effect=lambda filter: DeleteResponse(num_deleted=len(filter.id__in)))
-    components.delete_one = AsyncMock(return_value=DeleteResponse(num_deleted=1))
+    components.delete_many = AsyncMock(side_effect=lambda filter: DeleteResult(num_deleted=len(filter.id__in)))
+    components.delete_one = AsyncMock(return_value=DeleteResult(num_deleted=1))
     components.read_one = _id_resolving_get_one()
 
     contributions = AsyncMock(name="contributions")
@@ -77,7 +77,7 @@ async def test_delete_reachable_and_unreferenced_deletes_all():
 
     result = await svc.delete_many(AttachmentFilter())
 
-    assert isinstance(result, ComponentDeleteResponse)
+    assert isinstance(result, DeleteResult)
     assert result.num_deleted == 2
     assert result.num_skipped == 0
     assert result.referenced_ids == []
