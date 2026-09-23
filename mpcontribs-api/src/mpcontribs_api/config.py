@@ -133,6 +133,13 @@ class AwsSettings(BaseModel):
     """
 
     region: str = Field(default="us-east-1", description="The region to connect to")
+    endpoint_url: str = Field(
+        default="",
+        description=(
+            "Override the AWS endpoint for S3 and SQS (e.g. a LocalStack or dev URL). "
+            "Empty means the region's default AWS endpoints."
+        ),
+    )
     s3: S3Settings = Field(
         default_factory=S3Settings, description="Settings to configure the S3 connection for MPContribs"
     )

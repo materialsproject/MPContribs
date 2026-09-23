@@ -93,6 +93,7 @@ async def _setup_s3(app: FastAPI, settings: Settings, stack: AsyncExitStack) -> 
         app.state.boto_session.client(
             "s3",
             region_name=settings.aws.region,
+            endpoint_url=settings.aws.endpoint_url or None,
             config=AioConfig(max_pool_connections=settings.aws.s3.max_pool_connections),
         ),
     )
@@ -108,6 +109,7 @@ async def _setup_sqs(app: FastAPI, settings: Settings, stack: AsyncExitStack) ->
         app.state.boto_session.client(
             service_name="sqs",
             region_name=settings.aws.region,
+            endpoint_url=settings.aws.endpoint_url or None,
         ),
     )
     sqs: SQSClient = await stack.enter_async_context(cm)
