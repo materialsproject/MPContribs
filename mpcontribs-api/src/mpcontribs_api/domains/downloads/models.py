@@ -103,7 +103,7 @@ class Download(BaseDocumentWithInput[PydanticObjectId]):
 class DownloadIn(BaseModel):
     status: JobStatus
     requester: str
-    # The query the worker will excecute in collection 'domain' to get data to genertate download
+    # The query the worker will execute in collection 'domain' to get data to generate download
     # Should also include the user's scope directly.
     query: dict
     domain: DownloadDomain

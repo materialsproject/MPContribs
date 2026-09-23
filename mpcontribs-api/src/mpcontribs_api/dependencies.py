@@ -87,7 +87,7 @@ def require_writer(user: UserDep) -> User:
     """Require an authenticated caller who can write to at least one project.
 
     Controls access to creating components if you do not have contributions to attach them to.
-    Helps to limit orphanned components
+    Helps to limit orphaned components
     """
     if user.is_anonymous:
         raise AuthenticationError("authentication required")
