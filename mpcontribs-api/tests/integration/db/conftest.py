@@ -1,6 +1,11 @@
+from contextlib import AsyncExitStack
+from types import SimpleNamespace
+
+import aioboto3
 import pytest
 import pytest_asyncio
 from beanie import init_beanie
+from botocore.exceptions import BotoCoreError, ClientError
 from pymongo import AsyncMongoClient
 
 from mpcontribs_api.config import get_settings
@@ -151,3 +156,45 @@ async def clean_downloads(db):
     await db["downloads"].delete_many({})
     yield
     await db["downloads"].delete_many({})
+
+
+# ---------------------------------------------------------------------------
+# Live AWS (S3 + SQS) for the `aws`-marked dev-environment tier
+# ---------------------------------------------------------------------------
+
+
+@pytest_asyncio.fixture(scope="session")
+async def aws_clients():
+    """Real aioboto3 S3+SQS clients for a dev account; skip if unconfigured or unreachable.
+
+    The AWS analogue of ``mongo_client``: this is the gate for the ``aws``-marked tier. Settings come
+    from ``MPCONTRIBS_AWS__*`` (region, downloads bucket, SQS queue URL, optional endpoint_url for a
+    dev/LocalStack URL); credentials come from the ambient AWS chain (``AWS_ACCESS_KEY_ID`` etc. or
+    ``AWS_PROFILE``). A missing queue URL, absent credentials, or an unreachable bucket/queue
+    self-skips so CI without AWS still passes.
+
+    Yields a namespace with the live ``s3``/``sqs`` clients plus the resolved ``bucket``/``queue_url``.
+    """
+    settings = get_settings()
+    bucket = settings.aws.s3.downloads_bucket
+    queue_url = settings.aws.sqs.download_queue_url
+    if not queue_url:
+        pytest.skip("AWS not configured: set MPCONTRIBS_AWS__SQS__DOWNLOAD_QUEUE_URL")
+
+    session = aioboto3.Session()
+    endpoint = settings.aws.endpoint_url or None
+    async with AsyncExitStack() as stack:
+        try:
+            s3 = await stack.enter_async_context(
+                session.client("s3", region_name=settings.aws.region, endpoint_url=endpoint)
+            )
+            sqs = await stack.enter_async_context(
+                session.client("sqs", region_name=settings.aws.region, endpoint_url=endpoint)
+            )
+            # Probe credentials + reachability up front so a misconfigured env skips the whole tier
+            # rather than failing every test with the same auth/connectivity error.
+            await s3.head_bucket(Bucket=bucket)
+            await sqs.get_queue_attributes(QueueUrl=queue_url, AttributeNames=["QueueArn"])
+        except (BotoCoreError, ClientError) as exc:
+            pytest.skip(f"AWS not reachable: {exc}")
+        yield SimpleNamespace(s3=s3, sqs=sqs, bucket=bucket, queue_url=queue_url)

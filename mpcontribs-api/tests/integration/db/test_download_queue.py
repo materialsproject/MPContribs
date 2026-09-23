@@ -114,6 +114,29 @@ class TestQueueIdempotency:
         assert sqs.send_message.await_count == 3
 
 
+class TestConcurrentFirstSubmit:
+    """P4 #15: the single-enqueue dedup guarantee under two callers racing the *first* submission.
+
+    ``insert_or_get`` upserts on the unique ``(requester, s3_key)`` index, so exactly one caller
+    performs the insert (``created=True`` -> enqueues) and the other must observe the already-stored
+    ticket (``created=False`` -> no enqueue). Two identical concurrent requests therefore yield one
+    row and one SQS message, never two.
+    """
+
+    async def test_two_callers_racing_first_submit_enqueue_once(self, db):
+        # Same requester + identical query => identical natural key => a genuine insert race.
+        service_a, sqs_a = _service(_owner("consumer-a"))
+        service_b, sqs_b = _service(_owner("consumer-a"))
+
+        out_a, out_b = await asyncio.gather(_queue(service_a), _queue(service_b))
+
+        # One physical ticket, handed back to both callers...
+        assert out_a.id == out_b.id
+        assert await db["downloads"].count_documents({}) == 1
+        # ...and enqueued exactly once across the two racing callers (the loser must not re-enqueue).
+        assert sqs_a.send_message.await_count + sqs_b.send_message.await_count == 1
+
+
 class TestScopeIsolation:
     """The s3_key must isolate callers who see different rows, and only those callers."""
 
@@ -124,7 +147,11 @@ class TestScopeIsolation:
         anon_query = _query(ANON)
         assert admin_query != anon_query
         assert admin_query == {}  # admin bypasses read scope entirely
-        assert "is_public" in repr(anon_query)  # anonymous callers are pinned to public data
+        # Structural, not a repr substring: the anonymous contributions scope is exactly the public
+        # clause (see MongoDbContributionRepository.read_scope = Scope(Public(), Granted(...)); the
+        # Granted clause drops out for a caller with no grants). Public() has approved=False, so no
+        # is_approved term — asserting the whole dict pins both the field and the shape.
+        assert anon_query == {"$or": [{"is_public": True}]}
 
     async def test_different_scope_same_filter_gets_distinct_s3_key(self, db):
         # Regression: previously the s3_key hashed only the raw filter, so these two callers collided
@@ -222,6 +249,29 @@ class TestRetryOnError:
 
         assert again.status == JobStatus.ready
         assert sqs.send_message.await_count == 1  # unchanged: no work to do
+
+    async def test_only_one_of_two_racing_callers_reclaims_errored_ticket(self, db):
+        # P4 #15, error branch: sibling to the stale-submitted race, but exercising the
+        # ``status == error`` arm of ``claim_for_retry``. Two callers race to reclaim one errored
+        # ticket (within the max-retry age); the atomic status flip lets exactly one match, so the
+        # loser gets ``None`` back and does not re-enqueue.
+        seed, _ = _service(_owner("consumer-a"))
+        created = await _queue(seed)
+        await db["downloads"].update_one(
+            {"requester": "consumer-a", "s3_key": created.s3_key},
+            {"$set": {"status": JobStatus.error.value, "error": "boom"}},
+        )
+
+        service_a, sqs_a = _service(_owner("consumer-a"))
+        service_b, sqs_b = _service(_owner("consumer-a"))
+        await asyncio.gather(_queue(service_a), _queue(service_b))
+
+        assert sqs_a.send_message.await_count + sqs_b.send_message.await_count == 1  # one reclaim only
+        assert await db["downloads"].count_documents({}) == 1
+        stored = await db["downloads"].find_one({"requester": "consumer-a", "s3_key": created.s3_key})
+        assert stored is not None
+        assert stored["status"] == JobStatus.submitted.value  # flipped back for the worker
+        assert stored.get("error") is None  # prior failure cleared by the reclaim
 
 
 class TestStaleSubmittedReclaim:

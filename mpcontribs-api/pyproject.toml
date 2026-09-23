@@ -81,6 +81,7 @@ markers = [
     "base: basic resource testing",
     "extra: all extra views",
     "db: requires a live MongoDB connection (set MPCONTRIBS_MONGO__URI)",
+    "aws: requires live AWS S3+SQS in a dev account (set MPCONTRIBS_AWS__S3__DOWNLOADS_BUCKET, MPCONTRIBS_AWS__SQS__DOWNLOAD_QUEUE_URL, and ambient AWS_* credentials)",
 ]
 
 [tool.ruff]

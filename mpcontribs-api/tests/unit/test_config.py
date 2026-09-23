@@ -155,6 +155,37 @@ class TestSettingsEnvLoading:
 
 
 # ---------------------------------------------------------------------------
+# AwsSettings — defaults and the endpoint_url / dev-account override seam
+# ---------------------------------------------------------------------------
+
+
+class TestAwsSettings:
+    def test_endpoint_url_defaults_empty(self, monkeypatch):
+        # Empty by default so app.py passes endpoint_url=None and botocore uses the region's
+        # default AWS endpoints; a non-empty value points S3+SQS at a dev/LocalStack URL instead.
+        _set_required_env(monkeypatch)
+        aws = Settings().aws
+        assert aws.endpoint_url == ""
+        assert aws.region == "us-east-1"
+        assert aws.s3.downloads_bucket == "mpcontribs-downloads"
+        assert aws.sqs.download_queue_url == ""
+
+    def test_dev_account_env_overrides_reach_leaves(self, monkeypatch):
+        # The env vars a .env would set to point tests at a real dev AWS account (credentials still
+        # come from the ambient AWS chain, not MPCONTRIBS_*).
+        _set_required_env(monkeypatch)
+        monkeypatch.setenv("MPCONTRIBS_AWS__REGION", "us-west-2")
+        monkeypatch.setenv("MPCONTRIBS_AWS__ENDPOINT_URL", "http://localhost:4566")
+        monkeypatch.setenv("MPCONTRIBS_AWS__S3__DOWNLOADS_BUCKET", "mpcontribs-downloads-dev")
+        monkeypatch.setenv("MPCONTRIBS_AWS__SQS__DOWNLOAD_QUEUE_URL", "https://sqs.dev/q/downloads")
+        aws = Settings().aws
+        assert aws.region == "us-west-2"
+        assert aws.endpoint_url == "http://localhost:4566"
+        assert aws.s3.downloads_bucket == "mpcontribs-downloads-dev"
+        assert aws.sqs.download_queue_url == "https://sqs.dev/q/downloads"
+
+
+# ---------------------------------------------------------------------------
 # Consumer quota limits — domain-grouped defaults and env nesting
 # ---------------------------------------------------------------------------
 

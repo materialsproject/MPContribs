@@ -147,6 +147,28 @@ class TestComponentQueueDownloadReachability:
         allowed = service._downloads.queue_download.await_args.kwargs["query"]["$and"][1]["_id"]["$in"]
         assert allowed == []
 
+    async def test_caller_id_filter_is_preserved_alongside_scope_clause(self, db):
+        # P4 #17: a non-empty caller filter must survive as its own `$and` clause rather than being
+        # overwritten by the reachability `_id $in`. Two attachments are reachable, but the caller
+        # asks for only one by id; the queued query must carry *both* clauses so the worker runs
+        # their intersection (every reachability test elsewhere uses an empty filter, so this is the
+        # only place a real caller `_id` clause is verified to coexist with the scope clause).
+        pub = await _attachment(1)
+        extra = await _attachment(2)
+        await _contribution("mp-a", is_public=True, attachments=[pub, extra])
+
+        service = _service(PUBLIC_ONLY)
+        await service.queue_download(filter=AttachmentFilter(id__in=[pub.id]), format=DownloadFormat.JSONL)
+
+        query = service._downloads.queue_download.await_args.kwargs["query"]
+        base_clause, scope_clause = query["$and"]
+        # The caller's id__in survives as its own clause inside the base query (which beanie wraps as
+        # `{"$and": [<empty component scope>, <caller filter>]}`)...
+        assert {"_id": {"$in": [pub.id]}} in base_clause["$and"]
+        # ...and the reachability allow-list is a *separate* top-level clause carrying every reachable
+        # id (both), sorted for a stable s3_key. Their $and is the intersection, effectively just `pub`.
+        assert scope_clause == {"_id": {"$in": sorted([pub.id, extra.id])}}
+
     async def test_queued_ids_are_sorted_for_a_stable_s3_key(self, db):
         # ``referenced_component_ids`` returns an unordered set; embedding it unsorted would make the
         # hashed s3_key non-deterministic across processes and silently defeat download dedup. The
