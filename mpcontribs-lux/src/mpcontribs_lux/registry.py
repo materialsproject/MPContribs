@@ -17,7 +17,7 @@ class LuxRegistry:
     projects: ClassVar[dict[str, dict[SchemaType, dict[str, BM]]]] = {}
 
     @classmethod
-    def register_schema[T: type](
+    def register_schema(
         cls,
         project_name: str,
         schema_type: SchemaType,
@@ -46,7 +46,7 @@ class LuxRegistry:
         return dict(cls.projects.get(project_name, {}).get(schema_type, {}))
 
     @classmethod
-    def get_schema[T: type](
+    def get_schema(
         cls,
         project_name: str,
         schema_type: SchemaType,
