@@ -33,7 +33,7 @@ class LuxRegistry:
             if existing is not None and existing is not subclass:
                 raise ValueError(
                     f"{project_name!r} already has a {schema_type!r} schema "
-                    + f"named {key!r} ({str, existing.__name__}); pass a distinct "
+                    + f"named {key!r} {existing.__name__}; pass a distinct "
                     + f"`name=` to register {subclass.__name__}"
                 )
             by_name[key] = subclass
