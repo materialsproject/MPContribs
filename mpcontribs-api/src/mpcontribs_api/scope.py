@@ -5,6 +5,9 @@ from typing import Any, Protocol, runtime_checkable
 from mpcontribs_api.authz import ROOT_PATH, User
 from mpcontribs_api.authz_core import Role
 
+# A filter that matches nothing. Used to prevent leaking info to anonymous users
+MATCH_NOTHING: dict[str, Any] = {"_id": {"$in": []}}
+
 
 @runtime_checkable
 class ScopeClause(Protocol):
@@ -96,7 +99,9 @@ class Scope:
     :meth:`query` turns a ``User`` into the MongoDB filter injected into every scoped read. Admins
     bypass read scope everywhere (a global rule, matching ``User.is_admin(*ROOT_PATH)``). A ``Scope``
     with no clauses filters nothing — the explicit "unscoped collection" case (components, consumers),
-    whose visibility is gated elsewhere or not at all.
+    whose visibility is gated elsewhere or not at all. A ``Scope`` that declares clauses but whose
+    clauses all drop out for a caller results in ``MATCH_NOTHING`` rather than degrading to
+    match-everything - e.g. an ``Owned``-only scope for an anonymous caller.
     """
 
     def __init__(self, *clauses: ScopeClause) -> None:
@@ -105,5 +110,9 @@ class Scope:
     def query(self, user: User) -> dict[str, Any]:
         if user.is_admin(*ROOT_PATH):
             return {}
+        if not self.clauses:
+            # Intentionally unscoped collection (visibility gated elsewhere or not at all).
+            return {}
         ors = [fragment for clause in self.clauses if (fragment := clause.to_query(user)) is not None]
-        return {"$or": ors} if ors else {}
+        # Clauses were declared but none apply to this caller: deny rather than leak everything.
+        return {"$or": ors} if ors else dict(MATCH_NOTHING)
