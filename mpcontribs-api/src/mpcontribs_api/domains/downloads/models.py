@@ -134,6 +134,7 @@ class DownloadPatch(SparseFieldsModel):
 
 
 class DownloadFilter(BaseFilter):
+    # Supplies the base repository's required ``TFilter`` type parameter. There is no download list endpoint.
     status: JobStatus | None = None
     requester: str | None = None
     requester__in: list[str] | None = None
