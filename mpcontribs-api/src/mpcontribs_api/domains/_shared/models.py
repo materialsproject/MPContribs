@@ -6,7 +6,7 @@ from typing import Annotated, Any, ClassVar, Self
 
 from beanie import Document, PydanticObjectId
 from pydantic import BaseModel, ConfigDict, Field, model_validator
-from pymongo.results import DeleteResult
+from pymongo.results import DeleteResult as MongoDeleteResult
 
 from mpcontribs_api import pagination
 from mpcontribs_api.domains._shared.types import Identity, MD5Hash, NFKCStr
@@ -77,24 +77,23 @@ class DocumentOut[TId](SparseFieldsModel):
     id: Annotated[TId | None, Field(alias="_id", serialization_alias="id")] = None
 
 
-class DeleteResponse(BaseModel):
-    num_deleted: int
+class DeleteResult(BaseModel):
+    """Uniform result of any delete across every domain.
 
-    @classmethod
-    def from_delete_result(cls, delete_result: DeleteResult) -> Self:
-        return cls(num_deleted=delete_result.deleted_count)
-
-
-class ComponentDeleteResponse(DeleteResponse):
-    """Result of a component delete that may leave referenced components in place.
-
-    ``num_deleted`` (inherited) counts components actually removed; ``referenced_ids`` are the
-    component ids skipped because a contribution still references them, and ``num_skipped`` is
-    their count.
+    ``num_deleted`` counts the documents actually removed.
+    ``num_children_deleted`` counts cascade-deleted children.
+    ``referenced_ids`` are component ids skipped because a contribution still references them.
+    ``num_skipped`` is the count of 'referenced_ids'.
     """
 
-    referenced_ids: list[PydanticObjectId] = Field(default_factory=list)
+    num_deleted: int
+    num_children_deleted: int = 0
     num_skipped: int = 0
+    referenced_ids: list[PydanticObjectId] = Field(default_factory=list)
+
+    @classmethod
+    def from_delete_result(cls, delete_result: MongoDeleteResult) -> Self:
+        return cls(num_deleted=delete_result.deleted_count)
 
 
 def canonical_md5(payload: Mapping[str, Any]) -> str:

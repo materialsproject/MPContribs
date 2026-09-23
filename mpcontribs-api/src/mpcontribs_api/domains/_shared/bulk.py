@@ -42,11 +42,6 @@ class BulkWriteSummary[T](BaseModel):
     failed: list[BulkFailure]
 
 
-class BulkDeleteSummary[T](BaseModel):
-    num_deleted: int
-    num_children_deleted: int
-
-
 class BulkUpdateSummary(BaseModel):
     """Result of a bulk update.
 

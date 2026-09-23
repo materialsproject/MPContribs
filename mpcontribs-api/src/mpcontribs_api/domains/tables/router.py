@@ -6,7 +6,7 @@ from fastapi_filter import FilterDepends
 
 from mpcontribs_api.dependencies import S3Dep, require_user, require_writer
 from mpcontribs_api.domains._shared.bulk import BulkWriteSummary
-from mpcontribs_api.domains._shared.models import ComponentDeleteResponse, ComponentIdentity
+from mpcontribs_api.domains._shared.models import ComponentIdentity, DeleteResult
 from mpcontribs_api.domains._shared.types import (
     DownloadFormat,
     FieldSelector,
@@ -42,10 +42,10 @@ async def read_one_by_identity(
     return await service.read_one(identifiers=identity.as_dict(), fields=selected)
 
 
-@router.delete("/item", response_model=ComponentDeleteResponse, dependencies=[Depends(require_user)])
+@router.delete("/item", dependencies=[Depends(require_user)])
 async def delete_one_by_identity(
     service: TableServiceDep, identity: Annotated[ComponentIdentity, Depends()]
-) -> ComponentDeleteResponse:
+) -> DeleteResult:
     """Delete a single table addressed by its content ``md5`` (its natural key)."""
     return await service.delete_one(identifiers=identity.as_dict())
 
@@ -106,15 +106,13 @@ async def insert_many(
     return await service.insert_many(components=tables)
 
 
-@router.delete("", response_model=ComponentDeleteResponse, dependencies=[Depends(require_user)])
-async def delete_many(
-    service: TableServiceDep, filter: TableFilter = FilterDepends(TableFilter)
-) -> ComponentDeleteResponse:
+@router.delete("", dependencies=[Depends(require_user)])
+async def delete_many(service: TableServiceDep, filter: TableFilter = FilterDepends(TableFilter)) -> DeleteResult:
     return await service.delete_many(filter=filter)
 
 
-@router.delete("/{id}", response_model=ComponentDeleteResponse, dependencies=[Depends(require_user)])
-async def delete_one(service: TableServiceDep, id: str) -> ComponentDeleteResponse:
+@router.delete("/{id}", dependencies=[Depends(require_user)])
+async def delete_one(service: TableServiceDep, id: str) -> DeleteResult:
     """Delete a single table addressed by its ``_id``"""
     return await service.delete_one(identifiers={"id": id})
 

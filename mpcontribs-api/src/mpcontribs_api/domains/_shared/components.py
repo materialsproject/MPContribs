@@ -6,7 +6,7 @@ from pymongo.errors import BulkWriteError
 
 from mpcontribs_api.config import get_settings
 from mpcontribs_api.domains._shared.bulk import BulkFailure
-from mpcontribs_api.domains._shared.models import Component, ComponentIn, DeleteResponse, DocumentOut
+from mpcontribs_api.domains._shared.models import Component, ComponentIn, DeleteResult, DocumentOut
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
 from mpcontribs_api.domains._shared.types import MD5Hash
 from mpcontribs_api.exceptions import ConflictError
@@ -116,7 +116,7 @@ class MongoDbComponentsRepository[
         self,
         filter: TFilter,
         session: AsyncClientSession | None = None,
-    ) -> DeleteResponse:
+    ) -> DeleteResult:
         """Deletes all components matching ``filter``.
 
         Args:
@@ -124,8 +124,8 @@ class MongoDbComponentsRepository[
             session (AsyncClientSession | None): the current session, used to guarantee transactions
 
         Returns:
-            DeleteResponse: A report of the deletion
+            DeleteResult: A report of the deletion
         """
         query = filter.filter(self.document_model.find(self._scope, session=session))
         result = await query.delete(session=session)
-        return DeleteResponse(num_deleted=result.deleted_count if result else 0)
+        return DeleteResult(num_deleted=result.deleted_count if result else 0)

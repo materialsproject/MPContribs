@@ -1,9 +1,10 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, status
 from fastapi_filter import FilterDepends
 
 from mpcontribs_api.dependencies import require_admin
+from mpcontribs_api.domains._shared.models import DeleteResult
 from mpcontribs_api.domains._shared.types import FieldSelector
 from mpcontribs_api.domains.consumers.dependencies import ConsumerServiceDep
 from mpcontribs_api.domains.consumers.models import (
@@ -54,14 +55,13 @@ async def update_one_by_identity(
     return await service.update_one(identity.as_dict(), update)
 
 
-@router.delete("/item", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/item")
 async def delete_one_by_identity(
     service: ConsumerServiceDep,
     identity: Annotated[ConsumerIdentity, Depends()],
-) -> Response:
+) -> DeleteResult:
     """Delete a consumer override by its ``consumer_id`` natural key (admin only)."""
-    await service.delete_one(identity.as_dict())
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+    return await service.delete_one(identity.as_dict())
 
 
 @router.get("/{id}", response_model_exclude_unset=True)
@@ -94,11 +94,10 @@ async def update_one(
     return await service.update_one({"id": id}, update)
 
 
-@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{id}")
 async def delete_one(
     service: ConsumerServiceDep,
     id: str,
-) -> Response:
+) -> DeleteResult:
     """Delete a consumer override by document id (admin only)."""
-    await service.delete_one({"id": id})
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+    return await service.delete_one({"id": id})

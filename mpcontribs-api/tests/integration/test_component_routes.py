@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock
 import pytest
 from beanie import PydanticObjectId
 
-from mpcontribs_api.domains._shared.models import ComponentDeleteResponse
+from mpcontribs_api.domains._shared.models import DeleteResult
 from mpcontribs_api.domains.attachments.dependencies import get_attachment_service
 from mpcontribs_api.domains.structures.dependencies import get_structure_service
 from mpcontribs_api.domains.structures.models import StructureOut
@@ -101,13 +101,13 @@ class TestStructuresList:
 
 class TestStructuresDelete:
     def test_batch_delete_returns_200(self, client, structure_service):
-        structure_service.delete_many.return_value = ComponentDeleteResponse(num_deleted=3)
+        structure_service.delete_many.return_value = DeleteResult(num_deleted=3)
         r = client.delete("/api/v1/structures")
         assert r.status_code == 200
-        assert r.json() == {"num_deleted": 3, "num_skipped": 0, "referenced_ids": []}
+        assert r.json() == {"num_deleted": 3, "num_children_deleted": 0, "num_skipped": 0, "referenced_ids": []}
 
     def test_service_delete_called(self, client, structure_service):
-        structure_service.delete_many.return_value = ComponentDeleteResponse(num_deleted=0)
+        structure_service.delete_many.return_value = DeleteResult(num_deleted=0)
         client.delete("/api/v1/structures")
         structure_service.delete_many.assert_awaited_once()
 
@@ -131,7 +131,7 @@ class TestStructuresByIdRouting:
         assert client.get(f"/api/v1/structures/{PydanticObjectId()}").status_code == 200
 
     def test_delete_by_id_conventional_path(self, client, structure_service):
-        structure_service.delete_one.return_value = ComponentDeleteResponse(num_deleted=1)
+        structure_service.delete_one.return_value = DeleteResult(num_deleted=1)
         assert client.delete(f"/api/v1/structures/{PydanticObjectId()}").status_code == 200
 
     def test_patch_by_id_conventional_path(self, client, structure_service):
@@ -157,7 +157,7 @@ class TestStructuresByMd5Routing:
         assert structure_service.read_one.await_args.kwargs["identifiers"] == {"md5": self.MD5}
 
     def test_delete_by_md5_forwards_identifiers(self, client, structure_service):
-        structure_service.delete_one.return_value = ComponentDeleteResponse(num_deleted=1)
+        structure_service.delete_one.return_value = DeleteResult(num_deleted=1)
         r = client.delete(f"/api/v1/structures/item?md5={self.MD5}")
         assert r.status_code == 200
         assert structure_service.delete_one.await_args.kwargs["identifiers"] == {"md5": self.MD5}
@@ -204,9 +204,10 @@ class TestTablesList:
 
 class TestTablesDelete:
     def test_batch_delete_returns_200(self, client, table_service):
-        table_service.delete_many.return_value = ComponentDeleteResponse(num_deleted=2)
+        table_service.delete_many.return_value = DeleteResult(num_deleted=2)
         assert client.delete("/api/v1/tables").json() == {
             "num_deleted": 2,
+            "num_children_deleted": 0,
             "num_skipped": 0,
             "referenced_ids": [],
         }
@@ -225,7 +226,7 @@ class TestTablesByIdRouting:
         assert client.get(f"/api/v1/tables/{PydanticObjectId()}").status_code == 200
 
     def test_delete_by_id_conventional_path(self, client, table_service):
-        table_service.delete_one.return_value = ComponentDeleteResponse(num_deleted=1)
+        table_service.delete_one.return_value = DeleteResult(num_deleted=1)
         assert client.delete(f"/api/v1/tables/{PydanticObjectId()}").status_code == 200
 
     def test_patch_by_id_conventional_path(self, client, table_service):
@@ -252,12 +253,12 @@ class TestAttachmentsRouterWiring:
         attachment_service.read_one.assert_awaited_once()
 
     def test_delete_by_id_calls_attachment_service(self, client, attachment_service):
-        attachment_service.delete_one.return_value = ComponentDeleteResponse(num_deleted=1)
+        attachment_service.delete_one.return_value = DeleteResult(num_deleted=1)
         client.delete(f"/api/v1/attachments/{PydanticObjectId()}")
         attachment_service.delete_one.assert_awaited_once()
 
     def test_batch_delete_calls_attachment_service(self, client, attachment_service):
-        attachment_service.delete_many.return_value = ComponentDeleteResponse(num_deleted=0)
+        attachment_service.delete_many.return_value = DeleteResult(num_deleted=0)
         client.delete("/api/v1/attachments")
         attachment_service.delete_many.assert_awaited_once()
 
