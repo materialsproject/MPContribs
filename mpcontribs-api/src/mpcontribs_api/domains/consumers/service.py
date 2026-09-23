@@ -1,6 +1,7 @@
 from typing import Any
 
 from mpcontribs_api.config import ConsumerLimits, get_settings
+from mpcontribs_api.domains._shared.models import DeleteResult
 from mpcontribs_api.domains.consumers.models import (
     ConsumerFilter,
     ConsumerIn,
@@ -8,7 +9,6 @@ from mpcontribs_api.domains.consumers.models import (
     ConsumerPatch,
 )
 from mpcontribs_api.domains.consumers.repository import MongoDbConsumerRepository
-from mpcontribs_api.domains._shared.models import DeleteResult
 from mpcontribs_api.pagination import CursorParams, Page
 
 

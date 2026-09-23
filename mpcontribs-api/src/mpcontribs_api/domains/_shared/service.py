@@ -11,7 +11,7 @@ from types_aiobotocore_s3 import S3Client
 
 from mpcontribs_api.domains._shared.bulk import BulkFailure, BulkWriteSummary, bulk_failure_from_exception
 from mpcontribs_api.domains._shared.components import MongoDbComponentsRepository
-from mpcontribs_api.domains._shared.models import Component, DeleteResult, ComponentIn, DocumentOut
+from mpcontribs_api.domains._shared.models import Component, ComponentIn, DeleteResult, DocumentOut
 from mpcontribs_api.domains._shared.types import DownloadFormat, ShortMimeFormat
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
 from mpcontribs_api.exceptions import NotFoundError
