@@ -8,7 +8,7 @@ docs/build
 .ipynb_checkpoints/
 db.sqlite3
 .coverage
-build/*
+*/build/*
 dist/*
 db/*
 static/*
