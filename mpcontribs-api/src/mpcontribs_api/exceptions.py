@@ -122,6 +122,10 @@ class S3Error(AwsError):
     error_code = "s3_error"
 
 
+class SqsError(AwsError):
+    error_code = "sqs_error"
+
+
 def error_body(error_code: str, message: str, **public_context) -> dict:
     body: dict[str, Any] = {"error": {"code": error_code, "message": message}}
     if public_context:

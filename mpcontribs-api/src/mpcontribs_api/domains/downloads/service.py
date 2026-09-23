@@ -2,7 +2,7 @@ from datetime import UTC, datetime, timedelta
 
 import structlog
 from beanie import PydanticObjectId
-from botocore.exceptions import ClientError
+from botocore.exceptions import BotoCoreError, ClientError
 from pymongo.asynchronous.client_session import AsyncClientSession
 from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_sqs.client import SQSClient
@@ -15,6 +15,7 @@ from mpcontribs_api.domains.downloads.models import (
     DownloadDomain,
     DownloadIn,
     DownloadOut,
+    DownloadPatch,
     JobStatus,
 )
 from mpcontribs_api.domains.downloads.repository import MongoDbDownloadRepository
@@ -24,6 +25,7 @@ from mpcontribs_api.exceptions import (
     NotFoundError,
     PermissionError,
     S3Error,
+    SqsError,
 )
 
 logger = structlog.get_logger(__name__)
@@ -124,11 +126,20 @@ class DownloadService:
 
         Since the job is already added to MongoDB, we just pass the ID of the inserted document.
         """
-
-        await self._sqs.send_message(
-            QueueUrl=get_settings().aws.sqs.download_queue_url,
-            MessageBody=str(download.id),
-        )
+        queue_url = get_settings().aws.sqs.download_queue_url
+        try:
+            await self._sqs.send_message(
+                QueueUrl=queue_url,
+                MessageBody=str(download.id),
+            )
+        except (ClientError, BotoCoreError) as err:
+            await self._downloads.update_one(
+                {"id": download.id},
+                DownloadPatch(status=JobStatus.error, error="failed to enqueue download job"),
+            )
+            raise SqsError(
+                message="failed to enqueue download job", download_id=str(download.id), queue_url=queue_url
+            ) from err
 
     async def get_presigned_url(self, download_id: PydanticObjectId) -> str:
         """Generate a presigned url to download content, if the caller's file is ready.
@@ -156,7 +167,7 @@ class DownloadService:
                 },
                 ExpiresIn=get_settings().aws.s3.expires_in,
             )
-        except ClientError as err:
+        except (ClientError, BotoCoreError) as err:
             raise S3Error(
                 message="error generating presigned url for object", object_key=doc.s3_key, bucket=bucket_name
             ) from err
