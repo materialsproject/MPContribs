@@ -1,21 +1,25 @@
-"""Unit-level behaviour of ``DownloadService.get_presigned_url`` error mapping.
+"""Unit-level behaviour of ``DownloadService`` AWS error mapping.
 
 The lifecycle (queue/dedup/retry) and the owner-scoped happy path run against a real DB in
-``tests/integration/db/test_download_queue.py``. This module isolates the one branch that never
-needs a database: a ``botocore`` ``ClientError`` from the S3 client must surface as the app's
-``S3Error`` (500), not leak the raw AWS exception. ``read_one`` is stubbed so no Mongo is touched.
+``tests/integration/db/test_download_queue.py``. This module isolates the branches that never need a
+database:
+
+- a ``botocore`` error from the S3 client must surface as the app's ``S3Error`` (500), not leak the
+  raw AWS exception (``read_one`` is stubbed so no Mongo is touched); and
+- an SQS failure while enqueuing must surface as ``SqsError`` (500) *and* compensate by marking the
+  just-persisted ticket ``error`` (the repository is stubbed).
 """
 
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from beanie import PydanticObjectId
-from botocore.exceptions import ClientError
+from botocore.exceptions import BotoCoreError, ClientError
 
 from mpcontribs_api.authz import User
 from mpcontribs_api.domains.downloads.models import DownloadOut, JobStatus
 from mpcontribs_api.domains.downloads.service import DownloadService
-from mpcontribs_api.exceptions import S3Error
+from mpcontribs_api.exceptions import S3Error, SqsError
 
 
 def _service() -> DownloadService:
@@ -52,3 +56,45 @@ async def test_get_presigned_url_returns_url_on_success():
     service._s3.generate_presigned_url = AsyncMock(return_value="https://signed.example/object")
 
     assert await service.get_presigned_url(download_id=oid) == "https://signed.example/object"
+
+
+@pytest.mark.parametrize(
+    "boto_error",
+    [
+        ClientError({"Error": {"Code": "AccessDenied", "Message": "nope"}}, "SendMessage"),
+        BotoCoreError(),  # e.g. an endpoint/connection failure, not just a service-side ClientError
+    ],
+)
+async def test_enqueue_failure_marks_ticket_error_and_raises_sqserror(boto_error):
+    # A failed SQS send must not leave the ticket silently 'submitted' with no queue message. The
+    # service marks it 'error' (so a re-request reclaims it immediately) and raises SqsError (500).
+    service = _service()
+    service._downloads = AsyncMock()  # type: ignore[assignment]
+    service._sqs.send_message = AsyncMock(side_effect=boto_error)
+    download = MagicMock(id=PydanticObjectId())
+
+    with pytest.raises(SqsError) as excinfo:
+        await service._enqueue_or_fail(download)
+
+    # The raw boto error is chained, and the failing ticket id is carried for logging.
+    assert excinfo.value.__cause__ is boto_error
+    assert excinfo.value.context["download_id"] == str(download.id)
+    # Compensation: the ticket is patched to error state for its own id.
+    service._downloads.update_one.assert_awaited_once()
+    identifiers, patch = service._downloads.update_one.call_args.args
+    assert identifiers == {"id": download.id}
+    assert patch.status == JobStatus.error
+    assert patch.error is not None
+
+
+async def test_enqueue_success_does_not_compensate():
+    # The happy path never touches the ticket: no error mark, no extra writes.
+    service = _service()
+    service._downloads = AsyncMock()  # type: ignore[assignment]
+    service._sqs.send_message = AsyncMock(return_value={"MessageId": "m-1"})
+    download = MagicMock(id=PydanticObjectId())
+
+    await service._enqueue_or_fail(download)
+
+    service._sqs.send_message.assert_awaited_once()
+    service._downloads.update_one.assert_not_awaited()

@@ -46,6 +46,10 @@ def _make_service(
     ``referenced`` for unscoped checks (global integrity), keyed off the ``scoped`` kwarg.
     """
     components = AsyncMock(name="components")
+    # ``document_model.from_input`` is synchronous; override just that method so building docs in
+    # ``insert_many`` returns plain objects instead of un-awaited coroutines (RuntimeWarning noise).
+    # (Leave ``document_model`` itself an auto-child so its ``__name__`` still resolves for messages.)
+    components.document_model.from_input = MagicMock(side_effect=lambda comp: MagicMock(spec=Attachment))
     components.list_ids = AsyncMock(return_value=candidate_ids)
     components.delete_many = AsyncMock(side_effect=lambda filter: DeleteResponse(num_deleted=len(filter.id__in)))
     components.delete_one = AsyncMock(return_value=DeleteResponse(num_deleted=1))

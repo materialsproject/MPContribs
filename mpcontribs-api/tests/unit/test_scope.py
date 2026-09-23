@@ -13,10 +13,11 @@ from beanie import PydanticObjectId
 from mpcontribs_api.authz import PROJECT_GROUP_PATH, PROJECT_PATH, User
 from mpcontribs_api.authz_core import Role
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
+from mpcontribs_api.domains.downloads.repository import MongoDbDownloadRepository
 from mpcontribs_api.domains.initiatives.repository import MongoDbInitiativeRepository
 from mpcontribs_api.domains.project_groups.repository import MongoDbProjectGroupRepository
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
-from mpcontribs_api.scope import Granted, Owned, Public, Scope
+from mpcontribs_api.scope import MATCH_NOTHING, Granted, Owned, Public, Scope
 
 ADMIN = User(username="google:admin@example.com", groups=["mpcontribs=admin"])
 ANON = User()
@@ -128,6 +129,16 @@ class TestScopeQuery:
         assert Scope().query(ANON) == {}
         assert Scope().query(ALICE) == {}
 
+    def test_declared_clauses_all_dropping_out_fails_closed(self):
+        # A scope that DECLARES clauses but whose clauses all drop out for the caller must deny, not
+        # degrade to match-everything. An Owned-only scope for an anonymous caller is the case that
+        # bit downloads (Owned drops to None for anon, leaving an empty $or).
+        assert Scope(Owned()).query(ANON) == MATCH_NOTHING
+        # A non-empty deny filter, so the repository's ``if self._scope:`` guards still treat it as scoped.
+        assert Scope(Owned()).query(ANON) != {}
+        # An authenticated caller still gets the real owner clause (not denied).
+        assert Scope(Owned()).query(ALICE) == {"$or": [{"owner": ALICE.username}]}
+
     def test_anonymous_gets_only_applicable_clauses(self):
         # Public applies; Owned and (no-role) RoleIn drop out.
         assert self.scope.query(ANON) == {"$or": [{"is_public": True, "is_approved": True}]}
@@ -229,3 +240,20 @@ class TestContributionScope:
 
     def test_anonymous_only_public(self):
         assert _clauses(self.scope.query(ANON)) == [{"is_public": True}]
+
+
+class TestDownloadScope:
+    scope = MongoDbDownloadRepository.read_scope
+
+    def test_admin_unfiltered(self):
+        assert self.scope.query(ADMIN) == {}
+
+    def test_owner_scoped_by_requester(self):
+        # A caller sees only their own tickets, keyed on ``requester`` (the requesting username).
+        assert self.scope.query(ALICE) == {"$or": [{"requester": ALICE.username}]}
+
+    def test_anonymous_denied_not_leaked(self):
+        # Downloads' only clause (Owned) drops out for anonymous. Without the fail-closed guard this
+        # would be {} (every ticket); it must be MATCH_NOTHING instead. Anonymous downloads reads are
+        # also blocked at the router (require_user); this is defense-in-depth at the scope layer.
+        assert self.scope.query(ANON) == MATCH_NOTHING
