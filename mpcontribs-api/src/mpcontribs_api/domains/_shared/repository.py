@@ -337,9 +337,7 @@ class MongoDbRepository[
             raise ValidationError("DeleteResult not returned internally")
         return DeleteResult.from_delete_result(result)
 
-    async def delete_one(
-        self, identifiers: dict[str, Any], session: AsyncClientSession | None = None
-    ) -> DeleteResult:
+    async def delete_one(self, identifiers: dict[str, Any], session: AsyncClientSession | None = None) -> DeleteResult:
         """Delete the single scoped document matching ``identifiers``.
 
         Args:
