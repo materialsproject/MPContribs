@@ -156,8 +156,7 @@ class LuxRegistry:
         row by row, against the table schema registered under the same name.
 
         ``tables`` is keyed by registered schema name (the pydantic class name),
-        not the wire/parquet table name; mapping wire names to schema names is
-        the caller's responsibility.
+        parquet table name; mapping file names to schema names is the caller's responsibility.
         """
         contribution_schema = cls.get_schema(
             project_name, SchemaType.contribution, name=contribution_name
