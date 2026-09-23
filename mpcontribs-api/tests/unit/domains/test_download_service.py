@@ -74,7 +74,7 @@ async def test_enqueue_failure_marks_ticket_error_and_raises_sqserror(boto_error
     download = MagicMock(id=PydanticObjectId())
 
     with pytest.raises(SqsError) as excinfo:
-        await service._enqueue_or_fail(download)
+        await service._enqueue(download)
 
     # The raw boto error is chained, and the failing ticket id is carried for logging.
     assert excinfo.value.__cause__ is boto_error
@@ -94,7 +94,7 @@ async def test_enqueue_success_does_not_compensate():
     service._sqs.send_message = AsyncMock(return_value={"MessageId": "m-1"})
     download = MagicMock(id=PydanticObjectId())
 
-    await service._enqueue_or_fail(download)
+    await service._enqueue(download)
 
     service._sqs.send_message.assert_awaited_once()
     service._downloads.update_one.assert_not_awaited()
