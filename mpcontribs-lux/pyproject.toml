@@ -19,7 +19,7 @@ name = "mpcontribs-lux"
 dynamic = ["version"]
 description = "LUX: shed light on data published on MPContribs"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.14"
 dependencies = [
     "emmet-core>0.86.0",
     "pyarrow",
