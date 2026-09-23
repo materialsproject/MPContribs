@@ -4,9 +4,8 @@ from __future__ import annotations
 
 import re
 from math import isclose
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 
-import pandas as pd
 from pydantic import (
     AfterValidator,
     BaseModel,
@@ -191,28 +190,35 @@ class ClusterMaterial(BaseModel):
     )
 
 
+@LuxRegistry.register_validator("cluster_materials", "ClusterMaterial")
 def validate_material(
-    cluster_material: ClusterMaterial,
-    clusters: pd.DataFrame,
-    cluster_groups: pd.DataFrame,
+    contribution: ClusterMaterial,
+    tables: dict[str, list[dict[str, Any]]],
+    structures: dict[str, Any] | None = None,
 ) -> bool:
-    """Return True when main data and both tables satisfy shared invariants."""
-    cluster_rows = [
-        Cluster.model_validate(row) for row in clusters.to_dict(orient="records")
-    ]
+    """Return True when main data and both tables satisfy shared invariants.
+
+    This validator expects ``"Cluster"`` and ``"ClusterPointGroup"`` entries.
+    """
+    try:
+        clusters = tables["Cluster"]
+        cluster_groups = tables["ClusterPointGroup"]
+    except KeyError as err:
+        raise ValueError(f"cluster_materials requires a {err.args[0]!r} table") from err
+
+    cluster_rows = [Cluster.model_validate(row) for row in clusters]
     cluster_group_rows = [
-        ClusterPointGroup.model_validate(row)
-        for row in cluster_groups.to_dict(orient="records")
+        ClusterPointGroup.model_validate(row) for row in cluster_groups
     ]
 
-    if len(cluster_rows) != cluster_material.numberOfClusters:
+    if len(cluster_rows) != contribution.numberOfClusters:
         raise ValueError("numberOfClusters must equal the number of clusters rows")
     cluster_material_ids = {str(row.materialId) for row in cluster_rows}
     if len(cluster_material_ids) != 1:
         raise ValueError("clusters must contain exactly one materialId")
     if not isclose(
         min(row.averageDistance for row in cluster_rows),
-        cluster_material.minimumAverageDistance,
+        contribution.minimumAverageDistance,
         rel_tol=1e-9,
         abs_tol=1e-6,
     ):
