@@ -1122,7 +1122,7 @@ dependencies = [
     { name = "python-snappy" },
     { name = "structlog" },
     { name = "supervisor" },
-    { name = "types-aiobotocore", extra = ["s3"] },
+    { name = "types-aiobotocore", extra = ["s3", "sqs"] },
     { name = "uncertainties" },
 ]
 
@@ -1137,7 +1137,6 @@ dev = [
     { name = "pytest-cov" },
     { name = "pytest-xdist" },
     { name = "ruff" },
-    { name = "types-aioboto3-custom" },
 ]
 
 [package.metadata]
@@ -1160,7 +1159,7 @@ requires-dist = [
     { name = "python-snappy", specifier = ">=0.7.3" },
     { name = "structlog", specifier = ">=25.5.0" },
     { name = "supervisor", specifier = ">=4.3.0" },
-    { name = "types-aiobotocore", extras = ["s3"], specifier = ">=3.7.0" },
+    { name = "types-aiobotocore", extras = ["s3", "sqs"], specifier = ">=3.7.0" },
     { name = "uncertainties", specifier = ">=3.2.3" },
 ]
 
@@ -1175,7 +1174,6 @@ dev = [
     { name = "pytest-cov", specifier = ">=7.1.0" },
     { name = "pytest-xdist", specifier = ">=3.8.0" },
     { name = "ruff", specifier = ">=0.9.0" },
-    { name = "types-aioboto3-custom", path = "vendored/types_aioboto3_custom-14.1.0-py3-none-any.whl" },
 ]
 
 [[package]]
@@ -2300,25 +2298,6 @@ wheels = [
 ]
 
 [[package]]
-name = "types-aioboto3-custom"
-version = "14.1.0"
-source = { path = "vendored/types_aioboto3_custom-14.1.0-py3-none-any.whl" }
-dependencies = [
-    { name = "botocore-stubs" },
-    { name = "types-s3transfer" },
-]
-wheels = [
-    { filename = "types_aioboto3_custom-14.1.0-py3-none-any.whl", hash = "sha256:657f6f107fef5dd11c7d414e0d4565099b7174a8b61689a1fdd9973d4ad12dfa" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "botocore-stubs" },
-    { name = "types-s3transfer" },
-    { name = "typing-extensions", marker = "python_full_version < '3.12'" },
-]
-
-[[package]]
 name = "types-aiobotocore"
 version = "3.7.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2334,6 +2313,9 @@ wheels = [
 s3 = [
     { name = "types-aiobotocore-s3" },
 ]
+sqs = [
+    { name = "types-aiobotocore-sqs" },
+]
 
 [[package]]
 name = "types-aiobotocore-s3"
@@ -2345,21 +2327,21 @@ wheels = [
 ]
 
 [[package]]
+name = "types-aiobotocore-sqs"
+version = "3.7.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/15/e1/d207fd95f8b45d53488a8581e4f1e4641f9d7fe7fa477d5737ac70833820/types_aiobotocore_sqs-3.7.0.tar.gz", hash = "sha256:52000164f92ab6ec18fd2f6a9989997a2690d1b1c4a851d3c5796a5286d17d00", size = 23423, upload-time = "2026-05-10T03:18:27.162Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/18/6b/eef2901bd3bf25209a8182f83969a02729cbd2f2f93f0ec47e24dc74d475/types_aiobotocore_sqs-3.7.0-py3-none-any.whl", hash = "sha256:57f263c4d00de1a165a3863e498fd0837fb75a332f8423b30916d4071a3e79fd", size = 34273, upload-time = "2026-05-10T03:18:25.66Z" },
+]
+
+[[package]]
 name = "types-awscrt"
 version = "0.34.1"
 source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/3e/59/44409a8fc06b444ab1a6f71dcb29d49a6e17e02424345eb51b051bebb345/types_awscrt-0.34.1.tar.gz", hash = "sha256:559aa04250f6a419a617dfb788f3e10903aaf74700ef23e521b64a411b83b803", size = 19062, upload-time = "2026-06-05T04:40:10.689Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e4/b1/214b12162b452ed6acd230065e6c587cde6b96871e3ce6d653f40888f8df/types_awscrt-0.34.1-py3-none-any.whl", hash = "sha256:20c752b6031544d8f694803c35174aee129f1be5ddf886ae46d22f7ffd9b7d75", size = 45688, upload-time = "2026-06-05T04:40:09.198Z" },
-]
-
-[[package]]
-name = "types-s3transfer"
-version = "0.16.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/fe/64/42689150509eb3e6e82b33ee3d89045de1592488842ddf23c56957786d05/types_s3transfer-0.16.0.tar.gz", hash = "sha256:b4636472024c5e2b62278c5b759661efeb52a81851cde5f092f24100b1ecb443", size = 13557, upload-time = "2025-12-08T08:13:09.928Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/98/27/e88220fe6274eccd3bdf95d9382918716d312f6f6cef6a46332d1ee2feff/types_s3transfer-0.16.0-py3-none-any.whl", hash = "sha256:1c0cd111ecf6e21437cb410f5cddb631bfb2263b77ad973e79b9c6d0cb24e0ef", size = 19247, upload-time = "2025-12-08T08:13:08.426Z" },
 ]
 
 [[package]]

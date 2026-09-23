@@ -50,7 +50,7 @@ dependencies = [
     "python-snappy>=0.7.3",
     "structlog>=25.5.0",
     "supervisor>=4.3.0",
-    "types-aiobotocore[s3]>=3.7.0",
+    "types-aiobotocore[s3,sqs]>=3.7.0",
     "pint>=0.25.3",
     "uncertainties>=3.2.3",
 ]
@@ -70,7 +70,6 @@ dev = [
     "httpx2>=0.28.0",
     "pytest-asyncio>=1.4.0",
     "hypothesis>=6.100.0",
-    "types-aioboto3-custom",
 ]
 
 [tool.pytest.ini_options]
@@ -102,6 +101,3 @@ extraPaths = ["src"]
 # "build/" is a setuptools build artifact (gitignored); type-checking its stale copies produces
 # phantom errors against superseded source.
 ignore=["tests/", "build/"]
-
-[tool.uv.sources]
-types-aioboto3-custom = { path = "vendored/types_aioboto3_custom-14.1.0-py3-none-any.whl" }
