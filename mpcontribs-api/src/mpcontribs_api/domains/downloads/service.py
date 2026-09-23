@@ -155,8 +155,6 @@ class DownloadService:
             raise NotFoundError(message="download not found", download_id=str(download_id))
         if doc.status != JobStatus.ready:
             raise JobStatusError(message="download status not 'ready'", download_id=str(download_id), status=doc.status)
-        if doc.s3_key is None:
-            raise NotFoundError(message="download has no s3_key", download_id=str(download_id))
 
         try:
             url = await self._s3.generate_presigned_url(
