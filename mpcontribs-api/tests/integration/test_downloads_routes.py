@@ -36,10 +36,9 @@ def download_service(test_app):
 def _job(**overrides) -> DownloadOut:
     data = {
         "id": str(PydanticObjectId()),
-        "s3_key": "contributions/" + "0" * 64 + ".jsonl.gz",
+        "s3_key": "0" * 64 + ".jsonl.gz",
         "status": JobStatus.ready,
         "requester": "google:alice@example.com",
-        "domain": "contributions",
         "fmt": "jsonl",
     }
     data.update(overrides)

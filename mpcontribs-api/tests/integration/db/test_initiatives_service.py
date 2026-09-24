@@ -1,3 +1,5 @@
+from unittest.mock import AsyncMock
+
 import pytest
 from beanie import Link
 
@@ -33,6 +35,11 @@ def _service(user: User) -> ProjectService:
         user=user,
         projects=MongoDbProjectRepository(user),
         initiatives=MongoDbInitiativeRepository(user),
+        contributions=AsyncMock(),
+        structures=AsyncMock(),
+        tables=AsyncMock(),
+        attachments=AsyncMock(),
+        downloads=AsyncMock(),
     )
 
 

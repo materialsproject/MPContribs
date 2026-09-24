@@ -4,8 +4,10 @@ Covers the Ticket model: one Mongo row per ``(requester, s3_key)``, ``queue_down
 and enqueueing only on a genuinely new (or retried) ticket, per-requester isolation with shared
 ``s3_key`` (so S3 can dedupe the physical object), and the caller-scoped read/fetch path.
 
-``queue_download`` takes only ``query`` + ``domain`` + ``fmt``; the requester is the service's own
-authenticated user, so a submission "as" a given requester binds the service to that user.
+``queue_download`` takes only ``query`` + ``fmt``; the requester is the service's own authenticated
+user, so a submission "as" a given requester binds the service to that user. ``query`` is the
+``{collection: [mongo_query]}`` map the worker runs (a contribution-only download here is
+``{"contributions": [<scoped query>]}``).
 """
 
 import asyncio
@@ -18,7 +20,7 @@ from mpcontribs_api.authz import User
 from mpcontribs_api.domains._shared.types import DownloadFormat
 from mpcontribs_api.domains.contributions.models import ContributionFilter
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
-from mpcontribs_api.domains.downloads.models import DownloadDomain, DownloadOut, JobStatus
+from mpcontribs_api.domains.downloads.models import DownloadOut, JobStatus
 from mpcontribs_api.domains.downloads.service import DownloadService
 from mpcontribs_api.exceptions import (
     DownloadRetryExhaustedError,
@@ -69,8 +71,7 @@ async def _queue(
     by default).
     """
     return await service.queue_download(
-        query=_query(scope_user, **filter_kwargs),
-        domain=DownloadDomain.contributions,
+        query={"contributions": [_query(scope_user, **filter_kwargs)]},
         fmt=fmt,
     )
 
@@ -172,6 +173,43 @@ class TestScopeIsolation:
         service_b, _ = _service(_owner("consumer-b"))
         first = await _queue(service_a, scope_user=ANON)
         second = await _queue(service_b, scope_user=ANON)
+        assert first.s3_key == second.s3_key
+
+
+class TestBundleShapePartitionsKey:
+    """The query map (which collections are bundled) partitions the s3_key.
+
+    ``domain`` was removed; a download's collections now live in the ``query`` keys, so two requests
+    that differ only in which collections they bundle — or in a per-level filter — must land on
+    distinct physical objects, and identical bundles must share one.
+    """
+
+    async def test_including_a_related_collection_changes_the_key(self, db):
+        service, _ = _service(_owner("consumer-a"))
+        base = await service.queue_download(query={"contributions": [{"$or": [{"is_public": True}]}]}, fmt=DownloadFormat.JSONL)
+        bundled = await service.queue_download(
+            query={"contributions": [{"$or": [{"is_public": True}]}], "structures": [{}]},
+            fmt=DownloadFormat.JSONL,
+        )
+        assert base.s3_key != bundled.s3_key
+        assert await db["downloads"].count_documents({}) == 2
+
+    async def test_per_level_filter_changes_the_key(self, db):
+        service, _ = _service(_owner("consumer-a"))
+        unfiltered = await service.queue_download(
+            query={"contributions": [{}], "structures": [{}]}, fmt=DownloadFormat.JSONL
+        )
+        filtered = await service.queue_download(
+            query={"contributions": [{}], "structures": [{"name": "POSCAR"}]}, fmt=DownloadFormat.JSONL
+        )
+        assert unfiltered.s3_key != filtered.s3_key
+
+    async def test_identical_bundle_shares_the_key(self, db):
+        service_a, _ = _service(_owner("consumer-a"))
+        service_b, _ = _service(_owner("consumer-b"))
+        query = {"contributions": [{"$or": [{"is_public": True}]}], "tables": [{}]}
+        first = await service_a.queue_download(query=query, fmt=DownloadFormat.JSONL)
+        second = await service_b.queue_download(query=query, fmt=DownloadFormat.JSONL)
         assert first.s3_key == second.s3_key
 
 

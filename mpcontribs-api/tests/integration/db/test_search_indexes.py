@@ -29,7 +29,7 @@ import asyncio
 import time
 from collections.abc import Awaitable, Callable
 from typing import Any, TypeVar
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 import pytest_asyncio
@@ -77,6 +77,11 @@ def _project_service(user: User) -> ProjectService:
         user=user,
         projects=MongoDbProjectRepository(user),
         initiatives=MongoDbInitiativeRepository(user),
+        contributions=AsyncMock(),
+        structures=AsyncMock(),
+        tables=AsyncMock(),
+        attachments=AsyncMock(),
+        downloads=AsyncMock(),
     )
 
 

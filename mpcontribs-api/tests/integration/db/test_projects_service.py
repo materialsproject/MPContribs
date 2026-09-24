@@ -1,3 +1,5 @@
+from unittest.mock import AsyncMock
+
 import pytest
 from beanie import Link
 
@@ -34,6 +36,12 @@ def _service(user: User, limits: ConsumerLimits | None = None) -> ProjectService
         user=user,
         projects=MongoDbProjectRepository(user),
         initiatives=MongoDbInitiativeRepository(user),
+        # These download collaborators are unused by the write/read paths under test.
+        contributions=AsyncMock(),
+        structures=AsyncMock(),
+        tables=AsyncMock(),
+        attachments=AsyncMock(),
+        downloads=AsyncMock(),
         limits=limits,
     )
 

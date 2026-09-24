@@ -20,6 +20,7 @@ from mpcontribs_api.domains.attachments.models import Attachment, AttachmentIn
 from mpcontribs_api.domains.contributions import service as service_module
 from mpcontribs_api.domains.contributions.models import (
     Contribution,
+    ContributionDownloadRequest,
     ContributionFilter,
     ContributionIdentity,
     ContributionIn,
@@ -32,6 +33,7 @@ from mpcontribs_api.domains.structures.models import (
     SiteProperties,
     Species,
     Structure,
+    StructureFilter,
     StructureIn,
 )
 from mpcontribs_api.domains.tables.models import Attributes, Labels, Table, TableIn
@@ -1791,20 +1793,40 @@ class TestSearch:
 
 
 class TestQueueDownload:
-    """queue_download must hand the download service the scoped effective query, not the raw filter."""
+    """queue_download builds the {collection: [scoped_query]} map from the request, not raw filters."""
 
-    async def test_forwards_scoped_effective_query(self):
+    async def test_contributions_only_forwards_scoped_map(self):
         downloads = AsyncMock()
         svc, contrib_repo, *_ = _make_service(downloads=downloads)
         # The repo owns scope resolution; stub its effective-query builder with a sentinel so we can
-        # assert the service forwards exactly that dict (rather than re-dumping the raw filter).
+        # assert the service forwards exactly that dict under the contributions key.
         contrib_repo.build_download_query = MagicMock(return_value={"$and": [{"scoped": True}]})
 
-        filter = ContributionFilter(material_id="mp-1")
-        await svc.queue_download(filter=filter, format=DownloadFormat.CSV)
+        request = ContributionDownloadRequest(
+            contributions=ContributionFilter(material_id="mp-1"), format=DownloadFormat.CSV
+        )
+        await svc.queue_download(request)
 
-        contrib_repo.build_download_query.assert_called_once_with(filter)
+        contrib_repo.build_download_query.assert_called_once_with(request.contributions)
         call = downloads.queue_download.await_args.kwargs
-        assert call["query"] == {"$and": [{"scoped": True}]}
-        assert call["domain"] == "contributions"
+        assert call["query"] == {"contributions": [{"$and": [{"scoped": True}]}]}
+        assert "domain" not in call  # the domain field was removed; collections live in query keys
         assert call["fmt"] == DownloadFormat.CSV
+
+    async def test_bundling_components_adds_their_keys(self):
+        downloads = AsyncMock()
+        structures = AsyncMock()
+        structures.build_download_query = MagicMock(return_value={"struct": True})
+        svc, contrib_repo, *_ = _make_service(downloads=downloads, structures=structures)
+        contrib_repo.build_download_query = MagicMock(return_value={"contrib": True})
+
+        request = ContributionDownloadRequest(
+            contributions=ContributionFilter(),
+            structures=StructureFilter(name="POSCAR"),
+        )
+        await svc.queue_download(request)
+
+        # Only the requested collections appear; tables/attachments (no filter) are omitted.
+        query = downloads.queue_download.await_args.kwargs["query"]
+        assert query == {"contributions": [{"contrib": True}], "structures": [{"struct": True}]}
+        structures.build_download_query.assert_called_once_with(request.structures)

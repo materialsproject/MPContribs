@@ -6,7 +6,16 @@ from mpcontribs_api.domains.projects.dependencies import get_project_service
 from mpcontribs_api.domains.projects.models import ProjectOut, Stats
 from mpcontribs_api.exceptions import ConflictError, NotFoundError
 from mpcontribs_api.pagination import Page
-from tests.integration.conftest import ANON_HEADERS, AUTHED_HEADERS
+from tests.integration.conftest import ANON_HEADERS, AUTHED_HEADERS, FORCE_ANON_HEADERS
+
+# A queued download job as the service returns it (POST /download responds with the tracked job).
+SAMPLE_DOWNLOAD_JOB = {
+    "id": "0" * 24,
+    "s3_key": "0" * 32 + ".jsonl.gz",
+    "status": "submitted",
+    "requester": "google:alice@example.com",
+    "fmt": "jsonl",
+}
 
 # ---------------------------------------------------------------------------
 # Shared sample data
@@ -331,3 +340,67 @@ class TestProjectMutationsRequireAuth:
         r = client.delete("/api/v1/projects/mp-sample", headers=ANON_HEADERS)
         assert r.status_code == 401
         project_service.delete_one.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# POST /api/v1/projects/download  (bundled export via service)
+# ---------------------------------------------------------------------------
+
+
+class TestQueueDownload:
+    """The project download endpoint queues an async job (delegating to ``queue_download``) and
+    returns the tracked job. The JSON body is a ``collection -> filter`` bundle."""
+
+    def test_empty_body_returns_200(self, client, project_service):
+        # Every field is optional (projects defaults to match-all in scope), so an empty body works.
+        project_service.queue_download.return_value = SAMPLE_DOWNLOAD_JOB
+        r = client.post("/api/v1/projects/download", json={}, headers=AUTHED_HEADERS)
+        assert r.status_code == 200
+
+    def test_returns_the_queued_job(self, client, project_service):
+        project_service.queue_download.return_value = SAMPLE_DOWNLOAD_JOB
+        r = client.post("/api/v1/projects/download", json={}, headers=AUTHED_HEADERS)
+        assert r.json() == SAMPLE_DOWNLOAD_JOB
+
+    def test_default_format_forwarded_is_jsonl(self, client, project_service):
+        project_service.queue_download.return_value = SAMPLE_DOWNLOAD_JOB
+        client.post("/api/v1/projects/download", json={}, headers=AUTHED_HEADERS)
+        request = project_service.queue_download.call_args.args[0]
+        assert request.format == "jsonl"
+
+    def test_format_forwarded_to_service(self, client, project_service):
+        project_service.queue_download.return_value = SAMPLE_DOWNLOAD_JOB
+        client.post("/api/v1/projects/download", json={"format": "csv"}, headers=AUTHED_HEADERS)
+        request = project_service.queue_download.call_args.args[0]
+        assert request.format == "csv"
+
+    def test_invalid_format_returns_422(self, client, project_service):
+        project_service.queue_download.return_value = SAMPLE_DOWNLOAD_JOB
+        r = client.post("/api/v1/projects/download", json={"format": "xml"}, headers=AUTHED_HEADERS)
+        assert r.status_code == 422
+
+    def test_project_filter_forwarded(self, client, project_service):
+        # The body's ``projects`` object is parsed into a ProjectFilter and handed to the service.
+        project_service.queue_download.return_value = SAMPLE_DOWNLOAD_JOB
+        client.post("/api/v1/projects/download", json={"projects": {"is_public": True}}, headers=AUTHED_HEADERS)
+        request = project_service.queue_download.call_args.args[0]
+        assert request.projects.is_public is True
+
+    def test_related_collections_bundled_when_requested(self, client, project_service):
+        # Contributions/components are included only when their filter is present; the rest stay None.
+        project_service.queue_download.return_value = SAMPLE_DOWNLOAD_JOB
+        client.post(
+            "/api/v1/projects/download",
+            json={"contributions": {"is_public": True}, "structures": {"name": "POSCAR"}},
+            headers=AUTHED_HEADERS,
+        )
+        request = project_service.queue_download.call_args.args[0]
+        assert request.contributions is not None and request.contributions.is_public is True
+        assert request.structures is not None and request.structures.name == "POSCAR"
+        assert request.tables is None and request.attachments is None
+
+    def test_anonymous_download_returns_401(self, client, project_service):
+        # Downloads are authenticated-only: an anonymous caller cannot queue an export.
+        r = client.post("/api/v1/projects/download", json={}, headers=FORCE_ANON_HEADERS)
+        assert r.status_code == 401
+        project_service.queue_download.assert_not_called()

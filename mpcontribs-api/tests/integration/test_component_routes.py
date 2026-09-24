@@ -61,10 +61,9 @@ def _download_job(domain: str) -> dict:
     """A queued download job as ``queue_download`` returns it (POST /download responds with it)."""
     return {
         "id": str(PydanticObjectId()),
-        "s3_key": f"{domain}/" + "0" * 64 + ".jsonl.gz",
+        "s3_key": "0" * 64 + ".jsonl.gz",
         "status": "submitted",
         "requester": "test-consumer-id",
-        "domain": domain,
         "fmt": "jsonl",
     }
 
@@ -153,7 +152,7 @@ class TestStructuresByIdRouting:
 
     def test_download_conventional_path(self, client, structure_service):
         structure_service.queue_download.return_value = _download_job("structures")
-        assert client.post("/api/v1/structures/download?format=csv").status_code == 200
+        assert client.post("/api/v1/structures/download", json={"format": "csv"}).status_code == 200
 
 
 class TestStructuresByMd5Routing:
@@ -303,38 +302,39 @@ class TestComponentDownloads:
     """Component downloads queue an async job (delegating to ``queue_download``) and return the
     tracked job, mirroring the contributions download endpoint rather than streaming inline."""
 
-    def test_default_format_returns_200(self, client, download_target):
-        # ``format`` defaults to JSONL, so the endpoint works with the param omitted.
+    def test_empty_body_returns_200(self, client, download_target):
+        # ``format`` defaults to JSONL and the filter defaults to match-all, so an empty body works.
         prefix, *_ = download_target
-        assert client.post(f"/api/v1/{prefix}/download").status_code == 200
+        assert client.post(f"/api/v1/{prefix}/download", json={}).status_code == 200
 
     def test_csv_format_returns_200(self, client, download_target):
         prefix, *_ = download_target
-        assert client.post(f"/api/v1/{prefix}/download?format=csv").status_code == 200
+        assert client.post(f"/api/v1/{prefix}/download", json={"format": "csv"}).status_code == 200
 
     def test_returns_the_queued_job(self, client, download_target):
-        prefix, _, domain = download_target
-        assert client.post(f"/api/v1/{prefix}/download").json()["domain"] == domain
+        prefix, *_ = download_target
+        assert client.post(f"/api/v1/{prefix}/download", json={}).json()["status"] == "submitted"
 
     def test_default_format_forwarded_is_jsonl(self, client, download_target):
         prefix, service, _ = download_target
-        client.post(f"/api/v1/{prefix}/download")
+        client.post(f"/api/v1/{prefix}/download", json={})
         assert service.queue_download.call_args.kwargs["format"] == "jsonl"
 
     def test_format_forwarded_to_service(self, client, download_target):
         prefix, service, _ = download_target
-        client.post(f"/api/v1/{prefix}/download?format=csv")
+        client.post(f"/api/v1/{prefix}/download", json={"format": "csv"})
         assert service.queue_download.call_args.kwargs["format"] == "csv"
 
     def test_invalid_format_returns_422(self, client, download_target):
         prefix, *_ = download_target
-        assert client.post(f"/api/v1/{prefix}/download?format=xml").status_code == 422
+        assert client.post(f"/api/v1/{prefix}/download", json={"format": "xml"}).status_code == 422
 
     def test_filter_forwarded_to_service(self, client, download_target):
-        # Request query params are parsed into the component filter and handed to the service.
-        prefix, service, _ = download_target
-        client.post(f"/api/v1/{prefix}/download")
-        assert "filter" in service.queue_download.call_args.kwargs
+        # The body's component object is parsed into the component filter and handed to the service.
+        prefix, service, domain = download_target
+        client.post(f"/api/v1/{prefix}/download", json={domain: {"name": "POSCAR"}})
+        forwarded = service.queue_download.call_args.kwargs["filter"]
+        assert forwarded.name == "POSCAR"
 
 
 # ===========================================================================
@@ -402,17 +402,17 @@ class TestComponentMutationsRequireAuth:
 
     def test_structure_download_anon_401(self, client, structure_service):
         # Downloads are authenticated-only across every component domain.
-        r = client.post("/api/v1/structures/download", headers=FORCE_ANON_HEADERS)
+        r = client.post("/api/v1/structures/download", json={}, headers=FORCE_ANON_HEADERS)
         assert r.status_code == 401
         structure_service.queue_download.assert_not_called()
 
     def test_table_download_anon_401(self, client, table_service):
-        r = client.post("/api/v1/tables/download", headers=FORCE_ANON_HEADERS)
+        r = client.post("/api/v1/tables/download", json={}, headers=FORCE_ANON_HEADERS)
         assert r.status_code == 401
         table_service.queue_download.assert_not_called()
 
     def test_attachment_download_anon_401(self, client, attachment_service):
-        r = client.post("/api/v1/attachments/download", headers=FORCE_ANON_HEADERS)
+        r = client.post("/api/v1/attachments/download", json={}, headers=FORCE_ANON_HEADERS)
         assert r.status_code == 401
         attachment_service.queue_download.assert_not_called()
 

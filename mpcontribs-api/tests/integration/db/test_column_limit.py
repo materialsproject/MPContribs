@@ -14,7 +14,7 @@ These drive the real service against the dev DB. ``max_columns`` is monkeypatche
 column cap from the orthogonal per-project / per-contribution quotas.
 """
 
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from beanie import PydanticObjectId
@@ -60,6 +60,11 @@ def _project_service() -> ProjectService:
         user=ADMIN,
         projects=MongoDbProjectRepository(ADMIN),
         initiatives=MongoDbInitiativeRepository(ADMIN),
+        contributions=AsyncMock(),
+        structures=AsyncMock(),
+        tables=AsyncMock(),
+        attachments=AsyncMock(),
+        downloads=AsyncMock(),
     )
 
 

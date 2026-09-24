@@ -24,7 +24,7 @@ from mpcontribs_api.authz import User
 from mpcontribs_api.domains._shared.types import DownloadFormat
 from mpcontribs_api.domains.contributions.models import ContributionFilter
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
-from mpcontribs_api.domains.downloads.models import DownloadDomain, JobStatus
+from mpcontribs_api.domains.downloads.models import JobStatus
 from mpcontribs_api.domains.downloads.service import DownloadService
 from mpcontribs_api.exceptions import NotFoundError
 
@@ -62,8 +62,7 @@ async def test_real_user_download_end_to_end(db, aws_clients):
     service = DownloadService(user=OWNER, sqs=sqs, s3=s3)
 
     created = await service.queue_download(
-        query=_contribution_query(OWNER),
-        domain=DownloadDomain.contributions,
+        query={"contributions": [_contribution_query(OWNER)]},
         fmt=DownloadFormat.JSONL,
     )
     s3_key = created.s3_key
@@ -113,9 +112,10 @@ async def test_dedup_shares_one_s3_object_across_requesters(db, aws_clients):
 
     svc_a = DownloadService(user=OWNER, sqs=sqs, s3=s3)
     svc_b = DownloadService(user=OTHER, sqs=sqs, s3=s3)
-    query = _contribution_query(User())  # identical (public-only) scope for both requesters
-    a = await svc_a.queue_download(query=query, domain=DownloadDomain.contributions, fmt=DownloadFormat.JSONL)
-    b = await svc_b.queue_download(query=query, domain=DownloadDomain.contributions, fmt=DownloadFormat.JSONL)
+    # identical (public-only) scope for both requesters
+    query = {"contributions": [_contribution_query(User())]}
+    a = await svc_a.queue_download(query=query, fmt=DownloadFormat.JSONL)
+    b = await svc_b.queue_download(query=query, fmt=DownloadFormat.JSONL)
 
     payload = gzip.compress(b'{"identifier": "mp-2"}\n')
     try:

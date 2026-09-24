@@ -7,8 +7,19 @@ from bson import DBRef
 from mpcontribs_api.authz import User
 from mpcontribs_api.config import ConsumerLimits, ConsumerProjectLimits
 from mpcontribs_api.domains._shared.models import DeleteResponse
-from mpcontribs_api.domains.projects.models import Column, Project, ProjectIn, ProjectPatch, Stats
+from mpcontribs_api.domains._shared.types import DownloadFormat
+from mpcontribs_api.domains.contributions.models import ContributionFilter
+from mpcontribs_api.domains.projects.models import (
+    Column,
+    Project,
+    ProjectDownloadRequest,
+    ProjectFilter,
+    ProjectIn,
+    ProjectPatch,
+    Stats,
+)
 from mpcontribs_api.domains.projects.service import ProjectService
+from mpcontribs_api.domains.structures.models import StructureFilter
 from mpcontribs_api.exceptions import NotFoundError, ValidationError
 from mpcontribs_api.exceptions import PermissionError as AppPermissionError
 
@@ -69,7 +80,17 @@ def _service(user: User, *, existing=None, scoped=None, count: int = 0, limits: 
     projects.update_one.return_value = _project()
     projects.delete_one.return_value = DeleteResponse(num_deleted=1)
     initiatives = AsyncMock()
-    svc = ProjectService(user=user, projects=projects, initiatives=initiatives, limits=limits)
+    svc = ProjectService(
+        user=user,
+        projects=projects,
+        initiatives=initiatives,
+        contributions=AsyncMock(),
+        structures=AsyncMock(),
+        tables=AsyncMock(),
+        attachments=AsyncMock(),
+        downloads=AsyncMock(),
+        limits=limits,
+    )
     return svc, projects, initiatives
 
 
@@ -206,3 +227,90 @@ class TestPatch:
         await svc.update_one({"id": "proj-1"}, ProjectPatch(initiative=None))
         initiatives.read_one.assert_not_called()
         assert projects.update_one.call_args.kwargs["extra_set"] == {"initiative": None}
+
+
+# ---------------------------------------------------------------------------
+# queue_download: builds the {collection: [scoped_query]} bundle map
+# ---------------------------------------------------------------------------
+
+
+def _download_service():
+    """A ProjectService whose repos stub ``build_download_query`` with per-collection sentinels."""
+    projects = AsyncMock()
+    projects.build_download_query = MagicMock(return_value={"proj": True})
+    contributions = AsyncMock()
+    contributions.build_download_query = MagicMock(return_value={"contrib": True})
+    structures = AsyncMock()
+    structures.build_download_query = MagicMock(return_value={"struct": True})
+    tables = AsyncMock()
+    tables.build_download_query = MagicMock(return_value={"table": True})
+    attachments = AsyncMock()
+    attachments.build_download_query = MagicMock(return_value={"attach": True})
+    downloads = AsyncMock()
+    svc = ProjectService(
+        user=User(username="alice@example.com"),
+        projects=projects,
+        initiatives=AsyncMock(),
+        contributions=contributions,
+        structures=structures,
+        tables=tables,
+        attachments=attachments,
+        downloads=downloads,
+    )
+    return svc, projects, contributions, structures, downloads
+
+
+class TestQueueDownload:
+    """queue_download builds the {collection: [scoped_query]} map from the request body."""
+
+    async def test_projects_only_bundle(self):
+        svc, projects, contributions, _structures, downloads = _download_service()
+        request = ProjectDownloadRequest(projects=ProjectFilter(is_public=True), format=DownloadFormat.CSV)
+
+        await svc.queue_download(request)
+
+        projects.build_download_query.assert_called_once_with(request.projects)
+        contributions.build_download_query.assert_not_called()
+        call = downloads.queue_download.await_args.kwargs
+        assert call["query"] == {"projects": [{"proj": True}]}
+        assert "domain" not in call  # the domain field was removed; collections live in query keys
+        assert call["fmt"] == DownloadFormat.CSV
+
+    async def test_bundles_contributions_when_filter_present(self):
+        svc, _projects, contributions, _structures, downloads = _download_service()
+        request = ProjectDownloadRequest(contributions=ContributionFilter(is_public=True))
+
+        await svc.queue_download(request)
+
+        contributions.build_download_query.assert_called_once_with(request.contributions)
+        query = downloads.queue_download.await_args.kwargs["query"]
+        assert query == {"projects": [{"proj": True}], "contributions": [{"contrib": True}]}
+
+    async def test_component_without_contributions_injects_scoped_contributions(self):
+        # A component level needs contributions as its scoped join parent; when the request omits a
+        # contributions filter, a scope-only ContributionFilter is injected so nothing leaks.
+        svc, _projects, contributions, structures, downloads = _download_service()
+        request = ProjectDownloadRequest(structures=StructureFilter(name="POSCAR"))
+
+        await svc.queue_download(request)
+
+        contributions.build_download_query.assert_called_once()
+        injected = contributions.build_download_query.call_args.args[0]
+        assert isinstance(injected, ContributionFilter)
+        structures.build_download_query.assert_called_once_with(request.structures)
+        query = downloads.queue_download.await_args.kwargs["query"]
+        assert query == {
+            "projects": [{"proj": True}],
+            "contributions": [{"contrib": True}],
+            "structures": [{"struct": True}],
+        }
+
+    async def test_omitted_collections_are_absent_from_the_map(self):
+        svc, _projects, _contributions, _structures, downloads = _download_service()
+        request = ProjectDownloadRequest(contributions=ContributionFilter())
+
+        await svc.queue_download(request)
+
+        query = downloads.queue_download.await_args.kwargs["query"]
+        # No component filters were given, so no component keys appear.
+        assert set(query) == {"projects", "contributions"}

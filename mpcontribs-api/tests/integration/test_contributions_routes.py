@@ -51,10 +51,9 @@ SAMPLE_OUT = ContributionOut(project="p", material_id="mp-1", formula="Fe2O3")
 # A queued download job as the service returns it (POST /download responds with the tracked job).
 SAMPLE_JOB = {
     "id": str(PydanticObjectId()),
-    "s3_key": "contributions/" + "0" * 32 + ".jsonl.gz",
+    "s3_key": "0" * 32 + ".jsonl.gz",
     "status": "submitted",
     "requester": "test-consumer-id",
-    "domain": "contributions",
     "fmt": "jsonl",
 }
 
@@ -157,7 +156,7 @@ class TestContributionByIdRouting:
 
     def test_download_route_conventional_path(self, client, contribution_service):
         contribution_service.queue_download.return_value = SAMPLE_JOB
-        assert client.post("/api/v1/contributions/download").status_code == 200
+        assert client.post("/api/v1/contributions/download", json={}).status_code == 200
 
 
 class TestContributionByIdentityRouting:
@@ -281,46 +280,56 @@ class TestQueueDownload:
     """The download endpoint queues an async job (delegating to ``queue_download``) and returns the
     tracked job, rather than streaming the export inline."""
 
-    def test_default_format_returns_200(self, client, contribution_service):
-        # ``format`` defaults to JSONL, so the endpoint works with the param omitted.
+    def test_empty_body_returns_200(self, client, contribution_service):
+        # Every field is optional (contributions defaults to match-all in scope), so an empty body works.
         contribution_service.queue_download.return_value = SAMPLE_JOB
-        assert client.post("/api/v1/contributions/download").status_code == 200
+        assert client.post("/api/v1/contributions/download", json={}).status_code == 200
 
     def test_csv_format_returns_200(self, client, contribution_service):
         contribution_service.queue_download.return_value = SAMPLE_JOB
-        assert client.post("/api/v1/contributions/download?format=csv").status_code == 200
+        assert client.post("/api/v1/contributions/download", json={"format": "csv"}).status_code == 200
 
     def test_returns_the_queued_job(self, client, contribution_service):
         contribution_service.queue_download.return_value = SAMPLE_JOB
-        assert client.post("/api/v1/contributions/download").json() == SAMPLE_JOB
+        assert client.post("/api/v1/contributions/download", json={}).json() == SAMPLE_JOB
 
     def test_default_format_forwarded_is_jsonl(self, client, contribution_service):
         contribution_service.queue_download.return_value = SAMPLE_JOB
-        client.post("/api/v1/contributions/download")
-        assert contribution_service.queue_download.call_args.kwargs["format"] == "jsonl"
+        client.post("/api/v1/contributions/download", json={})
+        request = contribution_service.queue_download.call_args.args[0]
+        assert request.format == "jsonl"
 
     def test_format_forwarded_to_service(self, client, contribution_service):
         contribution_service.queue_download.return_value = SAMPLE_JOB
-        client.post("/api/v1/contributions/download?format=csv")
-        assert contribution_service.queue_download.call_args.kwargs["format"] == "csv"
+        client.post("/api/v1/contributions/download", json={"format": "csv"})
+        request = contribution_service.queue_download.call_args.args[0]
+        assert request.format == "csv"
 
     def test_invalid_format_returns_422(self, client, contribution_service):
         contribution_service.queue_download.return_value = SAMPLE_JOB
-        assert client.post("/api/v1/contributions/download?format=xml").status_code == 422
+        assert client.post("/api/v1/contributions/download", json={"format": "xml"}).status_code == 422
 
     def test_filter_forwarded_to_service(self, client, contribution_service):
-        # The request's query params are parsed into a ContributionFilter and handed to the service.
+        # The body's ``contributions`` object is parsed into a ContributionFilter and handed to the service.
         contribution_service.queue_download.return_value = SAMPLE_JOB
-        client.post("/api/v1/contributions/download?project=my-proj")
-        forwarded = contribution_service.queue_download.call_args.kwargs["filter"]
-        assert isinstance(forwarded, ContributionFilter)
-        assert forwarded.project == "my-proj"
+        client.post("/api/v1/contributions/download", json={"contributions": {"project": "my-proj"}})
+        request = contribution_service.queue_download.call_args.args[0]
+        assert isinstance(request.contributions, ContributionFilter)
+        assert request.contributions.project == "my-proj"
+
+    def test_components_bundled_when_requested(self, client, contribution_service):
+        # A component key with a filter is included; omitted component collections stay ``None``.
+        contribution_service.queue_download.return_value = SAMPLE_JOB
+        client.post("/api/v1/contributions/download", json={"structures": {"name": "POSCAR"}})
+        request = contribution_service.queue_download.call_args.args[0]
+        assert request.structures is not None and request.structures.name == "POSCAR"
+        assert request.tables is None and request.attachments is None
 
     def test_service_error_surfaces_as_uniform_json(self, client, contribution_service):
         # An AppError raised while queueing surfaces through the registered exception handler as the
         # uniform error envelope (not a 500 traceback).
         contribution_service.queue_download.side_effect = NotFoundError("nothing to download")
-        r = client.post("/api/v1/contributions/download")
+        r = client.post("/api/v1/contributions/download", json={})
         assert r.status_code == 404
         assert r.json()["error"]["code"] == "not_found"
 
@@ -437,7 +446,7 @@ class TestContributionMutationsRequireAuth:
 
     def test_download_anon_401(self, client, contribution_service):
         # Downloads are authenticated-only: an anonymous caller cannot queue an export.
-        r = client.post("/api/v1/contributions/download", headers=FORCE_ANON_HEADERS)
+        r = client.post("/api/v1/contributions/download", json={}, headers=FORCE_ANON_HEADERS)
         assert r.status_code == 401
         contribution_service.queue_download.assert_not_called()
 

@@ -71,6 +71,9 @@ def make_test_app() -> FastAPI:
     async def _noop_lifespan(app: FastAPI):
         app.state.db = MagicMock()
         app.state.s3 = MagicMock()
+        # Every resource service now constructs a DownloadService (for its /download route), which
+        # pulls the SQS client off app state; stub it so any real (non-overridden) service builds.
+        app.state.sqs = MagicMock()
         yield
 
     app = FastAPI(title="mpcontribs-test", lifespan=_noop_lifespan)
