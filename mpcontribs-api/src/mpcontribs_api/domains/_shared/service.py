@@ -12,7 +12,7 @@ from mpcontribs_api.domains._shared.components import MongoDbComponentsRepositor
 from mpcontribs_api.domains._shared.models import Component, ComponentDeleteResponse, ComponentIn, DocumentOut
 from mpcontribs_api.domains._shared.types import DownloadFormat
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
-from mpcontribs_api.domains.downloads.models import DownloadDomain, DownloadOut
+from mpcontribs_api.domains.downloads.models import DownloadOut
 from mpcontribs_api.domains.downloads.service import DownloadService
 from mpcontribs_api.exceptions import NotFoundError
 from mpcontribs_api.pagination import CursorParams, Page
@@ -140,19 +140,11 @@ class ComponentService[
         return await self._components.update_one(identifiers, update)
 
     async def queue_download(self, filter: TFilter, format: DownloadFormat) -> DownloadOut:
-        """Enqueue an async export of the matching, reachable components.
-
-        Since components don't carry a scope directly, we gather all in-scope components for the query and write them to
-        the Download.
-        """
+        """Enqueue an async export of the matching, reachable components."""
         reachable = await self._contributions.referenced_component_ids(self._ref_field, scoped=True)
         base = self._components.build_download_query(filter)
-        query = {"$and": [base, {"_id": {"$in": sorted(reachable)}}]}
-        return await self._downloads.queue_download(
-            query=query,
-            domain=DownloadDomain(self._ref_field),
-            fmt=format,
-        )
+        query = {self._ref_field: [{"$and": [base, {"_id": {"$in": sorted(reachable)}}]}]}
+        return await self._downloads.queue_download(query=query, fmt=format)
 
     async def delete_many(self, filter: TFilter) -> ComponentDeleteResponse:
         """Delete components matching ``filter`` that are reachable and globally unreferenced.

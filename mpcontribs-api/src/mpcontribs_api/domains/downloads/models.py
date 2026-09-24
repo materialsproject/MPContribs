@@ -20,8 +20,13 @@ class JobStatus(StrEnum):
 
 
 class DownloadDomain(StrEnum):
-    """The downloadable domains."""
+    """The downloadable collections.
 
+    Used as the vocabulary for the keys of a download ``query`` map (a download can bundle a base
+    collection plus related ones), not stored as a field on the ``Download`` doc.
+    """
+
+    projects = "projects"
     contributions = "contributions"
     structures = "structures"
     tables = "tables"
@@ -46,8 +51,8 @@ class Download(BaseDocumentWithInput[PydanticObjectId]):
     s3_key: str
     status: JobStatus
     requester: str
+    # Map of ``{collection_name: [mongo_query, ...]}`` the worker runs to assemble the download.
     query: dict
-    domain: DownloadDomain
     fmt: DownloadFormat
     rows_written: int = 0
     bytes_written: int = 0
@@ -69,15 +74,18 @@ class Download(BaseDocumentWithInput[PydanticObjectId]):
             DownloadIdentity.index_model(name="requester_s3_key", unique=True),
         ]
 
+    # Lives in API server instead of worker so we can check for cache hits
     @staticmethod
-    def build_s3_key(domain: DownloadDomain, fmt: DownloadFormat, query: dict) -> str:
+    def build_s3_key(fmt: DownloadFormat, query: dict) -> str:
         """Derive the deterministic S3 object key for a download request.
 
-        Includes the query, which includes the user's scope. This guarantees that a cache hit only
-        occurs when users share the same scope, and thus do not risk leaking documents to each other.
+        Includes the query, whose per-collection predicates embed the user's scope. This guarantees
+        that a cache hit only occurs when users share the same scope, and thus do not risk leaking
+        documents to each other. Stored flat: the collections being downloaded are encoded in the
+        ``query`` keys, so no per-domain path prefix is needed.
         """
-        digest = canonical_sha256({"domain": domain, "fmt": fmt.value, "query": query})
-        return download_filename(f"{domain}/{digest}", fmt, ShortMimeFormat.GZ)
+        digest = canonical_sha256({"fmt": fmt.value, "query": query})
+        return download_filename(digest, fmt, ShortMimeFormat.GZ)
 
     @classmethod
     def from_input_model(
@@ -88,11 +96,10 @@ class Download(BaseDocumentWithInput[PydanticObjectId]):
         return cls.model_validate(
             obj={
                 "_id": PydanticObjectId(),
-                "s3_key": cls.build_s3_key(data.domain, data.fmt, data.query),
+                "s3_key": cls.build_s3_key(data.fmt, data.query),
                 "status": data.status,
                 "requester": data.requester,
                 "query": data.query,
-                "domain": data.domain,
                 "fmt": data.fmt,
                 "created_at": created_at,
                 "original_time": created_at,
@@ -103,10 +110,9 @@ class Download(BaseDocumentWithInput[PydanticObjectId]):
 class DownloadIn(BaseModel):
     status: JobStatus
     requester: str
-    # The query the worker will execute in collection 'domain' to get data to generate download
-    # Should also include the user's scope directly.
+    # Map of ``{collection_name: [mongo_query, ...]}`` the worker runs to build the download. Each
+    # predicate already embeds the user's scope for that collection (see ``Download.query``).
     query: dict
-    domain: DownloadDomain
     fmt: DownloadFormat
 
 
@@ -115,7 +121,6 @@ class DownloadOut(DocumentOut):
     status: JobStatus | None = None
     requester: str | None = None
     query: dict | None = None
-    domain: DownloadDomain | None = None
     fmt: DownloadFormat | None = None
     rows_written: int = 0
     bytes_written: int = 0

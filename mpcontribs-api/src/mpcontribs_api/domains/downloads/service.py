@@ -12,7 +12,6 @@ from mpcontribs_api.config import get_settings
 from mpcontribs_api.domains._shared.types import DownloadFormat
 from mpcontribs_api.domains.downloads.models import (
     Download,
-    DownloadDomain,
     DownloadIn,
     DownloadOut,
     DownloadPatch,
@@ -63,15 +62,18 @@ class DownloadService:
         """
         return await self._downloads.read_one({"id": download_id}, fields=fields, session=session)
 
-    async def queue_download(self, query: dict, domain: DownloadDomain, fmt: DownloadFormat) -> DownloadOut:
-        """Assemble and enqueue a download job for the current user."""
+    async def queue_download(self, query: dict, fmt: DownloadFormat) -> DownloadOut:
+        """Assemble and enqueue a download job for the current user.
+
+        ``query`` is the ``{collection_name: [mongo_query, ...]}`` map the worker runs; its
+        per-collection predicates already embed the caller's read scope.
+        """
         if self._user.username is None:
             raise PermissionError(required_role="authenticated")
         download_in = DownloadIn(
             status=JobStatus.submitted,
             requester=self._user.username,
             query=query,
-            domain=domain,
             fmt=fmt,
         )
         return await self._submit(download_in)
