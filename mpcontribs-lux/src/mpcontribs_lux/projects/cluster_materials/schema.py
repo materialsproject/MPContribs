@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from math import isclose
-from typing import Annotated, Any, Literal
+from typing import Annotated, ClassVar, Literal
 
 from pydantic import (
     AfterValidator,
@@ -14,9 +14,9 @@ from pydantic import (
     StringConstraints,
     model_validator,
 )
-from pymatgen.core import Element
+from pymatgen.core import Element, Structure
 
-from mpcontribs_lux.registry import LuxRegistry, SchemaType
+from mpcontribs_lux.registry import LuxRegistry, SchemaType, ValidatedTables
 
 from .cluster import Cluster
 from .cluster_point_group import ClusterPointGroup
@@ -30,7 +30,7 @@ def _validate_compound_system(value: str) -> str:
 
     try:
         for symbol in symbols:
-            Element(symbol)
+            _ = Element(symbol)
     except ValueError as exc:
         raise ValueError("compoundSystem contains an invalid element symbol") from exc
 
@@ -75,7 +75,7 @@ _MODEL_CONFIG = ConfigDict(extra="forbid", allow_inf_nan=False)
 class FlatBandProperties(BaseModel):
     """Selected flat-band model annotation from Neves et al. (2024)."""
 
-    model_config = _MODEL_CONFIG
+    model_config: ClassVar[ConfigDict] = _MODEL_CONFIG
 
     sublatticeElement: Element = Field(
         description="Elemental sublattice hosting the selected flat-band model."
@@ -126,7 +126,7 @@ class FlatBandProperties(BaseModel):
 class ClusterMaterial(BaseModel):
     """Main data fields for one Cluster Materials contribution."""
 
-    model_config = _MODEL_CONFIG
+    model_config: ClassVar[ConfigDict] = _MODEL_CONFIG
 
     compoundSystem: CompoundSystem = Field(
         description=(
@@ -190,26 +190,21 @@ class ClusterMaterial(BaseModel):
     )
 
 
-@LuxRegistry.register_validator("cluster_materials", "ClusterMaterial")
+@LuxRegistry.register_validator("cluster_materials", contribution=ClusterMaterial)
 def validate_material(
     contribution: ClusterMaterial,
-    tables: dict[str, list[dict[str, Any]]],
-    structures: dict[str, Any] | None = None,
-) -> bool:
+    tables: ValidatedTables,
+    _structures: dict[str, Structure] | None = None,
+) -> None:
     """Return True when main data and both tables satisfy shared invariants.
 
-    This validator expects ``"Cluster"`` and ``"ClusterPointGroup"`` entries.
+    This validator expects ``Cluster`` and ``ClusterPointGroup`` entries.
     """
     try:
-        clusters = tables["Cluster"]
-        cluster_groups = tables["ClusterPointGroup"]
+        cluster_rows = tables.rows(Cluster)
+        cluster_group_rows = tables.rows(ClusterPointGroup)
     except KeyError as err:
         raise ValueError(f"cluster_materials requires a {err.args[0]!r} table") from err
-
-    cluster_rows = [Cluster.model_validate(row) for row in clusters]
-    cluster_group_rows = [
-        ClusterPointGroup.model_validate(row) for row in cluster_groups
-    ]
 
     if len(cluster_rows) != contribution.numberOfClusters:
         raise ValueError("numberOfClusters must equal the number of clusters rows")
@@ -239,5 +234,3 @@ def validate_material(
     labels = [row.label for row in cluster_group_rows]
     if len(labels) != len(set(labels)):
         raise ValueError("clusterPointGroups labels must be unique")
-
-    return True
