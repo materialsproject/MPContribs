@@ -19,7 +19,7 @@ from botocore.exceptions import BotoCoreError, ClientError
 from mpcontribs_api.authz import User
 from mpcontribs_api.domains.downloads.models import DownloadOut, JobStatus
 from mpcontribs_api.domains.downloads.service import DownloadService
-from mpcontribs_api.exceptions import S3Error, SqsError
+from mpcontribs_api.exceptions import NotFoundError, S3Error, SqsError
 
 
 def _service() -> DownloadService:
@@ -33,6 +33,7 @@ async def test_get_presigned_url_wraps_s3_clienterror_as_s3error():
     # A ready ticket the caller owns: read_one is scoped in the repo, so stub it directly here.
     ready = DownloadOut(id=str(oid), status=JobStatus.ready, s3_key="contributions/deadbeef.jsonl.gz")
     service.read_one = AsyncMock(return_value=ready)  # type: ignore[method-assign]
+    service._s3.head_object = AsyncMock(return_value={})  # object exists
     service._s3.generate_presigned_url = AsyncMock(
         side_effect=ClientError({"Error": {"Code": "AccessDenied", "Message": "nope"}}, "GetObject")
     )
@@ -53,9 +54,48 @@ async def test_get_presigned_url_returns_url_on_success():
     service.read_one = AsyncMock(  # type: ignore[method-assign]
         return_value=DownloadOut(id=str(oid), status=JobStatus.ready, s3_key="contributions/abc.jsonl.gz")
     )
+    service._s3.head_object = AsyncMock(return_value={})  # object exists
     service._s3.generate_presigned_url = AsyncMock(return_value="https://signed.example/object")
 
     assert await service.get_presigned_url(download_id=oid) == "https://signed.example/object"
+
+
+async def test_get_presigned_url_missing_object_is_not_found():
+    # A ready ticket whose S3 object is gone (lifecycle-expired before the Mongo TTL) must surface as
+    # a clean 404, not a signed URL that 404s only once the client tries to fetch it.
+    service = _service()
+    oid = PydanticObjectId()
+    service.read_one = AsyncMock(  # type: ignore[method-assign]
+        return_value=DownloadOut(id=str(oid), status=JobStatus.ready, s3_key="contributions/gone.jsonl.gz")
+    )
+    service._s3.head_object = AsyncMock(
+        side_effect=ClientError({"Error": {"Code": "404", "Message": "Not Found"}}, "HeadObject")
+    )
+    service._s3.generate_presigned_url = AsyncMock(return_value="https://signed.example/object")
+
+    with pytest.raises(NotFoundError):
+        await service.get_presigned_url(download_id=oid)
+
+    # A missing object short-circuits: we never sign a URL for it.
+    service._s3.generate_presigned_url.assert_not_awaited()
+
+
+async def test_get_presigned_url_head_object_error_is_s3error():
+    # A non-404 failure from the existence probe is an infrastructure error (500), not a 404.
+    service = _service()
+    oid = PydanticObjectId()
+    ready = DownloadOut(id=str(oid), status=JobStatus.ready, s3_key="contributions/x.jsonl.gz")
+    service.read_one = AsyncMock(return_value=ready)  # type: ignore[method-assign]
+    service._s3.head_object = AsyncMock(
+        side_effect=ClientError({"Error": {"Code": "AccessDenied", "Message": "nope"}}, "HeadObject")
+    )
+    service._s3.generate_presigned_url = AsyncMock(return_value="https://signed.example/object")
+
+    with pytest.raises(S3Error) as excinfo:
+        await service.get_presigned_url(download_id=oid)
+
+    assert excinfo.value.context["object_key"] == ready.s3_key
+    service._s3.generate_presigned_url.assert_not_awaited()
 
 
 @pytest.mark.parametrize(

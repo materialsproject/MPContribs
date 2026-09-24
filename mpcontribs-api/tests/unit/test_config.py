@@ -186,6 +186,22 @@ class TestAwsSettings:
 
 
 # ---------------------------------------------------------------------------
+# MPContribs download settings — defaults and env nesting
+# ---------------------------------------------------------------------------
+
+
+class TestMPContribsDownloadSettings:
+    def test_max_active_defaults_to_five(self, monkeypatch):
+        _set_required_env(monkeypatch)
+        assert Settings().mpcontribs.downloads_max_active == 5
+
+    def test_max_active_env_override(self, monkeypatch):
+        _set_required_env(monkeypatch)
+        monkeypatch.setenv("MPCONTRIBS_MPCONTRIBS__DOWNLOADS_MAX_ACTIVE", "2")
+        assert Settings().mpcontribs.downloads_max_active == 2
+
+
+# ---------------------------------------------------------------------------
 # Consumer quota limits — domain-grouped defaults and env nesting
 # ---------------------------------------------------------------------------
 

@@ -17,12 +17,14 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from mpcontribs_api.authz import User
+from mpcontribs_api.config import get_settings
 from mpcontribs_api.domains._shared.types import DownloadFormat
 from mpcontribs_api.domains.contributions.models import ContributionFilter
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
 from mpcontribs_api.domains.downloads.models import DownloadOut, JobStatus
 from mpcontribs_api.domains.downloads.service import DownloadService
 from mpcontribs_api.exceptions import (
+    DownloadLimitError,
     DownloadRetryExhaustedError,
     JobStatusError,
     NotFoundError,
@@ -49,7 +51,12 @@ def _service(user: User | None = None) -> tuple[DownloadService, MagicMock]:
     """
     sqs = MagicMock()
     sqs.send_message = AsyncMock()
-    service = DownloadService(user=user or _owner("requester@example.com"), sqs=sqs, s3=MagicMock())
+    s3 = MagicMock()
+    # Async-mock the awaited S3 calls so a bare MagicMock isn't awaited; the object-exists probe
+    # defaults to "present" and individual tests override generate_presigned_url as needed.
+    s3.head_object = AsyncMock(return_value={})
+    s3.generate_presigned_url = AsyncMock(return_value="https://signed.example/object")
+    service = DownloadService(user=user or _owner("requester@example.com"), sqs=sqs, s3=s3)
     return service, sqs
 
 
@@ -222,6 +229,93 @@ class TestAnonymousRejected:
             await _queue(service)
         assert sqs.send_message.await_count == 0
         assert await db["downloads"].count_documents({}) == 0
+
+
+class TestActiveLimit:
+    """A user may have at most ``downloads_max_active`` unfinished (``submitted``) jobs at once.
+
+    Enforced only when a genuinely new ticket is created, so a cache hit or an idempotent re-request
+    of an existing in-flight ticket is never blocked. The cap is per-requester.
+    """
+
+    @pytest.fixture
+    def cap(self, monkeypatch):
+        """Shrink the in-flight cap to 2 for the duration of a test (restored automatically)."""
+        monkeypatch.setattr(get_settings().mpcontribs, "downloads_max_active", 2)
+        return 2
+
+    async def test_new_submission_over_cap_is_refused_and_rolled_back(self, db, cap):
+        service, sqs = _service(_owner("consumer-a"))
+        # Two distinct in-flight tickets fill the cap.
+        await _queue(service, fmt=DownloadFormat.JSONL)
+        await _queue(service, fmt=DownloadFormat.CSV)
+        assert sqs.send_message.await_count == 2
+        assert await db["downloads"].count_documents({}) == 2
+
+        # A third, distinct submission trips the cap: refused, with no orphan ticket and no enqueue.
+        with pytest.raises(DownloadLimitError):
+            await _queue(service, material_id="mp-1")
+
+        assert await db["downloads"].count_documents({}) == 2  # the over-cap ticket was rolled back
+        assert sqs.send_message.await_count == 2  # not enqueued
+
+    async def test_existing_in_flight_rerequest_is_not_blocked(self, db, cap):
+        # An idempotent re-request of an already-``submitted`` ticket is not a new ticket, so it is
+        # returned as-is even when the requester is at the cap.
+        service, sqs = _service(_owner("consumer-a"))
+        first = await _queue(service, fmt=DownloadFormat.JSONL)
+        await _queue(service, fmt=DownloadFormat.CSV)  # now at cap (2 submitted)
+
+        again = await _queue(service, fmt=DownloadFormat.JSONL)
+
+        assert again.id == first.id
+        assert await db["downloads"].count_documents({}) == 2
+        assert sqs.send_message.await_count == 2  # unchanged: no new work
+
+    async def test_ready_ticket_is_retrievable_at_cap(self, db, cap):
+        # A finished (``ready``) job doesn't count toward the cap and a re-request returns it (cache
+        # hit) rather than being blocked, even while the requester's other jobs sit at the cap.
+        service, sqs = _service(_owner("consumer-a"))
+        ready = await _queue(service, fmt=DownloadFormat.JSONL)
+        await db["downloads"].update_one(
+            {"requester": "consumer-a", "s3_key": ready.s3_key},
+            {"$set": {"status": JobStatus.ready.value}},
+        )
+        # Fill the cap with distinct in-flight tickets.
+        await _queue(service, fmt=DownloadFormat.CSV)
+        await _queue(service, material_id="mp-1")
+        assert await db["downloads"].count_documents({"status": JobStatus.submitted.value}) == 2
+
+        hit = await _queue(service, fmt=DownloadFormat.JSONL)
+        assert hit.status == JobStatus.ready  # cache hit, not refused
+
+    async def test_cap_is_per_requester(self, db, cap):
+        # consumer-a at the cap does not stop consumer-b from queuing their own downloads.
+        service_a, _ = _service(_owner("consumer-a"))
+        await _queue(service_a, fmt=DownloadFormat.JSONL)
+        await _queue(service_a, fmt=DownloadFormat.CSV)  # consumer-a now at cap
+        with pytest.raises(DownloadLimitError):
+            await _queue(service_a, material_id="mp-1")
+
+        service_b, sqs_b = _service(_owner("consumer-b"))
+        out_b = await _queue(service_b, fmt=DownloadFormat.JSONL)  # must not raise
+        assert out_b.status == JobStatus.submitted
+        assert sqs_b.send_message.await_count == 1
+
+    async def test_working_jobs_count_toward_cap(self, db, cap):
+        # A job a worker has already picked up (``working``) is still in flight and counts against the
+        # cap, so it isn't a loophole for exceeding it once work starts.
+        service, _ = _service(_owner("consumer-a"))
+        first = await _queue(service, fmt=DownloadFormat.JSONL)
+        await _queue(service, fmt=DownloadFormat.CSV)
+        # A worker claims the first job: submitted -> working. Still 2 in flight (1 working, 1 submitted).
+        await db["downloads"].update_one(
+            {"requester": "consumer-a", "s3_key": first.s3_key},
+            {"$set": {"status": JobStatus.working.value}},
+        )
+
+        with pytest.raises(DownloadLimitError):
+            await _queue(service, material_id="mp-1")
 
 
 class TestRetryOnError:
