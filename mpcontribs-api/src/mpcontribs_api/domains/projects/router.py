@@ -8,6 +8,7 @@ from mpcontribs_api.dependencies import require_user
 from mpcontribs_api.domains._shared.types import FieldSelector
 from mpcontribs_api.domains.projects.dependencies import ProjectServiceDep
 from mpcontribs_api.domains.projects.models import (
+    ProjectDownloadRequest,
     ProjectFilter,
     ProjectIn,
     ProjectOut,
@@ -58,6 +59,17 @@ async def search(
         list[ProjectOut]: the matching projects
     """
     return await service.search(query=query, limit=limit)
+
+
+@router.post("/download", dependencies=[Depends(require_user)])
+async def download(service: ProjectServiceDep, request: ProjectDownloadRequest):
+    """Enqueue a bundled project download.
+
+    Declared before ``/{id}`` so the literal ``download`` segment is never captured as a project id.
+    The JSON body is a ``collection -> filter`` map: ``projects`` (the base) plus any of
+    ``contributions``/``structures``/``tables``/``attachments`` to bundle, each with its own filter.
+    """
+    return await service.queue_download(request)
 
 
 @router.get("/{id}")

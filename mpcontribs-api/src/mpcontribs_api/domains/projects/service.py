@@ -5,17 +5,26 @@ from bson import DBRef, ObjectId
 
 from mpcontribs_api.authz import INITIATIVE_PATH, ROOT_PATH, User
 from mpcontribs_api.config import ConsumerLimits, get_settings
+from mpcontribs_api.domains._shared.downloadable import build_query_map
 from mpcontribs_api.domains._shared.models import DeleteResponse
+from mpcontribs_api.domains.attachments.repository import MongoDbAttachmentRepository
+from mpcontribs_api.domains.contributions.models import ContributionFilter
+from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
+from mpcontribs_api.domains.downloads.models import DownloadDomain, DownloadOut
+from mpcontribs_api.domains.downloads.service import DownloadService
 from mpcontribs_api.domains.initiatives.models import Initiative
 from mpcontribs_api.domains.initiatives.repository import MongoDbInitiativeRepository
 from mpcontribs_api.domains.projects.models import (
     Project,
+    ProjectDownloadRequest,
     ProjectFilter,
     ProjectIn,
     ProjectOut,
     ProjectPatch,
 )
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
+from mpcontribs_api.domains.structures.repository import MongoDbStructureRepository
+from mpcontribs_api.domains.tables.repository import MongoDbTableRepository
 from mpcontribs_api.exceptions import ConflictError, NotFoundError, PermissionError, ValidationError
 from mpcontribs_api.pagination import CursorParams, Page
 
@@ -28,11 +37,21 @@ class ProjectService:
         user: User,
         projects: MongoDbProjectRepository,
         initiatives: MongoDbInitiativeRepository,
+        contributions: MongoDbContributionRepository,
+        structures: MongoDbStructureRepository,
+        tables: MongoDbTableRepository,
+        attachments: MongoDbAttachmentRepository,
+        downloads: DownloadService,
         limits: ConsumerLimits | None = None,
     ) -> None:
         self._user = user
         self._projects = projects
         self._initiatives = initiatives
+        self._contributions = contributions
+        self._structures = structures
+        self._tables = tables
+        self._attachments = attachments
+        self._downloads = downloads
         self._limits = limits or get_settings().consumer
 
     async def read_many(
@@ -44,6 +63,22 @@ class ProjectService:
     async def read_one(self, identifiers: dict[str, Any], fields: frozenset[str] | None) -> Project | ProjectOut | None:
         """Return the single scoped project matching ``identifiers`` (``{"id": ...}``)."""
         return await self._projects.read_one(identifiers, fields)
+
+    async def queue_download(self, request: ProjectDownloadRequest) -> DownloadOut:
+        """Enqueue a bundled export of projects and, optionally, their contributions/components."""
+        contributions = request.contributions
+        if contributions is None and any((request.structures, request.tables, request.attachments)):
+            contributions = ContributionFilter()
+        query = build_query_map(
+            [
+                (DownloadDomain.projects, self._projects, request.projects),
+                (DownloadDomain.contributions, self._contributions, contributions),
+                (DownloadDomain.structures, self._structures, request.structures),
+                (DownloadDomain.tables, self._tables, request.tables),
+                (DownloadDomain.attachments, self._attachments, request.attachments),
+            ]
+        )
+        return await self._downloads.queue_download(query=query, fmt=request.format)
 
     async def upsert_one(self, identifiers: dict[str, Any], data: ProjectIn) -> Project:
         """Upsert a project by id, applying every write-policy decision before persisting.

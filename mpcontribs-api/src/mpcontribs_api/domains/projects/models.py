@@ -8,8 +8,19 @@ from mpcontribs_api import pagination
 from mpcontribs_api.domains._shared.filters import BaseFilter
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut, Identity
 from mpcontribs_api.domains._shared.search_index import SearchIndex, SearchIndexed
-from mpcontribs_api.domains._shared.types import CANONICAL_KEY_COERCION, LongStr, PrefixedEmail, SearchStr, ShortStr
+from mpcontribs_api.domains._shared.types import (
+    CANONICAL_KEY_COERCION,
+    DownloadFormat,
+    LongStr,
+    PrefixedEmail,
+    SearchStr,
+    ShortStr,
+)
+from mpcontribs_api.domains.attachments.models import AttachmentFilter
+from mpcontribs_api.domains.contributions.models import ContributionFilter
 from mpcontribs_api.domains.initiatives.models import Initiative
+from mpcontribs_api.domains.structures.models import StructureFilter
+from mpcontribs_api.domains.tables.models import TableFilter
 from mpcontribs_api.exceptions import ValidationError
 
 
@@ -314,3 +325,20 @@ class ProjectPatch(BaseModel):
     @classmethod
     def _check_unique_column(cls, v: str | None) -> str | None:
         return _validate_unique_column(v)
+
+
+class ProjectDownloadRequest(BaseModel):
+    """Body of ``POST /projects/download``: a ``collection -> filter`` bundle.
+
+    ``projects`` is the base and is always downloaded (defaulting to every project in scope). Each
+    related collection is included only when its filter is present; the value is that level's
+    filter. Every level is scoped to the caller server-side, so an omitted-but-permissive filter
+    still cannot widen access.
+    """
+
+    projects: ProjectFilter = ProjectFilter()
+    contributions: ContributionFilter | None = None
+    structures: StructureFilter | None = None
+    tables: TableFilter | None = None
+    attachments: AttachmentFilter | None = None
+    format: DownloadFormat = DownloadFormat.JSONL

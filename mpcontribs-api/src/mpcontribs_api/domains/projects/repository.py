@@ -4,6 +4,7 @@ from beanie import PydanticObjectId
 from pymongo import UpdateOne
 
 from mpcontribs_api.authz import PROJECT_PATH
+from mpcontribs_api.domains._shared.downloadable import DownloadableRepository
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
 from mpcontribs_api.domains._shared.search_index import WILDCARD_PATH
 from mpcontribs_api.domains.projects.models import (
@@ -19,7 +20,10 @@ from mpcontribs_api.domains.projects.models import (
 from mpcontribs_api.scope import Granted, Owned, Public, Scope
 
 
-class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut, ProjectFilter, ProjectPatch]):
+class MongoDbProjectRepository(
+    DownloadableRepository[Project, ProjectOut, ProjectFilter],
+    MongoDbRepository[Project, ProjectIn, ProjectOut, ProjectFilter, ProjectPatch],
+):
     """A repository layer for access to MongoDB.
 
     Attributes:
