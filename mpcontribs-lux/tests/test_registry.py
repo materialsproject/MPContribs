@@ -11,7 +11,7 @@ import pytest
 from pydantic import BaseModel, ValidationError
 
 import mpcontribs_lux  # noqa: F401  -- import populates the registry
-from mpcontribs_lux import LuxRegistry, SchemaType
+from mpcontribs_lux import LuxRegistry, SchemaType, ValidatedTables
 
 
 @pytest.fixture
@@ -118,9 +118,9 @@ def test_import_populates_registry():
         "Experiment"
     }
 
-    # cluster_materials declares a cross-table validator; A_Lab does not.
-    assert LuxRegistry.get_validator("cluster_materials", "ClusterMaterial") is not None
-    assert LuxRegistry.get_validator("A_Lab", "Experiment") is None
+    # cluster_materials declares a cross-object validator; A_Lab does not.
+    assert LuxRegistry.get_validators("cluster_materials")
+    assert LuxRegistry.get_validators("A_Lab") == []
 
 
 def test_register_schema_idempotent_and_rejects_name_clash(isolated_registry):
@@ -184,10 +184,13 @@ def test_get_schemas_empty_for_unknown():
 
 
 # --------------------------------------------------------------------------- #
-# register_validator / get_validator
+# register_validator / get_validators
 # --------------------------------------------------------------------------- #
-def test_register_validator_stores_and_rejects_conflict(isolated_registry):
+def test_register_validator_allows_multiple_and_is_idempotent(isolated_registry):
+    """Several validators may be attached to one contribution; dupes collapse."""
     project = "zz_validator_project"
+    ctx = type("Ctx", (BaseModel,), {})
+    isolated_registry.register_schema(project, SchemaType.contribution)(ctx)
 
     def validator_a(contribution, tables, structures):
         return True
@@ -195,22 +198,45 @@ def test_register_validator_stores_and_rejects_conflict(isolated_registry):
     def validator_b(contribution, tables, structures):
         return True
 
-    isolated_registry.register_validator(project, "Ctx")(validator_a)
-    assert isolated_registry.get_validator(project, "Ctx") is validator_a
-    # Same callable again is fine.
-    isolated_registry.register_validator(project, "Ctx")(validator_a)
+    isolated_registry.register_validator(project, contribution="Ctx")(validator_a)
+    isolated_registry.register_validator(project, contribution="Ctx")(validator_b)
+    # Both are kept -- multiple validators per contribution are allowed.
+    funcs = isolated_registry.get_validators(project)
+    assert validator_a in funcs and validator_b in funcs
+    # Re-registering the same function with the same gates is a no-op.
+    isolated_registry.register_validator(project, contribution="Ctx")(validator_a)
+    assert isolated_registry.get_validators(project).count(validator_a) == 1
 
-    with pytest.raises(ValueError):
-        isolated_registry.register_validator(project, "Ctx")(validator_b)
 
-    assert isolated_registry.get_validator(project, "absent") is None
+def test_register_validator_validates_declared_scope(isolated_registry):
+    """Gates must name registered schemas, and at least one gate is required."""
+    project = "zz_scope"
+    ctx = type("Ctx", (BaseModel,), {})
+    tbl = type("Tbl", (BaseModel,), {})
+    isolated_registry.register_schema(project, SchemaType.contribution)(ctx)
+    isolated_registry.register_schema(project, SchemaType.table)(tbl)
+
+    def validator(contribution, tables, structures):
+        return True
+
+    # Must declare contribution= and/or tables=.
+    with pytest.raises(ValueError, match="contribution.*tables"):
+        isolated_registry.register_validator(project)(validator)
+    # Unknown contribution / table names fail fast.
+    with pytest.raises(ValueError, match="no such contribution"):
+        isolated_registry.register_validator(project, contribution="Missing")(validator)
+    with pytest.raises(ValueError, match="no such table"):
+        isolated_registry.register_validator(project, tables=("Missing",))(validator)
+    # A valid table gate registers.
+    isolated_registry.register_validator(project, tables="Tbl")(validator)
+    assert validator in isolated_registry.get_validators(project)
 
 
 # --------------------------------------------------------------------------- #
 # validate()
 # --------------------------------------------------------------------------- #
-def test_validate_dispatches_by_contribution_type(isolated_registry):
-    """A project with several contribution types routes to the matching validator."""
+def test_validate_runs_only_matching_contribution_scoped_validators(isolated_registry):
+    """A contribution-scoped validator runs only for its own contribution type."""
     project = "zz_multi_contrib"
 
     ctx_a = type("CtxA", (BaseModel,), {"__annotations__": {"x": int}})
@@ -218,11 +244,11 @@ def test_validate_dispatches_by_contribution_type(isolated_registry):
     isolated_registry.register_schema(project, SchemaType.contribution)(ctx_a)
     isolated_registry.register_schema(project, SchemaType.contribution)(ctx_b)
 
-    @isolated_registry.register_validator(project, "CtxA")
+    @isolated_registry.register_validator(project, contribution="CtxA")
     def _validate_a(contribution, tables, structures):
         raise ValueError("CtxA validator ran")
 
-    @isolated_registry.register_validator(project, "CtxB")
+    @isolated_registry.register_validator(project, contribution="CtxB")
     def _validate_b(contribution, tables, structures):
         return True
 
@@ -230,12 +256,62 @@ def test_validate_dispatches_by_contribution_type(isolated_registry):
     with pytest.raises(ValueError):
         isolated_registry.validate(project, {"x": 1})
 
-    # Each contribution_name routes to its own validator.
+    # Only the resolved contribution's validator runs.
     with pytest.raises(ValueError, match="CtxA validator ran"):
         isolated_registry.validate(project, {"x": 1}, contribution_name="CtxA")
     assert (
         isolated_registry.validate(project, {"x": 1}, contribution_name="CtxB") is True
     )
+
+
+def test_validate_runs_table_scoped_validator_only_when_tables_present(isolated_registry):
+    """A table-scoped validator fires on table presence and gets validated rows."""
+    project = "zz_table_scoped"
+    ctx = type("Ctx", (BaseModel,), {"__annotations__": {"x": int}})
+    row = type("Row", (BaseModel,), {"__annotations__": {"v": int}})
+    isolated_registry.register_schema(project, SchemaType.contribution)(ctx)
+    isolated_registry.register_schema(project, SchemaType.table)(row)
+
+    seen: list[type] = []
+
+    # Gate declared with the schema class; rows read back with the same class.
+    @isolated_registry.register_validator(project, tables=row)
+    def _cross(contribution, tables, structures):
+        # Rows arrive already parsed into their table model, not as raw dicts.
+        seen.extend(type(r) for r in tables.rows(row))
+        return True
+
+    # Absent table -> validator does not run.
+    assert isolated_registry.validate(project, {"x": 1}) is True
+    assert seen == []
+
+    # Present table -> validator runs on validated row models.
+    assert (
+        isolated_registry.validate(project, {"x": 1}, tables={"Row": [{"v": 1}]}) is True
+    )
+    assert seen == [row]
+
+
+def test_validated_tables_typed_access_and_missing():
+    """rows(Schema) returns the validated instances; a missing table raises."""
+    row = type("Row", (BaseModel,), {"__annotations__": {"v": int}})
+    other = type("Other", (BaseModel,), {"__annotations__": {"w": int}})
+
+    tables = ValidatedTables({"Row": [row(v=1), row(v=2)]})
+
+    fetched = tables.rows(row)
+    assert [r.v for r in fetched] == [1, 2]  # typed access, no cast at call site
+    assert all(isinstance(r, row) for r in fetched)
+
+    # Presence introspection by class or name.
+    assert row in tables and "Row" in tables
+    assert other not in tables
+    assert tables.names() == frozenset({"Row"})
+
+    # get() is the optional-access form; rows() raises for an absent table.
+    assert tables.get(other) is None
+    with pytest.raises(KeyError):
+        tables.rows(other)
 
 
 def test_validate_runs_declared_cross_table_validator():
@@ -282,8 +358,8 @@ def test_validate_rejects_mismatched_material_ids():
         )
 
 
-def test_validate_fallback_per_row_for_project_without_validator():
-    """A_Lab declares no validator, so validate falls back to per-row checks."""
+def test_validate_per_row_for_project_without_validator():
+    """A_Lab declares no validator; per-row schema validation still runs."""
     assert (
         LuxRegistry.validate(
             "A_Lab",
@@ -294,7 +370,7 @@ def test_validate_fallback_per_row_for_project_without_validator():
     )
 
 
-def test_validate_fallback_rejects_bad_row():
+def test_validate_rejects_bad_row():
     bad_rows = valid_characterization_rows()
     bad_rows[0]["xrdSource"] = "bogus"  # not in {"mongo", "aeris"}
 
