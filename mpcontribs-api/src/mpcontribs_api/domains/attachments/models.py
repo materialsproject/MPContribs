@@ -1,9 +1,9 @@
 from beanie import PydanticObjectId
-from pydantic import field_validator
+from pydantic import BaseModel, field_validator
 
 from mpcontribs_api.domains._shared.filters import BaseFilter
 from mpcontribs_api.domains._shared.models import Component, ComponentIdentity, ComponentIn, DocumentOut
-from mpcontribs_api.domains._shared.types import FileLike, MD5Hash, MimeFormat, NFKCStr
+from mpcontribs_api.domains._shared.types import DownloadFormat, FileLike, MD5Hash, MimeFormat, NFKCStr
 from mpcontribs_api.exceptions import ValidationError
 from mpcontribs_api.projection import SparseFieldsModel
 
@@ -89,3 +89,10 @@ class AttachmentFilter(BaseFilter):
 
     class Constants(BaseFilter.Constants):
         model = Attachment
+
+
+class AttachmentDownloadRequest(BaseModel):
+    """Body of ``POST /attachments/download``: the attachment filter plus output format."""
+
+    attachments: AttachmentFilter = AttachmentFilter()
+    format: DownloadFormat = DownloadFormat.JSONL

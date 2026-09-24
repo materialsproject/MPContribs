@@ -5,9 +5,14 @@ from fastapi_filter import FilterDepends
 
 from mpcontribs_api.dependencies import require_user
 from mpcontribs_api.domains._shared.models import ComponentDeleteResponse, ComponentIdentity
-from mpcontribs_api.domains._shared.types import DownloadFormat, FieldSelector
+from mpcontribs_api.domains._shared.types import FieldSelector
 from mpcontribs_api.domains.attachments.dependencies import AttachmentServiceDep
-from mpcontribs_api.domains.attachments.models import AttachmentFilter, AttachmentOut, AttachmentPatch
+from mpcontribs_api.domains.attachments.models import (
+    AttachmentDownloadRequest,
+    AttachmentFilter,
+    AttachmentOut,
+    AttachmentPatch,
+)
 from mpcontribs_api.pagination import CursorParams
 
 router = APIRouter()
@@ -63,13 +68,9 @@ async def read_one(
 
 
 @router.post("/download", dependencies=[Depends(require_user)])
-async def download_attachment(
-    service: AttachmentServiceDep,
-    filter: AttachmentFilter = FilterDepends(AttachmentFilter),
-    format: DownloadFormat = DownloadFormat.JSONL,
-):
+async def download_attachment(service: AttachmentServiceDep, request: AttachmentDownloadRequest):
     """Enqueue an async export of the matching attachments, returning the download job ticket."""
-    return await service.queue_download(filter=filter, format=format)
+    return await service.queue_download(filter=request.attachments, format=request.format)
 
 
 @router.delete("", response_model=ComponentDeleteResponse, dependencies=[Depends(require_user)])

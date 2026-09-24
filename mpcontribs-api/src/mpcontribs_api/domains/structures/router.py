@@ -6,9 +6,15 @@ from fastapi_filter import FilterDepends
 from mpcontribs_api.dependencies import require_user, require_writer
 from mpcontribs_api.domains._shared.bulk import BulkWriteSummary
 from mpcontribs_api.domains._shared.models import ComponentDeleteResponse, ComponentIdentity
-from mpcontribs_api.domains._shared.types import DownloadFormat, FieldSelector
+from mpcontribs_api.domains._shared.types import FieldSelector
 from mpcontribs_api.domains.structures.dependencies import StructureServiceDep
-from mpcontribs_api.domains.structures.models import StructureFilter, StructureIn, StructureOut, StructurePatch
+from mpcontribs_api.domains.structures.models import (
+    StructureDownloadRequest,
+    StructureFilter,
+    StructureIn,
+    StructureOut,
+    StructurePatch,
+)
 from mpcontribs_api.pagination import CursorParams
 
 router = APIRouter()
@@ -64,13 +70,9 @@ async def read_one(
 
 
 @router.post("/download", dependencies=[Depends(require_user)])
-async def download_structure(
-    service: StructureServiceDep,
-    filter: StructureFilter = FilterDepends(StructureFilter),
-    format: DownloadFormat = DownloadFormat.JSONL,
-):
+async def download_structure(service: StructureServiceDep, request: StructureDownloadRequest):
     """Enqueue an async export of the matching structures, returning the download job ticket."""
-    return await service.queue_download(filter=filter, format=format)
+    return await service.queue_download(filter=request.structures, format=request.format)
 
 
 @router.post("", response_model=BulkWriteSummary[StructureOut], dependencies=[Depends(require_writer)])

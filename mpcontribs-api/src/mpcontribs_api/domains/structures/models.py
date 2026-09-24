@@ -6,7 +6,7 @@ from pymatgen.core import Element
 
 from mpcontribs_api.domains._shared.filters import BaseFilter
 from mpcontribs_api.domains._shared.models import Component, ComponentIdentity, ComponentIn, DocumentOut
-from mpcontribs_api.domains._shared.types import MD5Hash, NFKCStr
+from mpcontribs_api.domains._shared.types import DownloadFormat, MD5Hash, NFKCStr
 from mpcontribs_api.exceptions import ValidationError
 from mpcontribs_api.projection import SparseFieldsModel
 
@@ -172,3 +172,10 @@ class StructureFilter(BaseFilter):
 
     class Constants(BaseFilter.Constants):
         model = Structure
+
+
+class StructureDownloadRequest(BaseModel):
+    """Body of ``POST /structures/download``: the structure filter plus output format."""
+
+    structures: StructureFilter = StructureFilter()
+    format: DownloadFormat = DownloadFormat.JSONL

@@ -21,7 +21,15 @@ from mpcontribs_api._openapi import CONTRIBUTION_DATA_INPUT_DESCRIPTION, CONTRIB
 from mpcontribs_api.domains._shared.filters import BaseFilter
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
 from mpcontribs_api.domains._shared.search_index import SearchIndex, SearchIndexed
-from mpcontribs_api.domains._shared.types import ChemicalSystemId, Formula, Identity, MaterialId, Scalar, ShortStr
+from mpcontribs_api.domains._shared.types import (
+    ChemicalSystemId,
+    DownloadFormat,
+    Formula,
+    Identity,
+    MaterialId,
+    Scalar,
+    ShortStr,
+)
 from mpcontribs_api.domains.attachments.models import Attachment, AttachmentFilter, AttachmentIn
 from mpcontribs_api.domains.contributions.data import ContributionData, ContributionPatchData, ContributionStoredData
 from mpcontribs_api.domains.structures.models import Structure, StructureFilter, StructureIn
@@ -372,3 +380,18 @@ class ContributionFilter(BaseFilter):
                 "Invalid ObjectId format. Must be 12-byte input or a 24-character hex string",
                 oid=v,
             ) from err
+
+
+class ContributionDownloadRequest(BaseModel):
+    """Body of ``POST /contributions/download``: a ``collection -> filter`` bundle.
+
+    ``contributions`` is the base and is always downloaded (defaulting to every contribution in
+    scope). Each component collection is included only when its filter is present; the value is that
+    level's filter. Every level is scoped to the caller server-side.
+    """
+
+    contributions: ContributionFilter = ContributionFilter()
+    structures: StructureFilter | None = None
+    tables: TableFilter | None = None
+    attachments: AttachmentFilter | None = None
+    format: DownloadFormat = DownloadFormat.JSONL

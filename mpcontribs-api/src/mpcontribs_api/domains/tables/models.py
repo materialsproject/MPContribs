@@ -12,7 +12,14 @@ from pydantic import (
 
 from mpcontribs_api.domains._shared.filters import BaseFilter
 from mpcontribs_api.domains._shared.models import Component, ComponentIdentity, ComponentIn, DocumentOut
-from mpcontribs_api.domains._shared.types import DisplayStr, MD5Hash, NFKCStr, PolarsFrame, nfc_normalize
+from mpcontribs_api.domains._shared.types import (
+    DisplayStr,
+    DownloadFormat,
+    MD5Hash,
+    NFKCStr,
+    PolarsFrame,
+    nfc_normalize,
+)
 from mpcontribs_api.projection import SparseFieldsModel
 
 
@@ -194,3 +201,10 @@ class TableOut(DocumentOut[PydanticObjectId]):
 class TablePatch(SparseFieldsModel):
     name: str | None = None
     attrs: Attributes | None = None
+
+
+class TableDownloadRequest(BaseModel):
+    """Body of ``POST /tables/download``: the table filter plus output format."""
+
+    tables: TableFilter = TableFilter()
+    format: DownloadFormat = DownloadFormat.JSONL
