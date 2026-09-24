@@ -1,0 +1,63 @@
+Download Request: {
+  shape: sequence_diagram
+  client: Client {
+    shape: person
+  }
+  api: API Server{
+    shape: image
+    icon: https://icons.d2lang.com/aws%2F_General%2FTraditional-server_light-bg.svg
+  }
+  mongo: MongoDB {
+    shape: image
+    icon: https://icons.d2lang.com/dev%2Fmongodb.svg
+  }
+  sqs: SQS {
+    shape: image
+    icon: https://icons.d2lang.com/aws%2FApplication%20Integration%2FAmazon-Simple-Queue-Service-SQS_Message_light-bg.svg
+  }
+  worker: Worker {
+    shape: image
+    icon: https://icons.d2lang.com/aws%2FCompute%2FAWS-Lambda_Lambda-Function_light-bg.svg
+  }
+  s3: S3 {
+    shape: image
+    icon: https://icons.d2lang.com/aws%2FStorage%2FAmazon-Simple-Storage-Service-S3_Bucket-with-Objects_light-bg.svg
+  }
+
+  setup: New Download Request {
+    client.t1 -> api.t1: "POST /projects/download"
+    api.t1 -> mongo.t1: "build_query_map()\nbuild_s3_key(sha256(fmt, query))\ninsert_or_get()"
+    mongo.t1 -> api.t1: "(doc, created)"
+    api.t1 -> sqs.t1: "if created: queue job with _id"
+    api.t1 -> client.t1: "{_id, status: submitted}"
+  }
+  client_polling: "Repeated Polling" {
+    client.t2 -> api.t2: "GET /downloads/id"
+    api.t2 -> mongo.t2: "read_one(id)"
+    mongo.t2 -> api.t2: "{status: submitted}/{status: pending}"
+    api.t2 -> client.t2: "{status: submitted}/{status: pending}"
+  }
+  worker_work: Generate Download {
+    sqs.t1 -> worker.t1: "pulls job"
+    worker.t1 -> mongo.t2.b: "read doc\nretrieve query\nrun query"
+    worker.t1 -> s3.t1: "stream query results\ngzip\nput"
+    worker.t1 -> mongo.t2.b: "PATCH {status: finished}"
+  }
+  final_poll: "Final Poll" {
+    client.t2 -> api.t2: "GET /downloads/{id}"
+    api.t2 -> mongo.t2: "read_one(id)"
+    mongo.t2 -> api.t2: "{statis: ready}"
+    api.t2 -> client.t2: "{status: ready}"
+  }
+  download: Download {
+    get_presigned: "Get Presigned URL" {
+      client.t3 -> api.t3: "GET /download/{id}/content"
+      api.t3 -> s3.t1: "generate_presigned_url()"
+      api.t3 -> client.t3: "presigned URL"
+    }
+    pull_from_s3: Pull from S3 {
+      client.t3 -> s3.t1: "GET presigned URL"
+      s3.t1 -> client.t3: "projects.gz"
+    }
+  }
+}
