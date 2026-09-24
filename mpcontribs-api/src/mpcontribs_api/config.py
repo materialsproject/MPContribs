@@ -283,6 +283,12 @@ class MPContribsSettings(BaseModel):
         "request stops being retried and eventually TTL-expires.",
     )
 
+    downloads_max_active: int = Field(
+        default=5,
+        description="Max number of a user's unfinished downloads allowed at once. A new "
+        "submission beyond this is refused until an existing job finishes or errors.",
+    )
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(

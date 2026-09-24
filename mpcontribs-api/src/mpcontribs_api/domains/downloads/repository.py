@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+from typing import ClassVar
 
 from beanie import PydanticObjectId
 from pymongo import ReturnDocument
@@ -58,6 +59,15 @@ class MongoDbDownloadRepository(MongoDbRepository[Download, DownloadIn, Download
         if before is None:
             return document, True
         return self.document_model.model_validate(before), False
+
+    # In-flight statuses that count against a requester's active-download cap
+    _ACTIVE_STATUSES: ClassVar[list[str]] = [JobStatus.submitted.value, JobStatus.working.value]
+
+    async def count_active(self, requester: str) -> int:
+        """Count a requester's in-flight (``submitted`` or ``working``) downloads."""
+        return await self.count_matching(
+            {"requester": requester, "status": {"$in": self._ACTIVE_STATUSES}}, scoped=False
+        )
 
     async def claim_for_retry(self, id: PydanticObjectId, stale_cutoff: datetime) -> Download | None:
         """Atomically reclaim a failed or stale-submitted job for one retrying caller.

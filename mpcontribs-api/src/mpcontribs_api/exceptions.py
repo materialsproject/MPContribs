@@ -112,6 +112,12 @@ class DownloadRetryExhaustedError(AppError):
     log_level = logging.WARNING
 
 
+class DownloadLimitError(AppError):
+    status_code = 429
+    error_code = "download_limit"
+    log_level = logging.WARNING
+
+
 class AwsError(AppError):
     status_code = 500
     error_code = "aws_error"

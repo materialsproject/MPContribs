@@ -19,6 +19,7 @@ from mpcontribs_api.domains.downloads.models import (
 )
 from mpcontribs_api.domains.downloads.repository import MongoDbDownloadRepository
 from mpcontribs_api.exceptions import (
+    DownloadLimitError,
     DownloadRetryExhaustedError,
     JobStatusError,
     NotFoundError,
@@ -93,6 +94,7 @@ class DownloadService:
         job = Download.from_input_model(download_in)
         stored, created = await self._downloads.insert_or_get(job)
         if created:
+            await self._enforce_active_limit(stored)
             await self._enqueue(stored)
             return DownloadOut.model_validate(stored.model_dump())
         if stored.status == JobStatus.ready:
@@ -122,6 +124,21 @@ class DownloadService:
                 stored = claimed
                 await self._enqueue(stored)
         return DownloadOut.model_validate(stored.model_dump())
+
+    async def _enforce_active_limit(self, stored: Download) -> None:
+        """Refuse a freshly-created ticket that puts the requester over their in-flight cap.
+
+        Soft limit: the count-then-check is not atomic, so concurrent creates by the same user can
+        overshoot the cap slightly.
+        """
+        cap = get_settings().mpcontribs.downloads_max_active
+        active = await self._downloads.count_active(stored.requester)
+        if active > cap:
+            await self._downloads.delete_one({"id": stored.id})
+            raise DownloadLimitError(
+                message="too many unfinished downloads; wait for an existing job to finish",
+                limit=cap,
+            )
 
     async def _enqueue(self, download: Download) -> None:
         """Push the job into SQS for a worker to pick up.
@@ -153,23 +170,42 @@ class DownloadService:
 
         doc = await self.read_one(download_id=download_id, fields=frozenset(["status", "s3_key"]))
 
-        if doc is None:
+        if doc is None or doc.s3_key is None:
             raise NotFoundError(message="download not found", download_id=str(download_id))
         if doc.status != JobStatus.ready:
             raise JobStatusError(message="download status not 'ready'", download_id=str(download_id), status=doc.status)
+        s3_key = doc.s3_key
+
+        # Verify that the object exists in s3 (there may be edge cases where the object is removed before the Mongo doc)
+        # ie. misonfiguration of expirations, manual removal, etc.
+        await self._ensure_object_exists(bucket_name, s3_key, download_id)
 
         try:
             url = await self._s3.generate_presigned_url(
                 ClientMethod="get_object",
                 Params={
                     "Bucket": bucket_name,
-                    "Key": doc.s3_key,
+                    "Key": s3_key,
                 },
                 ExpiresIn=get_settings().aws.s3.expires_in,
             )
         except (ClientError, BotoCoreError) as err:
             raise S3Error(
-                message="error generating presigned url for object", object_key=doc.s3_key, bucket=bucket_name
+                message="error generating presigned url for object", object_key=s3_key, bucket=bucket_name
             ) from err
 
         return url
+
+    async def _ensure_object_exists(self, bucket: str, key: str, download_id: PydanticObjectId) -> None:
+        """Raise ``NotFoundError`` if the download object is gone, ``S3Error`` on any other AWS failure."""
+        try:
+            await self._s3.head_object(Bucket=bucket, Key=key)
+        except ClientError as err:
+            code = err.response.get("Error", {}).get("Code")
+            if code in ("404", "NoSuchKey", "NotFound"):
+                raise NotFoundError(
+                    message="download object not found or expired", download_id=str(download_id)
+                ) from err
+            raise S3Error(message="error checking download object", object_key=key, bucket=bucket) from err
+        except BotoCoreError as err:
+            raise S3Error(message="error checking download object", object_key=key, bucket=bucket) from err
