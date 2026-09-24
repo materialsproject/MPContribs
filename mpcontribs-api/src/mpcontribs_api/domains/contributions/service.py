@@ -23,14 +23,15 @@ from mpcontribs_api.domains._shared.bulk import (
     BulkWriteSummary,
     bulk_failure_from_exception,
 )
+from mpcontribs_api.domains._shared.downloadable import build_query_map
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
-from mpcontribs_api.domains._shared.types import DownloadFormat
 from mpcontribs_api.domains._shared.units import QuantityLeaf
 from mpcontribs_api.domains.attachments.models import AttachmentFilter
 from mpcontribs_api.domains.attachments.repository import MongoDbAttachmentRepository
 from mpcontribs_api.domains.contributions.data import validate_contribution_data, validate_data_depth
 from mpcontribs_api.domains.contributions.models import (
     Contribution,
+    ContributionDownloadRequest,
     ContributionFilter,
     ContributionIdentity,
     ContributionIn,
@@ -126,12 +127,20 @@ class ContributionService:
     ) -> Page[ContributionOut]:
         return await self._contributions.read_many(pagination=pagination, filter=filter, fields=fields)
 
-    async def queue_download(self, filter: ContributionFilter, format: DownloadFormat) -> DownloadOut:
-        return await self._downloads.queue_download(
-            query=self._contributions.build_download_query(filter),
-            domain=DownloadDomain.contributions,
-            fmt=format,
+    async def queue_download(self, request: ContributionDownloadRequest) -> DownloadOut:
+        """Enqueue a bundled export of contributions and, optionally, their components.
+
+        Components are only gathered when their respective `Filter` is defined.
+        """
+        query = build_query_map(
+            [
+                (DownloadDomain.contributions, self._contributions, request.contributions),
+                (DownloadDomain.structures, self._structures, request.structures),
+                (DownloadDomain.tables, self._tables, request.tables),
+                (DownloadDomain.attachments, self._attachments, request.attachments),
+            ]
         )
+        return await self._downloads.queue_download(query=query, fmt=request.format)
 
     async def delete_one(self, identifiers: dict[str, Any]) -> BulkDeleteSummary:
         """Delete a single contribution and its child components.
