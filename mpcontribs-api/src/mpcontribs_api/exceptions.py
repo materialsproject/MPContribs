@@ -94,12 +94,6 @@ class AuthenticationError(AppError):
     log_level = logging.WARNING  # security-relevant: alertable, but not a server fault
 
 
-class DownloadError(AppError):
-    status_code = 415
-    error_code = "download_error"
-    log_level = logging.WARNING
-
-
 class JobStatusError(AppError):
     status_code = 425
     error_code = "job_status_error"
