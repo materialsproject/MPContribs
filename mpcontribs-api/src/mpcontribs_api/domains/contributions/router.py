@@ -8,12 +8,12 @@ from mpcontribs_api.dependencies import require_user
 from mpcontribs_api.domains._shared.bulk import BulkDeleteSummary, BulkUpdateSummary, BulkWriteSummary
 from mpcontribs_api.domains._shared.models import DeleteResponse
 from mpcontribs_api.domains._shared.types import (
-    DownloadFormat,
     FieldSelector,
 )
 from mpcontribs_api.domains.contributions.dependencies import ContributionServiceDep
 from mpcontribs_api.domains.contributions.models import (
     Contribution,
+    ContributionDownloadRequest,
     ContributionFilter,
     ContributionIdentity,
     ContributionIn,
@@ -105,12 +105,13 @@ async def upsert_many(
 
 
 @router.post("/download", dependencies=[Depends(require_user)])
-async def download(
-    service: ContributionServiceDep,
-    filter: ContributionFilter = FilterDepends(Filter=ContributionFilter),
-    format: DownloadFormat = DownloadFormat.JSONL,
-):
-    return await service.queue_download(filter=filter, format=format)
+async def download(service: ContributionServiceDep, request: ContributionDownloadRequest):
+    """Enqueue a bundled contribution download.
+
+    The JSON body is a ``collection -> filter`` map: ``contributions`` (the base) plus any of
+    ``structures``/``tables``/``attachments`` to bundle, each with its own filter.
+    """
+    return await service.queue_download(request)
 
 
 # Declared before the ``/{id}`` routes so the literal ``item`` is never captured as an id.
