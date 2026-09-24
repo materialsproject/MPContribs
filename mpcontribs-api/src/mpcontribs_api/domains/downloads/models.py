@@ -15,6 +15,7 @@ from mpcontribs_api.projection import SparseFieldsModel
 
 class JobStatus(StrEnum):
     submitted = "submitted"
+    working = "working"
     ready = "ready"
     error = "error"
 
@@ -120,7 +121,6 @@ class DownloadOut(DocumentOut):
     s3_key: str | None = None
     status: JobStatus | None = None
     requester: str | None = None
-    query: dict | None = None
     fmt: DownloadFormat | None = None
     rows_written: int = 0
     bytes_written: int = 0
