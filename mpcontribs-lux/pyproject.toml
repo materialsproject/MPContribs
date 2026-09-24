@@ -24,6 +24,7 @@ dependencies = [
     "emmet-core>0.86.0",
     "pyarrow",
     "pandas",
+    "pymatgen>=2025.10.7",
 ]
 license = "BSD-3-Clause-LBNL"
 authors = [

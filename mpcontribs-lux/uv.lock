@@ -474,6 +474,7 @@ dependencies = [
     { name = "emmet-core" },
     { name = "pandas" },
     { name = "pyarrow" },
+    { name = "pymatgen" },
 ]
 
 [package.optional-dependencies]
@@ -505,6 +506,7 @@ requires-dist = [
     { name = "pyarrow" },
     { name = "pycodestyle", marker = "extra == 'test'" },
     { name = "pydocstyle", marker = "extra == 'test'" },
+    { name = "pymatgen", specifier = ">=2025.10.7" },
     { name = "pytest", marker = "extra == 'test'" },
     { name = "pytest-cov", marker = "extra == 'test'" },
     { name = "pytest-xdist", marker = "extra == 'test'" },
