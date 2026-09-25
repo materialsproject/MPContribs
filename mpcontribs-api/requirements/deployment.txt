@@ -38,9 +38,9 @@ blinker==1.9.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
 boltons==26.2.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
-boto3==1.43.99
+boto3==1.43.103
     # via flask-mongorest-mpcontribs
-botocore==1.43.99
+botocore==1.43.103
     # via
     #   boto3
     #   s3transfer
@@ -128,7 +128,7 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.65.0
+fonttools==4.66.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
@@ -293,7 +293,7 @@ numpy==2.4.6
     #   pymatgen-core
     #   scipy
     #   spglib
-opentelemetry-api==1.44.0
+opentelemetry-api==1.45.0
     # via ddtrace
 orjson==3.12.0
     # via
@@ -327,7 +327,7 @@ pillow==12.3.0
     # via matplotlib
 pint==0.25.3
     # via mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
-platformdirs==4.11.11
+platformdirs==4.11.14
     # via
     #   jupyter-core
     #   pint
@@ -358,9 +358,9 @@ pygments==2.21.0
     #   ipython
     #   ipython-pygments-lexers
     #   nbconvert
-pymatgen==2026.5.4
+pymatgen==2026.9.24
     # via mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
-pymatgen-core==2026.8.30
+pymatgen-core==2026.9.23
     # via pymatgen
 pymongo==4.17.0
     # via
@@ -390,7 +390,7 @@ python-mimeparse==2.0.0
     # via mimerender-pr36
 python-snappy==0.7.3
     # via mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
-pytz==2026.3.post1
+pytz==2026.4
     # via dateparser
 pyyaml==6.0.3
     # via
@@ -459,7 +459,7 @@ six==1.17.0
     #   flask-sse
     #   python-dateutil
     #   rfc3339-validator
-soupsieve==2.9.2
+soupsieve==2.10
     # via beautifulsoup4
 spglib==2.7.0
     # via pymatgen-core
@@ -526,7 +526,7 @@ urllib3==2.8.0
     # via
     #   botocore
     #   requests
-wcwidth==0.8.4
+wcwidth==0.9.1
     # via prompt-toolkit
 webcolors==25.10.0
     # via jsonschema
