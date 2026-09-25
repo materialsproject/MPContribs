@@ -272,8 +272,7 @@ class MPContribsSettings(BaseModel):
     downloads_stale_after: int = Field(
         default=300,  # 5 minutes
         description="Seconds a download may sit in 'submitted' before a re-request reclaims it as a "
-        "presumed-dead worker and re-enqueues it. Must exceed the worker's longest expected run so a "
-        "still-running job isn't re-enqueued.",
+        "presumed-dead worker and re-enqueues it.",
     )
 
     downloads_max_retry_age: int = Field(

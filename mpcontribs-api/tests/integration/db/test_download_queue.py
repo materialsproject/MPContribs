@@ -145,6 +145,73 @@ class TestConcurrentFirstSubmit:
         assert sqs_a.send_message.await_count + sqs_b.send_message.await_count == 1
 
 
+class TestReadySiblingAdoption:
+    """A new ticket adopts an already-``ready`` object for the same s3_key instead of re-running.
+
+    The s3_key embeds the caller's read scope, so a ready ticket sharing it was produced under an
+    identical scoped query — the same data the new caller is entitled to. The new ticket is served
+    ``ready`` immediately, the worker is not re-invoked, and the byte/row counts are copied so the
+    returned metadata stays accurate.
+    """
+
+    async def test_new_requester_adopts_ready_object_without_enqueue(self, db):
+        # consumer-a's job has finished; consumer-b then requests the identical (anonymous) scope.
+        service_a, _ = _service(_owner("consumer-a"))
+        ready = await _queue(service_a)
+        await db["downloads"].update_one(
+            {"requester": "consumer-a", "s3_key": ready.s3_key},
+            {"$set": {"status": JobStatus.ready.value, "rows_written": 42, "bytes_written": 1024}},
+        )
+
+        service_b, sqs_b = _service(_owner("consumer-b"))
+        out_b = await _queue(service_b)
+
+        # b's ticket is served ready straight away, with no duplicate worker job...
+        assert out_b.status == JobStatus.ready
+        assert sqs_b.send_message.await_count == 0
+        # ...its counts copied from the sibling so the metadata is accurate...
+        assert (out_b.rows_written, out_b.bytes_written) == (42, 1024)
+        # ...and it is b's own row (per-requester), sharing a's physical object key.
+        assert out_b.s3_key == ready.s3_key
+        b_doc = await db["downloads"].find_one({"requester": "consumer-b", "s3_key": ready.s3_key})
+        assert b_doc is not None and b_doc["status"] == JobStatus.ready.value
+
+    async def test_no_adoption_while_sibling_still_in_flight(self, db):
+        # A sibling that is only ``submitted`` (worker hasn't finished) is not adoptable: b still
+        # enqueues its own job rather than being handed an object that doesn't exist yet.
+        service_a, _ = _service(_owner("consumer-a"))
+        await _queue(service_a)  # stays 'submitted' (worker is mocked)
+
+        service_b, sqs_b = _service(_owner("consumer-b"))
+        out_b = await _queue(service_b)
+
+        assert out_b.status == JobStatus.submitted
+        assert sqs_b.send_message.await_count == 1
+
+    async def test_adopted_ticket_does_not_consume_active_cap(self, db, monkeypatch):
+        # An instantly-adopted ticket costs no worker capacity, so it must not count against the cap:
+        # consumer-b sitting at the cap can still adopt a ready object.
+        monkeypatch.setattr(get_settings().mpcontribs, "downloads_max_active", 2)
+        service_a, _ = _service(_owner("consumer-a"))
+        ready = await _queue(service_a)
+        await db["downloads"].update_one(
+            {"requester": "consumer-a", "s3_key": ready.s3_key},
+            {"$set": {"status": JobStatus.ready.value}},
+        )
+
+        service_b, _ = _service(_owner("consumer-b"))
+        # Fill consumer-b's cap with distinct in-flight tickets.
+        await _queue(service_b, material_id="mp-0")
+        await _queue(service_b, material_id="mp-1")
+        assert await db["downloads"].count_documents(
+            {"requester": "consumer-b", "status": JobStatus.submitted.value}
+        ) == 2
+
+        # The adoptable request is satisfied despite b being at the cap (it never enters 'in flight').
+        adopted = await _queue(service_b)
+        assert adopted.status == JobStatus.ready
+
+
 class TestScopeIsolation:
     """The s3_key must isolate callers who see different rows, and only those callers."""
 

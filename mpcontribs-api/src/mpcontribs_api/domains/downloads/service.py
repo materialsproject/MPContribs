@@ -94,6 +94,11 @@ class DownloadService:
         job = Download.from_input_model(download_in)
         stored, created = await self._downloads.insert_or_get(job)
         if created:
+            adopted = await self._adopt_ready_sibling(stored)
+            if adopted is not None:
+                # Another caller with an identical scope already produced this exact object; serve
+                # it without enqueuing a duplicate job.
+                return adopted
             await self._enforce_active_limit(stored)
             await self._enqueue(stored)
             return DownloadOut.model_validate(stored.model_dump())
@@ -119,11 +124,35 @@ class DownloadService:
                     error=stored.error,
                 )
             stale_cutoff = now - timedelta(seconds=settings.downloads_stale_after)
-            claimed = await self._downloads.claim_for_retry(stored.id, stale_cutoff)
+            claimed = await self._downloads.claim_for_retry(stored.id, stored.requester, stale_cutoff)
             if claimed is not None:
                 stored = claimed
                 await self._enqueue(stored)
         return DownloadOut.model_validate(stored.model_dump())
+
+    async def _adopt_ready_sibling(self, stored: Download) -> DownloadOut | None:
+        """Satisfy a freshly-created ticket from an already-ready object for the same ``s3_key``.
+
+        A prior request under an identical scope may have already generated this exact object (the
+        ``s3_key`` embeds the caller's read scope, so a shared key means shared, permitted data).
+        When one exists, mark this ticket ``ready`` — copying the sibling's byte/row counts so the
+        metadata stays accurate — and skip the worker entirely. Object existence is verified lazily
+        by :meth:`get_presigned_url` (as it is for any ``ready`` cache hit), so this stays consistent
+        with the existing cache path. Returns the updated ``DownloadOut``, or ``None`` if no sibling
+        is ready yet.
+        """
+        sibling = await self._downloads.read_ready_sibling(stored.s3_key)
+        if sibling is None:
+            return None
+        updated = await self._downloads.update_one(
+            {"id": stored.id},
+            DownloadPatch(
+                status=JobStatus.ready,
+                rows_written=sibling.rows_written,
+                bytes_written=sibling.bytes_written,
+            ),
+        )
+        return DownloadOut.model_validate(updated.model_dump())
 
     async def _enforce_active_limit(self, stored: Download) -> None:
         """Refuse a freshly-created ticket that puts the requester over their in-flight cap.

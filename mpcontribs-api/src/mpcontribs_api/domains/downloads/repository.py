@@ -69,16 +69,29 @@ class MongoDbDownloadRepository(MongoDbRepository[Download, DownloadIn, Download
             {"requester": requester, "status": {"$in": self._ACTIVE_STATUSES}}, scoped=False
         )
 
-    async def claim_for_retry(self, id: PydanticObjectId, stale_cutoff: datetime) -> Download | None:
+    async def read_ready_sibling(self, s3_key: str) -> Download | None:
+        """Return any already-``ready`` download for ``s3_key``, regardless of requester."""
+        collection = self.document_model.get_pymongo_collection()
+        doc = await collection.find_one({"s3_key": s3_key, "status": JobStatus.ready.value})
+        if doc is None:
+            return None
+        return self.document_model.model_validate(doc)
+
+    async def claim_for_retry(self, id: PydanticObjectId, requester: str, stale_cutoff: datetime) -> Download | None:
         """Atomically reclaim a failed or stale-submitted job for one retrying caller.
 
         Resets a doc in error or hung submitted state and before the stale_cutoff window by
         resetting job_status to submitted (if in error) and bumps created_at.
+
+        The match is pinned to ``requester`` as well as ``_id`` so this can only ever reset the
+        caller's own ticket
         """
+
         collection = self.document_model.get_pymongo_collection()
         updated = await collection.find_one_and_update(
             {
                 "_id": id,
+                "requester": requester,
                 "$or": [
                     {"status": JobStatus.error.value},
                     {"status": JobStatus.submitted.value, "created_at": {"$lt": stale_cutoff}},
