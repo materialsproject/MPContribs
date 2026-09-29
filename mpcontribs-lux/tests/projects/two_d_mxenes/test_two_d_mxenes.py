@@ -400,19 +400,23 @@ def test_check_dataset_collects_all_failures(dataset, tmp_path, capsys):
         shutil.copy(sample, dataset / folder / "CONTCAR")
 
     result = check_dataset(dataset)
-    assert len(result.entries) == 2
+    assert [e.mxeneId for e in result.entries] == ["Hf2NF2-h-2"]
     assert len(result.skipped) == 2
     failed = {r.path.parent.relative_to(dataset).as_posix(): r for r in result.failures}
-    assert set(failed) == {"Hf/m2x/t-1", "Hf/m2x/weird", "Hf/m2x/h-1"}
+    assert set(failed) == {"Hf/m2x/t-1", "Hf/m2x/weird", "Hf/m2x/h-1", "Hf/m2x/HfN/h-1"}
     assert "core coordination" in failed["Hf/m2x/t-1"].message
     assert failed["Hf/m2x/t-1"].measuredCoordination == "O-P-O"
-    assert "Duplicate" in failed["Hf/m2x/h-1"].message  # HfN/h-1 was seen first
+    # both files claiming Hf2CF2-h-1 are flagged, each pointing at the other
+    assert "Duplicate 'Hf2CF2-h-1'" in failed["Hf/m2x/h-1"].message
+    assert "HfN" in failed["Hf/m2x/h-1"].message
+    assert failed["Hf/m2x/HfN/h-1"].cellId == "Hf2CF2-h-1"
+    assert failed["Hf/m2x/weird"].cellId == ""  # could not be placed
     assert "ValidationError" not in failed["Hf/m2x/t-1"].message  # concise
 
     report = tmp_path / "report.csv"
     assert main([str(dataset), "--report", str(report)]) == 1
     out = capsys.readouterr().out
-    assert "2 structures valid, 3 failed, 2 skipped" in out
+    assert "1 structures valid, 4 failed, 2 skipped" in out
     assert "Measured outer-metal coordination by label" in out
     assert report.read_text().count("\n") == 8  # header + 7 CONTCARs
 
@@ -442,3 +446,66 @@ def test_termination_site_table():
     ]
     table = termination_site_table(CheckResult(recs))
     assert table == {(2, "h2", 1): {"P,P": 1}, (2, "t", 1): {"O,O": 1}}
+
+
+# ---- dataset overview --------------------------------------------------------
+
+
+def test_grid_columns_cover_every_feasible_structure():
+    from mpcontribs.lux.projects.two_d_mxenes.pipelines.dataset_overview import (
+        grid_columns,
+    )
+
+    cols = grid_columns()
+    # n=1: 2 pristine + 4 F + 4 O; n=2 and n=3: 4 pristine + 8 F + 8 O each
+    assert len(cols) == 10 + 20 + 20
+    assert len(set(cols)) == len(cols)
+    assert (1, None, "h") in cols and (1, "F", "h-2") in cols
+    assert (3, "O", "h1a-2") in cols and (2, None, "h2") in cols
+    assert (1, None, "h2") not in cols  # h2 needs n >= 2
+
+
+def test_write_overview(dataset, tmp_path):
+    openpyxl = pytest.importorskip("openpyxl")
+    from mpcontribs.lux.projects.two_d_mxenes.pipelines.build_contributions import (
+        check_dataset,
+        main,
+    )
+    from mpcontribs.lux.projects.two_d_mxenes.pipelines.dataset_overview import (
+        BAD,
+        GOOD,
+        MISSING,
+        OUT_OF_SCOPE,
+        grid_states,
+    )
+
+    # break one structure: prismatic core in a `t` folder
+    (dataset / "Hf/m2x/t-2").mkdir()
+    shutil.copy(dataset / "Hf/m2x/h-1/CONTCAR", dataset / "Hf/m2x/t-2/CONTCAR")
+
+    states, _ = grid_states(check_dataset(dataset))
+    assert states[("Hf", "C", 1, "F", "h-1")] == GOOD
+    assert states[("Hf", "N", 1, "F", "h-2")] == GOOD
+    assert states[("Hf", "C", 1, "F", "t-2")] == BAD
+    assert states[("Hf", "C", 1, "F", "t-1")] == MISSING
+    assert states[("Ti", "C", 3, "O", "h1a-2")] == MISSING
+    assert states[("Hf", "C", 1, "O", "h-1")] == OUT_OF_SCOPE
+    assert states[("Hf", "C", 1, None, "t")] == OUT_OF_SCOPE
+
+    path = tmp_path / "overview.xlsx"
+    main([str(dataset), "--overview", str(path)])
+    wb = openpyxl.load_workbook(path)
+    assert wb.sheetnames == ["Overview", "Problems", "Missing", "All files"]
+    ws = wb["Overview"]
+    cells = {
+        c.value: c for row in ws.iter_rows() for c in row if c.value in {GOOD, BAD}
+    }
+    bad = [c for row in ws.iter_rows(min_row=8) for c in row if c.value == BAD]
+    assert len(bad) == 1 and "core coordination" in bad[0].comment.text
+    assert GOOD in cells
+    assert "2 good, 1 with problems (1 files)" in ws["A2"].value
+    problems = list(wb["Problems"].values)
+    assert problems[1][0] == "Hf2CF2-t-2"
+    missing = [r[0] for r in list(wb["Missing"].values)[1:]]
+    assert "Hf2CF2-t-1" in missing and "Hf2CO2-t-1" not in missing
+    assert len(list(wb["All files"].values)) == 1 + 3

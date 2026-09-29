@@ -38,6 +38,8 @@ from mpcontribs.lux.projects.two_d_mxenes.schemas import (
     MXeneProperties,
     StructureDescriptors,
 )
+from mpcontribs.lux.projects.two_d_mxenes.schemas.mxene import infer_chemistry
+from mpcontribs.lux.projects.two_d_mxenes.schemas.structure import plain_formula
 from pydantic import ValidationError
 from pymatgen.core import Structure
 
@@ -142,6 +144,10 @@ class CheckRecord:
     formula: str = ""
     folderLabel: str = ""
     n: int | None = None
+    metal: str = ""
+    nonmetal: str = ""
+    termination: str = ""
+    cellId: str = ""  # the structure this file claims to be, e.g. `Hf2CF2-t-1`
     measuredCoordination: str = ""
     entry: MXeneEntry | None = field(default=None, repr=False)
 
@@ -201,7 +207,6 @@ def check_dataset(root: str | Path) -> CheckResult:
     """
     root = Path(root)
     records: list[CheckRecord] = []
-    seen_at: dict[str, Path] = {}
     for path in iter_structure_files(root):
         rec = CheckRecord(path=path, status="failed", folderLabel=path.parent.name)
         records.append(rec)
@@ -211,25 +216,43 @@ def check_dataset(root: str | Path) -> CheckResult:
             continue
         try:
             structure = Structure.from_file(path)
-            rec.formula = structure.composition.reduced_formula
+            rec.formula = plain_formula(structure.composition)
+            chem = infer_chemistry(structure.composition)
+            rec.metal, rec.nonmetal, rec.n = chem["metal"], chem["nonmetal"], chem["n"]
+            rec.termination = chem["termination"] or ""
+            stacking, site = MXeneLabel.parse_folder_label(path.parent.name)
+            rec.cellId = f"{_cell_formula(chem)}-{path.parent.name.lower()}"
             desc = StructureDescriptors.from_structure(structure)
             rec.measuredCoordination = "-".join(desc.coordinationSequence)
-            stacking, site = MXeneLabel.parse_folder_label(path.parent.name)
             entry = MXeneEntry.from_structure(
                 structure, stacking=stacking, terminationSite=site
             )
         except (ValueError, KeyError, IndexError, OSError) as exc:
             rec.message = _short_error(exc)
             continue
-        rec.n = entry.labels.n
-        if entry.mxeneId in seen_at:
-            rec.message = (
-                f"Duplicate mxeneId {entry.mxeneId!r} (also {seen_at[entry.mxeneId]})"
-            )
-            continue
-        seen_at[entry.mxeneId] = path
         rec.status, rec.entry = "valid", entry
+
+    # Several files claiming the same structure: none can be trusted, so all
+    # of them are marked failed and point at each other.
+    claims: dict[str, list[CheckRecord]] = defaultdict(list)
+    for rec in records:
+        if rec.cellId and rec.status != "skipped":
+            claims[rec.cellId].append(rec)
+    for cell, group in claims.items():
+        if len(group) < 2:
+            continue
+        for rec in group:
+            others = ", ".join(str(o.path) for o in group if o is not rec)
+            note = f"Duplicate {cell!r}: also claimed by {others}"
+            rec.message = f"{rec.message}; {note}" if rec.message else note
+            rec.status, rec.entry = "failed", None
     return CheckResult(records)
+
+
+def _cell_formula(chem: dict) -> str:
+    return MXeneLabel(
+        **chem, stacking="t", terminationSite=1 if chem["termination"] else None
+    ).formula
 
 
 def termination_site_table(result: CheckResult) -> dict[tuple, Counter]:
@@ -274,13 +297,16 @@ def write_report(result: CheckResult, path: str | Path, root: str | Path) -> Non
 def main(argv: list[str] | None = None) -> int:
     """Check a dataset from the command line and print a summary.
 
-    Usage: ``python -m mpcontribs.lux.projects.two_d_mxenes.pipelines.build_contributions MXENE_DATA [--report report.csv]``
+    Usage: ``python -m mpcontribs.lux.projects.two_d_mxenes.pipelines.build_contributions MXENE_DATA [--report report.csv] [--overview overview.xlsx]``
     """
     import argparse
 
     parser = argparse.ArgumentParser(description=main.__doc__.splitlines()[0])
     parser.add_argument("root", help="Path to the MXENE_DATA folder")
     parser.add_argument("--report", help="Write a per-structure CSV report here")
+    parser.add_argument(
+        "--overview", help="Write an Excel overview grid of the dataset here"
+    )
     args = parser.parse_args(argv)
     root = Path(args.root)
 
@@ -315,6 +341,13 @@ def main(argv: list[str] | None = None) -> int:
     if args.report:
         write_report(result, args.report, root)
         print(f"\nReport written to {args.report}")
+    if args.overview:
+        from mpcontribs.lux.projects.two_d_mxenes.pipelines.dataset_overview import (
+            write_overview,
+        )
+
+        write_overview(result, args.overview, root)
+        print(f"Overview written to {args.overview}")
     return 1 if result.failures else 0
 
 

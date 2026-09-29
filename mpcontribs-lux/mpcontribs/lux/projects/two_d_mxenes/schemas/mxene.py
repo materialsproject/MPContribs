@@ -20,6 +20,29 @@ from pymatgen.core import Composition, Structure
 _MODEL_CONFIG = ConfigDict(extra="forbid", allow_inf_nan=False)
 
 
+def infer_chemistry(composition: Composition) -> dict:
+    """Infer M, X, T and n from the composition of an M_{n+1}X_nT_x slab.
+
+    Returns
+    -----------
+    dict with keys `metal`, `nonmetal`, `termination` (None if pristine), `n`
+    """
+    metals = [el.symbol for el in composition if el.is_transition_metal]
+    nonmetals = [el.symbol for el in composition if el.symbol in {"C", "N"}]
+    terms = [el.symbol for el in composition if el.symbol in {"F", "O"}]
+    if len(metals) != 1 or len(nonmetals) != 1 or len(terms) > 1:
+        raise ValueError(f"Cannot infer MXene labels from {composition.formula}")
+    n_units = composition[metals[0]] - composition[nonmetals[0]]
+    if n_units <= 0:
+        raise ValueError(f"Not an M_(n+1)X_n composition: {composition.formula}")
+    return {
+        "metal": metals[0],
+        "nonmetal": nonmetals[0],
+        "termination": terms[0] if terms else None,
+        "n": round(composition[nonmetals[0]] / n_units),
+    }
+
+
 class MXeneEntry(BaseModel):
     """A single MXene: its labels, relaxed structure and properties.
 
@@ -69,18 +92,8 @@ class MXeneEntry(BaseModel):
         properties : MXeneProperties or None
             Properties from the authors' spreadsheet, if available.
         """
-        comp = structure.composition
-        metals = [el.symbol for el in comp if el.is_transition_metal]
-        nonmetals = [el.symbol for el in comp if el.symbol in {"C", "N"}]
-        terms = [el.symbol for el in comp if el.symbol in {"F", "O"}]
-        if len(metals) != 1 or len(nonmetals) != 1 or len(terms) > 1:
-            raise ValueError(f"Cannot infer MXene labels from {comp.formula}")
-        n_units = comp[metals[0]] - comp[nonmetals[0]]
         labels = MXeneLabel(
-            metal=metals[0],
-            nonmetal=nonmetals[0],
-            termination=terms[0] if terms else None,
-            n=round(comp[nonmetals[0]] / n_units),
+            **infer_chemistry(structure.composition),
             stacking=stacking,
             terminationSite=terminationSite,
         )
