@@ -27,10 +27,11 @@ label      n       core coordination sequence (X-M-X-... centres)
 For terminated MXenes a suffix ``-1`` or ``-2`` (e.g. ``h-1``, ``h1a-2``)
 records the termination site:
 
-- ``1``: T sits staggered with respect to the X layer beneath the outer metal,
-  so the outer metal layer is **octahedrally** coordinated (``O``);
-- ``2``: T sits directly above X atoms, so the outer metal layer is
-  **prismatically** coordinated (``P``).
+- n = 1: ``1`` makes the outer metal layers **octahedral** (``O``, T staggered
+  relative to X) and ``2`` makes them **prismatic** (``P``, T above X);
+- n >= 2: ``1`` gives the outer metal layers the **same** coordination as the
+  inner metal layers of the stacking and ``2`` the **opposite** (inner metal
+  layers are ``O`` in ``t``/``h1b`` and ``P`` in ``h1a``/``h2``).
 """
 
 from __future__ import annotations
@@ -51,8 +52,39 @@ Coordination = Literal["O", "P"]
 _N1_STACKINGS: frozenset[str] = frozenset({"t", "h"})
 _THICK_STACKINGS: frozenset[str] = frozenset({"t", "h1a", "h1b", "h2"})
 
-TERMINATION_SITE_COORDINATION: dict[int, str] = {1: "O", 2: "P"}
-"""Coordination of the outer metal layers implied by each termination site."""
+_OPPOSITE = {"O": "P", "P": "O"}
+
+
+def expected_termination_coordination(n: int, stacking: str, site: int) -> str:
+    """Return the outer-metal coordination implied by a termination site.
+
+    - n = 1: site 1 is octahedral (``O``), site 2 is prismatic (``P``).
+    - n >= 2: site 1 gives the outer metal layers the same coordination as
+      the inner metal layers of the stacking, site 2 the opposite. The inner
+      metal layers are ``O`` in `t` and `h1b` and ``P`` in `h1a` and `h2`.
+
+    Parameters
+    -----------
+    n : int
+        Thickness index (number of X layers).
+    stacking : str
+        One of the stacking labels in `StackingLabel`.
+    site : int
+        Termination site, 1 or 2.
+
+    Returns
+    -----------
+    str, ``O`` or ``P``
+    """
+    if site not in (1, 2):
+        raise ValueError(f"Termination site must be 1 or 2, got {site!r}")
+    if n == 1:
+        same = "O"
+    else:
+        # the core sequence alternates X, M, X, ...; index 1 is an M layer
+        same = expected_core_sequence(n, stacking)[1]
+    return same if site == 1 else _OPPOSITE[same]
+
 
 _FOLDER_LABEL = re.compile(r"^(?P<stacking>h1a|h1b|h2|h|t)(?:-(?P<site>[12]))?$")
 
@@ -117,10 +149,10 @@ class MXeneLabel(BaseModel):
     )
     terminationSite: TerminationSite | None = Field(
         None,
-        description="Termination site (the `1`/`2` suffix of the dataset label): "
-        "1 = outer metal layers octahedrally coordinated (T staggered relative "
-        "to X), 2 = prismatically coordinated (T directly above X). Required "
-        "for terminated MXenes "
+        description="Termination site (the `-1`/`-2` suffix of the dataset label). "
+        "For n=1, 1 = octahedral and 2 = prismatic outer metal layers; for n>=2, "
+        "1 = same coordination as the inner metal layers and 2 = opposite. "
+        "Required for terminated MXenes "
         "and null for pristine ones.",
     )
 
@@ -169,6 +201,15 @@ class MXeneLabel(BaseModel):
     def core_sequence(self) -> list[str]:
         """Return the coordination sequence implied by `stacking`."""
         return expected_core_sequence(self.n, self.stacking)
+
+    @property
+    def termination_coordination(self) -> str | None:
+        """Outer-metal coordination implied by `terminationSite`, if terminated."""
+        if self.terminationSite is None:
+            return None
+        return expected_termination_coordination(
+            self.n, self.stacking, self.terminationSite
+        )
 
     @staticmethod
     def parse_folder_label(label: str) -> tuple[str, int | None]:

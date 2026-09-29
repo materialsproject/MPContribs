@@ -1,6 +1,7 @@
 """Test schemas and pipeline for the two_d_mxenes project."""
 
 import shutil
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -16,7 +17,10 @@ from mpcontribs.lux.projects.two_d_mxenes.schemas import (
     MXeneStructure,
     StructureDescriptors,
 )
-from mpcontribs.lux.projects.two_d_mxenes.schemas.labels import expected_core_sequence
+from mpcontribs.lux.projects.two_d_mxenes.schemas.labels import (
+    expected_core_sequence,
+    expected_termination_coordination,
+)
 from pydantic import ValidationError
 from pymatgen.core import Lattice, Structure
 
@@ -216,15 +220,46 @@ def test_entry_rejects_wrong_composition(sample_structure):
         MXeneEntry.model_validate(data)
 
 
-@pytest.mark.parametrize("site, coord", [(1, "O"), (2, "P")])
-def test_entry_infers_thick_mxene(site, coord):
-    seq = [coord] + expected_core_sequence(3, "h1a") + [coord]
+@pytest.mark.parametrize(
+    "n, stacking, site, coord",
+    [
+        (1, "t", 1, "O"),
+        (1, "t", 2, "P"),
+        (1, "h", 1, "O"),
+        (1, "h", 2, "P"),
+        (2, "t", 1, "O"),
+        (2, "t", 2, "P"),
+        (2, "h1b", 1, "O"),
+        (3, "h1b", 2, "P"),
+        (2, "h1a", 1, "P"),
+        (3, "h1a", 2, "O"),
+        (2, "h2", 1, "P"),
+        (3, "h2", 2, "O"),
+    ],
+)
+def test_expected_termination_coordination(n, stacking, site, coord):
+    assert expected_termination_coordination(n, stacking, site) == coord
+
+
+@pytest.mark.parametrize("stacking", ["t", "h1a", "h1b", "h2"])
+@pytest.mark.parametrize("site", [1, 2])
+def test_entry_thick_mxene_termination_rule(stacking, site):
+    coord = expected_termination_coordination(3, stacking, site)
+    seq = [coord] + expected_core_sequence(3, stacking) + [coord]
     entry = MXeneEntry.from_structure(
-        ideal_mxene("Ti", "C", 3, seq, termination="O"), "h1a", terminationSite=site
+        ideal_mxene("Ti", "C", 3, seq, termination="O"), stacking, terminationSite=site
     )
     assert entry.labels.formula == "Ti4C3O2"
-    assert entry.mxeneId == f"Ti4C3O2-h1a-{site}"
+    assert entry.mxeneId == f"Ti4C3O2-{stacking}-{site}"
     assert entry.termination_coordination == (coord, coord)
+
+    # the same structure labelled with the other site must be rejected
+    with pytest.raises(ValidationError, match="Termination site"):
+        MXeneEntry.from_structure(
+            ideal_mxene("Ti", "C", 3, seq, termination="O"),
+            stacking,
+            terminationSite=3 - site,
+        )
 
 
 # ---- properties -------------------------------------------------------------
@@ -314,22 +349,66 @@ def test_ideal_builder_sanity():
     assert np.isclose(s.lattice.gamma, 120.0)
 
 
-def test_check_dataset_collects_all_failures(dataset, capsys):
+def test_check_dataset_collects_all_failures(dataset, tmp_path, capsys):
     from mpcontribs.lux.projects.two_d_mxenes.pipelines.build_contributions import (
         check_dataset,
         main,
     )
 
-    # a mislabelled structure (prismatic core in a `t` folder) and a bad folder name
-    for folder in ["Hf/m2x/t-1", "Hf/m2x/weird"]:
-        (dataset / folder).mkdir(parents=True)
-        shutil.copy(dataset / "Hf/m2x/h-1/CONTCAR", dataset / folder / "CONTCAR")
+    sample = dataset / "Hf/m2x/h-1/CONTCAR"
+    # mislabelled (prismatic core in a `t` folder), bad folder name, and a
+    # nitride folder that actually holds a copy of the carbide
+    # plus auxiliary calculations nested inside an entry folder, which are skipped
+    for folder in [
+        "Hf/m2x/t-1",
+        "Hf/m2x/weird",
+        "Hf/m2x/HfN/h-1",
+        "Hf/m2x/h-1/super331",
+        "Hf/m2x/h-1/super331/phonon",
+    ]:
+        (dataset / folder).mkdir(parents=True, exist_ok=True)
+        shutil.copy(sample, dataset / folder / "CONTCAR")
 
-    entries, failures = check_dataset(dataset)
-    assert len(entries) == 2
-    assert {p.parent.name for p, _ in failures} == {"t-1", "weird"}
+    result = check_dataset(dataset)
+    assert len(result.entries) == 2
+    assert len(result.skipped) == 2
+    failed = {r.path.parent.relative_to(dataset).as_posix(): r for r in result.failures}
+    assert set(failed) == {"Hf/m2x/t-1", "Hf/m2x/weird", "Hf/m2x/h-1"}
+    assert "core coordination" in failed["Hf/m2x/t-1"].message
+    assert failed["Hf/m2x/t-1"].measuredCoordination == "O-P-O"
+    assert "Duplicate" in failed["Hf/m2x/h-1"].message  # HfN/h-1 was seen first
+    assert "ValidationError" not in failed["Hf/m2x/t-1"].message  # concise
 
-    assert main([str(dataset)]) == 1
+    report = tmp_path / "report.csv"
+    assert main([str(dataset), "--report", str(report)]) == 1
     out = capsys.readouterr().out
-    assert "2 structures valid, 2 failed" in out
-    assert "core coordination" in out and "Unrecognized MXene folder label" in out
+    assert "2 structures valid, 3 failed, 2 skipped" in out
+    assert "Measured outer-metal coordination by label" in out
+    assert report.read_text().count("\n") == 8  # header + 7 CONTCARs
+
+
+def test_build_entries_skips_auxiliary_calculations(dataset):
+    aux = dataset / "Hf/m2x/h-1/d2/Cont"
+    aux.mkdir(parents=True)
+    shutil.copy(dataset / "Hf/m2x/h-1/CONTCAR", aux / "CONTCAR")
+    assert len(build_entries(dataset)) == 2
+
+
+def test_termination_site_table():
+    from mpcontribs.lux.projects.two_d_mxenes.pipelines.build_contributions import (
+        CheckRecord,
+        CheckResult,
+        termination_site_table,
+    )
+
+    recs = [
+        CheckRecord(
+            Path("a"), "failed", folderLabel="h2-1", measuredCoordination="P-P-P-P-P"
+        ),
+        CheckRecord(
+            Path("b"), "valid", folderLabel="t-1", measuredCoordination="O-O-O-O-O"
+        ),
+        CheckRecord(Path("c"), "valid", folderLabel="h", measuredCoordination="P"),
+    ]
+    table = termination_site_table(CheckResult(recs))
+    assert table == {(2, "h2", 1): {"P,P": 1}, (2, "t", 1): {"O,O": 1}}

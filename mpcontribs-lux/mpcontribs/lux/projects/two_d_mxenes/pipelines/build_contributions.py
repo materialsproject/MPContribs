@@ -24,8 +24,9 @@ the dataset's folders are nested (e.g. the extra `ReN/`, `HfN/` levels):
 
 from __future__ import annotations
 
-from collections import defaultdict
+from collections import Counter, defaultdict
 from collections.abc import Iterator, Mapping
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import pandas as pd
@@ -35,7 +36,9 @@ from mpcontribs.lux.projects.two_d_mxenes.schemas import (
     MXeneEntry,
     MXeneLabel,
     MXeneProperties,
+    StructureDescriptors,
 )
+from pydantic import ValidationError
 from pymatgen.core import Structure
 
 STRUCTURE_FILENAME = "CONTCAR"
@@ -104,12 +107,16 @@ def build_entries(
 ) -> list[MXeneEntry]:
     """Build and cross-validate entries for every CONTCAR under `root`.
 
-    Raises if two structures map to the same `mxeneId`, or if the spreadsheet
-    lists an `mxeneId` with no matching structure.
+    CONTCARs in sub-folders of an entry folder (auxiliary calculations such
+    as supercells or phonons) are skipped. Raises if two structures map to
+    the same `mxeneId`, or if the spreadsheet lists an `mxeneId` with no
+    matching structure.
     """
     properties = dict(properties or {})
     entries: dict[str, MXeneEntry] = {}
     for path in iter_structure_files(root):
+        if is_auxiliary(path, Path(root)):
+            continue
         entry = entry_from_file(path)
         if entry.mxeneId in entries:
             raise ValueError(f"Duplicate mxeneId {entry.mxeneId!r} at {path}")
@@ -125,55 +132,166 @@ def build_entries(
     return [MXeneEntry.model_validate(e.model_dump()) for e in result]
 
 
-def check_dataset(
-    root: str | Path,
-) -> tuple[list[MXeneEntry], list[tuple[Path, str]]]:
+@dataclass
+class CheckRecord:
+    """Outcome of checking one CONTCAR."""
+
+    path: Path
+    status: str  # "valid", "failed" or "skipped"
+    message: str = ""
+    formula: str = ""
+    folderLabel: str = ""
+    n: int | None = None
+    measuredCoordination: str = ""
+    entry: MXeneEntry | None = field(default=None, repr=False)
+
+
+@dataclass
+class CheckResult:
+    """All records from `check_dataset`, with convenience views."""
+
+    records: list[CheckRecord]
+
+    @property
+    def entries(self) -> list[MXeneEntry]:
+        return [r.entry for r in self.records if r.status == "valid"]
+
+    @property
+    def failures(self) -> list[CheckRecord]:
+        return [r for r in self.records if r.status == "failed"]
+
+    @property
+    def skipped(self) -> list[CheckRecord]:
+        return [r for r in self.records if r.status == "skipped"]
+
+
+def _is_label(name: str) -> bool:
+    try:
+        MXeneLabel.parse_folder_label(name)
+    except ValueError:
+        return False
+    return True
+
+
+def is_auxiliary(path: Path, root: Path) -> bool:
+    """True if a CONTCAR sits in a sub-folder of an entry folder.
+
+    Such files (e.g. `h1a/super331/phonon/CONTCAR`) belong to follow-up
+    calculations on an entry, not to new entries, and are skipped.
+    """
+    parents = path.parent.relative_to(root).parts
+    if not parents:
+        return False
+    return not _is_label(parents[-1]) and any(_is_label(p) for p in parents[:-1])
+
+
+def _short_error(exc: Exception) -> str:
+    if isinstance(exc, ValidationError):
+        msgs = [e["msg"].removeprefix("Value error, ") for e in exc.errors()]
+        return "; ".join(msgs)
+    return f"{type(exc).__name__}: {exc}"
+
+
+def check_dataset(root: str | Path) -> CheckResult:
     """Validate every CONTCAR under `root`, collecting all failures.
 
-    Unlike `build_entries`, this does not stop at the first problem.
-
-    Returns
-    -----------
-    tuple of (valid entries, list of (path, error message) for failures)
+    Unlike `build_entries`, this does not stop at the first problem. Each
+    record keeps the coordination sequence measured from the structure, even
+    when validation fails, so mismatches can be diagnosed.
     """
-    entries: dict[str, MXeneEntry] = {}
+    root = Path(root)
+    records: list[CheckRecord] = []
     seen_at: dict[str, Path] = {}
-    failures: list[tuple[Path, str]] = []
     for path in iter_structure_files(root):
-        try:
-            entry = entry_from_file(path)
-        except (ValueError, KeyError, IndexError, OSError) as exc:
-            failures.append((path, f"{type(exc).__name__}: {exc}"))
+        rec = CheckRecord(path=path, status="failed", folderLabel=path.parent.name)
+        records.append(rec)
+        if is_auxiliary(path, root):
+            rec.status = "skipped"
+            rec.message = "inside an entry folder (auxiliary calculation)"
             continue
-        if entry.mxeneId in entries:
-            failures.append(
-                (
-                    path,
-                    f"Duplicate mxeneId {entry.mxeneId!r} (also {seen_at[entry.mxeneId]})",
-                )
+        try:
+            structure = Structure.from_file(path)
+            rec.formula = structure.composition.reduced_formula
+            desc = StructureDescriptors.from_structure(structure)
+            rec.measuredCoordination = "-".join(desc.coordinationSequence)
+            stacking, site = MXeneLabel.parse_folder_label(path.parent.name)
+            entry = MXeneEntry.from_structure(
+                structure, stacking=stacking, terminationSite=site
+            )
+        except (ValueError, KeyError, IndexError, OSError) as exc:
+            rec.message = _short_error(exc)
+            continue
+        rec.n = entry.labels.n
+        if entry.mxeneId in seen_at:
+            rec.message = (
+                f"Duplicate mxeneId {entry.mxeneId!r} (also {seen_at[entry.mxeneId]})"
             )
             continue
-        entries[entry.mxeneId] = entry
         seen_at[entry.mxeneId] = path
-    return list(entries.values()), failures
+        rec.status, rec.entry = "valid", entry
+    return CheckResult(records)
+
+
+def termination_site_table(result: CheckResult) -> dict[tuple, Counter]:
+    """Measured outer-metal coordination for each (n, stacking, site) label.
+
+    Includes failed records, so a systematic label convention mismatch shows
+    up as a whole row with the opposite coordination.
+    """
+    table: dict[tuple, Counter] = defaultdict(Counter)
+    for rec in result.records:
+        if rec.status == "skipped" or not rec.measuredCoordination:
+            continue
+        try:
+            stacking, site = MXeneLabel.parse_folder_label(rec.folderLabel)
+        except ValueError:
+            continue
+        seq = rec.measuredCoordination.split("-")
+        if site is None or len(seq) < 3:
+            continue
+        n = (len(seq) - 1) // 2  # terminated: 2n + 1 interior layers
+        table[(n, stacking, site)][f"{seq[0]},{seq[-1]}"] += 1
+    return dict(table)
+
+
+def write_report(result: CheckResult, path: str | Path, root: str | Path) -> None:
+    """Write one CSV row per CONTCAR with its label, measurement and outcome."""
+    rows = [
+        {
+            "path": str(r.path.relative_to(root)),
+            "status": r.status,
+            "formula": r.formula,
+            "folderLabel": r.folderLabel,
+            "measuredCoordination": r.measuredCoordination,
+            "mxeneId": r.entry.mxeneId if r.entry else "",
+            "message": r.message,
+        }
+        for r in result.records
+    ]
+    pd.DataFrame(rows).to_csv(path, index=False)
 
 
 def main(argv: list[str] | None = None) -> int:
     """Check a dataset from the command line and print a summary.
 
-    Usage: ``python -m mpcontribs.lux.projects.two_d_mxenes.pipelines.build_contributions MXENE_DATA``
+    Usage: ``python -m mpcontribs.lux.projects.two_d_mxenes.pipelines.build_contributions MXENE_DATA [--report report.csv]``
     """
     import argparse
 
     parser = argparse.ArgumentParser(description=main.__doc__.splitlines()[0])
     parser.add_argument("root", help="Path to the MXENE_DATA folder")
+    parser.add_argument("--report", help="Write a per-structure CSV report here")
     args = parser.parse_args(argv)
+    root = Path(args.root)
 
-    entries, failures = check_dataset(args.root)
-    print(f"{len(entries)} structures valid, {len(failures)} failed\n")
+    result = check_dataset(root)
+    print(
+        f"{len(result.entries)} structures valid, {len(result.failures)} failed, "
+        f"{len(result.skipped)} skipped (auxiliary calculations)\n"
+    )
 
     counts: dict[tuple, int] = defaultdict(int)
-    for e in entries:
+    for e in result.entries:
         lab = e.labels
         counts[(lab.metal, lab.nonmetal, lab.termination or "-", lab.n)] += 1
     if counts:
@@ -182,10 +300,22 @@ def main(argv: list[str] | None = None) -> int:
             print(f"{m:<4}{x:<4}{t:<4}{n:<4}{count}")
         print()
 
-    root = Path(args.root)
-    for path, message in failures:
-        print(f"FAILED {path.relative_to(root)}\n    {message}")
-    return 1 if failures else 0
+    table = termination_site_table(result)
+    if table:
+        print("Measured outer-metal coordination by label (all terminated structures):")
+        print(f"{'n':<4}{'label':<9}measured (bottom,top): count")
+        for (n, stacking, site), counter in sorted(table.items()):
+            found = ", ".join(f"{k}: {v}" for k, v in sorted(counter.items()))
+            print(f"{n:<4}{stacking + '-' + str(site):<9}{found}")
+        print()
+
+    for rec in result.failures:
+        print(f"FAILED {rec.path.relative_to(root)}\n    {rec.message}")
+
+    if args.report:
+        write_report(result, args.report, root)
+        print(f"\nReport written to {args.report}")
+    return 1 if result.failures else 0
 
 
 def add_relative_stacking_energies(entries: list[MXeneEntry]) -> None:

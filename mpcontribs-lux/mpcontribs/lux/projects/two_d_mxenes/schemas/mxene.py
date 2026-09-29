@@ -8,10 +8,7 @@ Data are from:
 
 from __future__ import annotations
 
-from mpcontribs.lux.projects.two_d_mxenes.schemas.labels import (
-    TERMINATION_SITE_COORDINATION,
-    MXeneLabel,
-)
+from mpcontribs.lux.projects.two_d_mxenes.schemas.labels import MXeneLabel
 from mpcontribs.lux.projects.two_d_mxenes.schemas.properties import MXeneProperties
 from mpcontribs.lux.projects.two_d_mxenes.schemas.structure import (
     MXeneStructure,
@@ -115,10 +112,11 @@ class MXeneEntry(BaseModel):
             )
 
         if self.labels.terminationSite is not None:
-            coord = TERMINATION_SITE_COORDINATION[self.labels.terminationSite]
+            coord = self.labels.termination_coordination
             if self.termination_coordination != (coord, coord):
                 raise ValueError(
-                    f"Termination site {self.labels.terminationSite} implies "
+                    f"Termination site {self.labels.terminationSite} of "
+                    f"{self.labels.stacking!r} (n={self.labels.n}) implies "
                     f"outer-metal coordination {coord} on both surfaces but the "
                     f"structure has {self.termination_coordination}"
                 )
