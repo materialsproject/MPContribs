@@ -39,6 +39,20 @@ def _is_metal(symbol: str) -> bool:
     return Element(symbol).is_transition_metal
 
 
+def plain_formula(composition) -> str:
+    """Reduced formula in M, X, T order without grouping, e.g. `Hf3C2F2`.
+
+    pymatgen's `reduced_formula` may group elements (`Hf3(CF)2`), which is
+    harder to search for; here elements are ordered by electronegativity.
+    """
+    reduced = composition.reduced_composition
+    parts = []
+    for el in sorted(reduced, key=lambda e: e.X):
+        amount = round(reduced[el])
+        parts.append(f"{el.symbol}{amount if amount != 1 else ''}")
+    return "".join(parts)
+
+
 class MXeneStructure(BaseModel):
     """Relaxed slab structure, stored in an Arrow/Parquet-friendly form."""
 
@@ -89,7 +103,8 @@ class StructureDescriptors(BaseModel):
     model_config = _MODEL_CONFIG
 
     reducedFormula: str = Field(
-        description="Reduced chemical formula of the slab, e.g. `Hf2CF2`.",
+        description="Reduced chemical formula of the slab in M, X, T order, "
+        "e.g. `Hf2CF2` or `Ti3C2O2`.",
     )
     nSites: int = Field(description="Number of sites in the simulation cell.")
     a: float = Field(description="Length of in-plane lattice vector a, in Å.")
@@ -164,7 +179,7 @@ class StructureDescriptors(BaseModel):
 
         sga = SpacegroupAnalyzer(structure, symprec=SYMPREC)
         return cls(
-            reducedFormula=composition.reduced_formula,
+            reducedFormula=plain_formula(composition),
             nSites=len(structure),
             a=float(lattice.a),
             b=float(lattice.b),
@@ -214,7 +229,13 @@ def _group_layers(structure: Structure, z: np.ndarray) -> list[list[int]]:
     for layer in layers:
         symbols = {structure[i].specie.symbol for i in layer}
         if len(symbols) != 1:
-            raise ValueError(f"Mixed-species atomic layer found: {sorted(symbols)}")
+            zs = sorted(round(float(z[i]), 2) for i in layer)
+            raise ValueError(
+                f"Mixed-species atomic layer found: {sorted(symbols)} at z = {zs} Å; "
+                f"atoms of different elements lie within {LAYER_Z_TOLERANCE} Å "
+                "of each other along the normal, so the structure may be "
+                "strongly distorted"
+            )
     return layers
 
 

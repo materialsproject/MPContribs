@@ -187,6 +187,36 @@ def test_coordination_detected_for_every_stacking(n, stacking):
 # ---- entry ------------------------------------------------------------------
 
 
+@pytest.mark.parametrize(
+    "formula, expected",
+    [
+        ("Hf3C2F2", "Hf3C2F2"),
+        ("Mo3N2O2", "Mo3N2O2"),
+        ("Ti2C", "Ti2C"),
+        ("Hf2CF2", "Hf2CF2"),
+    ],
+)
+def test_plain_formula(formula, expected):
+    from mpcontribs.lux.projects.two_d_mxenes.schemas.structure import plain_formula
+    from pymatgen.core import Composition
+
+    assert plain_formula(Composition(formula) * 2) == expected
+
+
+def test_thick_descriptor_formula_is_ungrouped():
+    s = ideal_mxene(
+        "Hf", "C", 2, ["O"] + expected_core_sequence(2, "t") + ["O"], termination="F"
+    )
+    assert StructureDescriptors.from_structure(s).reducedFormula == "Hf3C2F2"
+
+
+def test_mixed_layer_message():
+    s = ideal_mxene("Re", "N", 1, ["O"])
+    s.translate_sites([1], [0, 0, -1.1 / 30])  # push N into the lower Re layer
+    with pytest.raises(ValueError, match="strongly distorted"):
+        StructureDescriptors.from_structure(s)
+
+
 def test_entry_from_sample(sample_structure):
     entry = MXeneEntry.from_structure(sample_structure, "h", terminationSite=1)
     assert entry.mxeneId == "Hf2CF2-h-1"
