@@ -340,8 +340,8 @@ def test_build_entries(dataset, tmp_path):
     assert by_id["Hf2NF2-h-2"].properties.elastic is None
 
     contrib = to_contribution(hfc)
-    assert contrib["identifier"] == "Hf2CF2"
-    assert contrib["data"]["structure"]["a"].endswith(" Å")
+    assert contrib["identifier"] == "Hf2CF2-h-1"  # unique, unlike the formula
+    assert contrib["data"]["geometry"]["a"].endswith(" Å")
     assert contrib["data"]["elastic"]["C11"] == "250 N/m"
 
     flat = _flatten(contrib["data"])
@@ -352,7 +352,7 @@ def test_build_entries(dataset, tmp_path):
 def test_build_entries_rejects_orphan_rows(dataset, tmp_path):
     csv = tmp_path / "props.csv"
     csv.write_text("mxeneId,c11,c12\nTi2C-t,1,0\n")
-    with pytest.raises(ValueError, match="No structure found"):
+    with pytest.raises(ValueError, match="No valid structure found"):
         build_entries(dataset, properties=load_properties(csv))
 
 
@@ -509,3 +509,169 @@ def test_write_overview(dataset, tmp_path):
     missing = [r[0] for r in list(wb["Missing"].values)[1:]]
     assert "Hf2CF2-t-1" in missing and "Hf2CO2-t-1" not in missing
     assert len(list(wb["All files"].values)) == 1 + 3
+
+
+# ---- MPContribs contribution format ---------------------------------------
+
+
+def test_contribution_matches_column_definitions(dataset, tmp_path):
+    from mpcontribs.lux.projects.two_d_mxenes.pipelines.build_contributions import (
+        MPCONTRIBS_COLUMN_DESCRIPTIONS,
+        MPCONTRIBS_COLUMNS,
+    )
+
+    assert set(MPCONTRIBS_COLUMN_DESCRIPTIONS) == set(MPCONTRIBS_COLUMNS)
+    assert len(MPCONTRIBS_COLUMNS) <= 50
+    assert all("_" not in k for k in MPCONTRIBS_COLUMNS)
+
+    csv = tmp_path / "props.csv"
+    csv.write_text(
+        "mxeneId,totalEnergyPerAtom,formationEnergyPerAtom,c11,c12,c66\n"
+        "Hf2CF2-h-1,-8.10,-1.20,250,60,\n"
+    )
+    entry = next(
+        e
+        for e in build_entries(dataset, properties=load_properties(csv))
+        if e.mxeneId == "Hf2CF2-h-1"
+    )
+    contrib = to_contribution(entry)
+    assert contrib["formula"] == "Hf2CF2"
+    assert contrib["identifier"] == entry.mxeneId
+    flat = _flatten(contrib["data"])
+    assert set(flat) <= set(MPCONTRIBS_COLUMNS)
+    for key, value in flat.items():
+        unit = MPCONTRIBS_COLUMNS[key]
+        if unit is None:  # text column
+            assert isinstance(value, str), key
+        elif unit:  # quantity: "<number> <unit>"
+            number, got = value.split(" ", 1)
+            float(number)
+            assert got == unit, key
+        else:  # dimensionless
+            float(value)
+    assert flat["terminationSite"] == "1"
+
+
+# ---- properties template ------------------------------------------------------
+
+
+def _template_module():
+    from mpcontribs.lux.projects.two_d_mxenes.pipelines import build_contributions
+
+    return build_contributions
+
+
+def test_template_roundtrip(dataset, tmp_path):
+    import pandas as pd
+
+    bc = _template_module()
+    path = tmp_path / "props.csv"
+    main_out = bc.main([str(dataset), "--template", str(path)])
+    assert main_out == 0
+
+    df = pd.read_csv(path, encoding="utf-8-sig")
+    assert list(df["mxeneId"]) == ["Hf2CF2-h-1", "Hf2NF2-h-2"]  # grid order
+    assert "c11 [N/m]" in df.columns and "a [angstrom]" in df.columns
+    assert df["c11 [N/m]"].isna().all()  # to be filled in
+    assert df.loc[0, "a [angstrom]"] == pytest.approx(3.2396, abs=1e-3)
+    assert df.loc[0, "file"] == "Hf/m2x/h-1/CONTCAR"
+
+    # the researcher fills in some values; the file loads back directly
+    df.loc[0, ["c11 [N/m]", "c12 [N/m]"]] = [250, 60]
+    df.loc[1, "totalEnergyPerAtom [eV/atom]"] = -7.9
+    df.to_csv(path, index=False, encoding="utf-8-sig")
+    props = bc.load_properties(path)
+    assert props["Hf2CF2-h-1"].elastic.c66 == pytest.approx(95.0)
+    assert props["Hf2NF2-h-2"].energetics.totalEnergyPerAtom == pytest.approx(-7.9)
+    entries = bc.build_entries(dataset, properties=props)
+    assert {e.mxeneId for e in entries if e.properties} == set(props)
+
+
+def test_template_refresh_keeps_values_and_orphans(dataset, tmp_path):
+    import pandas as pd
+
+    bc = _template_module()
+    path = tmp_path / "props.csv"
+    entries = bc.build_entries(dataset)
+    bc.write_properties_template(entries, path)
+    df = pd.read_csv(path, encoding="utf-8-sig")
+    df.loc[0, "c11 [N/m]"], df.loc[0, "c12 [N/m]"] = 250, 60
+    df.loc[1, "formationEnergyPerAtom [eV/atom]"] = -1.5
+    df.to_csv(path, index=False, encoding="utf-8-sig")
+
+    # Hf2NF2-h-2 disappears (e.g. its CONTCAR failed a later check)
+    keep = [e for e in entries if e.mxeneId == "Hf2CF2-h-1"]
+    counts = bc.write_properties_template(keep, path)
+    assert counts == {"rows": 1, "kept": 1, "orphaned": 1}
+    refreshed = pd.read_csv(path, encoding="utf-8-sig")
+    assert refreshed.loc[0, "c11 [N/m]"] == 250
+    orphan = pd.read_csv(path.with_suffix(".orphaned.csv"), encoding="utf-8-sig")
+    assert list(orphan["mxeneId"]) == ["Hf2NF2-h-2"]
+
+
+@pytest.mark.parametrize(
+    "header, row, match",
+    [
+        ("mxeneId,c11 [GPa],c12 [GPa]", "Hf2CF2-h-1,250,60", "expected 'N/m'"),
+        ("mxeneId,c11,c12", "Hf2CF2-h-1,250,", "give both c11 and c12"),
+        ("mxeneId,bandGap [eV]", "Hf2CF2-h-1,0.1", "unrecognized column"),
+    ],
+)
+def test_load_properties_rejects(tmp_path, header, row, match):
+    path = tmp_path / "props.csv"
+    path.write_text(f"{header}\n{row}\n")
+    with pytest.raises(ValueError, match=match):
+        load_properties(path)
+
+
+def test_build_entries_skip_invalid(dataset):
+    (dataset / "Hf/m2x/t-1").mkdir()
+    shutil.copy(dataset / "Hf/m2x/h-1/CONTCAR", dataset / "Hf/m2x/t-1/CONTCAR")
+    with pytest.raises(ValidationError):
+        build_entries(dataset)
+    ids = [e.mxeneId for e in build_entries(dataset, skip_invalid=True)]
+    assert sorted(ids) == ["Hf2CF2-h-1", "Hf2NF2-h-2"]
+
+
+def test_parquet_roundtrip(dataset, tmp_path):
+    bc = _template_module()
+    csv = tmp_path / "props.csv"
+    csv.write_text("mxeneId,c11,c12\nHf2CF2-h-1,250,60\n")
+    entries = bc.build_entries(dataset, properties=bc.load_properties(csv))
+    path = tmp_path / "two_d_mxenes.parquet"
+    bc.write_parquet(entries, path)
+    back = bc.read_parquet(path)
+    assert back == entries
+
+
+def test_project_other_has_server_safe_keys():
+    from string import punctuation, whitespace
+
+    from mpcontribs.lux.projects.two_d_mxenes.pipelines.build_contributions import (
+        MPCONTRIBS_COLUMN_DESCRIPTIONS,
+        project_other,
+    )
+    from mpcontribs.lux.projects.two_d_mxenes.schemas import CalculationSettings
+
+    # same rule as the MPContribs API (mpcontribs.api.valid_key)
+    invalid = set(punctuation.replace("*", "").replace("|", "") + whitespace)
+
+    def keys(d, depth=1):
+        for k, v in d.items():
+            yield k, depth
+            if isinstance(v, dict):
+                yield from keys(v, depth + 1)
+
+    settings = CalculationSettings(
+        code="VASP", pseudopotentials=["Ti_sv", "C"], kpointMesh=[12, 12, 1]
+    )
+    other = project_other(settings)
+    for key, depth in keys(other):
+        assert key.isascii() and not (set(key) & invalid), key
+        assert depth <= 7
+    assert other["geometry"]["a"] == MPCONTRIBS_COLUMN_DESCRIPTIONS["geometry.a"]
+    assert other["calculation"] == {
+        "code": "VASP",
+        "pseudopotentials": "Ti_sv, C",
+        "kpointMesh": "12x12x1",
+    }

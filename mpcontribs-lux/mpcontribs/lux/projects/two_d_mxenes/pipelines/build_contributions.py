@@ -24,6 +24,7 @@ the dataset's folders are nested (e.g. the extra `ReN/`, `HfN/` levels):
 
 from __future__ import annotations
 
+import re
 from collections import Counter, defaultdict
 from collections.abc import Iterator, Mapping
 from dataclasses import dataclass, field
@@ -31,6 +32,7 @@ from pathlib import Path
 
 import pandas as pd
 from mpcontribs.lux.projects.two_d_mxenes.schemas import (
+    CalculationSettings,
     ElasticProperties,
     Energetics,
     MXeneEntry,
@@ -53,7 +55,54 @@ SPREADSHEET_COLUMNS: dict[str, str] = {
     "c12": "N/m",
     "c66": "N/m",
 }
-"""Expected spreadsheet columns and their units (see the project README)."""
+"""Property columns read from the spreadsheet, and their units.
+
+These are the values that cannot be computed from a structure. To add a
+property, add it here, to `schemas/properties.py`, to `load_properties`, and
+(if it should be searchable) to `MPCONTRIBS_COLUMNS` and `to_contribution`.
+"""
+
+TEMPLATE_INFO_COLUMNS: dict[str, str] = {
+    "M": "",
+    "X": "",
+    "T": "",
+    "n": "",
+    "stacking": "",
+    "terminationSite": "",
+    "coordinationSequence": "",
+    "a": "angstrom",
+    "thickness": "angstrom",
+    "vacuum": "angstrom",
+    "metalNonmetalBondLength": "angstrom",
+    "metalTerminationBondLength": "angstrom",
+    "spaceGroup": "",
+    "file": "",
+}
+"""Read-only columns in the properties template, filled from the structures.
+
+They help whoever fills in the sheet; `load_properties` ignores them because
+they are always recomputed from the CONTCARs.
+"""
+
+_HEADER = re.compile(r"^\s*(?P<name>[A-Za-z0-9]+)\s*(?:\[(?P<unit>[^\]]*)\])?\s*$")
+
+
+def _header(name: str, unit: str) -> str:
+    return f"{name} [{unit}]" if unit else name
+
+
+def _parse_header(header: str) -> tuple[str, str | None]:
+    """Split `c11 [N/m]` into (`c11`, `N/m`); the unit is None if absent."""
+    match = _HEADER.match(str(header))
+    if match is None:
+        raise ValueError(f"Cannot read spreadsheet column header {header!r}")
+    return match.group("name"), match.group("unit")
+
+
+def _read_table(path: Path) -> pd.DataFrame:
+    if path.suffix.lower() == ".csv":
+        return pd.read_csv(path, encoding="utf-8-sig", dtype={"mxeneId": str})
+    return pd.read_excel(path, dtype={"mxeneId": str})
 
 
 def iter_structure_files(root: str | Path) -> Iterator[Path]:
@@ -74,15 +123,30 @@ def entry_from_file(
 
 
 def load_properties(path: str | Path) -> dict[str, MXeneProperties]:
-    """Read the properties spreadsheet (xlsx or csv) keyed by `mxeneId`."""
+    """Read the properties spreadsheet (xlsx or csv) keyed by `mxeneId`.
+
+    Headers may carry units in brackets, e.g. `c11 [N/m]`, as written by
+    `write_properties_template`; a unit that differs from the expected one is
+    an error. Read-only template columns (`TEMPLATE_INFO_COLUMNS`) are ignored.
+    """
     path = Path(path)
-    df = pd.read_csv(path) if path.suffix == ".csv" else pd.read_excel(path)
-    missing = {"mxeneId"} - set(df.columns)
-    if missing:
-        raise ValueError(f"Spreadsheet is missing required columns {missing}")
-    unknown = set(df.columns) - set(SPREADSHEET_COLUMNS)
-    if unknown:
-        raise ValueError(f"Spreadsheet has unrecognized columns {sorted(unknown)}")
+    df = _read_table(path)
+    renamed = {}
+    for header in df.columns:
+        name, unit = _parse_header(header)
+        expected = SPREADSHEET_COLUMNS.get(name, TEMPLATE_INFO_COLUMNS.get(name))
+        if expected is None:
+            raise ValueError(f"Spreadsheet has unrecognized column {header!r}")
+        if unit is not None and unit != expected:
+            raise ValueError(
+                f"Column {header!r} has unit {unit!r}, expected {expected!r}"
+            )
+        renamed[header] = name
+    df = df.rename(columns=renamed)
+    df = df[[c for c in df.columns if c in SPREADSHEET_COLUMNS]]
+    if "mxeneId" not in df.columns:
+        raise ValueError("Spreadsheet is missing required column 'mxeneId'")
+    df = df[df["mxeneId"].notna()]
     if df["mxeneId"].duplicated().any():
         dupes = df.loc[df["mxeneId"].duplicated(), "mxeneId"].tolist()
         raise ValueError(f"Duplicate mxeneId values: {dupes}")
@@ -91,6 +155,11 @@ def load_properties(path: str | Path) -> dict[str, MXeneProperties]:
     out: dict[str, MXeneProperties] = {}
     for row in df.to_dict(orient="records"):
         c11, c12, c66 = row.get("c11"), row.get("c12"), row.get("c66")
+        if (c11 is None) != (c12 is None) or (c66 is not None and c11 is None):
+            raise ValueError(
+                f"{row['mxeneId']}: give both c11 and c12 (and optionally c66), "
+                "or leave all three blank"
+            )
         elastic = (
             ElasticProperties.from_elastic_constants(c11, c12, c66)
             if c11 is not None and c12 is not None
@@ -104,34 +173,164 @@ def load_properties(path: str | Path) -> dict[str, MXeneProperties]:
     return out
 
 
+_METAL_ORDER = ("Ti", "Mo", "Hf", "Re")
+_TERM_ORDER = {None: 0, "F": 1, "O": 2}
+
+
+def _entry_sort_key(entry: MXeneEntry) -> tuple:
+    lab = entry.labels
+    metal = _METAL_ORDER.index(lab.metal) if lab.metal in _METAL_ORDER else 99
+    return (
+        metal,
+        lab.metal,
+        lab.nonmetal,
+        lab.n,
+        _TERM_ORDER[lab.termination],
+        lab.label,
+    )
+
+
+def template_rows(
+    entries: list[MXeneEntry], files: Mapping[str, str] | None = None
+) -> pd.DataFrame:
+    """One row per entry: read-only structure columns plus blank property columns."""
+    files = files or {}
+    rows = []
+    for entry in sorted(entries, key=_entry_sort_key):
+        lab, desc = entry.labels, entry.descriptors
+        info = {
+            "M": lab.metal,
+            "X": lab.nonmetal,
+            "T": lab.termination or "none",
+            "n": lab.n,
+            "stacking": lab.stacking,
+            "terminationSite": lab.terminationSite or "none",
+            "coordinationSequence": "-".join(desc.coordinationSequence),
+            "a": round(desc.a, 4),
+            "thickness": round(desc.thickness, 4),
+            "vacuum": round(desc.vacuum, 4),
+            "metalNonmetalBondLength": round(desc.metalNonmetalBondLength, 4),
+            "metalTerminationBondLength": (
+                None
+                if desc.metalTerminationBondLength is None
+                else round(desc.metalTerminationBondLength, 4)
+            ),
+            "spaceGroup": desc.spaceGroupSymbol,
+            "file": files.get(entry.mxeneId, ""),
+        }
+        row = {_header("mxeneId", ""): entry.mxeneId}
+        row.update({_header(k, TEMPLATE_INFO_COLUMNS[k]): v for k, v in info.items()})
+        row.update(
+            {
+                _header(k, u): None
+                for k, u in SPREADSHEET_COLUMNS.items()
+                if k != "mxeneId"
+            }
+        )
+        rows.append(row)
+    columns = (
+        ["mxeneId"]
+        + [_header(k, u) for k, u in TEMPLATE_INFO_COLUMNS.items()]
+        + [_header(k, u) for k, u in SPREADSHEET_COLUMNS.items() if k != "mxeneId"]
+    )
+    return pd.DataFrame(rows, columns=columns)
+
+
+def write_properties_template(
+    entries: list[MXeneEntry],
+    path: str | Path,
+    files: Mapping[str, str] | None = None,
+) -> dict[str, int]:
+    """Write (or refresh) the properties CSV for the researcher to fill in.
+
+    If `path` already exists, property values already entered are kept for
+    every structure that is still present. Rows that had values but whose
+    structure is no longer valid are moved to `<name>.orphaned.csv` next to
+    it rather than lost.
+
+    Returns
+    -----------
+    dict with counts of `rows`, `kept` (rows with values carried over) and
+    `orphaned` rows
+    """
+    path = Path(path)
+    new = template_rows(entries, files)
+    fill = [_header(k, u) for k, u in SPREADSHEET_COLUMNS.items() if k != "mxeneId"]
+    kept = orphaned = 0
+
+    if path.exists():
+        old = _read_table(path)
+        old.columns = [
+            _header(n, SPREADSHEET_COLUMNS.get(n, TEMPLATE_INFO_COLUMNS.get(n, "")))
+            for n, _ in map(_parse_header, old.columns)
+        ]
+        old_fill = [c for c in fill if c in old.columns]
+        old = old[old["mxeneId"].notna()].set_index("mxeneId")
+        has_values = (
+            old[old_fill].notna().any(axis=1)
+            if old_fill
+            else pd.Series(False, index=old.index)
+        )
+        new = new.set_index("mxeneId")
+        for mxene_id in old.index[has_values]:
+            if mxene_id in new.index:
+                for col in old_fill:
+                    new.loc[mxene_id, col] = old.loc[mxene_id, col]
+                kept += 1
+        lost = old[has_values & ~old.index.isin(new.index)]
+        if len(lost):
+            orphaned = len(lost)
+            lost.reset_index().to_csv(
+                path.with_suffix(".orphaned.csv"), index=False, encoding="utf-8-sig"
+            )
+        new = new.reset_index()
+
+    new.to_csv(path, index=False, encoding="utf-8-sig")
+    return {"rows": len(new), "kept": kept, "orphaned": orphaned}
+
+
 def build_entries(
-    root: str | Path, properties: Mapping[str, MXeneProperties] | None = None
+    root: str | Path,
+    properties: Mapping[str, MXeneProperties] | None = None,
+    skip_invalid: bool = False,
 ) -> list[MXeneEntry]:
     """Build and cross-validate entries for every CONTCAR under `root`.
 
     CONTCARs in sub-folders of an entry folder (auxiliary calculations such
-    as supercells or phonons) are skipped. Raises if two structures map to
-    the same `mxeneId`, or if the spreadsheet lists an `mxeneId` with no
-    matching structure.
+    as supercells or phonons) are skipped.
+
+    By default any invalid or duplicate structure raises, so nothing is
+    uploaded until the whole dataset is clean. With `skip_invalid=True`, the
+    structures that `check_dataset` reports as failed are left out and the
+    rest are returned (use this to upload the good part of a dataset while
+    problems are being resolved).
+
+    Always raises if the spreadsheet lists an `mxeneId` with no matching
+    valid structure, so property values are never silently dropped.
     """
     properties = dict(properties or {})
-    entries: dict[str, MXeneEntry] = {}
-    for path in iter_structure_files(root):
-        if is_auxiliary(path, Path(root)):
-            continue
-        entry = entry_from_file(path)
-        if entry.mxeneId in entries:
-            raise ValueError(f"Duplicate mxeneId {entry.mxeneId!r} at {path}")
+    if skip_invalid:
+        found = check_dataset(root).entries
+    else:
+        found, seen = [], set()
+        for path in iter_structure_files(root):
+            if is_auxiliary(path, Path(root)):
+                continue
+            entry = entry_from_file(path)
+            if entry.mxeneId in seen:
+                raise ValueError(f"Duplicate mxeneId {entry.mxeneId!r} at {path}")
+            seen.add(entry.mxeneId)
+            found.append(entry)
+
+    for entry in found:
         entry.properties = properties.pop(entry.mxeneId, None)
-        entries[entry.mxeneId] = entry
     if properties:
         raise ValueError(
-            f"No structure found for spreadsheet rows {sorted(properties)}"
+            f"No valid structure found for spreadsheet rows {sorted(properties)}"
         )
 
-    result = list(entries.values())
-    add_relative_stacking_energies(result)
-    return [MXeneEntry.model_validate(e.model_dump()) for e in result]
+    add_relative_stacking_energies(found)
+    return [MXeneEntry.model_validate(e.model_dump()) for e in found]
 
 
 @dataclass
@@ -297,7 +496,7 @@ def write_report(result: CheckResult, path: str | Path, root: str | Path) -> Non
 def main(argv: list[str] | None = None) -> int:
     """Check a dataset from the command line and print a summary.
 
-    Usage: ``python -m mpcontribs.lux.projects.two_d_mxenes.pipelines.build_contributions MXENE_DATA [--report report.csv] [--overview overview.xlsx]``
+    Usage: ``python -m mpcontribs.lux.projects.two_d_mxenes.pipelines.build_contributions MXENE_DATA [--report report.csv] [--overview overview.xlsx] [--template properties.csv]``
     """
     import argparse
 
@@ -306,6 +505,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--report", help="Write a per-structure CSV report here")
     parser.add_argument(
         "--overview", help="Write an Excel overview grid of the dataset here"
+    )
+    parser.add_argument(
+        "--template",
+        help="Write (or refresh) a properties CSV for every valid structure here",
     )
     args = parser.parse_args(argv)
     root = Path(args.root)
@@ -348,6 +551,22 @@ def main(argv: list[str] | None = None) -> int:
 
         write_overview(result, args.overview, root)
         print(f"Overview written to {args.overview}")
+    if args.template:
+        files = {
+            r.entry.mxeneId: str(r.path.relative_to(root))
+            for r in result.records
+            if r.status == "valid"
+        }
+        counts = write_properties_template(result.entries, args.template, files)
+        print(
+            f"Properties template written to {args.template}: {counts['rows']} "
+            f"structures, values kept for {counts['kept']}"
+        )
+        if counts["orphaned"]:
+            print(
+                f"  {counts['orphaned']} filled rows no longer match a valid "
+                f"structure; moved to {Path(args.template).with_suffix('.orphaned.csv')}"
+            )
     return 1 if result.failures else 0
 
 
@@ -367,14 +586,109 @@ def add_relative_stacking_energies(entries: list[MXeneEntry]) -> None:
             )
 
 
+MPCONTRIBS_COLUMNS: dict[str, str | None] = {
+    "mxeneId": None,
+    "M": None,
+    "X": None,
+    "T": None,
+    "n": "",
+    "stacking": None,
+    "terminationSite": None,
+    "coordination": None,
+    "geometry.a": "Å",
+    "geometry.thickness": "Å",
+    "geometry.MX": "Å",
+    "geometry.MT": "Å",
+    "geometry.spaceGroup": None,
+    "energy.formation": "eV/atom",
+    "energy.relativeStacking": "meV/atom",
+    "elastic.C11": "N/m",
+    "elastic.C12": "N/m",
+    "elastic.C66": "N/m",
+    "elastic.Y": "N/m",
+    "elastic.nu": "",
+    "elastic.stable": None,
+}
+"""MPContribs `data` columns and units, for `Client.init_columns`.
+
+`None` marks text columns and `""` dimensionless numbers, following the
+MPContribs client. Keep this in sync with `to_contribution`.
+"""
+
+MPCONTRIBS_COLUMN_DESCRIPTIONS: dict[str, str] = {
+    "mxeneId": "Unique ID in this project: formula plus dataset label, e.g. Ti3C2O2-h1a-2",
+    "M": "Transition metal M",
+    "X": "Non-metal X (C or N)",
+    "T": "Surface termination T, or none for pristine sheets",
+    "n": "Thickness index n in M(n+1)X(n)T(x)",
+    "stacking": "Stacking label of the M/X layers (t, h, h1a, h1b, h2)",
+    "terminationSite": "Termination site label (1, 2, or none)",
+    "coordination": "Measured O/P coordination of each interior layer, bottom to top",
+    "geometry.a": "In-plane lattice constant a, in Å",
+    "geometry.thickness": "Distance between the outermost atomic planes, in Å",
+    "geometry.MX": "Mean nearest-neighbour M-X distance, in Å",
+    "geometry.MT": "Mean nearest-neighbour M-T distance, in Å",
+    "geometry.spaceGroup": "Space group of the periodic slab model",
+    "energy.formation": "Formation energy per atom, in eV/atom",
+    "energy.relativeStacking": "Energy above the most stable stacking of the same composition, in meV/atom",
+    "elastic.C11": "2D elastic constant C11, in N/m",
+    "elastic.C12": "2D elastic constant C12, in N/m",
+    "elastic.C66": "2D elastic constant C66, in N/m",
+    "elastic.Y": "In-plane 2D Young's modulus, in N/m",
+    "elastic.nu": "In-plane Poisson's ratio",
+    "elastic.stable": "Born mechanical stability of the hexagonal sheet (True/False)",
+}
+"""Column descriptions, for `Client.update_project({"other": ...})`."""
+
+
+def project_other(settings: CalculationSettings | None = None) -> dict:
+    """The project's `other` metadata: column descriptions and DFT settings.
+
+    For `Client.update_project({"other": project_other(settings)})`. The
+    MPContribs API rejects keys containing punctuation (including `.`), so
+    dotted column names are nested (`geometry.a` -> `{"geometry": {"a": ...}}`)
+    and list-valued settings are joined into strings.
+    """
+    other: dict = {}
+    for column, text in MPCONTRIBS_COLUMN_DESCRIPTIONS.items():
+        node = other
+        *parents, leaf = column.split(".")
+        for key in parents:
+            node = node.setdefault(key, {})
+        node[leaf] = text
+    if settings is not None:
+        calc = {}
+        for key, value in settings.model_dump(exclude_none=True).items():
+            if isinstance(value, list):
+                sep = "x" if key == "kpointMesh" else ", "
+                value = sep.join(str(v) for v in value)
+            calc[key] = value
+        if calc:
+            other["calculation"] = calc
+    return other
+
+
 def to_contribution(entry: MXeneEntry, project: str = "two_d_mxenes") -> dict:
     """Convert an entry into an MPContribs contribution dictionary.
 
-    Only searchable quantities go into `data` (MPContribs allows at most 50
-    flattened keys); values carry units as strings, as MPContribs expects.
-    The full record, including arrays, lives in the project's Parquet file.
+    Only searchable quantities go into `data` (see `MPCONTRIBS_COLUMNS`; MP
+    asks for at most 50 flattened keys). Values carry units as strings, as
+    MPContribs expects. The relaxed structure goes in `structures`.
+
+    The contribution `identifier` is the `mxeneId`, not the formula: several
+    structures share a formula (e.g. `Hf2CF2-h-1` and `Hf2CF2-t-2`), and
+    MPContribs projects accept one contribution per identifier by default
+    (`unique_identifiers=True`), silently skipping the rest. The formula is
+    still given in `formula`.
     """
     lab, desc = entry.labels, entry.descriptors
+    geometry = {
+        "a": _with_unit(desc.a, "Å", 4),
+        "thickness": _with_unit(desc.thickness, "Å", 4),
+        "MX": _with_unit(desc.metalNonmetalBondLength, "Å", 4),
+        "MT": _with_unit(desc.metalTerminationBondLength, "Å", 4),
+        "spaceGroup": desc.spaceGroupSymbol,
+    }
     data: dict = {
         "mxeneId": entry.mxeneId,
         "M": lab.metal,
@@ -382,17 +696,10 @@ def to_contribution(entry: MXeneEntry, project: str = "two_d_mxenes") -> dict:
         "T": lab.termination or "none",
         "n": lab.n,
         "stacking": lab.stacking,
-        "terminationSite": lab.terminationSite or "none",
+        "terminationSite": str(lab.terminationSite or "none"),
         "coordination": "-".join(desc.coordinationSequence),
-        "structure": {
-            "a": f"{desc.a:.4f} Å",
-            "thickness": f"{desc.thickness:.4f} Å",
-            "MX": f"{desc.metalNonmetalBondLength:.4f} Å",
-            "spaceGroup": desc.spaceGroupSymbol,
-        },
+        "geometry": {k: v for k, v in geometry.items() if v is not None},
     }
-    if desc.metalTerminationBondLength is not None:
-        data["structure"]["MT"] = f"{desc.metalTerminationBondLength:.4f} Å"
 
     props = entry.properties
     if props and props.energetics:
@@ -420,16 +727,42 @@ def to_contribution(entry: MXeneEntry, project: str = "two_d_mxenes") -> dict:
 
     return {
         "project": project,
-        "identifier": entry.descriptors.reducedFormula,
+        "identifier": entry.mxeneId,
+        "formula": desc.reducedFormula,
         "data": data,
         "structures": [entry.structure.pymatgen_structure],
     }
 
 
-def _with_unit(value: float | None, unit: str) -> str | None:
+def write_parquet(entries: list[MXeneEntry], path: str | Path) -> None:
+    """Write full records (structures, descriptors, properties) to Parquet.
+
+    The Arrow schema is derived from `MXeneEntry` with emmet's `arrowize`,
+    the same check the MPContribs-lux test suite runs on every model.
+    """
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+    from emmet.core.arrow import arrowize
+
+    schema = pa.schema(list(arrowize(MXeneEntry)))
+    table = pa.Table.from_pylist([e.model_dump() for e in entries], schema=schema)
+    pq.write_table(table, path)
+
+
+def read_parquet(path: str | Path) -> list[MXeneEntry]:
+    """Read records written by `write_parquet`, re-validating each one."""
+    import pyarrow.parquet as pq
+
+    return [MXeneEntry.model_validate(row) for row in pq.read_table(path).to_pylist()]
+
+
+def _with_unit(
+    value: float | None, unit: str, decimals: int | None = None
+) -> str | None:
     if value is None:
         return None
-    return f"{value:.6g} {unit}".strip()
+    number = f"{value:.{decimals}f}" if decimals is not None else f"{value:.6g}"
+    return f"{number} {unit}".strip()
 
 
 if __name__ == "__main__":
