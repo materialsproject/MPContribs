@@ -1,5 +1,5 @@
-"""CoRE MOF contribution schema."""
+"""CoRE MOF schemas for native MPContribs contributions."""
 
-from .schemas import CoreMofContribution
+from .schemas import CoreMofData, RacFeatures, Topology, ZeoFeatures
 
-__all__ = ["CoreMofContribution"]
+__all__ = ["CoreMofData", "ZeoFeatures", "Topology", "RacFeatures"]

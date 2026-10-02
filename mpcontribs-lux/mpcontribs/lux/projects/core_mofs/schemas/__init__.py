@@ -1,5 +1,8 @@
-"""Public schema for final CoRE MOF contributions."""
+"""Public data and Table row schemas; no native Contribution wrapper."""
 
-from .structure import CoreMofContribution
+from .data import CoreMofData
+from .rac_features import RacFeatures
+from .topology import Topology
+from .zeo_features import ZeoFeatures
 
-__all__ = ["CoreMofContribution"]
+__all__ = ["CoreMofData", "ZeoFeatures", "RacFeatures", "Topology"]
