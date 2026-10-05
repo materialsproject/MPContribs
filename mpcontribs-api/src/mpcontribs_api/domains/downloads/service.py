@@ -3,9 +3,11 @@ from datetime import UTC, datetime, timedelta
 import structlog
 from beanie import PydanticObjectId
 from botocore.exceptions import BotoCoreError, ClientError
+from opentelemetry import trace
 from pymongo.asynchronous.client_session import AsyncClientSession
 from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_sqs.client import SQSClient
+from types_aiobotocore_sqs.type_defs import MessageAttributeValueTypeDef
 
 from mpcontribs_api.authz import User
 from mpcontribs_api.config import get_settings
@@ -29,6 +31,17 @@ from mpcontribs_api.exceptions import (
 )
 
 logger = structlog.get_logger(__name__)
+
+
+def _trace_message_attributes() -> dict[str, MessageAttributeValueTypeDef]:
+    """SQS message attributes carrying the active trace/span so the worker can join this request's trace."""
+    ctx = trace.get_current_span().get_span_context()
+    if not ctx.is_valid:
+        return {}
+    return {
+        "trace_id": {"DataType": "String", "StringValue": format(ctx.trace_id, "032x")},
+        "span_id": {"DataType": "String", "StringValue": format(ctx.span_id, "016x")},
+    }
 
 
 def _as_utc(dt: datetime) -> datetime:
@@ -179,6 +192,8 @@ class DownloadService:
             await self._sqs.send_message(
                 QueueUrl=queue_url,
                 MessageBody=str(download.id),
+                # Carry the request's trace/span so the worker can continue this trace.
+                MessageAttributes=_trace_message_attributes(),
             )
         except (ClientError, BotoCoreError) as err:
             await self._downloads.update_one(
