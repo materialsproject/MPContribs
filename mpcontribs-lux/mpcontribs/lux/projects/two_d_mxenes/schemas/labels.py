@@ -1,17 +1,18 @@
-"""Controlled vocabularies and labels describing each MXene in the dataset.
+"""Controlled vocabularies and labels that identify an MXene variant.
 
 An MXene has the general formula M_{n+1} X_n T_x, where
 
-- ``M`` is an early transition metal (here Ti, Mo, Hf, Re),
+- ``M`` is a transition metal,
 - ``X`` is carbon or nitrogen,
-- ``T`` is a surface termination (here F or O, or none for pristine sheets),
+- ``T`` is a surface termination (F or O, or none for pristine sheets),
 - ``n`` is the thickness index (1, 2 or 3), i.e. the number of X layers.
 
-The dataset also enumerates how the layers are stacked. Each atomic layer
+Variants also differ in how the layers are stacked. Each atomic layer
 that sits between two other layers is either **octahedrally** (``O``) or
 **trigonal-prismatically** (``P``) coordinated by its neighbours, depending on
 whether the layer below and the layer above are staggered or eclipsed. The
-stacking labels used by the authors (Oyeniran et al.) are:
+stacking labels (nomenclature of Oyeniran et al., Adv. Funct. Mater. 2025,
+doi:10.1002/adfm.202508047) are:
 
 =========  ======  =================================================
 label      n       core coordination sequence (X-M-X-... centres)
@@ -143,13 +144,13 @@ class MXeneLabel(BaseModel):
     )
     stacking: StackingLabel = Field(
         description="Stacking label of the metal/X layers as defined by the "
-        "dataset authors: `t` (all octahedral), `h` or `h2` (all prismatic), "
+        "MXene nomenclature: `t` (all octahedral), `h` or `h2` (all prismatic), "
         "`h1a` (O-P-O...), `h1b` (P-O-P...). `h` is used only for n=1 and "
         "`h1a`, `h1b`, `h2` only for n>=2.",
     )
     terminationSite: TerminationSite | None = Field(
         None,
-        description="Termination site (the `-1`/`-2` suffix of the dataset label). "
+        description="Termination site (the `-1`/`-2` suffix of the label). "
         "For n=1, 1 = octahedral and 2 = prismatic outer metal layers; for n>=2, "
         "1 = same coordination as the inner metal layers and 2 = opposite. "
         "Required for terminated MXenes "
@@ -192,7 +193,7 @@ class MXeneLabel(BaseModel):
 
     @property
     def label(self) -> str:
-        """Return the dataset's folder label, e.g. `h1a-2` or `t`."""
+        """Return the folder label, e.g. `h1a-2` or `t`."""
         if self.terminationSite is None:
             return self.stacking
         return f"{self.stacking}-{self.terminationSite}"
@@ -213,12 +214,12 @@ class MXeneLabel(BaseModel):
 
     @staticmethod
     def parse_folder_label(label: str) -> tuple[str, int | None]:
-        """Split a dataset folder name such as `h1a-2` into its parts.
+        """Split a folder label such as `h1a-2` into its parts.
 
         Parameters
         -----------
         label : str
-            Leaf folder name from the dataset, e.g. `t`, `h-1`, `h1b-2`.
+            Name of the folder that contains the structure, e.g. `t`, `h-1`, `h1b-2`.
 
         Returns
         -----------

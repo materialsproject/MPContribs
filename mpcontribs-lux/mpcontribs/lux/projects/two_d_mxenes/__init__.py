@@ -1,1 +1,1 @@
-"""MPContribs project: 2D MXenes (Oyeniran et al., Adv. Funct. Mater. 2025)."""
+"""MPContribs project `two_d_mxenes`: structures and properties of 2D MXenes."""

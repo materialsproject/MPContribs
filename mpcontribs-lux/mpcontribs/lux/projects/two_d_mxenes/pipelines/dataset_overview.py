@@ -6,18 +6,22 @@ then stacking label. Each cell shows
 
 - ``✓`` a CONTCAR that passed every check,
 - ``✗`` a CONTCAR that failed (hover for the reason; details on "Problems"),
-- ``○`` no CONTCAR although the structure is part of the study,
+- ``○`` no CONTCAR for a structure that is in scope,
 
-and cells outside the study (e.g. O-terminated Hf) are shaded grey.
+and combinations excluded from the scope are shaded grey. Rows are created for
+every transition metal found in the data, in order of atomic number. All
+combinations are in scope unless excluded with ``out_of_scope`` (on the command
+line: ``--out-of-scope Hf:O``).
 
 Generate it with the dataset check::
 
-    python -m mpcontribs.lux.projects.two_d_mxenes.pipelines.build_contributions MXENE_DATA --overview overview.xlsx
+    python -m mpcontribs.lux.projects.two_d_mxenes.pipelines.build_contributions DATA_ROOT --overview overview.xlsx
 """
 
 from __future__ import annotations
 
 from collections import Counter
+from collections.abc import Collection
 from datetime import datetime
 from itertools import pairwise
 from pathlib import Path
@@ -28,17 +32,14 @@ from mpcontribs.lux.projects.two_d_mxenes.pipelines.build_contributions import (
 )
 from mpcontribs.lux.projects.two_d_mxenes.schemas.labels import MXeneLabel
 
-METALS: tuple[str, ...] = ("Ti", "Mo", "Hf", "Re")
+from pymatgen.core import Element
+
 NONMETALS: tuple[str, ...] = ("C", "N")
 TERMINATIONS: tuple[str | None, ...] = (None, "F", "O")
 
-STUDY_TERMINATIONS: dict[str, tuple[str | None, ...]] = {
-    "Ti": (None, "F", "O"),
-    "Mo": (None, "F", "O"),
-    "Hf": ("F",),
-    "Re": ("F",),
-}
-"""Terminations included in the study for each metal (see the dataset README)."""
+ScopeExclusion = tuple[str, str | None]
+"""(metal, termination) to exclude; metal `*` means every metal, termination
+None means pristine."""
 
 GOOD, BAD, MISSING, OUT_OF_SCOPE = "✓", "✗", "○", ""
 
@@ -81,22 +82,56 @@ def cell_id(metal: str, nonmetal: str, n: int, term: str | None, label: str) -> 
     return f"{lab.formula}-{lab.label}"
 
 
+def metals_in(result: CheckResult) -> list[str]:
+    """Transition metals that appear in the checked files, by atomic number."""
+    found = {r.metal for r in result.records if r.metal}
+    return sorted(found, key=lambda symbol: Element(symbol).Z)
+
+
+def parse_scope_exclusion(text: str) -> ScopeExclusion:
+    """Parse `M:T` (e.g. `Hf:O`, `Re:none`, `*:O`) into a scope exclusion."""
+    metal, sep, term = text.partition(":")
+    metal, term = metal.strip(), term.strip()
+    if not sep or not metal or not term:
+        raise ValueError(f"Expected METAL:TERMINATION, e.g. Hf:O, got {text!r}")
+    if metal != "*" and not Element.is_valid_symbol(metal):
+        raise ValueError(f"{metal!r} is not an element symbol")
+    termination = None if term.lower() == "none" else term
+    if termination not in TERMINATIONS:
+        raise ValueError(f"Termination must be none, F or O, got {term!r}")
+    return metal, termination
+
+
+def _excluded(metal: str, term: str | None, out_of_scope) -> bool:
+    return (metal, term) in out_of_scope or ("*", term) in out_of_scope
+
+
 def grid_states(
     result: CheckResult,
+    out_of_scope: Collection[ScopeExclusion] = (),
 ) -> tuple[dict[tuple, str], dict[str, list[CheckRecord]]]:
     """State of every grid cell and the records that claim each cell.
+
+    Parameters
+    -----------
+    result : CheckResult
+        Output of `check_dataset`.
+    out_of_scope : collection of (metal, termination)
+        Combinations that are not expected to have structures; their empty
+        cells are shown as out of scope instead of missing.
 
     Returns
     -----------
     tuple of ({(metal, nonmetal, n, term, label): symbol}, {cellId: records})
     """
+    out_of_scope = set(out_of_scope)
     claims: dict[str, list[CheckRecord]] = {}
     for rec in result.records:
         if rec.cellId and rec.status != "skipped":
             claims.setdefault(rec.cellId, []).append(rec)
 
     states = {}
-    for m in METALS:
+    for m in metals_in(result):
         for x in NONMETALS:
             for n, term, label in grid_columns():
                 recs = claims.get(cell_id(m, x, n, term, label), [])
@@ -104,25 +139,30 @@ def grid_states(
                     state = BAD
                 elif recs:
                     state = GOOD
-                elif term in STUDY_TERMINATIONS.get(m, TERMINATIONS):
-                    state = MISSING
-                else:
+                elif _excluded(m, term, out_of_scope):
                     state = OUT_OF_SCOPE
+                else:
+                    state = MISSING
                 states[(m, x, n, term, label)] = state
     return states, claims
 
 
-def write_overview(result: CheckResult, path: str | Path, root: str | Path) -> None:
-    """Write the dataset overview workbook to `path`."""
+def write_overview(
+    result: CheckResult,
+    path: str | Path,
+    root: str | Path,
+    out_of_scope: Collection[ScopeExclusion] = (),
+) -> None:
+    """Write the dataset overview workbook to `path` (see `grid_states`)."""
     from openpyxl import Workbook
     from openpyxl.comments import Comment
     from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
     from openpyxl.utils import get_column_letter
 
     root = Path(root)
-    states, claims = grid_states(result)
+    states, claims = grid_states(result, out_of_scope)
     columns = grid_columns()
-    systems = [(m, x) for m in METALS for x in NONMETALS]
+    systems = [(m, x) for m in metals_in(result) for x in NONMETALS]
 
     fills = {k: PatternFill("solid", fgColor=bg) for k, (bg, _) in _COLORS.items()}
     fonts = {k: Font(color=fg, bold=True, size=12) for k, (_, fg) in _COLORS.items()}
@@ -151,7 +191,7 @@ def write_overview(result: CheckResult, path: str | Path, root: str | Path) -> N
         (GOOD, "CONTCAR passes all checks"),
         (BAD, "problem: hover the cell, or see Problems"),
         (MISSING, "no CONTCAR yet: see Missing"),
-        (OUT_OF_SCOPE, "not part of the study"),
+        (OUT_OF_SCOPE, "out of scope"),
     ]
     col = 1
     for symbol, text in legend:

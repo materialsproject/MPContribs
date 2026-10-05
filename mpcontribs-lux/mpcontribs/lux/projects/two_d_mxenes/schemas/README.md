@@ -6,7 +6,7 @@ These pydantic models are the data contract for the `two_d_mxenes` MPContribs pr
 |---|---|---|
 | `labels.py` | `MXeneLabel`; `expected_core_sequence`, `expected_termination_coordination` | chemistry and stacking labels and the rules linking them to geometry |
 | `structure.py` | `MXeneStructure`, `StructureDescriptors`; `plain_formula` | stored structure, and everything computed from it |
-| `properties.py` | `MXeneProperties`, `Energetics`, `ElasticProperties` | values from the researcher's spreadsheet (and those derived from them) |
+| `properties.py` | `MXeneProperties`, `Energetics`, `ElasticProperties` | energetics and elastic properties supplied in the properties spreadsheet, and the quantities derived from them |
 | `calculation.py` | `CalculationSettings` | DFT settings, recorded once per project |
 | `mxene.py` | `MXeneEntry`; `infer_chemistry` | the full record and the label/structure cross-checks |
 
@@ -33,11 +33,11 @@ A single MXene: its labels, relaxed structure and properties.
 
 | field | type | required | description |
 |---|---|---|---|
-| `mxeneId` | `str` | yes | Unique identifier within this project: formula plus dataset label, e.g. `Hf2CF2-h-1` or `Ti3C2-h1a`. |
+| `mxeneId` | `str` | yes | Unique identifier within this project: formula plus folder label, e.g. `Hf2CF2-h-1` or `Ti3C2-h1a`. |
 | `labels` | `MXeneLabel` | yes | Chemistry and stacking labels of this MXene. |
-| `structure` | `MXeneStructure` | yes | Relaxed slab structure (from the dataset's CONTCAR). |
+| `structure` | `MXeneStructure` | yes | Relaxed slab structure (from a VASP CONTCAR). |
 | `descriptors` | `StructureDescriptors` | yes | Geometric descriptors computed from `structure`. |
-| `properties` | `MXeneProperties` or null | no | Computed properties from the authors' spreadsheet. |
+| `properties` | `MXeneProperties` or null | no | Computed properties: energetics and elastic constants. |
 
 ### `MXeneLabel`
 
@@ -49,8 +49,8 @@ Chemical and structural labels that identify one MXene variant.
 | `nonmetal` | `Literal['C', 'N']` | yes | Symbol of the X element: `C` (carbide) or `N` (nitride). |
 | `termination` | `Literal['F', 'O']` or null | no | Symbol of the surface termination T, or null for a pristine (unterminated) MXene. |
 | `n` | `Literal[1, 2, 3]` | yes | Thickness index n in M_{n+1}X_n: the number of X layers (1 for M2X, 2 for M3X2, 3 for M4X3). |
-| `stacking` | `Literal['t', 'h', 'h1a', 'h1b', 'h2']` | yes | Stacking label of the metal/X layers as defined by the dataset authors: `t` (all octahedral), `h` or `h2` (all prismatic), `h1a` (O-P-O...), `h1b` (P-O-P...). `h` is used only for n=1 and `h1a`, `h1b`, `h2` only for n>=2. |
-| `terminationSite` | `Literal[1, 2]` or null | no | Termination site (the `-1`/`-2` suffix of the dataset label). For n=1, 1 = octahedral and 2 = prismatic outer metal layers; for n>=2, 1 = same coordination as the inner metal layers and 2 = opposite. Required for terminated MXenes and null for pristine ones. |
+| `stacking` | `Literal['t', 'h', 'h1a', 'h1b', 'h2']` | yes | Stacking label of the metal/X layers as defined by the MXene nomenclature: `t` (all octahedral), `h` or `h2` (all prismatic), `h1a` (O-P-O...), `h1b` (P-O-P...). `h` is used only for n=1 and `h1a`, `h1b`, `h2` only for n>=2. |
+| `terminationSite` | `Literal[1, 2]` or null | no | Termination site (the `-1`/`-2` suffix of the label). For n=1, 1 = octahedral and 2 = prismatic outer metal layers; for n>=2, 1 = same coordination as the inner metal layers and 2 = opposite. Required for terminated MXenes and null for pristine ones. |
 
 ### `MXeneStructure`
 

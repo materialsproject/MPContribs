@@ -1,10 +1,4 @@
-"""Top-level schema: one record per relaxed MXene structure.
-
-Data are from:
-    N. Oyeniran et al., "A Panoramic View of MXenes via a New Design Strategy",
-    Adv. Funct. Mater. (2025), https://doi.org/10.1002/adfm.202508047
-    (preprint: https://doi.org/10.48550/arXiv.2501.15390).
-"""
+"""Top-level schema: one record per relaxed MXene structure."""
 
 from __future__ import annotations
 
@@ -30,6 +24,16 @@ def infer_chemistry(composition: Composition) -> dict:
     metals = [el.symbol for el in composition if el.is_transition_metal]
     nonmetals = [el.symbol for el in composition if el.symbol in {"C", "N"}]
     terms = [el.symbol for el in composition if el.symbol in {"F", "O"}]
+    others = sorted(
+        el.symbol
+        for el in composition
+        if not el.is_transition_metal and el.symbol not in {"C", "N", "F", "O"}
+    )
+    if others:
+        raise ValueError(
+            f"Cannot infer MXene labels from {composition.formula}: "
+            f"unsupported element(s) {others}"
+        )
     if len(metals) != 1 or len(nonmetals) != 1 or len(terms) > 1:
         raise ValueError(f"Cannot infer MXene labels from {composition.formula}")
     n_units = composition[metals[0]] - composition[nonmetals[0]]
@@ -56,19 +60,19 @@ class MXeneEntry(BaseModel):
 
     mxeneId: str = Field(
         description="Unique identifier within this project: formula plus "
-        "dataset label, e.g. `Hf2CF2-h-1` or `Ti3C2-h1a`.",
+        "folder label, e.g. `Hf2CF2-h-1` or `Ti3C2-h1a`.",
     )
     labels: MXeneLabel = Field(
         description="Chemistry and stacking labels of this MXene."
     )
     structure: MXeneStructure = Field(
-        description="Relaxed slab structure (from the dataset's CONTCAR)."
+        description="Relaxed slab structure (from a VASP CONTCAR)."
     )
     descriptors: StructureDescriptors = Field(
         description="Geometric descriptors computed from `structure`."
     )
     properties: MXeneProperties | None = Field(
-        None, description="Computed properties from the authors' spreadsheet."
+        None, description="Computed properties: energetics and elastic constants."
     )
 
     @classmethod
@@ -90,7 +94,7 @@ class MXeneEntry(BaseModel):
         terminationSite : int or None
             Termination site (1 or 2), or None for a pristine MXene.
         properties : MXeneProperties or None
-            Properties from the authors' spreadsheet, if available.
+            Computed properties, if available.
         """
         labels = MXeneLabel(
             **infer_chemistry(structure.composition),

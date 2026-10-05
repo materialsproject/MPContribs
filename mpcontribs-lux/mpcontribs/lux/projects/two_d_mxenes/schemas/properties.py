@@ -1,8 +1,8 @@
-"""Computed properties of each MXene supplied by the authors' spreadsheet.
+"""Computed properties of an MXene that are not derived from its structure.
 
-DRAFT: these models follow the column layout proposed in the project
-README. Field names, units and definitions should be confirmed against the
-primary researcher's raw data before review by MP staff.
+The values are supplied in a properties spreadsheet (layout in
+`pipelines/README.md`): DFT energies and in-plane elastic constants. Moduli,
+mechanical stability and relative stacking energies are derived from them.
 
 Lattice parameters are deliberately *not* duplicated here: they are derived
 from the stored relaxed structure (see `StructureDescriptors`) so that the

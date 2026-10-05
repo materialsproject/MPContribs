@@ -2,7 +2,7 @@
 
 Check a whole dataset from the command line (reports every failure)::
 
-    python -m mpcontribs.lux.projects.two_d_mxenes.pipelines.build_contributions MXENE_DATA
+    python -m mpcontribs.lux.projects.two_d_mxenes.pipelines.build_contributions DATA_ROOT
 
 Use from Python::
 
@@ -11,11 +11,11 @@ Use from Python::
     )
 
     props = load_properties("mxene_properties.xlsx")
-    entries = build_entries("MXENE_DATA", properties=props)
+    entries = build_entries("DATA_ROOT", properties=props)
     contributions = [to_contribution(e) for e in entries]
 
 Labels are assigned as follows, which keeps the pipeline independent of how
-the dataset's folders are nested (e.g. the extra `ReN/`, `HfN/` levels):
+the folders above the label folder are named or nested:
 
 - M, X, T and n are inferred from the composition of each CONTCAR;
 - the stacking label and termination site come from the name of the folder
@@ -43,7 +43,7 @@ from mpcontribs.lux.projects.two_d_mxenes.schemas import (
 from mpcontribs.lux.projects.two_d_mxenes.schemas.mxene import infer_chemistry
 from mpcontribs.lux.projects.two_d_mxenes.schemas.structure import plain_formula
 from pydantic import ValidationError
-from pymatgen.core import Structure
+from pymatgen.core import Element, Structure
 
 STRUCTURE_FILENAME = "CONTCAR"
 
@@ -173,16 +173,14 @@ def load_properties(path: str | Path) -> dict[str, MXeneProperties]:
     return out
 
 
-_METAL_ORDER = ("Ti", "Mo", "Hf", "Re")
 _TERM_ORDER = {None: 0, "F": 1, "O": 2}
 
 
 def _entry_sort_key(entry: MXeneEntry) -> tuple:
+    """Order of the overview grid: metal (by Z), X, n, termination, label."""
     lab = entry.labels
-    metal = _METAL_ORDER.index(lab.metal) if lab.metal in _METAL_ORDER else 99
     return (
-        metal,
-        lab.metal,
+        Element(lab.metal).Z,
         lab.nonmetal,
         lab.n,
         _TERM_ORDER[lab.termination],
@@ -241,7 +239,7 @@ def write_properties_template(
     path: str | Path,
     files: Mapping[str, str] | None = None,
 ) -> dict[str, int]:
-    """Write (or refresh) the properties CSV for the researcher to fill in.
+    """Write (or refresh) the properties CSV to be filled in.
 
     If `path` already exists, property values already entered are kept for
     every structure that is still present. Rows that had values but whose
@@ -496,15 +494,23 @@ def write_report(result: CheckResult, path: str | Path, root: str | Path) -> Non
 def main(argv: list[str] | None = None) -> int:
     """Check a dataset from the command line and print a summary.
 
-    Usage: ``python -m mpcontribs.lux.projects.two_d_mxenes.pipelines.build_contributions MXENE_DATA [--report report.csv] [--overview overview.xlsx] [--template properties.csv]``
+    Usage: ``python -m mpcontribs.lux.projects.two_d_mxenes.pipelines.build_contributions DATA_ROOT [--report report.csv] [--overview overview.xlsx] [--template properties.csv]``
     """
     import argparse
 
     parser = argparse.ArgumentParser(description=main.__doc__.splitlines()[0])
-    parser.add_argument("root", help="Path to the MXENE_DATA folder")
+    parser.add_argument("root", help="Root folder of the CONTCAR tree")
     parser.add_argument("--report", help="Write a per-structure CSV report here")
     parser.add_argument(
-        "--overview", help="Write an Excel overview grid of the dataset here"
+        "--overview", help="Write an Excel overview grid of the structures here"
+    )
+    parser.add_argument(
+        "--out-of-scope",
+        action="append",
+        default=[],
+        metavar="M:T",
+        help="Combination with no expected structures, shown grey in the "
+        "overview, e.g. Hf:O, Re:none or *:O (repeatable)",
     )
     parser.add_argument(
         "--template",
@@ -546,10 +552,15 @@ def main(argv: list[str] | None = None) -> int:
         print(f"\nReport written to {args.report}")
     if args.overview:
         from mpcontribs.lux.projects.two_d_mxenes.pipelines.dataset_overview import (
+            parse_scope_exclusion,
             write_overview,
         )
 
-        write_overview(result, args.overview, root)
+        try:
+            scope = [parse_scope_exclusion(t) for t in args.out_of_scope]
+        except ValueError as exc:
+            parser.error(str(exc))
+        write_overview(result, args.overview, root, out_of_scope=scope)
         print(f"Overview written to {args.overview}")
     if args.template:
         files = {
@@ -616,7 +627,7 @@ MPContribs client. Keep this in sync with `to_contribution`.
 """
 
 MPCONTRIBS_COLUMN_DESCRIPTIONS: dict[str, str] = {
-    "mxeneId": "Unique ID in this project: formula plus dataset label, e.g. Ti3C2O2-h1a-2",
+    "mxeneId": "Unique ID in this project: formula plus folder label, e.g. Ti3C2O2-h1a-2",
     "M": "Transition metal M",
     "X": "Non-metal X (C or N)",
     "T": "Surface termination T, or none for pristine sheets",

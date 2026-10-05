@@ -465,11 +465,15 @@ def test_grid_columns_cover_every_feasible_structure():
     assert (1, None, "h2") not in cols  # h2 needs n >= 2
 
 
-def test_write_overview(dataset, tmp_path):
-    openpyxl = pytest.importorskip("openpyxl")
+def _break_one_structure(dataset):
+    """Prismatic core in a `t` folder: fails the stacking check."""
+    (dataset / "Hf/m2x/t-2").mkdir()
+    shutil.copy(dataset / "Hf/m2x/h-1/CONTCAR", dataset / "Hf/m2x/t-2/CONTCAR")
+
+
+def test_grid_states(dataset):
     from mpcontribs.lux.projects.two_d_mxenes.pipelines.build_contributions import (
         check_dataset,
-        main,
     )
     from mpcontribs.lux.projects.two_d_mxenes.pipelines.dataset_overview import (
         BAD,
@@ -477,23 +481,69 @@ def test_write_overview(dataset, tmp_path):
         MISSING,
         OUT_OF_SCOPE,
         grid_states,
+        metals_in,
     )
 
-    # break one structure: prismatic core in a `t` folder
-    (dataset / "Hf/m2x/t-2").mkdir()
-    shutil.copy(dataset / "Hf/m2x/h-1/CONTCAR", dataset / "Hf/m2x/t-2/CONTCAR")
+    _break_one_structure(dataset)
+    result = check_dataset(dataset)
+    assert metals_in(result) == ["Hf"]  # rows only for metals in the data
 
-    states, _ = grid_states(check_dataset(dataset))
+    states, _ = grid_states(result)
     assert states[("Hf", "C", 1, "F", "h-1")] == GOOD
     assert states[("Hf", "N", 1, "F", "h-2")] == GOOD
     assert states[("Hf", "C", 1, "F", "t-2")] == BAD
     assert states[("Hf", "C", 1, "F", "t-1")] == MISSING
-    assert states[("Ti", "C", 3, "O", "h1a-2")] == MISSING
-    assert states[("Hf", "C", 1, "O", "h-1")] == OUT_OF_SCOPE
-    assert states[("Hf", "C", 1, None, "t")] == OUT_OF_SCOPE
+    assert states[("Hf", "C", 1, "O", "h-1")] == MISSING  # in scope by default
+    assert not any(key[0] == "Ti" for key in states)
 
+    scoped, _ = grid_states(result, out_of_scope={("Hf", "O"), ("*", None)})
+    assert scoped[("Hf", "C", 1, "O", "h-1")] == OUT_OF_SCOPE
+    assert scoped[("Hf", "N", 3, None, "h2")] == OUT_OF_SCOPE
+    assert scoped[("Hf", "C", 1, "F", "t-1")] == MISSING
+    assert scoped[("Hf", "C", 1, "F", "t-2")] == BAD  # files are never hidden
+
+
+@pytest.mark.parametrize(
+    "text, expected",
+    [("Hf:O", ("Hf", "O")), ("Re:none", ("Re", None)), ("*:F", ("*", "F"))],
+)
+def test_parse_scope_exclusion(text, expected):
+    from mpcontribs.lux.projects.two_d_mxenes.pipelines.dataset_overview import (
+        parse_scope_exclusion,
+    )
+
+    assert parse_scope_exclusion(text) == expected
+
+
+@pytest.mark.parametrize("text", ["Hf", "Xx:O", "Hf:Cl", ":O"])
+def test_parse_scope_exclusion_rejects(text):
+    from mpcontribs.lux.projects.two_d_mxenes.pipelines.dataset_overview import (
+        parse_scope_exclusion,
+    )
+
+    with pytest.raises(ValueError):
+        parse_scope_exclusion(text)
+
+
+def test_write_overview(dataset, tmp_path):
+    openpyxl = pytest.importorskip("openpyxl")
+    from mpcontribs.lux.projects.two_d_mxenes.pipelines.build_contributions import (
+        main,
+    )
+    from mpcontribs.lux.projects.two_d_mxenes.pipelines.dataset_overview import (
+        BAD,
+        GOOD,
+    )
+
+    _break_one_structure(dataset)
     path = tmp_path / "overview.xlsx"
-    main([str(dataset), "--overview", str(path)])
+    with pytest.raises(SystemExit):  # invalid scope is a usage error
+        main([str(dataset), "--overview", str(path), "--out-of-scope", "Hf:Cl"])
+    path = tmp_path / "overview.xlsx"
+    main(
+        [str(dataset), "--overview", str(path)]
+        + ["--out-of-scope", "Hf:O", "--out-of-scope", "*:none"]
+    )
     wb = openpyxl.load_workbook(path)
     assert wb.sheetnames == ["Overview", "Problems", "Missing", "All files"]
     ws = wb["Overview"]
@@ -576,7 +626,7 @@ def test_template_roundtrip(dataset, tmp_path):
     assert df.loc[0, "a [angstrom]"] == pytest.approx(3.2396, abs=1e-3)
     assert df.loc[0, "file"] == "Hf/m2x/h-1/CONTCAR"
 
-    # the researcher fills in some values; the file loads back directly
+    # property values are filled in; the file loads back directly
     df.loc[0, ["c11 [N/m]", "c12 [N/m]"]] = [250, 60]
     df.loc[1, "totalEnergyPerAtom [eV/atom]"] = -7.9
     df.to_csv(path, index=False, encoding="utf-8-sig")
@@ -675,3 +725,94 @@ def test_project_other_has_server_safe_keys():
         "pseudopotentials": "Ti_sv, C",
         "kpointMesh": "12x12x1",
     }
+
+
+def test_units_parse_with_mpcontribs_unit_registry():
+    """Every unit in MPCONTRIBS_COLUMNS parses as the MPContribs client parses it."""
+    pint = pytest.importorskip("pint")
+    from mpcontribs.lux.projects.two_d_mxenes.pipelines.build_contributions import (
+        MPCONTRIBS_COLUMNS,
+    )
+
+    # registry set up as in mpcontribs.client (which defines `atom`)
+    ureg = pint.UnitRegistry(autoconvert_offset_to_baseunit=True)
+    ureg.define("atom = 1")
+    for column, unit in MPCONTRIBS_COLUMNS.items():
+        if unit:
+            ureg.Quantity(f"1.5 {unit}")  # raises if the unit is unknown
+
+
+# ---- accepted and rejected data (README "Accepted and rejected data") ------
+
+
+def test_supercell_is_accepted():
+    s = ideal_mxene(
+        "Ti", "C", 2, ["P"] + expected_core_sequence(2, "h1a") + ["P"], termination="O"
+    )
+    s.make_supercell([[2, 0, 0], [0, 2, 0], [0, 0, 1]])
+    entry = MXeneEntry.from_structure(s, "h1a", terminationSite=1)
+    assert entry.mxeneId == "Ti3C2O2-h1a-1"
+    assert entry.descriptors.nSites == 4 * 7
+
+
+def _replace(s, index, element):
+    s = s.copy()
+    s.replace(index, element)
+    return s
+
+
+@pytest.mark.parametrize(
+    "make, reason",
+    [
+        # mixed terminations: O on the bottom, F on the top
+        (
+            lambda: _replace(
+                ideal_mxene("Ti", "C", 1, ["O", "O", "O"], termination="O"), 4, "F"
+            ),
+            "Cannot infer",
+        ),
+        # other termination element
+        (
+            lambda: ideal_mxene("Ti", "C", 1, ["O", "O", "O"], termination="Cl"),
+            "Cannot infer",
+        ),
+        # MBene (X = B)
+        (lambda: ideal_mxene("Mo", "B", 1, ["O"]), "Cannot infer"),
+        # double-metal MXene Mo2TiC2
+        (
+            lambda: _replace(ideal_mxene("Mo", "C", 2, ["O", "O", "O"]), 2, "Ti"),
+            "Cannot infer",
+        ),
+        # n = 4
+        (lambda: ideal_mxene("Ti", "C", 4, ["O"] * 7), "n"),
+        # one-sided termination
+        (
+            lambda: _remove_last(
+                ideal_mxene("Ti", "C", 1, ["O", "O", "O"], termination="O")
+            ),
+            "Labels imply",
+        ),
+        # metal vacancy
+        (
+            lambda: _remove_index(ideal_mxene("Ti", "C", 2, ["O", "O", "O"]), 0),
+            "M_\\(n\\+1\\)X_n|Cannot infer|Labels imply",
+        ),
+    ],
+)
+def test_rejected_compositions(make, reason):
+    with pytest.raises(ValueError, match=reason):
+        s = make()
+        n_term = sum(1 for site in s if site.specie.symbol in {"F", "O"})
+        MXeneEntry.from_structure(s, "t", terminationSite=1 if n_term else None)
+
+
+def _remove_last(s):
+    s = s.copy()
+    s.remove_sites([len(s) - 1])
+    return s
+
+
+def _remove_index(s, index):
+    s = s.copy()
+    s.remove_sites([index])
+    return s

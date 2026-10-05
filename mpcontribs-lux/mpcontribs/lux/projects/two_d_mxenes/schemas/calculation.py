@@ -1,11 +1,12 @@
-"""Simulation settings shared by every MXene in the dataset.
+"""Simulation settings shared by every MXene in the project.
 
 These settings are identical for all entries, so they are recorded once at
 the project level (in the MPContribs project description / `other` metadata)
 rather than repeated in each contribution. The model documents what is
 recorded and validates it.
 
-DRAFT: values are to be filled in from the primary researcher's records.
+The values are supplied when the MPContribs project is set up (see
+`pipelines/README.md`, "Describe the project and initialise the columns").
 """
 
 from __future__ import annotations
