@@ -132,15 +132,38 @@ class ContributionService:
 
         Components are only gathered when their respective `Filter` is defined.
         """
+        # Contributions are self-scoping; component levels carry no read scope of their
+        # own, so each present one is gated to the ids reachable through an in-scope contribution.
         query = build_query_map(
             [
-                (DownloadDomain.contributions, self._contributions, request.contributions),
-                (DownloadDomain.structures, self._structures, request.structures),
-                (DownloadDomain.tables, self._tables, request.tables),
-                (DownloadDomain.attachments, self._attachments, request.attachments),
+                (DownloadDomain.contributions, self._contributions, request.contributions, None),
+                (
+                    DownloadDomain.structures,
+                    self._structures,
+                    request.structures,
+                    await self._component_gate(request.structures, "structures"),
+                ),
+                (
+                    DownloadDomain.tables,
+                    self._tables,
+                    request.tables,
+                    await self._component_gate(request.tables, "tables"),
+                ),
+                (
+                    DownloadDomain.attachments,
+                    self._attachments,
+                    request.attachments,
+                    await self._component_gate(request.attachments, "attachments"),
+                ),
             ]
         )
         return await self._downloads.queue_download(query=query, fmt=request.format)
+
+    async def _component_gate(self, filter: Any, ref_field: str) -> set[Any] | None:
+        """Scoped reachable-id gate for a component download level, or ``None`` when absent."""
+        if filter is None:
+            return None
+        return await self._contributions.referenced_component_ids(ref_field, scoped=True)
 
     async def delete_one(self, identifiers: dict[str, Any]) -> BulkDeleteSummary:
         """Delete a single contribution and its child components.

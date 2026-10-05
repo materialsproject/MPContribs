@@ -1,4 +1,4 @@
-from collections.abc import Iterable
+from collections.abc import Collection, Iterable
 from typing import Any
 
 from fastapi_filter.contrib.beanie import Filter
@@ -32,17 +32,22 @@ class DownloadableRepository[TDoc: BaseDocumentWithInput, TOut: DocumentOut, TFi
 
 
 def build_query_map(
-    levels: Iterable[tuple[DownloadDomain, DownloadableRepository[Any, Any, Any], Filter | None]],
+    levels: Iterable[
+        tuple[DownloadDomain, DownloadableRepository[Any, Any, Any], Filter | None, Collection[Any] | None]
+    ],
 ) -> dict[str, list[dict[str, Any]]]:
-    """Assemble the ``{collection_name: [scoped_query]}`` map for a bundled download.
+    """Build the ``{collection_name: [query]}`` map for a bundled download.
 
-    Each ``(collection, repository, filter)`` level whose ``filter`` is set contributes one scoped
-    predicate (``repository.build_download_query(filter)``) under its collection name; levels whose
-    filter is ``None`` are omitted. The worker treats the topmost collection present as the root and
-    joins the remaining (descendant) collections from it.
+    Each level in `levels` with a set ``filter`` adds one scoped query under its collection name; filters set to
+    ``None`` are skipped. ``gate_ids`` (the last element of the tuple) restricts components (which have no read scope of
+    their own) to the ids reachable in the caller's scope, ANDing ``{"_id": {"$in": sorted(gate_ids)}}`` onto the query;
+    self-scoping roots (projects/contributions) pass ``None``.
     """
-    return {
-        domain.value: [repository.build_download_query(filter)]
-        for domain, repository, filter in levels
-        if filter is not None
-    }
+    out: dict[str, list[dict[str, Any]]] = {}
+    for domain, repository, filter, gate_ids in levels:
+        if filter is None:
+            continue
+        base = repository.build_download_query(filter)
+        predicate = base if gate_ids is None else {"$and": [base, {"_id": {"$in": sorted(gate_ids)}}]}
+        out[domain.value] = [predicate]
+    return out

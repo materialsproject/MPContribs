@@ -9,10 +9,11 @@ from pymongo.asynchronous.client_session import AsyncClientSession
 from mpcontribs_api.authz import User
 from mpcontribs_api.domains._shared.bulk import BulkFailure, BulkWriteSummary, bulk_failure_from_exception
 from mpcontribs_api.domains._shared.components import MongoDbComponentsRepository
+from mpcontribs_api.domains._shared.downloadable import build_query_map
 from mpcontribs_api.domains._shared.models import Component, ComponentDeleteResponse, ComponentIn, DocumentOut
 from mpcontribs_api.domains._shared.types import DownloadFormat
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
-from mpcontribs_api.domains.downloads.models import DownloadOut
+from mpcontribs_api.domains.downloads.models import DownloadDomain, DownloadOut
 from mpcontribs_api.domains.downloads.service import DownloadService
 from mpcontribs_api.exceptions import NotFoundError
 from mpcontribs_api.pagination import CursorParams, Page
@@ -142,8 +143,7 @@ class ComponentService[
     async def queue_download(self, filter: TFilter, format: DownloadFormat) -> DownloadOut:
         """Enqueue an async export of the matching, reachable components."""
         reachable = await self._contributions.referenced_component_ids(self._ref_field, scoped=True)
-        base = self._components.build_download_query(filter)
-        query = {self._ref_field: [{"$and": [base, {"_id": {"$in": sorted(reachable)}}]}]}
+        query = build_query_map([(DownloadDomain(self._ref_field), self._components, filter, reachable)])
         return await self._downloads.queue_download(query=query, fmt=format)
 
     async def delete_many(self, filter: TFilter) -> ComponentDeleteResponse:

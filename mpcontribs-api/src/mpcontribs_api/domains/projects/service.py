@@ -69,16 +69,39 @@ class ProjectService:
         contributions = request.contributions
         if contributions is None and any((request.structures, request.tables, request.attachments)):
             contributions = ContributionFilter()
+        # Projects and contributions are self-scoping roots; component levels carry no read scope of
+        # their own, so each present one is gated to the ids reachable through an in-scope contribution.
         query = build_query_map(
             [
-                (DownloadDomain.projects, self._projects, request.projects),
-                (DownloadDomain.contributions, self._contributions, contributions),
-                (DownloadDomain.structures, self._structures, request.structures),
-                (DownloadDomain.tables, self._tables, request.tables),
-                (DownloadDomain.attachments, self._attachments, request.attachments),
+                (DownloadDomain.projects, self._projects, request.projects, None),
+                (DownloadDomain.contributions, self._contributions, contributions, None),
+                (
+                    DownloadDomain.structures,
+                    self._structures,
+                    request.structures,
+                    await self._component_gate(request.structures, "structures"),
+                ),
+                (
+                    DownloadDomain.tables,
+                    self._tables,
+                    request.tables,
+                    await self._component_gate(request.tables, "tables"),
+                ),
+                (
+                    DownloadDomain.attachments,
+                    self._attachments,
+                    request.attachments,
+                    await self._component_gate(request.attachments, "attachments"),
+                ),
             ]
         )
         return await self._downloads.queue_download(query=query, fmt=request.format)
+
+    async def _component_gate(self, filter: Any, ref_field: str) -> set[Any] | None:
+        """Scoped reachable-id gate for a component download level, or ``None`` when absent."""
+        if filter is None:
+            return None
+        return await self._contributions.referenced_component_ids(ref_field, scoped=True)
 
     async def upsert_one(self, identifiers: dict[str, Any], data: ProjectIn) -> Project:
         """Upsert a project by id, applying every write-policy decision before persisting.

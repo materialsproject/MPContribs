@@ -1819,6 +1819,10 @@ class TestQueueDownload:
         structures.build_download_query = MagicMock(return_value={"struct": True})
         svc, contrib_repo, *_ = _make_service(downloads=downloads, structures=structures)
         contrib_repo.build_download_query = MagicMock(return_value={"contrib": True})
+        # Components have no read scope of their own, so the service gates each one to the ids
+        # reachable through an in-scope contribution.
+        reachable = {_oid(), _oid()}
+        contrib_repo.referenced_component_ids = AsyncMock(return_value=reachable)
 
         request = ContributionDownloadRequest(
             contributions=ContributionFilter(),
@@ -1826,7 +1830,12 @@ class TestQueueDownload:
         )
         await svc.queue_download(request)
 
-        # Only the requested collections appear; tables/attachments (no filter) are omitted.
+        # Only the requested collections appear; tables/attachments (no filter) are omitted. The
+        # contributions root is self-scoping (no gate); structures is ANDed with its reachable ids.
         query = downloads.queue_download.await_args.kwargs["query"]
-        assert query == {"contributions": [{"contrib": True}], "structures": [{"struct": True}]}
+        assert query == {
+            "contributions": [{"contrib": True}],
+            "structures": [{"$and": [{"struct": True}, {"_id": {"$in": sorted(reachable)}}]}],
+        }
         structures.build_download_query.assert_called_once_with(request.structures)
+        contrib_repo.referenced_component_ids.assert_awaited_once_with("structures", scoped=True)

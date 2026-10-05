@@ -16,8 +16,15 @@ from mpcontribs_api.domains._shared.service import ComponentService
 from mpcontribs_api.domains._shared.types import DownloadFormat
 from mpcontribs_api.domains.attachments.models import Attachment, AttachmentFilter
 from mpcontribs_api.domains.attachments.repository import MongoDbAttachmentRepository
-from mpcontribs_api.domains.contributions.models import Contribution
+from mpcontribs_api.domains.contributions.models import Contribution, ContributionDownloadRequest, ContributionFilter
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
+from mpcontribs_api.domains.contributions.service import ContributionService
+from mpcontribs_api.domains.initiatives.repository import MongoDbInitiativeRepository
+from mpcontribs_api.domains.projects.models import ProjectDownloadRequest, ProjectFilter
+from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
+from mpcontribs_api.domains.projects.service import ProjectService
+from mpcontribs_api.domains.structures.repository import MongoDbStructureRepository
+from mpcontribs_api.domains.tables.repository import MongoDbTableRepository
 from mpcontribs_api.pagination import CursorParams
 
 pytestmark = [pytest.mark.db, pytest.mark.asyncio(loop_scope="session")]
@@ -185,3 +192,107 @@ class TestComponentQueueDownloadReachability:
         # ``build_s3_key`` hashes the id list as-is (canonicalization sorts dict keys, not list
         # elements), so a deterministic key depends on the ids being sorted here at the source.
         assert allowed == sorted(allowed)
+
+
+def _contribution_service(user: User) -> ContributionService:
+    # Real repos against the test DB; ``client``/``downloads`` are mocks (``queue_download`` touches
+    # neither) so the queued query map can be inspected via ``service._downloads``.
+    return ContributionService(
+        client=AsyncMock(),
+        user=user,
+        projects=MongoDbProjectRepository(user),
+        contributions=MongoDbContributionRepository(user),
+        structures=MongoDbStructureRepository(user),
+        attachments=MongoDbAttachmentRepository(user),
+        tables=MongoDbTableRepository(user),
+        downloads=AsyncMock(),
+    )
+
+
+def _project_service(user: User) -> ProjectService:
+    return ProjectService(
+        user=user,
+        projects=MongoDbProjectRepository(user),
+        initiatives=MongoDbInitiativeRepository(user),
+        contributions=MongoDbContributionRepository(user),
+        structures=MongoDbStructureRepository(user),
+        tables=MongoDbTableRepository(user),
+        attachments=MongoDbAttachmentRepository(user),
+        downloads=AsyncMock(),
+    )
+
+
+class TestBundledDownloadReachability:
+    """A *bundled* contribution/project download must gate its component sub-queries to the caller's
+    scoped-reachable ids — exactly as the direct component path does — so a caller cannot export
+    components of a contribution they cannot see by naming them via ``id__in``/``md5__in``. The
+    root collections (contributions/projects) are self-scoping and must carry no reachability gate.
+    """
+
+    async def test_contribution_bundle_gates_components_to_reachable(self, db):
+        pub = await _attachment(1)
+        priv = await _attachment(2)
+        orphan = await _attachment(3)  # referenced by nothing
+        await _contribution("mp-a", is_public=True, attachments=[pub])
+        await _contribution("mp-b", is_public=False, attachments=[priv])
+
+        service = _contribution_service(PUBLIC_ONLY)
+        await service.queue_download(ContributionDownloadRequest(attachments=AttachmentFilter()))
+
+        query = service._downloads.queue_download.await_args.kwargs["query"]
+        # The attachments level is reachability-gated: a public-only caller cannot reach the private
+        # or orphan attachment even though they could name them by id/md5 in the filter.
+        allowed = query["attachments"][0]["$and"][1]["_id"]["$in"]
+        assert pub.id in allowed
+        assert priv.id not in allowed
+        assert orphan.id not in allowed
+        # The contributions root is self-scoping: its predicate is exactly the scoped query, with no
+        # reachability ``_id $in`` gate wrapped around it.
+        expected_root = MongoDbContributionRepository(PUBLIC_ONLY).build_download_query(ContributionFilter())
+        assert query["contributions"][0] == expected_root
+
+    async def test_project_bundle_gates_components_to_reachable(self, db):
+        pub = await _attachment(10)
+        priv = await _attachment(20)
+        orphan = await _attachment(30)
+        await _contribution("mp-a", is_public=True, attachments=[pub])
+        await _contribution("mp-b", is_public=False, attachments=[priv])
+
+        service = _project_service(PUBLIC_ONLY)
+        await service.queue_download(ProjectDownloadRequest(attachments=AttachmentFilter()))
+
+        query = service._downloads.queue_download.await_args.kwargs["query"]
+        allowed = query["attachments"][0]["$and"][1]["_id"]["$in"]
+        assert pub.id in allowed
+        assert priv.id not in allowed
+        assert orphan.id not in allowed
+        # Both roots are self-scoping (no reachability gate). Projects is the top-level root; the
+        # contributions level is auto-injected (ContributionFilter()) because components were requested.
+        assert query["projects"][0] == MongoDbProjectRepository(PUBLIC_ONLY).build_download_query(ProjectFilter())
+        assert query["contributions"][0] == MongoDbContributionRepository(PUBLIC_ONLY).build_download_query(
+            ContributionFilter()
+        )
+
+    async def test_bundle_component_gate_is_sorted_and_empty_when_unreachable(self, db):
+        # A public-only caller reaches nothing referenced only by a private contribution: the gate is
+        # an empty allow-list (empty export, not the whole collection), and reachable ids are sorted
+        # for a stable s3_key.
+        att = await _attachment(40)
+        await _contribution("mp-x", is_public=False, attachments=[att])
+
+        service = _contribution_service(PUBLIC_ONLY)
+        await service.queue_download(ContributionDownloadRequest(attachments=AttachmentFilter()))
+
+        allowed = service._downloads.queue_download.await_args.kwargs["query"]["attachments"][0]["$and"][1]["_id"]["$in"]
+        assert allowed == []
+
+    async def test_absent_component_filter_is_omitted(self, db):
+        # No component filter -> no component level (and no spurious reachability query); only the
+        # always-present contributions root is bundled.
+        await _contribution("mp-a", is_public=True, attachments=[await _attachment(50)])
+
+        service = _contribution_service(PUBLIC_ONLY)
+        await service.queue_download(ContributionDownloadRequest())
+
+        query = service._downloads.queue_download.await_args.kwargs["query"]
+        assert set(query) == {"contributions"}

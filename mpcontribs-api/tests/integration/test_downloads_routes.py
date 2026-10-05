@@ -59,12 +59,14 @@ class TestReadOneRoute:
         client.get(f"/api/v1/downloads/{oid}")
         assert download_service.read_one.call_args.kwargs["download_id"] == oid
 
-    def test_unknown_id_returns_200_null(self, client, download_service):
-        # Matches the by-id GET convention across domains: a miss is 200 with a null body.
+    def test_unknown_or_non_owner_id_returns_404(self, client, download_service):
+        # A download is private/owner-scoped: a miss (unknown id, or another user's id the read
+        # scope resolves to None) is 404, indistinguishable from "does not exist" — matching the
+        # /content route rather than the 200-null convention used for public-ish resources.
         download_service.read_one.return_value = None
         r = client.get(f"/api/v1/downloads/{PydanticObjectId()}")
-        assert r.status_code == 200
-        assert r.json() is None
+        assert r.status_code == 404
+        assert r.json()["error"]["code"] == "not_found"
 
     def test_malformed_id_returns_422(self, client, download_service):
         assert client.get("/api/v1/downloads/not-an-objectid").status_code == 422

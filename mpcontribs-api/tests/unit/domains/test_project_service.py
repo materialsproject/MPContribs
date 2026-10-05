@@ -290,6 +290,8 @@ class TestQueueDownload:
         # A component level needs contributions as its scoped join parent; when the request omits a
         # contributions filter, a scope-only ContributionFilter is injected so nothing leaks.
         svc, _projects, contributions, structures, downloads = _download_service()
+        reachable = {PydanticObjectId(), PydanticObjectId()}
+        contributions.referenced_component_ids = AsyncMock(return_value=reachable)
         request = ProjectDownloadRequest(structures=StructureFilter(name="POSCAR"))
 
         await svc.queue_download(request)
@@ -298,11 +300,13 @@ class TestQueueDownload:
         injected = contributions.build_download_query.call_args.args[0]
         assert isinstance(injected, ContributionFilter)
         structures.build_download_query.assert_called_once_with(request.structures)
+        contributions.referenced_component_ids.assert_awaited_once_with("structures", scoped=True)
         query = downloads.queue_download.await_args.kwargs["query"]
+        # Roots (projects/contributions) are self-scoping; structures is gated to its reachable ids.
         assert query == {
             "projects": [{"proj": True}],
             "contributions": [{"contrib": True}],
-            "structures": [{"struct": True}],
+            "structures": [{"$and": [{"struct": True}, {"_id": {"$in": sorted(reachable)}}]}],
         }
 
     async def test_omitted_collections_are_absent_from_the_map(self):
