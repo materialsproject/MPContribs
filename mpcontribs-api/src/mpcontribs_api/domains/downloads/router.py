@@ -5,6 +5,7 @@ from mpcontribs_api.dependencies import require_user
 from mpcontribs_api.domains._shared.types import FieldSelector
 from mpcontribs_api.domains.downloads.dependencies import DownloadServiceDep
 from mpcontribs_api.domains.downloads.models import DownloadOut
+from mpcontribs_api.exceptions import NotFoundError
 
 router = APIRouter()
 
@@ -14,9 +15,12 @@ async def read_one(
     service: DownloadServiceDep,
     id: PydanticObjectId,
     fields: FieldSelector = None,
-) -> DownloadOut | None:
+) -> DownloadOut:
     selected = DownloadOut.parse_fields(fields)
-    return await service.read_one(download_id=id, fields=selected)
+    result = await service.read_one(download_id=id, fields=selected)
+    if result is None:
+        raise NotFoundError(message="download not found", download_id=str(id))
+    return result
 
 
 @router.get("/{id}/content", dependencies=[Depends(require_user)])
