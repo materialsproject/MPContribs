@@ -1,12 +1,12 @@
 [project]
 name = "mpcontribs-serverless"
 version = "0.1.0"
-description = "Add your description here"
+description = "lambda function definition for mpcontribs workers"
 readme = "README.md"
 authors = [
-    { name = "Brendan Foley", email = "brendanfoley1214@proton.me" }
+    { name = "Brendan Foley", email = "bfoley@lbl.gov" }
 ]
-requires-python = ">=3.12"
+requires-python = ">=3.14"
 dependencies = []
 
 [project.scripts]
