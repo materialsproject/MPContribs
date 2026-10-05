@@ -156,3 +156,7 @@ class DownloadFilter(BaseFilter):
     original_time: datetime | None = None
     original_time__lte: datetime | None = None
     original_time__gte: datetime | None = None
+
+
+class DownloadJob(BaseModel):
+    id: PydanticObjectId

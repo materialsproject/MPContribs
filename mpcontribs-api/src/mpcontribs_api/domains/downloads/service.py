@@ -15,6 +15,7 @@ from mpcontribs_api.domains._shared.types import DownloadFormat
 from mpcontribs_api.domains.downloads.models import (
     Download,
     DownloadIn,
+    DownloadJob,
     DownloadOut,
     DownloadPatch,
     JobStatus,
@@ -191,7 +192,7 @@ class DownloadService:
         try:
             await self._sqs.send_message(
                 QueueUrl=queue_url,
-                MessageBody=str(download.id),
+                MessageBody=DownloadJob(id=download.id).model_dump_json(),
                 # Carry the request's trace/span so the worker can continue this trace.
                 MessageAttributes=_trace_message_attributes(),
             )
