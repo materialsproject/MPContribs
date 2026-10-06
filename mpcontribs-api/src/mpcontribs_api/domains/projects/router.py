@@ -6,6 +6,7 @@ from starlette.status import HTTP_204_NO_CONTENT
 
 from mpcontribs_api.dependencies import require_user
 from mpcontribs_api.domains._shared.types import FieldSelector
+from mpcontribs_api.domains.downloads.models import DownloadOut
 from mpcontribs_api.domains.projects.dependencies import ProjectServiceDep
 from mpcontribs_api.domains.projects.models import (
     ProjectDownloadRequest,
@@ -62,7 +63,7 @@ async def search(
 
 
 @router.post("/download", dependencies=[Depends(require_user)])
-async def download(service: ProjectServiceDep, request: ProjectDownloadRequest):
+async def download(service: ProjectServiceDep, request: ProjectDownloadRequest) -> DownloadOut:
     """Enqueue a bundled project download.
 
     Declared before ``/{id}`` so the literal ``download`` segment is never captured as a project id.

@@ -20,6 +20,7 @@ from mpcontribs_api.domains.contributions.models import (
     ContributionOut,
     ContributionPatch,
 )
+from mpcontribs_api.domains.downloads.models import DownloadOut
 from mpcontribs_api.exceptions import ValidationError
 from mpcontribs_api.pagination import CursorParams
 
@@ -105,7 +106,7 @@ async def upsert_many(
 
 
 @router.post("/download", dependencies=[Depends(require_user)])
-async def download(service: ContributionServiceDep, request: ContributionDownloadRequest):
+async def download(service: ContributionServiceDep, request: ContributionDownloadRequest) -> DownloadOut:
     """Enqueue a bundled contribution download.
 
     The JSON body is a ``collection -> filter`` map: ``contributions`` (the base) plus any of

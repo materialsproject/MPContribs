@@ -13,6 +13,7 @@ from mpcontribs_api.domains.attachments.models import (
     AttachmentOut,
     AttachmentPatch,
 )
+from mpcontribs_api.domains.downloads.models import DownloadOut
 from mpcontribs_api.pagination import CursorParams
 
 router = APIRouter()
@@ -68,7 +69,7 @@ async def read_one(
 
 
 @router.post("/download", dependencies=[Depends(require_user)])
-async def download_attachment(service: AttachmentServiceDep, request: AttachmentDownloadRequest):
+async def download_attachment(service: AttachmentServiceDep, request: AttachmentDownloadRequest) -> DownloadOut:
     """Enqueue an async export of the matching attachments, returning the download job ticket."""
     return await service.queue_download(filter=request.attachments, format=request.format)
 

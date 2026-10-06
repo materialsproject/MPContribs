@@ -7,6 +7,7 @@ from mpcontribs_api.dependencies import require_user, require_writer
 from mpcontribs_api.domains._shared.bulk import BulkWriteSummary
 from mpcontribs_api.domains._shared.models import ComponentDeleteResponse, ComponentIdentity
 from mpcontribs_api.domains._shared.types import FieldSelector
+from mpcontribs_api.domains.downloads.models import DownloadOut
 from mpcontribs_api.domains.tables.dependencies import TableServiceDep
 from mpcontribs_api.domains.tables.models import Table, TableDownloadRequest, TableFilter, TableIn, TableOut, TablePatch
 from mpcontribs_api.pagination import CursorParams
@@ -64,7 +65,7 @@ async def read_one(
 
 
 @router.post("/download", dependencies=[Depends(require_user)])
-async def download_table(service: TableServiceDep, request: TableDownloadRequest):
+async def download_table(service: TableServiceDep, request: TableDownloadRequest) -> DownloadOut:
     """Enqueue an async export of the matching tables, returning the download job ticket."""
     return await service.queue_download(filter=request.tables, format=request.format)
 
