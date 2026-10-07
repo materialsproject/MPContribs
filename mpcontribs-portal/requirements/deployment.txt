@@ -56,7 +56,7 @@ debugpy==1.8.22
     # via ipykernel
 defusedxml==0.7.1
     # via nbconvert
-django==3.2.25
+django==5.2.17
     # via
     #   django-extensions
     #   django-settings-file
@@ -345,7 +345,7 @@ six==1.17.0
     #   bravado-core
     #   python-dateutil
     #   rfc3339-validator
-soupsieve==2.10
+soupsieve==2.9
     # via beautifulsoup4
 spglib==2.7.0
     # via pymatgen-core
@@ -363,7 +363,7 @@ tabulate==0.10.0
     # via pymatgen-core
 tinycss2==1.5.1
     # via bleach
-tornado==6.5.10
+tornado==6.5.9
     # via
     #   ipykernel
     #   jupyter-client

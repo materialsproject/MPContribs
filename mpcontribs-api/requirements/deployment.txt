@@ -4,7 +4,7 @@
 #
 #    pip-compile --allow-unsafe --no-index --output-file=MPContribs/mpcontribs-api/requirements/deployment.txt MPContribs/mpcontribs-api/pyproject.toml python/requirements.txt
 #
-anyio==4.15.1
+anyio==4.14.2
     # via jupyter-server
 apispec==5.2.2
     # via mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
@@ -459,7 +459,7 @@ six==1.17.0
     #   flask-sse
     #   python-dateutil
     #   rfc3339-validator
-soupsieve==2.10
+soupsieve==2.9
     # via beautifulsoup4
 spglib==2.7.0
     # via pymatgen-core
@@ -478,7 +478,7 @@ terminado==0.18.1
     #   notebook
 tinycss2==1.5.1
     # via bleach
-tornado==6.5.10
+tornado==6.5.9
     # via
     #   ipykernel
     #   jupyter-client
