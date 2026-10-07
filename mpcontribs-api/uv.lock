@@ -1122,7 +1122,7 @@ dependencies = [
     { name = "python-snappy" },
     { name = "structlog" },
     { name = "supervisor" },
-    { name = "types-aiobotocore", extra = ["s3"] },
+    { name = "types-aiobotocore", extra = ["s3", "sqs"] },
     { name = "uncertainties" },
 ]
 
@@ -1159,7 +1159,7 @@ requires-dist = [
     { name = "python-snappy", specifier = ">=0.7.3" },
     { name = "structlog", specifier = ">=25.5.0" },
     { name = "supervisor", specifier = ">=4.3.0" },
-    { name = "types-aiobotocore", extras = ["s3"], specifier = ">=3.7.0" },
+    { name = "types-aiobotocore", extras = ["s3", "sqs"], specifier = ">=3.7.0" },
     { name = "uncertainties", specifier = ">=3.2.3" },
 ]
 
@@ -2313,6 +2313,9 @@ wheels = [
 s3 = [
     { name = "types-aiobotocore-s3" },
 ]
+sqs = [
+    { name = "types-aiobotocore-sqs" },
+]
 
 [[package]]
 name = "types-aiobotocore-s3"
@@ -2321,6 +2324,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/94/ce/5b7baa06cde79ab5f083f56f060ccd2b60f6249127d70bbb8a37aafbdcd4/types_aiobotocore_s3-3.7.0.tar.gz", hash = "sha256:6ec738853dbba9133707991b98ea4dab19f7c62e02b3cca016e6cd8e3d684576", size = 77662, upload-time = "2026-05-10T03:17:35.088Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e9/ac/67240c3804a3e1c1e8f0f402155d7ed5351faf7a2085136083e5ca3f26b8/types_aiobotocore_s3-3.7.0-py3-none-any.whl", hash = "sha256:5dbb5479ece3e1aceaccac224fc3dd1ab7d912c4457419bd19e88a0a5b3844fc", size = 85450, upload-time = "2026-05-10T03:17:33.061Z" },
+]
+
+[[package]]
+name = "types-aiobotocore-sqs"
+version = "3.7.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/15/e1/d207fd95f8b45d53488a8581e4f1e4641f9d7fe7fa477d5737ac70833820/types_aiobotocore_sqs-3.7.0.tar.gz", hash = "sha256:52000164f92ab6ec18fd2f6a9989997a2690d1b1c4a851d3c5796a5286d17d00", size = 23423, upload-time = "2026-05-10T03:18:27.162Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/18/6b/eef2901bd3bf25209a8182f83969a02729cbd2f2f93f0ec47e24dc74d475/types_aiobotocore_sqs-3.7.0-py3-none-any.whl", hash = "sha256:57f263c4d00de1a165a3863e498fd0837fb75a332f8423b30916d4071a3e79fd", size = 34273, upload-time = "2026-05-10T03:18:25.66Z" },
 ]
 
 [[package]]
