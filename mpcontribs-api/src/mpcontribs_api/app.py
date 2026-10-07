@@ -1,6 +1,6 @@
-from collections.abc import AsyncGenerator
-from contextlib import AbstractAsyncContextManager, AsyncExitStack, asynccontextmanager
-from typing import cast
+from collections.abc import AsyncGenerator, Callable
+from contextlib import AbstractAsyncContextManager, AsyncExitStack, _AsyncGeneratorContextManager, asynccontextmanager
+from typing import Any, cast
 
 import aioboto3
 from aiobotocore.config import AioConfig
@@ -37,10 +37,10 @@ from mpcontribs_api.middleware import (
     instrument_app,
 )
 
-logger = get_logger(__name__)
+logger = get_logger(name=__name__)
 
 # The Beanie document models registered with the app; reused for init_beanie and search-index sync.
-DOCUMENT_MODELS = [
+DOCUMENT_MODELS: list[Any] = [
     Project,
     ProjectGroup,
     Initiative,
@@ -54,8 +54,8 @@ DOCUMENT_MODELS = [
 
 async def _setup_mongo(app: FastAPI, settings: Settings, stack: AsyncExitStack) -> None:
     """Setting up app-wide access to MongoDB via AsyncMongoClient and Beanie"""
-    client = AsyncMongoClient(
-        settings.mongo.uri.get_secret_value(),
+    client: AsyncMongoClient[Any] = AsyncMongoClient(
+        host=settings.mongo.uri.get_secret_value(),
         appname=settings.mongo.app_name,
         maxPoolSize=settings.mongo.max_pool_size,
         minPoolSize=settings.mongo.min_pool_size,
@@ -81,12 +81,12 @@ async def _setup_mongo(app: FastAPI, settings: Settings, stack: AsyncExitStack) 
         allow_index_dropping=True,  # allow old indices to be dropped from MongoDB when not specified in this package
     )
     # Reconcile Atlas Search indexes with what the models declare (opt-in, non-fatal, non-blocking).
-    await sync_all_search_indexes(DOCUMENT_MODELS, manage=settings.mongo.manage_search_indexes)
+    await sync_all_search_indexes(document_models=DOCUMENT_MODELS, manage=settings.mongo.manage_search_indexes)
 
 
 async def _setup_s3(app: FastAPI, settings: Settings, stack: AsyncExitStack) -> None:
     """Setting up app-wide access to AWS S3 via aioboto3"""
-    cm = cast(
+    cm: AbstractAsyncContextManager[S3Client] = cast(
         AbstractAsyncContextManager[S3Client],
         app.state.boto_session.client(
             "s3",
@@ -102,7 +102,7 @@ async def _setup_s3(app: FastAPI, settings: Settings, stack: AsyncExitStack) -> 
 
 async def _setup_sqs(app: FastAPI, settings: Settings, stack: AsyncExitStack) -> None:
     """Setting up app-wide access to AWS SQS via aioboto3"""
-    cm = cast(
+    cm: AbstractAsyncContextManager[SQSClient] = cast(
         AbstractAsyncContextManager[SQSClient],
         app.state.boto_session.client(
             service_name="sqs",
@@ -124,7 +124,7 @@ async def _setup_aws(app: FastAPI, settings: Settings, stack: AsyncExitStack) ->
     logger.info("all AWS connections connected")
 
 
-def _build_lifespan(settings: Settings):
+def _build_lifespan(settings: Settings) -> Callable[..., _AsyncGeneratorContextManager]:
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
         async with AsyncExitStack() as stack:
@@ -136,21 +136,20 @@ def _build_lifespan(settings: Settings):
     return lifespan
 
 
-def create_app(settings: Settings | None = None) -> FastAPI:
-    settings = settings or get_settings()
+def create_app(settings: Settings) -> FastAPI:
     # Register OTEL providers before logging so the logs pipeline attaches to live telemetry.
     configure_tracing(settings)
     configure_logging(settings)
 
     # In prod, Kong injects identity headers; locally expose them as Authorize fields.
-    security_deps = [Depends(api_key_scheme)]
+    security_deps: list[Any] = [Depends(dependency=api_key_scheme)]
     if settings.environment != "prod":
         security_deps += [
-            Depends(consumer_username_scheme),
-            Depends(authenticated_groups_scheme),
+            Depends(dependency=consumer_username_scheme),
+            Depends(dependency=authenticated_groups_scheme),
         ]
 
-    app = FastAPI(
+    app: FastAPI = FastAPI(
         title="mpcontribs-api",
         description="Operations to contribute, update and retrieve materials data on Materials Project",
         version=settings.version,
@@ -168,16 +167,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
 
     # Reject oversized request bodies before they're buffered into memory. Added before
-    app.add_middleware(BodySizeLimitMiddleware, max_bytes=settings.mongo.max_request_bytes)
+    app.add_middleware(middleware_class=BodySizeLimitMiddleware, max_bytes=settings.mongo.max_request_bytes)
     # Add request context to the logger
-    app.add_middleware(RequestContextMiddleware)
+    app.add_middleware(middleware_class=RequestContextMiddleware)
     # Emit server-side request spans/metrics (no-op when telemetry is disabled).
     instrument_app(app, settings)
     register_exception_handlers(app)
-    app.include_router(healthcheck_router, prefix="/healthcheck")
-    app.include_router(v1_router, prefix="/api/v1")
+    app.include_router(router=healthcheck_router, prefix="/healthcheck")
+    app.include_router(router=v1_router, prefix="/api/v1")
 
     return app
 
 
-app: FastAPI = create_app()
+app: FastAPI = create_app(settings=get_settings())
