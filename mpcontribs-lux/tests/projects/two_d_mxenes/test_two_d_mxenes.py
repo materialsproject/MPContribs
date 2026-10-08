@@ -1,28 +1,59 @@
-"""Test schemas and pipeline for the two_d_mxenes project."""
+"""Tests for the two_d_mxenes schemas and pipelines.
+
+Sections follow the validation phases in the project README: labels (3),
+structure analysis (2, 4), schema cross-validation (5), properties (7),
+pipeline and overview (1, 6), upload and export (8), and accepted/rejected
+data.
+"""
 
 import shutil
 from pathlib import Path
+from string import punctuation, whitespace
 
 import numpy as np
+import pandas as pd
 import pytest
 from mpcontribs.lux.projects.two_d_mxenes.pipelines.build_contributions import (
+    CheckRecord,
+    CheckResult,
     build_entries,
+    build_records,
+    check_dataset,
     load_properties,
+    main,
+    termination_site_table,
+    write_properties_template,
+)
+from mpcontribs.lux.projects.two_d_mxenes.pipelines.structure_analysis import (
+    compute_descriptors,
+    entry_from_structure,
+    infer_chemistry,
+    plain_formula,
+)
+from mpcontribs.lux.projects.two_d_mxenes.pipelines.upload import (
+    MAX_COLUMNS,
+    MPCONTRIBS_COLUMN_DESCRIPTIONS,
+    MPCONTRIBS_COLUMNS,
+    CalculationSettings,
+    project_other,
+    read_parquet,
     to_contribution,
+    write_parquet,
 )
 from mpcontribs.lux.projects.two_d_mxenes.schemas import (
     ElasticProperties,
     MXeneEntry,
     MXeneLabel,
-    MXeneStructure,
     StructureDescriptors,
 )
 from mpcontribs.lux.projects.two_d_mxenes.schemas.labels import (
+    TRANSITION_METALS,
     expected_core_sequence,
     expected_termination_coordination,
+    parse_folder_label,
 )
 from pydantic import ValidationError
-from pymatgen.core import Lattice, Structure
+from pymatgen.core import Composition, Element, Lattice, Structure
 
 SITES = {"A": (0.0, 0.0), "B": (1 / 3, 2 / 3), "C": (2 / 3, 1 / 3)}
 
@@ -62,11 +93,59 @@ def ideal_mxene(metal, nonmetal, n, sequence, termination=None, a=3.1, dz=1.2):
     c = 30.0
     z0 = 0.5 - dz * (len(elements) - 1) / 2 / c
     coords = [(*SITES[s], z0 + i * dz / c) for i, s in enumerate(sites)]
-    lattice = Lattice.hexagonal(a, c)
-    return Structure(lattice, elements, coords)
+    return Structure(Lattice.hexagonal(a, c), elements, coords)
 
 
-# ---- labels -------------------------------------------------------------
+def sample_descriptors(**changes):
+    """Descriptors of the sample Hf2CF2 `h-1` structure, with optional changes."""
+    data = {
+        "reducedFormula": "Hf2CF2",
+        "nSites": 5,
+        "a": 3.2396,
+        "b": 3.2396,
+        "gamma": 120.0,
+        "cellArea": 9.0891,
+        "areaPerFormulaUnit": 9.0891,
+        "arealMassDensity": 7.4355,
+        "thickness": 5.1908,
+        "vacuum": 34.8092,
+        "layerSequence": "F-Hf-C-Hf-F",
+        "coordinationSequence": "O-P-O",
+        "metalNonmetalBondLength": 2.2874,
+        "metalTerminationBondLength": 2.2657,
+        "spaceGroupSymbol": "P-6m2",
+        "spaceGroupNumber": 187,
+    }
+    data.update(changes)
+    return data
+
+
+SAMPLE_LABELS = {
+    "metal": "Hf",
+    "nonmetal": "C",
+    "termination": "F",
+    "n": 1,
+    "stacking": "h",
+    "terminationSite": 1,
+}
+
+
+def _flatten(d, prefix=""):
+    out = {}
+    for key, value in d.items():
+        name = f"{prefix}.{key}" if prefix else key
+        if isinstance(value, dict):
+            out.update(_flatten(value, name))
+        else:
+            out[name] = value
+    return out
+
+
+def test_ideal_builder_sanity():
+    assert np.isclose(ideal_mxene("Ti", "C", 1, ["O"]).lattice.gamma, 120.0)
+
+
+# ---- phase 3: labels --------------------------------------------------------
 
 
 @pytest.mark.parametrize(
@@ -79,13 +158,13 @@ def ideal_mxene(metal, nonmetal, n, sequence, termination=None, a=3.1, dz=1.2):
     ],
 )
 def test_parse_folder_label(label, expected):
-    assert MXeneLabel.parse_folder_label(label) == expected
+    assert parse_folder_label(label) == expected
 
 
-@pytest.mark.parametrize("label", ["no-termination", "h3", "t-3", "h1c"])
+@pytest.mark.parametrize("label", ["no-termination", "h3", "t-3", "h1c", "h1"])
 def test_parse_folder_label_rejects(label):
     with pytest.raises(ValueError):
-        MXeneLabel.parse_folder_label(label)
+        parse_folder_label(label)
 
 
 def test_expected_core_sequence():
@@ -93,161 +172,6 @@ def test_expected_core_sequence():
     assert expected_core_sequence(2, "h1a") == ["O", "P", "O"]
     assert expected_core_sequence(3, "h1b") == ["P", "O", "P", "O", "P"]
     assert expected_core_sequence(3, "t") == ["O"] * 5
-
-
-@pytest.mark.parametrize(
-    "kwargs",
-    [
-        {"metal": "Ti", "nonmetal": "C", "n": 1, "stacking": "h1a"},  # h1a needs n >= 2
-        {"metal": "Ti", "nonmetal": "C", "n": 2, "stacking": "h"},  # h only for n = 1
-        {
-            "metal": "Ti",
-            "nonmetal": "C",
-            "n": 1,
-            "stacking": "t",
-            "termination": "O",
-        },  # no site
-        {
-            "metal": "Ti",
-            "nonmetal": "C",
-            "n": 1,
-            "stacking": "t",
-            "terminationSite": 1,
-        },  # no T
-        {"metal": "C", "nonmetal": "C", "n": 1, "stacking": "t"},  # M not a metal
-        {"metal": "Ti", "nonmetal": "B", "n": 1, "stacking": "t"},  # X not C/N
-    ],
-)
-def test_label_rejects_inconsistent(kwargs):
-    with pytest.raises(ValidationError):
-        MXeneLabel(**kwargs)
-
-
-def test_label_formula():
-    lab = MXeneLabel(
-        metal="Ti",
-        nonmetal="C",
-        n=2,
-        stacking="h1a",
-        termination="O",
-        terminationSite=2,
-    )
-    assert lab.formula == "Ti3C2O2"
-    assert lab.label == "h1a-2"
-
-
-# ---- structure ------------------------------------------------------------
-
-
-def test_structure_roundtrip(sample_structure):
-    doc = MXeneStructure.from_structure(sample_structure)
-    assert doc.pymatgen_structure.matches(sample_structure)
-
-
-def test_sample_descriptors(sample_structure):
-    desc = StructureDescriptors.from_structure(sample_structure)
-    assert desc.reducedFormula == "Hf2CF2"
-    assert desc.a == pytest.approx(3.2396, abs=1e-3)
-    assert desc.gamma == pytest.approx(120.0)
-    assert desc.layerSequence == ["F", "Hf", "C", "Hf", "F"]
-    assert desc.coordinationSequence == ["O", "P", "O"]
-    assert desc.thickness == pytest.approx(5.1908, abs=1e-3)
-    assert desc.thickness + desc.vacuum == pytest.approx(40.0)
-    assert desc.spaceGroupNumber == 187
-
-
-def test_descriptors_handle_slab_split_across_cell(sample_structure):
-    shifted = sample_structure.copy()
-    shifted.translate_sites(range(len(shifted)), [0, 0, 0.47], to_unit_cell=True)
-    a = StructureDescriptors.from_structure(sample_structure)
-    b = StructureDescriptors.from_structure(shifted)
-    assert b.thickness == pytest.approx(a.thickness)
-    assert b.coordinationSequence == a.coordinationSequence
-
-
-@pytest.mark.parametrize(
-    "n, stacking",
-    [
-        (1, "t"),
-        (1, "h"),
-        (2, "t"),
-        (2, "h1a"),
-        (2, "h1b"),
-        (2, "h2"),
-        (3, "h1a"),
-        (3, "h1b"),
-    ],
-)
-def test_coordination_detected_for_every_stacking(n, stacking):
-    seq = expected_core_sequence(n, stacking)
-    desc = StructureDescriptors.from_structure(ideal_mxene("Mo", "N", n, seq))
-    assert desc.coordinationSequence == seq
-
-
-# ---- entry ------------------------------------------------------------------
-
-
-@pytest.mark.parametrize(
-    "formula, expected",
-    [
-        ("Hf3C2F2", "Hf3C2F2"),
-        ("Mo3N2O2", "Mo3N2O2"),
-        ("Ti2C", "Ti2C"),
-        ("Hf2CF2", "Hf2CF2"),
-    ],
-)
-def test_plain_formula(formula, expected):
-    from mpcontribs.lux.projects.two_d_mxenes.schemas.structure import plain_formula
-    from pymatgen.core import Composition
-
-    assert plain_formula(Composition(formula) * 2) == expected
-
-
-def test_thick_descriptor_formula_is_ungrouped():
-    s = ideal_mxene(
-        "Hf", "C", 2, ["O"] + expected_core_sequence(2, "t") + ["O"], termination="F"
-    )
-    assert StructureDescriptors.from_structure(s).reducedFormula == "Hf3C2F2"
-
-
-def test_mixed_layer_message():
-    s = ideal_mxene("Re", "N", 1, ["O"])
-    s.translate_sites([1], [0, 0, -1.1 / 30])  # push N into the lower Re layer
-    with pytest.raises(ValueError, match="strongly distorted"):
-        StructureDescriptors.from_structure(s)
-
-
-def test_entry_from_sample(sample_structure):
-    entry = MXeneEntry.from_structure(sample_structure, "h", terminationSite=1)
-    assert entry.mxeneId == "Hf2CF2-h-1"
-    assert entry.labels.n == 1 and entry.labels.termination == "F"
-    assert entry.termination_coordination == ("O", "O")
-
-
-def test_entry_rejects_wrong_stacking(sample_structure):
-    with pytest.raises(ValidationError, match="core coordination"):
-        MXeneEntry.from_structure(sample_structure, "t", terminationSite=1)
-
-
-def test_entry_rejects_wrong_termination_site(sample_structure):
-    # the sample is site 1 (octahedral outer metal); labelling it site 2 must fail
-    with pytest.raises(ValidationError, match="Termination site 2"):
-        MXeneEntry.from_structure(sample_structure, "h", terminationSite=2)
-
-
-def test_entry_rejects_mixed_termination_sites():
-    s = ideal_mxene("Ti", "C", 1, ["P", "P", "O"], termination="O")
-    for site in (1, 2):
-        with pytest.raises(ValidationError, match="Termination site"):
-            MXeneEntry.from_structure(s, "h", terminationSite=site)
-
-
-def test_entry_rejects_wrong_composition(sample_structure):
-    entry = MXeneEntry.from_structure(sample_structure, "h", terminationSite=1)
-    data = entry.model_dump()
-    data["labels"]["metal"] = "Ti"
-    with pytest.raises(ValidationError, match="Labels imply"):
-        MXeneEntry.model_validate(data)
 
 
 @pytest.mark.parametrize(
@@ -271,28 +195,232 @@ def test_expected_termination_coordination(n, stacking, site, coord):
     assert expected_termination_coordination(n, stacking, site) == coord
 
 
+def test_transition_metals_match_pymatgen():
+    assert {e.symbol for e in Element if e.is_transition_metal} == TRANSITION_METALS
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"n": 1, "stacking": "h1a", "termination": None, "terminationSite": None},
+        {"n": 2, "stacking": "h"},
+        {"terminationSite": None},  # terminated without a site
+        {"termination": None},  # site without a termination
+        {"metal": "C"},  # not a transition metal
+        {"metal": "Xx"},  # not an element
+        {"nonmetal": "B"},  # X not C/N
+        {"termination": "Cl"},
+        {"n": 4},
+    ],
+)
+def test_label_rejects(changes):
+    with pytest.raises(ValidationError):
+        MXeneLabel(**{**SAMPLE_LABELS, **changes})
+
+
+def test_label_derived_values():
+    lab = MXeneLabel(
+        metal="Ti",
+        nonmetal="C",
+        n=2,
+        stacking="h1a",
+        termination="O",
+        terminationSite=2,
+    )
+    assert lab.formula == "Ti3C2O2"
+    assert lab.label == "h1a-2"
+    assert lab.layer_sequence == "O-Ti-C-Ti-C-Ti-O"
+    assert lab.coordination_sequence == "O-O-P-O-O"
+
+
+# ---- phases 2 and 4: structure analysis -------------------------------------
+
+
+@pytest.mark.parametrize(
+    "formula, expected",
+    [
+        ("Hf3C2F2", "Hf3C2F2"),
+        ("Mo3N2O2", "Mo3N2O2"),
+        ("Ti2C", "Ti2C"),
+        ("Hf2CF2", "Hf2CF2"),
+    ],
+)
+def test_plain_formula(formula, expected):
+    assert plain_formula(Composition(formula) * 2) == expected
+
+
+def test_infer_chemistry():
+    assert infer_chemistry(Composition("Ti4C3O2")) == {
+        "metal": "Ti",
+        "nonmetal": "C",
+        "termination": "O",
+        "n": 3,
+    }
+
+
+def test_sample_descriptors(sample_structure):
+    desc = compute_descriptors(sample_structure)
+    assert desc.reducedFormula == "Hf2CF2"
+    assert desc.a == pytest.approx(3.2396, abs=1e-3)
+    assert desc.gamma == pytest.approx(120.0)
+    assert desc.layerSequence == "F-Hf-C-Hf-F"
+    assert desc.coordinationSequence == "O-P-O"
+    assert desc.thickness == pytest.approx(5.1908, abs=1e-3)
+    assert desc.thickness + desc.vacuum == pytest.approx(40.0)
+    assert (desc.spaceGroupSymbol, desc.spaceGroupNumber) == ("P-6m2", 187)
+
+
+def test_descriptors_handle_slab_split_across_cell(sample_structure):
+    shifted = sample_structure.copy()
+    shifted.translate_sites(range(len(shifted)), [0, 0, 0.47], to_unit_cell=True)
+    a, b = compute_descriptors(sample_structure), compute_descriptors(shifted)
+    assert b.thickness == pytest.approx(a.thickness)
+    assert b.coordinationSequence == a.coordinationSequence
+
+
+@pytest.mark.parametrize(
+    "n, stacking",
+    [
+        (1, "t"),
+        (1, "h"),
+        (2, "t"),
+        (2, "h1a"),
+        (2, "h1b"),
+        (2, "h2"),
+        (3, "h1a"),
+        (3, "h1b"),
+    ],
+)
+def test_coordination_detected_for_every_stacking(n, stacking):
+    seq = expected_core_sequence(n, stacking)
+    desc = compute_descriptors(ideal_mxene("Mo", "N", n, seq))
+    assert desc.coordinationSequence == "-".join(seq)
+
+
+def test_thick_descriptor_formula_is_ungrouped():
+    s = ideal_mxene("Hf", "C", 2, ["O", "O", "O", "O", "O"], termination="F")
+    assert compute_descriptors(s).reducedFormula == "Hf3C2F2"
+
+
+def test_mixed_layer_message():
+    s = ideal_mxene("Re", "N", 1, ["O"])
+    s.translate_sites([1], [0, 0, -1.1 / 30])  # push N into the lower Re layer
+    with pytest.raises(ValueError, match="strongly distorted"):
+        compute_descriptors(s)
+
+
+def test_sheet_must_lie_in_ab_plane(sample_structure):
+    tilted = Structure(
+        Lattice([[3.2, 0, 0.5], [-1.6, 2.8, 0], [0, 0, 40]]),
+        sample_structure.species,
+        sample_structure.frac_coords,
+    )
+    with pytest.raises(ValueError, match="xy plane"):
+        compute_descriptors(tilted)
+
+
+# ---- phase 4: descriptor schema limits --------------------------------------
+
+
+def test_descriptors_accept_sample():
+    assert StructureDescriptors(**sample_descriptors()).layerSequence == "F-Hf-C-Hf-F"
+
+
+@pytest.mark.parametrize(
+    "changes, match",
+    [
+        ({"reducedFormula": "hf2cf2"}, "pattern"),
+        ({"reducedFormula": "Hf2CF2Hf2CF2Hf2"}, "pattern|at most"),
+        ({"layerSequence": "F,Hf,C,Hf,F"}, "pattern"),
+        ({"layerSequence": "-".join(["Hf"] * 12)}, "pattern|at most"),
+        ({"coordinationSequence": "O-X-O"}, "pattern"),
+        ({"coordinationSequence": "O-P"}, "interior layer"),
+        ({"spaceGroupSymbol": "P-6m3"}, "not a Hermann-Mauguin"),
+        ({"spaceGroupNumber": 186}, "has number 187"),
+        ({"spaceGroupSymbol": "P" * 13}, "at most 12"),
+        ({"gamma": 190.0}, "less than 180"),
+        ({"a": -1.0}, "greater than 0"),
+        ({"thickness": float("nan")}, "finite"),
+        ({"extra": 1}, "Extra inputs"),
+    ],
+)
+def test_descriptors_reject(changes, match):
+    with pytest.raises(ValidationError, match=match):
+        StructureDescriptors(**sample_descriptors(**changes))
+
+
+# ---- phase 5: cross-validation in MXeneEntry --------------------------------
+
+
+def test_entry_from_sample(sample_structure):
+    entry = entry_from_structure(sample_structure, "h", terminationSite=1)
+    assert entry.mxeneId == "Hf2CF2-h-1"
+    assert entry.labels.n == 1 and entry.labels.termination == "F"
+
+
+def test_entry_validates_without_a_structure():
+    entry = MXeneEntry(
+        mxeneId="Hf2CF2-h-1", labels=SAMPLE_LABELS, descriptors=sample_descriptors()
+    )
+    assert entry.descriptors.coordinationSequence == "O-P-O"
+
+
+@pytest.mark.parametrize(
+    "mxene_id, labels, descriptors, match",
+    [
+        ("Hf2CF2-h-2", {}, {}, "mxeneId must be"),
+        ("hf2cf2-h-1", {}, {}, "pattern"),
+        ("Ti2CF2-h-1", {"metal": "Ti"}, {}, "Labels imply Ti2CF2"),
+        ("Hf2CF2-h-1", {}, {"layerSequence": "F-C-Hf-Hf-F"}, "Labels imply layers"),
+        ("Hf2CF2-t-1", {"stacking": "t"}, {}, "core coordination"),
+        ("Hf2CF2-h-2", {"terminationSite": 2}, {}, "Termination site 2"),
+        ("Hf2CF2-h-1", {}, {"coordinationSequence": "O-P-P"}, "Termination site 1"),
+    ],
+)
+def test_entry_rejects(mxene_id, labels, descriptors, match):
+    with pytest.raises(ValidationError, match=match):
+        MXeneEntry(
+            mxeneId=mxene_id,
+            labels={**SAMPLE_LABELS, **labels},
+            descriptors=sample_descriptors(**descriptors),
+        )
+
+
+def test_entry_rejects_wrong_stacking(sample_structure):
+    with pytest.raises(ValidationError, match="core coordination"):
+        entry_from_structure(sample_structure, "t", terminationSite=1)
+
+
+def test_entry_rejects_wrong_termination_site(sample_structure):
+    # the sample is site 1 (octahedral outer metal); labelling it site 2 must fail
+    with pytest.raises(ValidationError, match="Termination site 2"):
+        entry_from_structure(sample_structure, "h", terminationSite=2)
+
+
+def test_entry_rejects_mixed_termination_sites():
+    s = ideal_mxene("Ti", "C", 1, ["P", "P", "O"], termination="O")
+    for site in (1, 2):
+        with pytest.raises(ValidationError, match="Termination site"):
+            entry_from_structure(s, "h", terminationSite=site)
+
+
 @pytest.mark.parametrize("stacking", ["t", "h1a", "h1b", "h2"])
 @pytest.mark.parametrize("site", [1, 2])
 def test_entry_thick_mxene_termination_rule(stacking, site):
     coord = expected_termination_coordination(3, stacking, site)
     seq = [coord] + expected_core_sequence(3, stacking) + [coord]
-    entry = MXeneEntry.from_structure(
-        ideal_mxene("Ti", "C", 3, seq, termination="O"), stacking, terminationSite=site
-    )
-    assert entry.labels.formula == "Ti4C3O2"
+    structure = ideal_mxene("Ti", "C", 3, seq, termination="O")
+    entry = entry_from_structure(structure, stacking, terminationSite=site)
     assert entry.mxeneId == f"Ti4C3O2-{stacking}-{site}"
-    assert entry.termination_coordination == (coord, coord)
+    measured = entry.descriptors.coordinationSequence
+    assert measured == entry.labels.coordination_sequence
 
     # the same structure labelled with the other site must be rejected
     with pytest.raises(ValidationError, match="Termination site"):
-        MXeneEntry.from_structure(
-            ideal_mxene("Ti", "C", 3, seq, termination="O"),
-            stacking,
-            terminationSite=3 - site,
-        )
+        entry_from_structure(structure, stacking, terminationSite=3 - site)
 
 
-# ---- properties -------------------------------------------------------------
+# ---- phase 7: properties ----------------------------------------------------
 
 
 def test_elastic_derivation():
@@ -304,12 +432,27 @@ def test_elastic_derivation():
     assert not ElasticProperties.from_elastic_constants(100.0, 120.0).mechanicallyStable
 
 
-# ---- pipeline -----------------------------------------------------------------
+@pytest.mark.parametrize(
+    "data, match",
+    [
+        ({"c11": 300.0}, "together"),
+        ({"youngsModulus": 270.0}, "require c11 and c12"),
+        ({"c11": 300.0, "c12": 90.0, "youngsModulus": 1.0}, "inconsistent"),
+        ({"c11": 300.0, "c12": 90.0, "mechanicallyStable": False}, "inconsistent"),
+        ({"c11": 2e5, "c12": 90.0}, "less than or equal"),
+    ],
+)
+def test_elastic_rejects(data, match):
+    with pytest.raises(ValidationError, match=match):
+        ElasticProperties(**data)
+
+
+# ---- phases 1, 6, 7: pipeline -----------------------------------------------
 
 
 @pytest.fixture
 def dataset(tmp_path, sample_path):
-    """A small dataset tree mimicking MXENE_DATA, including a nested HfN folder."""
+    """A small CONTCAR tree, including a nested HfN folder."""
     root = tmp_path / "MXENE_DATA"
     for folder in ["Hf/m2x/h-1", "Hf/m2x/HfN/h-2"]:
         (root / folder).mkdir(parents=True)
@@ -319,76 +462,56 @@ def dataset(tmp_path, sample_path):
     return root
 
 
-def test_build_entries_from_repo_test_data(test_data_dir):
+def test_build_from_repo_test_data(test_data_dir):
     entries = build_entries(test_data_dir / "by_user" / "two_d_mxenes" / "MXENE_DATA")
     assert [e.mxeneId for e in entries] == ["Hf2CF2-h-1"]
 
 
-def test_build_entries(dataset, tmp_path):
+def test_build_records(dataset, tmp_path):
     csv = tmp_path / "props.csv"
     csv.write_text(
         "mxeneId,totalEnergyPerAtom,formationEnergyPerAtom,c11,c12,c66\n"
         "Hf2CF2-h-1,-8.10,-1.20,250,60,\n"
         "Hf2NF2-h-2,-7.90,,,,\n"
     )
-    entries = build_entries(dataset, properties=load_properties(csv))
-    by_id = {e.mxeneId: e for e in entries}
+    records = build_records(dataset, properties=load_properties(csv))
+    by_id = {r.entry.mxeneId: r for r in records}
     assert set(by_id) == {"Hf2CF2-h-1", "Hf2NF2-h-2"}
     hfc = by_id["Hf2CF2-h-1"]
-    assert hfc.properties.elastic.c66 == pytest.approx(95.0)
-    assert hfc.properties.energetics.relativeStackingEnergy == pytest.approx(0.0)
-    assert by_id["Hf2NF2-h-2"].properties.elastic is None
-
-    contrib = to_contribution(hfc)
-    assert contrib["identifier"] == "Hf2CF2-h-1"  # unique, unlike the formula
-    assert contrib["data"]["geometry"]["a"].endswith(" Å")
-    assert contrib["data"]["elastic"]["C11"] == "250 N/m"
-
-    flat = _flatten(contrib["data"])
-    assert len(flat) <= 50
-    assert all("_" not in key for key in flat)
+    assert hfc.structure.composition.reduced_formula == "Hf2CF2"
+    assert hfc.path.parent.name == "h-1"
+    assert hfc.entry.properties.elastic.c66 == pytest.approx(95.0)
+    assert hfc.entry.properties.energetics.relativeStackingEnergy == pytest.approx(0.0)
+    assert by_id["Hf2NF2-h-2"].entry.properties.elastic is None
 
 
-def test_build_entries_rejects_orphan_rows(dataset, tmp_path):
+def test_build_rejects_orphan_rows(dataset, tmp_path):
     csv = tmp_path / "props.csv"
     csv.write_text("mxeneId,c11,c12\nTi2C-t,1,0\n")
     with pytest.raises(ValueError, match="No valid structure found"):
         build_entries(dataset, properties=load_properties(csv))
 
 
-def test_load_properties_rejects_unknown_columns(tmp_path):
-    csv = tmp_path / "props.csv"
-    csv.write_text("mxeneId,bandGap\nTi2C-t,0.1\n")
-    with pytest.raises(ValueError, match="unrecognized"):
-        load_properties(csv)
+def test_build_skip_invalid(dataset):
+    (dataset / "Hf/m2x/t-1").mkdir()
+    shutil.copy(dataset / "Hf/m2x/h-1/CONTCAR", dataset / "Hf/m2x/t-1/CONTCAR")
+    with pytest.raises(ValidationError):
+        build_entries(dataset)
+    ids = [e.mxeneId for e in build_entries(dataset, skip_invalid=True)]
+    assert sorted(ids) == ["Hf2CF2-h-1", "Hf2NF2-h-2"]
 
 
-def _flatten(d, prefix=""):
-    out = {}
-    for key, value in d.items():
-        name = f"{prefix}.{key}" if prefix else key
-        if isinstance(value, dict):
-            out.update(_flatten(value, name))
-        else:
-            out[name] = value
-    return out
-
-
-def test_ideal_builder_sanity():
-    s = ideal_mxene("Ti", "C", 1, ["O"])
-    assert np.isclose(s.lattice.gamma, 120.0)
+def test_build_skips_auxiliary_calculations(dataset):
+    aux = dataset / "Hf/m2x/h-1/d2/Cont"
+    aux.mkdir(parents=True)
+    shutil.copy(dataset / "Hf/m2x/h-1/CONTCAR", aux / "CONTCAR")
+    assert len(build_entries(dataset)) == 2
 
 
 def test_check_dataset_collects_all_failures(dataset, tmp_path, capsys):
-    from mpcontribs.lux.projects.two_d_mxenes.pipelines.build_contributions import (
-        check_dataset,
-        main,
-    )
-
     sample = dataset / "Hf/m2x/h-1/CONTCAR"
-    # mislabelled (prismatic core in a `t` folder), bad folder name, and a
-    # nitride folder that actually holds a copy of the carbide
-    # plus auxiliary calculations nested inside an entry folder, which are skipped
+    # mislabelled (prismatic core in a `t` folder), bad folder name, a nitride
+    # folder holding a copy of the carbide, and two auxiliary calculations
     for folder in [
         "Hf/m2x/t-1",
         "Hf/m2x/weird",
@@ -406,7 +529,6 @@ def test_check_dataset_collects_all_failures(dataset, tmp_path, capsys):
     assert set(failed) == {"Hf/m2x/t-1", "Hf/m2x/weird", "Hf/m2x/h-1", "Hf/m2x/HfN/h-1"}
     assert "core coordination" in failed["Hf/m2x/t-1"].message
     assert failed["Hf/m2x/t-1"].measuredCoordination == "O-P-O"
-    # both files claiming Hf2CF2-h-1 are flagged, each pointing at the other
     assert "Duplicate 'Hf2CF2-h-1'" in failed["Hf/m2x/h-1"].message
     assert "HfN" in failed["Hf/m2x/h-1"].message
     assert failed["Hf/m2x/HfN/h-1"].cellId == "Hf2CF2-h-1"
@@ -421,20 +543,7 @@ def test_check_dataset_collects_all_failures(dataset, tmp_path, capsys):
     assert report.read_text().count("\n") == 8  # header + 7 CONTCARs
 
 
-def test_build_entries_skips_auxiliary_calculations(dataset):
-    aux = dataset / "Hf/m2x/h-1/d2/Cont"
-    aux.mkdir(parents=True)
-    shutil.copy(dataset / "Hf/m2x/h-1/CONTCAR", aux / "CONTCAR")
-    assert len(build_entries(dataset)) == 2
-
-
 def test_termination_site_table():
-    from mpcontribs.lux.projects.two_d_mxenes.pipelines.build_contributions import (
-        CheckRecord,
-        CheckResult,
-        termination_site_table,
-    )
-
     recs = [
         CheckRecord(
             Path("a"), "failed", folderLabel="h2-1", measuredCoordination="P-P-P-P-P"
@@ -448,7 +557,66 @@ def test_termination_site_table():
     assert table == {(2, "h2", 1): {"P,P": 1}, (2, "t", 1): {"O,O": 1}}
 
 
-# ---- dataset overview --------------------------------------------------------
+# ---- phase 7: properties template and loader --------------------------------
+
+
+def test_template_roundtrip(dataset, tmp_path):
+    path = tmp_path / "props.csv"
+    assert main([str(dataset), "--template", str(path)]) == 0
+
+    df = pd.read_csv(path, encoding="utf-8-sig")
+    assert list(df["mxeneId"]) == ["Hf2CF2-h-1", "Hf2NF2-h-2"]  # grid order
+    assert "c11 [N/m]" in df.columns and "a [angstrom]" in df.columns
+    assert df["c11 [N/m]"].isna().all()  # to be filled in
+    assert df.loc[0, "a [angstrom]"] == pytest.approx(3.2396, abs=1e-3)
+    assert df.loc[0, "coordinationSequence"] == "O-P-O"
+    assert df.loc[0, "file"] == "Hf/m2x/h-1/CONTCAR"
+
+    df.loc[0, ["c11 [N/m]", "c12 [N/m]"]] = [250, 60]
+    df.loc[1, "totalEnergyPerAtom [eV/atom]"] = -7.9
+    df.to_csv(path, index=False, encoding="utf-8-sig")
+    props = load_properties(path)
+    assert props["Hf2CF2-h-1"].elastic.c66 == pytest.approx(95.0)
+    assert props["Hf2NF2-h-2"].energetics.totalEnergyPerAtom == pytest.approx(-7.9)
+    entries = build_entries(dataset, properties=props)
+    assert {e.mxeneId for e in entries if e.properties} == set(props)
+
+
+def test_template_refresh_keeps_values_and_orphans(dataset, tmp_path):
+    path = tmp_path / "props.csv"
+    entries = build_entries(dataset)
+    write_properties_template(entries, path)
+    df = pd.read_csv(path, encoding="utf-8-sig")
+    df.loc[0, "c11 [N/m]"], df.loc[0, "c12 [N/m]"] = 250, 60
+    df.loc[1, "formationEnergyPerAtom [eV/atom]"] = -1.5
+    df.to_csv(path, index=False, encoding="utf-8-sig")
+
+    keep = [e for e in entries if e.mxeneId == "Hf2CF2-h-1"]
+    counts = write_properties_template(keep, path)
+    assert counts == {"rows": 1, "kept": 1, "orphaned": 1}
+    assert pd.read_csv(path, encoding="utf-8-sig").loc[0, "c11 [N/m]"] == 250
+    orphan = pd.read_csv(path.with_suffix(".orphaned.csv"), encoding="utf-8-sig")
+    assert list(orphan["mxeneId"]) == ["Hf2NF2-h-2"]
+
+
+@pytest.mark.parametrize(
+    "header, row, match",
+    [
+        ("mxeneId,c11 [GPa],c12 [GPa]", "Hf2CF2-h-1,250,60", "expected 'N/m'"),
+        ("mxeneId,c11,c12", "Hf2CF2-h-1,250,", "give both c11 and c12"),
+        ("mxeneId,bandGap [eV]", "Hf2CF2-h-1,0.1", "unrecognized column"),
+        ("mxeneId,c11,c12", "Hf2CF2-h-1,N/A,60", "must be a number"),
+        ("mxeneId,c11,c12\nHf2CF2-h-1,1,0", "Hf2CF2-h-1,250,60", "Duplicate mxeneId"),
+    ],
+)
+def test_load_properties_rejects(tmp_path, header, row, match):
+    path = tmp_path / "props.csv"
+    path.write_text(f"{header}\n{row}\n")
+    with pytest.raises(ValueError, match=match):
+        load_properties(path)
+
+
+# ---- overview ---------------------------------------------------------------
 
 
 def test_grid_columns_cover_every_feasible_structure():
@@ -472,9 +640,6 @@ def _break_one_structure(dataset):
 
 
 def test_grid_states(dataset):
-    from mpcontribs.lux.projects.two_d_mxenes.pipelines.build_contributions import (
-        check_dataset,
-    )
     from mpcontribs.lux.projects.two_d_mxenes.pipelines.dataset_overview import (
         BAD,
         GOOD,
@@ -527,9 +692,6 @@ def test_parse_scope_exclusion_rejects(text):
 
 def test_write_overview(dataset, tmp_path):
     openpyxl = pytest.importorskip("openpyxl")
-    from mpcontribs.lux.projects.two_d_mxenes.pipelines.build_contributions import (
-        main,
-    )
     from mpcontribs.lux.projects.two_d_mxenes.pipelines.dataset_overview import (
         BAD,
         GOOD,
@@ -539,7 +701,6 @@ def test_write_overview(dataset, tmp_path):
     path = tmp_path / "overview.xlsx"
     with pytest.raises(SystemExit):  # invalid scope is a usage error
         main([str(dataset), "--overview", str(path), "--out-of-scope", "Hf:Cl"])
-    path = tmp_path / "overview.xlsx"
     main(
         [str(dataset), "--overview", str(path)]
         + ["--out-of-scope", "Hf:O", "--out-of-scope", "*:none"]
@@ -547,162 +708,119 @@ def test_write_overview(dataset, tmp_path):
     wb = openpyxl.load_workbook(path)
     assert wb.sheetnames == ["Overview", "Problems", "Missing", "All files"]
     ws = wb["Overview"]
-    cells = {
-        c.value: c for row in ws.iter_rows() for c in row if c.value in {GOOD, BAD}
-    }
+    values = {c.value for row in ws.iter_rows() for c in row}
     bad = [c for row in ws.iter_rows(min_row=8) for c in row if c.value == BAD]
     assert len(bad) == 1 and "core coordination" in bad[0].comment.text
-    assert GOOD in cells
+    assert GOOD in values
     assert "2 good, 1 with problems (1 files)" in ws["A2"].value
-    problems = list(wb["Problems"].values)
-    assert problems[1][0] == "Hf2CF2-t-2"
+    assert list(wb["Problems"].values)[1][0] == "Hf2CF2-t-2"
     missing = [r[0] for r in list(wb["Missing"].values)[1:]]
     assert "Hf2CF2-t-1" in missing and "Hf2CO2-t-1" not in missing
     assert len(list(wb["All files"].values)) == 1 + 3
 
 
-# ---- MPContribs contribution format ---------------------------------------
+# ---- phase 8: upload and export ---------------------------------------------
 
 
-def test_contribution_matches_column_definitions(dataset, tmp_path):
-    from mpcontribs.lux.projects.two_d_mxenes.pipelines.build_contributions import (
-        MPCONTRIBS_COLUMN_DESCRIPTIONS,
-        MPCONTRIBS_COLUMNS,
-    )
-
+def test_columns_are_generated_from_the_schema():
     assert set(MPCONTRIBS_COLUMN_DESCRIPTIONS) == set(MPCONTRIBS_COLUMNS)
-    assert len(MPCONTRIBS_COLUMNS) <= 50
-    assert all("_" not in k for k in MPCONTRIBS_COLUMNS)
+    assert len(MPCONTRIBS_COLUMNS) <= MAX_COLUMNS
+    for column in MPCONTRIBS_COLUMNS:
+        assert column.count(".") <= 3, column  # at most 4 nesting levels
+        assert all(part.isalnum() for part in column.split(".")), column
+        assert MPCONTRIBS_COLUMN_DESCRIPTIONS[column], column
+    assert MPCONTRIBS_COLUMNS["descriptors.a"] == "Å"
+    assert MPCONTRIBS_COLUMNS["labels.n"] == ""
+    assert MPCONTRIBS_COLUMNS["descriptors.coordinationSequence"] is None
+    assert MPCONTRIBS_COLUMNS["properties.elastic.c11"] == "N/m"
 
+
+def test_contribution_data_is_the_schema(dataset, tmp_path):
     csv = tmp_path / "props.csv"
     csv.write_text(
         "mxeneId,totalEnergyPerAtom,formationEnergyPerAtom,c11,c12,c66\n"
         "Hf2CF2-h-1,-8.10,-1.20,250,60,\n"
     )
-    entry = next(
-        e
-        for e in build_entries(dataset, properties=load_properties(csv))
-        if e.mxeneId == "Hf2CF2-h-1"
+    record = next(
+        r
+        for r in build_records(dataset, properties=load_properties(csv))
+        if r.entry.mxeneId == "Hf2CF2-h-1"
     )
-    contrib = to_contribution(entry)
+    contrib = to_contribution(record.entry, record.structure)
+    assert contrib["project"] == "two_d_mxenes"
+    assert contrib["identifier"] == "Hf2CF2-h-1"  # unique, unlike the formula
     assert contrib["formula"] == "Hf2CF2"
-    assert contrib["identifier"] == entry.mxeneId
+    assert contrib["structures"] == [record.structure]
+
     flat = _flatten(contrib["data"])
-    assert set(flat) <= set(MPCONTRIBS_COLUMNS)
+    schema = _flatten(record.entry.model_dump(exclude_none=True))
+    assert set(flat) == set(schema)  # exactly the schema's fields
     for key, value in flat.items():
         unit = MPCONTRIBS_COLUMNS[key]
-        if unit is None:  # text column
-            assert isinstance(value, str), key
-        elif unit:  # quantity: "<number> <unit>"
+        assert isinstance(value, str), key  # no lists, numbers as strings
+        if unit:
             number, got = value.split(" ", 1)
             float(number)
             assert got == unit, key
-        else:  # dimensionless
+        elif unit == "":
             float(value)
-    assert flat["terminationSite"] == "1"
+    assert flat["descriptors.coordinationSequence"] == "O-P-O"
+    assert flat["properties.elastic.c11"] == "250 N/m"
+    assert flat["properties.elastic.mechanicallyStable"] == "Yes"
+    assert flat["labels.terminationSite"] == "1"
 
 
-# ---- properties template ------------------------------------------------------
+def test_units_parse_with_mpcontribs_unit_registry():
+    """Every unit in MPCONTRIBS_COLUMNS parses as the MPContribs client parses it."""
+    pint = pytest.importorskip("pint")
+    ureg = pint.UnitRegistry(autoconvert_offset_to_baseunit=True)
+    ureg.define("atom = 1")  # defined by mpcontribs.client
+    for unit in MPCONTRIBS_COLUMNS.values():
+        if unit:
+            ureg.Quantity(f"1.5 {unit}")  # raises if the unit is unknown
 
 
-def _template_module():
-    from mpcontribs.lux.projects.two_d_mxenes.pipelines import build_contributions
-
-    return build_contributions
-
-
-def test_template_roundtrip(dataset, tmp_path):
-    import pandas as pd
-
-    bc = _template_module()
-    path = tmp_path / "props.csv"
-    main_out = bc.main([str(dataset), "--template", str(path)])
-    assert main_out == 0
-
-    df = pd.read_csv(path, encoding="utf-8-sig")
-    assert list(df["mxeneId"]) == ["Hf2CF2-h-1", "Hf2NF2-h-2"]  # grid order
-    assert "c11 [N/m]" in df.columns and "a [angstrom]" in df.columns
-    assert df["c11 [N/m]"].isna().all()  # to be filled in
-    assert df.loc[0, "a [angstrom]"] == pytest.approx(3.2396, abs=1e-3)
-    assert df.loc[0, "file"] == "Hf/m2x/h-1/CONTCAR"
-
-    # property values are filled in; the file loads back directly
-    df.loc[0, ["c11 [N/m]", "c12 [N/m]"]] = [250, 60]
-    df.loc[1, "totalEnergyPerAtom [eV/atom]"] = -7.9
-    df.to_csv(path, index=False, encoding="utf-8-sig")
-    props = bc.load_properties(path)
-    assert props["Hf2CF2-h-1"].elastic.c66 == pytest.approx(95.0)
-    assert props["Hf2NF2-h-2"].energetics.totalEnergyPerAtom == pytest.approx(-7.9)
-    entries = bc.build_entries(dataset, properties=props)
-    assert {e.mxeneId for e in entries if e.properties} == set(props)
-
-
-def test_template_refresh_keeps_values_and_orphans(dataset, tmp_path):
-    import pandas as pd
-
-    bc = _template_module()
-    path = tmp_path / "props.csv"
-    entries = bc.build_entries(dataset)
-    bc.write_properties_template(entries, path)
-    df = pd.read_csv(path, encoding="utf-8-sig")
-    df.loc[0, "c11 [N/m]"], df.loc[0, "c12 [N/m]"] = 250, 60
-    df.loc[1, "formationEnergyPerAtom [eV/atom]"] = -1.5
-    df.to_csv(path, index=False, encoding="utf-8-sig")
-
-    # Hf2NF2-h-2 disappears (e.g. its CONTCAR failed a later check)
-    keep = [e for e in entries if e.mxeneId == "Hf2CF2-h-1"]
-    counts = bc.write_properties_template(keep, path)
-    assert counts == {"rows": 1, "kept": 1, "orphaned": 1}
-    refreshed = pd.read_csv(path, encoding="utf-8-sig")
-    assert refreshed.loc[0, "c11 [N/m]"] == 250
-    orphan = pd.read_csv(path.with_suffix(".orphaned.csv"), encoding="utf-8-sig")
-    assert list(orphan["mxeneId"]) == ["Hf2NF2-h-2"]
+def test_calculation_settings():
+    settings = CalculationSettings(
+        codeVersion="6.4.2",
+        functional="PBE",
+        vdwCorrection="DFT-D3(BJ)",
+        potcarSet="PBE_54",
+        potcarSymbols="Ti_sv, C, O",
+        energyCutoff=520,
+        kpointsA=12,
+        kpointsB=12,
+        kpointsC=1,
+        elasticMethod="energy-strain",
+        maxStrain=2,
+        nStrainPoints=5,
+    )
+    assert settings.code == "VASP"
 
 
 @pytest.mark.parametrize(
-    "header, row, match",
+    "changes",
     [
-        ("mxeneId,c11 [GPa],c12 [GPa]", "Hf2CF2-h-1,250,60", "expected 'N/m'"),
-        ("mxeneId,c11,c12", "Hf2CF2-h-1,250,", "give both c11 and c12"),
-        ("mxeneId,bandGap [eV]", "Hf2CF2-h-1,0.1", "unrecognized column"),
+        {"code": "Quantum ESPRESSO"},
+        {"functional": "not-a-functional"},
+        {"vdwCorrection": "D5"},
+        {"potcarSet": "PBE_99"},
+        {"potcarSymbols": "Ti_sv; C"},
+        {"potcarSymbols": ", ".join(["Ti_sv"] * 11)},
+        {"codeVersion": "six"},
+        {"elasticMethod": "fit"},
+        {"maxStrain": 20},
+        {"nStrainPoints": 1},
+        {"kpointsA": 0},
+        {"pseudopotentials": ["Ti_sv"]},  # unknown field
     ],
 )
-def test_load_properties_rejects(tmp_path, header, row, match):
-    path = tmp_path / "props.csv"
-    path.write_text(f"{header}\n{row}\n")
-    with pytest.raises(ValueError, match=match):
-        load_properties(path)
-
-
-def test_build_entries_skip_invalid(dataset):
-    (dataset / "Hf/m2x/t-1").mkdir()
-    shutil.copy(dataset / "Hf/m2x/h-1/CONTCAR", dataset / "Hf/m2x/t-1/CONTCAR")
+def test_calculation_settings_reject(changes):
     with pytest.raises(ValidationError):
-        build_entries(dataset)
-    ids = [e.mxeneId for e in build_entries(dataset, skip_invalid=True)]
-    assert sorted(ids) == ["Hf2CF2-h-1", "Hf2NF2-h-2"]
-
-
-def test_parquet_roundtrip(dataset, tmp_path):
-    bc = _template_module()
-    csv = tmp_path / "props.csv"
-    csv.write_text("mxeneId,c11,c12\nHf2CF2-h-1,250,60\n")
-    entries = bc.build_entries(dataset, properties=bc.load_properties(csv))
-    path = tmp_path / "two_d_mxenes.parquet"
-    bc.write_parquet(entries, path)
-    back = bc.read_parquet(path)
-    assert back == entries
+        CalculationSettings(**changes)
 
 
 def test_project_other_has_server_safe_keys():
-    from string import punctuation, whitespace
-
-    from mpcontribs.lux.projects.two_d_mxenes.pipelines.build_contributions import (
-        MPCONTRIBS_COLUMN_DESCRIPTIONS,
-        project_other,
-    )
-    from mpcontribs.lux.projects.two_d_mxenes.schemas import CalculationSettings
-
     # same rule as the MPContribs API (mpcontribs.api.valid_key)
     invalid = set(punctuation.replace("*", "").replace("|", "") + whitespace)
 
@@ -713,33 +831,36 @@ def test_project_other_has_server_safe_keys():
                 yield from keys(v, depth + 1)
 
     settings = CalculationSettings(
-        code="VASP", pseudopotentials=["Ti_sv", "C"], kpointMesh=[12, 12, 1]
+        functional="PBE", kpointsA=12, potcarSymbols="Ti_sv, C"
     )
     other = project_other(settings)
     for key, depth in keys(other):
         assert key.isascii() and not (set(key) & invalid), key
         assert depth <= 7
-    assert other["geometry"]["a"] == MPCONTRIBS_COLUMN_DESCRIPTIONS["geometry.a"]
+    assert other["descriptors"]["a"] == MPCONTRIBS_COLUMN_DESCRIPTIONS["descriptors.a"]
     assert other["calculation"] == {
         "code": "VASP",
-        "pseudopotentials": "Ti_sv, C",
-        "kpointMesh": "12x12x1",
+        "functional": "PBE",
+        "potcarSymbols": "Ti_sv, C",
+        "kpointsA": 12,
     }
 
 
-def test_units_parse_with_mpcontribs_unit_registry():
-    """Every unit in MPCONTRIBS_COLUMNS parses as the MPContribs client parses it."""
-    pint = pytest.importorskip("pint")
-    from mpcontribs.lux.projects.two_d_mxenes.pipelines.build_contributions import (
-        MPCONTRIBS_COLUMNS,
-    )
-
-    # registry set up as in mpcontribs.client (which defines `atom`)
-    ureg = pint.UnitRegistry(autoconvert_offset_to_baseunit=True)
-    ureg.define("atom = 1")
-    for column, unit in MPCONTRIBS_COLUMNS.items():
-        if unit:
-            ureg.Quantity(f"1.5 {unit}")  # raises if the unit is unknown
+@pytest.mark.parametrize("with_structures", [True, False])
+def test_parquet_roundtrip(dataset, tmp_path, with_structures):
+    csv = tmp_path / "props.csv"
+    csv.write_text("mxeneId,c11,c12\nHf2CF2-h-1,250,60\n")
+    records = build_records(dataset, properties=load_properties(csv))
+    entries = [r.entry for r in records]
+    structures = [r.structure for r in records] if with_structures else None
+    path = tmp_path / "two_d_mxenes.parquet"
+    write_parquet(entries, path, structures)
+    back, back_structures = read_parquet(path)
+    assert back == entries
+    if with_structures:
+        assert all(a.matches(b) for a, b in zip(back_structures, structures))
+    else:
+        assert back_structures is None
 
 
 # ---- accepted and rejected data (README "Accepted and rejected data") ------
@@ -750,7 +871,7 @@ def test_supercell_is_accepted():
         "Ti", "C", 2, ["P"] + expected_core_sequence(2, "h1a") + ["P"], termination="O"
     )
     s.make_supercell([[2, 0, 0], [0, 2, 0], [0, 0, 1]])
-    entry = MXeneEntry.from_structure(s, "h1a", terminationSite=1)
+    entry = entry_from_structure(s, "h1a", terminationSite=1)
     assert entry.mxeneId == "Ti3C2O2-h1a-1"
     assert entry.descriptors.nSites == 4 * 7
 
@@ -758,6 +879,12 @@ def test_supercell_is_accepted():
 def _replace(s, index, element):
     s = s.copy()
     s.replace(index, element)
+    return s
+
+
+def _remove(s, index):
+    s = s.copy()
+    s.remove_sites([index])
     return s
 
 
@@ -771,31 +898,28 @@ def _replace(s, index, element):
             ),
             "Cannot infer",
         ),
-        # other termination element
         (
             lambda: ideal_mxene("Ti", "C", 1, ["O", "O", "O"], termination="Cl"),
-            "Cannot infer",
+            "unsupported",
         ),
-        # MBene (X = B)
-        (lambda: ideal_mxene("Mo", "B", 1, ["O"]), "Cannot infer"),
+        (lambda: ideal_mxene("Mo", "B", 1, ["O"]), "unsupported"),  # MBene
         # double-metal MXene Mo2TiC2
         (
             lambda: _replace(ideal_mxene("Mo", "C", 2, ["O", "O", "O"]), 2, "Ti"),
             "Cannot infer",
         ),
-        # n = 4
-        (lambda: ideal_mxene("Ti", "C", 4, ["O"] * 7), "n"),
+        (lambda: ideal_mxene("Ti", "C", 4, ["O"] * 7), "n"),  # n = 4
         # one-sided termination
         (
-            lambda: _remove_last(
-                ideal_mxene("Ti", "C", 1, ["O", "O", "O"], termination="O")
+            lambda: _remove(
+                ideal_mxene("Ti", "C", 1, ["O", "O", "O"], termination="O"), 4
             ),
             "Labels imply",
         ),
         # metal vacancy
         (
-            lambda: _remove_index(ideal_mxene("Ti", "C", 2, ["O", "O", "O"]), 0),
-            "M_\\(n\\+1\\)X_n|Cannot infer|Labels imply",
+            lambda: _remove(ideal_mxene("Ti", "C", 2, ["O", "O", "O"]), 0),
+            "M_\\(n\\+1\\)X_n|Labels imply",
         ),
     ],
 )
@@ -803,16 +927,4 @@ def test_rejected_compositions(make, reason):
     with pytest.raises(ValueError, match=reason):
         s = make()
         n_term = sum(1 for site in s if site.specie.symbol in {"F", "O"})
-        MXeneEntry.from_structure(s, "t", terminationSite=1 if n_term else None)
-
-
-def _remove_last(s):
-    s = s.copy()
-    s.remove_sites([len(s) - 1])
-    return s
-
-
-def _remove_index(s, index):
-    s = s.copy()
-    s.remove_sites([index])
-    return s
+        entry_from_structure(s, "t", terminationSite=1 if n_term else None)

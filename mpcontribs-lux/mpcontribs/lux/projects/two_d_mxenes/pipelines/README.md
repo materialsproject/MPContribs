@@ -1,14 +1,10 @@
 # two_d_mxenes pipelines
 
-Tools that convert a tree of relaxed VASP `CONTCAR` files and a properties spreadsheet into validated `MXeneEntry` records, MPContribs contributions and a Parquet file. Labelling rules, validation phases and the accepted data are defined in the [project README](../README.md); fields are listed in [`schemas/README.md`](../schemas/README.md).
-
-| file | purpose |
-|---|---|
-| `build_contributions.py` | structure check (command line), properties template and loader, record building, MPContribs contribution format, Parquet export |
-| `dataset_overview.py` | Excel overview of present, failing and missing structures |
+Code that converts a tree of relaxed VASP `CONTCAR` files and a properties spreadsheet into validated `MXeneEntry` objects, MPContribs contributions and a Parquet file. Labelling rules, validation phases and the accepted data are defined in the [project README](../README.md); fields are listed in [`schemas/README.md`](../schemas/README.md).
 
 ## Contents
 
+- [Modules](#modules)
 - [Setup](#setup)
 - [Folder layout](#folder-layout)
 - [The structure check (command line)](#the-structure-check-command-line)
@@ -19,6 +15,32 @@ Tools that convert a tree of relaxed VASP `CONTCAR` files and a properties sprea
 - [Upload errors](#upload-errors)
 - [Python API summary](#python-api-summary)
 - [Tolerances](#tolerances)
+
+---
+
+## Modules
+
+`schemas/` holds only the data contract: the pydantic models of one contribution's `data` and their validators. Everything that operates on structures, files or the MPContribs client lives here, in `pipelines/`.
+
+| module | purpose | main contents |
+|---|---|---|
+| `structure_analysis.py` | Turns a pymatgen `Structure` into an `MXeneEntry`: reads M, X, T and n from the composition, groups atoms into layers, measures the O/P coordination of every interior layer, and computes the geometric descriptors. | `infer_chemistry`, `compute_descriptors`, `entry_from_structure`, `plain_formula`; tolerances `LAYER_Z_TOLERANCE`, `ECLIPSED_XY_TOLERANCE`, `SYMPREC` |
+| `build_contributions.py` | Works on a folder tree: finds the `CONTCAR` files, checks all of them (command line), reads and writes the properties spreadsheet, and builds records. A record (`MXeneRecord`) pairs a validated entry with the structure it was computed from and its file. | `check_dataset`, `build_records`, `build_entries`, `load_properties`, `write_properties_template`, `main` |
+| `upload.py` | Everything that leaves the project: the MPContribs column definitions (generated from the schema), contributions, the project's `other` metadata including the DFT settings, and Parquet files. | `CalculationSettings`, `MPCONTRIBS_COLUMNS`, `MPCONTRIBS_COLUMN_DESCRIPTIONS`, `to_contribution`, `project_other`, `write_parquet`, `read_parquet` |
+| `dataset_overview.py` | Excel overview of which structures are present, failing or missing. | `write_overview`, `grid_states`, `parse_scope_exclusion` |
+
+Data flow:
+
+```
+CONTCAR ──structure_analysis──▶ MXeneEntry (schemas) ──build_contributions──▶ MXeneRecord (entry + Structure)
+                                                                                    │
+spreadsheet ──load_properties──▶ MXeneProperties ───────────────────────────────────┤
+                                                                                    ▼
+                                                    upload: to_contribution ──▶ MPContribs (data + structures)
+                                                            write_parquet   ──▶ Parquet
+```
+
+`CalculationSettings` lives in `upload.py` because the settings are not part of any contribution: they are written once to the project's `other` metadata by `project_other`. Its fields are restricted to known vocabularies (`code` is `VASP`; `functional` is emmet's `RunType`; dispersion correction, POTCAR set and elastic method are `Literal`s) or to patterns with maximum lengths.
 
 ---
 
@@ -127,6 +149,8 @@ Each failing file reports one of the messages below. Failures are resolved by co
 | `terminationSite must be set if and only if termination is set` | a pristine structure in a `-1`/`-2` folder, or a terminated structure in a folder without a suffix | move the file, or correct the folder name |
 | pymatgen `ValueError`, `IndexError` or `OSError` | the file is empty, truncated or not in POSCAR/CONTCAR format | replace the file with the complete output of the calculation |
 | `Lattice vectors a and b must lie in the xy plane (sheet plane)` | the sheet is not in the a–b plane | re-orient the cell so that c is the surface normal |
+| pydantic messages on `descriptors` fields, e.g. `String should match pattern`, `should be less than 180`, `at most 12 characters` | a computed descriptor is outside its allowed range or form, e.g. a cell angle of 180° or more, or a sheet with more than 9 layers | the structure is outside the schema; check the file |
+| `'X' is not a Hermann-Mauguin symbol known to spglib` / `Space group 'X' has number N, not M` | the space group in the record is not one spglib produces, or symbol and number disagree | only occurs for hand-written records; space groups computed by the pipeline always pass |
 
 ### Composition
 
@@ -135,6 +159,8 @@ Each failing file reports one of the messages below. Failures are resolved by co
 | `Cannot infer MXene labels from <formula>` (optionally `: unsupported element(s) [...]`) | not exactly one transition metal, one of C/N and at most one of F/O (e.g. a double-metal sheet, mixed terminations, or another element such as Cl or B) | outside the schema: remove the file, or extend the schema (see [Extending the schema](../README.md#extending-the-schema)) |
 | `Not an M_(n+1)X_n composition: <formula>` | the metal count is not one more than the X count per formula unit | replace the file |
 | `Labels imply <A> but the structure is <B>` | e.g. a termination on only one surface (M₂XT₁) | outside the schema: remove the file |
+| `Labels imply layers <A> but the structure has <B>` | the atomic layers are not in the order M, X, …, M (with T outside) | outside the schema: remove the file |
+| `mxeneId must be '<id>', got '<other>'` | a hand-written record has an ID that does not match its labels | only occurs for hand-written records |
 | `Duplicate '<id>': also claimed by <other file>` | two or more files describe the same `mxeneId`; all are rejected | see [Duplicates](#duplicates) |
 
 ### Geometry
@@ -207,11 +233,12 @@ Running `--template` on an existing file keeps all entered values for structures
 
 ### Adding a property
 
-1. Add a field with description and unit to `schemas/properties.py`.
+1. Add a field to `schemas/properties.py` with a description, bounds and its unit in `json_schema_extra`.
 2. Add the column and unit to `SPREADSHEET_COLUMNS`.
 3. Map the column to the field in `load_properties`.
-4. For a searchable column, add it to `MPCONTRIBS_COLUMNS`, `MPCONTRIBS_COLUMN_DESCRIPTIONS` and `to_contribution`.
-5. Add tests.
+4. Add tests.
+
+The MPContribs columns, units and descriptions are generated from the schema, so the new field is uploaded without further changes (within the limit of 50 columns, enforced by a test).
 
 ### Loader errors
 
@@ -222,7 +249,8 @@ Running `--template` on an existing file keeps all entered values for structures
 | `<id>: give both c11 and c12 (and optionally c66), or leave all three blank` | complete or clear the row's elastic constants |
 | `Duplicate mxeneId values: [...]` | remove the duplicated row |
 | `Spreadsheet is missing required column 'mxeneId'` | restore the key column |
-| `Input should be a valid number` (pydantic) | replace the text in the numeric cell with a number, or clear it |
+| `<id>: <column> must be a number or blank, got 'N/A'` | replace the text in the numeric cell with a number, or clear it |
+| pydantic messages such as `less than or equal to 10000` | the value is outside the physical bounds of its field (see [`schemas/README.md`](../schemas/README.md)); check its unit |
 | `No valid structure found for spreadsheet rows [...]` (when building records) | correct the structure, or remove the row |
 
 ---
@@ -246,16 +274,21 @@ export MPCONTRIBS_API_KEY="<api key>"                  # macOS/Linux
 
 ```python
 from mpcontribs.lux.projects.two_d_mxenes.pipelines.build_contributions import (
-    build_entries, load_properties, to_contribution, write_parquet,
+    build_records, load_properties,
+)
+from mpcontribs.lux.projects.two_d_mxenes.pipelines.upload import (
+    to_contribution, write_parquet,
 )
 
 props = load_properties("properties.csv")          # or .xlsx
-entries = build_entries("DATA_ROOT", properties=props)
-write_parquet(entries, "two_d_mxenes.parquet")
-contributions = [to_contribution(e) for e in entries]
+records = build_records("DATA_ROOT", properties=props)
+contributions = [to_contribution(r.entry, r.structure) for r in records]
+write_parquet(
+    [r.entry for r in records], "two_d_mxenes.parquet", [r.structure for r in records]
+)
 ```
 
-`build_entries` raises on the first failing structure. `build_entries(..., skip_invalid=True)` returns only the valid structures, so that a subset can be uploaded and the remainder added later.
+`build_records` raises on the first failing structure. `build_records(..., skip_invalid=True)` returns only the valid structures, so that a subset can be uploaded and the remainder added later. Each record holds the validated `entry` and the relaxed `structure`.
 
 ### 2. Create the project
 
@@ -277,13 +310,23 @@ client.create_project(
 ### 3. Describe the project and initialise the columns
 
 ```python
-from mpcontribs.lux.projects.two_d_mxenes.pipelines.build_contributions import (
-    MPCONTRIBS_COLUMNS, project_other,
+from mpcontribs.lux.projects.two_d_mxenes.pipelines.upload import (
+    MPCONTRIBS_COLUMNS, CalculationSettings, project_other,
 )
-from mpcontribs.lux.projects.two_d_mxenes.schemas import CalculationSettings
 
 client = Client(project="two_d_mxenes")
-settings = CalculationSettings(code="VASP", functional="PBE")   # the settings used
+settings = CalculationSettings(      # the settings used for the structures
+    codeVersion="6.4.2",
+    functional="PBE",
+    vdwCorrection="DFT-D3(BJ)",
+    potcarSet="PBE_54",
+    potcarSymbols="Ti_sv, C, O",
+    energyCutoff=520,
+    kpointsA=12, kpointsB=12, kpointsC=1,
+    elasticMethod="energy-strain",
+    maxStrain=2,
+    nStrainPoints=5,
+)
 client.update_project({
     "references": [
         {"label": "paper", "url": "<URL of the primary reference>"},
@@ -294,8 +337,9 @@ client.update_project({
 client.init_columns(MPCONTRIBS_COLUMNS)
 ```
 
-- `project_other` nests the column descriptions (`geometry.a` becomes `geometry` → `a`), because the MPContribs API rejects keys containing `.` or other punctuation.
-- `init_columns` sets the column order and units. In `MPCONTRIBS_COLUMNS`, `None` marks text columns and `""` dimensionless numbers, as the client specifies.
+- `project_other` nests the column descriptions by field path (`descriptors.a` becomes `descriptors` → `a`), because the MPContribs API rejects keys containing `.` or other punctuation.
+- `init_columns` sets the column order and units. `MPCONTRIBS_COLUMNS` is generated from the schema: `None` marks text columns and `""` dimensionless numbers, as the client specifies.
+- The `data` of each contribution is the `MXeneEntry` itself, with numbers written as strings with units and unset values omitted. The structure is the single element of `structures`.
 - **Identifiers.** Each contribution's `identifier` is its `mxeneId` (e.g. `Hf2CF2-h-1`); the formula is in `formula`. Projects accept one contribution per identifier by default (`unique_identifiers=True`). Several structures share a formula, so a formula identifier would retain only one of them.
 
 ### 4. Submit
@@ -323,7 +367,7 @@ client.make_public(recursive=True)   # project and contributions
 
 ### 7. Parquet file
 
-`two_d_mxenes.parquet` holds the complete records in the reviewed schema. MP hosts Parquet files on the MPContribs S3 bucket; credentials and destination are provided by MP with upload permission. `read_parquet` reads and re-validates the file.
+`two_d_mxenes.parquet` holds the entries in the reviewed schema and, when structures are passed to `write_parquet`, a `structure` column with each structure as pymatgen JSON. MP hosts Parquet files on the MPContribs S3 bucket; credentials and destination are provided by MP with upload permission. `read_parquet` returns the re-validated entries and the structures.
 
 ### Updating an upload
 
@@ -354,31 +398,32 @@ client.make_public(recursive=True)   # project and contributions
 
 ## Python API summary
 
-All in `build_contributions.py` unless noted.
-
-| function | purpose |
-|---|---|
-| `check_dataset(root)` | validate every `CONTCAR` and collect all failures; returns `CheckResult` (`.records`, `.entries`, `.failures`, `.skipped`) |
-| `build_entries(root, properties=None, skip_invalid=False)` | validated `MXeneEntry` list with properties and relative stacking energies |
-| `entry_from_file(path)` | one entry from one `CONTCAR` |
-| `load_properties(path)` | properties CSV/XLSX as `{mxeneId: MXeneProperties}` |
-| `write_properties_template(entries, path, files=None)` | write or refresh the properties CSV |
-| `to_contribution(entry)` | MPContribs contribution dictionary |
-| `MPCONTRIBS_COLUMNS` | column units for `init_columns` |
-| `MPCONTRIBS_COLUMN_DESCRIPTIONS` | column descriptions (flat, same keys as `MPCONTRIBS_COLUMNS`) |
-| `project_other(settings=None)` | project `other` metadata: nested column descriptions and DFT settings |
-| `write_parquet(entries, path)`, `read_parquet(path)` | complete records to and from Parquet |
-| `termination_site_table(result)` | measured outer-metal coordination per label |
-| `write_report(result, path, root)` | the `--report` CSV |
-| `dataset_overview.write_overview(result, path, root, out_of_scope=())` | the `--overview` workbook |
-| `dataset_overview.grid_states(result, out_of_scope=())` | state (✓/✗/○/out of scope) of every grid cell |
-| `dataset_overview.parse_scope_exclusion(text)` | parse `M:T` into a scope exclusion |
+| module | function | purpose |
+|---|---|---|
+| `structure_analysis` | `infer_chemistry(composition)` | M, X, T and n of a composition |
+| `structure_analysis` | `compute_descriptors(structure)` | validated `StructureDescriptors` of a slab |
+| `structure_analysis` | `entry_from_structure(structure, stacking, terminationSite=None, properties=None)` | validated `MXeneEntry` |
+| `structure_analysis` | `plain_formula(composition)` | ungrouped reduced formula, e.g. `Hf3C2F2` |
+| `build_contributions` | `check_dataset(root)` | check every `CONTCAR`, collecting all failures; returns `CheckResult` (`.records`, `.valid`, `.entries`, `.failures`, `.skipped`) |
+| `build_contributions` | `build_records(root, properties=None, skip_invalid=False)` | `MXeneRecord`s (entry, structure, path) with properties and relative stacking energies |
+| `build_contributions` | `build_entries(...)` | the entries of `build_records` |
+| `build_contributions` | `record_from_file(path)` | one record from one `CONTCAR` |
+| `build_contributions` | `load_properties(path)` | properties CSV/XLSX as `{mxeneId: MXeneProperties}` |
+| `build_contributions` | `write_properties_template(entries, path, files=None)` | write or refresh the properties CSV |
+| `build_contributions` | `termination_site_table(result)`, `write_report(result, path, root)` | console table and `--report` CSV |
+| `upload` | `CalculationSettings` | DFT settings of the project |
+| `upload` | `MPCONTRIBS_COLUMNS`, `MPCONTRIBS_COLUMN_DESCRIPTIONS` | column units and descriptions generated from `MXeneEntry` |
+| `upload` | `to_contribution(entry, structure)` | MPContribs contribution dictionary |
+| `upload` | `project_other(settings=None)` | project `other` metadata |
+| `upload` | `write_parquet(entries, path, structures=None)`, `read_parquet(path)` | entries (and structures) to and from Parquet |
+| `dataset_overview` | `write_overview(result, path, root, out_of_scope=())` | the `--overview` workbook |
+| `dataset_overview` | `grid_states(result, out_of_scope=())`, `parse_scope_exclusion(text)` | grid-cell states; `M:T` parsing |
 
 ---
 
 ## Tolerances
 
-Defined in `schemas/structure.py`:
+Defined in `structure_analysis.py`:
 
 | constant | value | use |
 |---|---|---|

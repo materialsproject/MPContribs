@@ -1,1 +1,1 @@
-"""Pipelines turning raw MXene data into MPContribs contributions."""
+"""Pipelines turning VASP CONTCAR trees into validated MXene records and MPContribs uploads."""

@@ -30,8 +30,10 @@ from mpcontribs.lux.projects.two_d_mxenes.pipelines.build_contributions import (
     CheckRecord,
     CheckResult,
 )
-from mpcontribs.lux.projects.two_d_mxenes.schemas.labels import MXeneLabel
-
+from mpcontribs.lux.projects.two_d_mxenes.schemas.labels import (
+    MXeneLabel,
+    parse_folder_label,
+)
 from pymatgen.core import Element
 
 NONMETALS: tuple[str, ...] = ("C", "N")
@@ -56,7 +58,11 @@ _COLORS = {
 
 
 def grid_columns() -> list[tuple[int, str | None, str]]:
-    """All (n, termination, folder label) columns of the grid, in order."""
+    """All (n, termination, folder label) columns of the grid, in order.
+
+    Returns:
+        One tuple per column: 50 for n = 1-3 and terminations none, F, O.
+    """
     cols = []
     for n in (1, 2, 3):
         for term in TERMINATIONS:
@@ -69,8 +75,19 @@ def grid_columns() -> list[tuple[int, str | None, str]]:
 
 
 def cell_id(metal: str, nonmetal: str, n: int, term: str | None, label: str) -> str:
-    """The `mxeneId` a grid cell stands for, e.g. `Ti3C2O2-h1a-2`."""
-    stacking, site = MXeneLabel.parse_folder_label(label)
+    """The `mxeneId` a grid cell stands for.
+
+    Args:
+        metal: Transition metal M.
+        nonmetal: C or N.
+        n: Thickness index.
+        term: Termination, or None for pristine.
+        label: Folder label, e.g. `h1a-2`.
+
+    Returns:
+        The ID, e.g. `Ti3C2O2-h1a-2`.
+    """
+    stacking, site = parse_folder_label(label)
     lab = MXeneLabel(
         metal=metal,
         nonmetal=nonmetal,
@@ -83,13 +100,31 @@ def cell_id(metal: str, nonmetal: str, n: int, term: str | None, label: str) -> 
 
 
 def metals_in(result: CheckResult) -> list[str]:
-    """Transition metals that appear in the checked files, by atomic number."""
+    """Transition metals that appear in the checked files.
+
+    Args:
+        result: Output of `check_dataset`.
+
+    Returns:
+        Metal symbols ordered by atomic number.
+    """
     found = {r.metal for r in result.records if r.metal}
     return sorted(found, key=lambda symbol: Element(symbol).Z)
 
 
 def parse_scope_exclusion(text: str) -> ScopeExclusion:
-    """Parse `M:T` (e.g. `Hf:O`, `Re:none`, `*:O`) into a scope exclusion."""
+    """Parse `M:T` (e.g. `Hf:O`, `Re:none`, `*:O`) into a scope exclusion.
+
+    Args:
+        text: Metal symbol or `*`, a colon, and `none`, `F` or `O`.
+
+    Returns:
+        (metal, termination), with termination None for `none`.
+
+    Raises:
+        ValueError: If the text is malformed or names an unknown element or
+            termination.
+    """
     metal, sep, term = text.partition(":")
     metal, term = metal.strip(), term.strip()
     if not sep or not metal or not term:
@@ -112,17 +147,15 @@ def grid_states(
 ) -> tuple[dict[tuple, str], dict[str, list[CheckRecord]]]:
     """State of every grid cell and the records that claim each cell.
 
-    Parameters
-    -----------
-    result : CheckResult
-        Output of `check_dataset`.
-    out_of_scope : collection of (metal, termination)
-        Combinations that are not expected to have structures; their empty
-        cells are shown as out of scope instead of missing.
+    Args:
+        result: Output of `check_dataset`.
+        out_of_scope: (metal, termination) combinations that are not expected
+            to have structures; their empty cells are shown as out of scope
+            instead of missing.
 
-    Returns
-    -----------
-    tuple of ({(metal, nonmetal, n, term, label): symbol}, {cellId: records})
+    Returns:
+        `{(metal, nonmetal, n, termination, label): symbol}` and
+        `{cellId: check records}`.
     """
     out_of_scope = set(out_of_scope)
     claims: dict[str, list[CheckRecord]] = {}
@@ -153,7 +186,14 @@ def write_overview(
     root: str | Path,
     out_of_scope: Collection[ScopeExclusion] = (),
 ) -> None:
-    """Write the dataset overview workbook to `path` (see `grid_states`)."""
+    """Write the overview workbook.
+
+    Args:
+        result: Output of `check_dataset`.
+        path: Excel file to write.
+        root: Root folder of the CONTCAR tree, for relative paths.
+        out_of_scope: Combinations excluded from the scope (see `grid_states`).
+    """
     from openpyxl import Workbook
     from openpyxl.comments import Comment
     from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
