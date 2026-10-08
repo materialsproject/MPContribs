@@ -4,7 +4,7 @@
 #
 #    pip-compile --no-index --output-file=MPContribs/mpcontribs-kernel-gateway/requirements/deployment.txt MPContribs/mpcontribs-kernel-gateway/requirements.in python/requirements.txt
 #
-anyio==4.15.1
+anyio==4.14.2
     # via jupyter-server
 argon2-cffi==25.1.0
     # via jupyter-server
@@ -383,7 +383,7 @@ terminado==0.18.1
     #   jupyter-server-terminals
 tinycss2==1.5.1
     # via bleach
-tornado==6.5.10
+tornado==6.5.9
     # via
     #   ipykernel
     #   jupyter-client
