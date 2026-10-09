@@ -357,7 +357,7 @@ pymatgen==2026.5.4
     # via mpcontribs-api (pyproject.toml)
 pymatgen-core==2026.5.18
     # via pymatgen
-pymongo==4.17.0
+pymongo==4.18.2
     # via
     #   flask-mongorest-mpcontribs
     #   mongoengine
@@ -514,7 +514,7 @@ uncertainties==3.2.3
     #   pymatgen-core
 uri-template==1.3.0
     # via jsonschema
-urllib3==2.7.0
+urllib3==2.8.0
     # via
     #   botocore
     #   requests
@@ -530,7 +530,7 @@ websocket-client==1.9.0
     # via
     #   jupyter-server
     #   mpcontribs-api (pyproject.toml)
-werkzeug==3.1.8
+werkzeug==3.1.9
     # via
     #   flasgger-tschaume
     #   flask
