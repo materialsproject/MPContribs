@@ -22,6 +22,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = (
+    "mp_logging.django_ext.RequestContextMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -78,3 +79,27 @@ WEBPACK_LOADER = {
 
 APPEND_SLASH = False
 SECURE_REFERRER_POLICY = "unsafe-url"
+
+
+def _logging_config():
+    """Structured (Datadog JSON) logging, see `mp_logging`.
+
+    Replaces Django's default handlers (its `django` / `django.server` loggers
+    would otherwise also write plain text). The access log comes from
+    gunicorn (gunicorn.conf.py).
+    """
+    from mp_logging import build_logging_config
+
+    return build_logging_config(
+        app_loggers=("mpcontribs",),
+        debug=DEBUG,
+        extra_loggers={
+            # Django's own loggers: propagate to the root handler at INFO
+            "django": {"level": "INFO", "handlers": [], "propagate": True},
+            "django.server": {"level": "INFO", "handlers": [], "propagate": True},
+        },
+    )
+
+
+LOGGING_CONFIG = "logging.config.dictConfig"
+LOGGING = _logging_config()

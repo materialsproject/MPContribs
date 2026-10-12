@@ -42,6 +42,7 @@ COPY main.py .
 COPY maintenance.py .
 COPY docker-entrypoint.sh .
 COPY gunicorn.conf.py .
+COPY mp_logging mp_logging
 RUN chmod +x main.py scripts/start.sh scripts/start_rq.sh docker-entrypoint.sh
 
 ARG VERSION
@@ -52,7 +53,7 @@ ENV DD_SERVICE=contribs-apis \
   DD_TRACE_OTEL_ENABLED=false \
   DD_MAIN_PACKAGE=mpcontribs-api
 
-LABEL com.datadoghq.ad.logs='[{"source": "gunicorn", "service": "contribs-apis"}]'
+LABEL com.datadoghq.ad.logs='[{"source": "mp-backend", "service": "contribs-apis"}]'
 EXPOSE 10000 10002 10003 10005 20000
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["/usr/bin/supervisord", "-c", "supervisord.conf"]

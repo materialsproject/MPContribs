@@ -68,9 +68,14 @@ def execute_cells(cid, cells):
                 current_app.kernels[kernel_id] = None
                 return outputs
             else:
-                logger.warning(f"{kernel_id} busy with {running_cid}")
+                logger.warning(
+                    "Kernel busy",
+                    extra={"kernel_id": kernel_id, "contribution": running_cid},
+                )
 
-        logger.warning("WAITING for a kernel to become available")
+        logger.warning(
+            "Waiting for a kernel to become available", extra={"tries": ntries}
+        )
         sleep(5)
         ntries += 1
 
@@ -186,12 +191,14 @@ def make(projects=None, cids=None, force=False):
                 nb = Notebooks.objects.get(id=document.notebook.id)
                 nb.delete()
                 document.update(unset__notebook="")
-                logger.debug(f"Notebook {document.notebook.id} deleted.")
+                logger.debug(
+                    "Notebook deleted", extra={"notebook": str(document.notebook.id)}
+                )
             except DoesNotExist:
                 pass
 
         cid = str(document.id)
-        logger.debug(f"prep notebook for {cid} ...")
+        logger.debug("Preparing notebook", extra={"contribution": cid})
         document.reload("tables", "structures", "attachments")
 
         cells = [

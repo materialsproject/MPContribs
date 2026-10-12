@@ -8,7 +8,7 @@ logger = get_logger(__name__)
 
 
 def run_cells(kernel_id, cid, cells):
-    logger.debug(f"running {cid} on {kernel_id}")
+    logger.debug("Running cells", extra={"contribution": cid, "kernel_id": kernel_id})
     ws = create_kernel_connection(kernel_id)
     outputs = {}
 

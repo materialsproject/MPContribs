@@ -58,19 +58,38 @@ FILTERS["ALL"] = (
 )
 
 
-class CustomLoggerAdapter(logging.LoggerAdapter):
-    def process(self, msg, kwargs):
-        prefix = self.extra.get("prefix")
-        return f"[{prefix}] {msg}" if prefix else msg, kwargs
-
-
 def get_logger(name):
-    logger = logging.getLogger(name)
-    process = os.environ.get("SUPERVISOR_PROCESS_NAME")
-    group = os.environ.get("SUPERVISOR_GROUP_NAME")
-    cfg = {"prefix": f"{group}/{process}"} if process and group else {}
-    logger.setLevel("DEBUG" if os.environ.get("FLASK_DEBUG") else "INFO")
-    return CustomLoggerAdapter(logger, cfg)
+    """Logger for `name`.
+
+    Formatting, levels and the per-request/process fields (`process.name`,
+    `usr.id`, ...) come from the structured logging config (`mp_logging`,
+    applied in `configure_logging` and gunicorn.conf.py), so this is a plain
+    `logging.getLogger`. Kept for existing imports.
+    """
+    return logging.getLogger(name)
+
+
+def flask_debug():
+    """FLASK_DEBUG as a bool (supervisord sets it to "True" / "False")."""
+    return os.environ.get("FLASK_DEBUG", "").strip().lower() in ("1", "true", "yes")
+
+
+def configure_logging():
+    """Structured (Datadog JSON) logging for this process, see `mp_logging`.
+
+    `mp_logging` is a top-level module next to the app (not part of the
+    `mpcontribs.api` package). If it isn't importable (e.g. the package is
+    used outside the service image), the process' existing config is kept.
+    """
+    try:
+        from mp_logging import configure_logging as _configure
+    except ImportError:
+        return None
+    return _configure(
+        # rq.worker: job start/finish messages (`flask rq worker`)
+        app_loggers=("mpcontribs", "__main__", "rq.worker"),
+        debug=flask_debug(),
+    )
 
 
 logger = get_logger(__name__)
@@ -125,7 +144,7 @@ def send_email(to, subject, html):
         ses_client.starttls()
         ses_client.login(os.environ["SMTP_USERNAME"], os.environ["SMTP_PASSWORD"])
         ses_client.send_message(msg)
-        logger.warning(f"Email with subject `{subject}` sent to `{to}`")
+        logger.warning("Email sent", extra={"email.subject": subject, "email.to": to})
 
 
 def get_collections(db):
@@ -166,7 +185,7 @@ def get_kernels():
     try:
         r = requests.get(get_kernel_endpoint(), timeout=2)
     except (ConnectionError, Timeout):
-        logger.warning("Kernel Gateway NOT AVAILABLE")
+        logger.warning("Kernel Gateway not available")
         return None
 
     response = r.json()
@@ -174,7 +193,13 @@ def get_kernels():
     idx = int(os.environ.get("DEPLOYMENT", 1))
 
     if len(response) < nkernels * (idx + 1):
-        logger.error("NOT ENOUGH KERNELS AVAILABLE")
+        logger.error(
+            "Not enough kernels available",
+            extra={
+                "kernels.available": len(response),
+                "kernels.required": nkernels * (idx + 1),
+            },
+        )
         return None
 
     return {kernel["id"]: None for kernel in response[idx : idx + 3]}
@@ -192,6 +217,7 @@ def get_consumer():
 
 def create_app():
     """create flask app"""
+    configure_logging()
     app = Flask(__name__)
     app.config.from_pyfile("config.py", silent=True)
     app.config["USTS"] = URLSafeTimedSerializer(app.secret_key)
@@ -201,7 +227,7 @@ def create_app():
     app.json.sort_keys = False
     MPCONTRIBS_API_HOST = app.config.get("MPCONTRIBS_API_HOST")
     app.config["TEMPLATE"]["schemes"] = ["http"] if app.debug else ["https"]
-    logger.info("database: " + app.config["MPCONTRIBS_DB"])
+    logger.info("Using database", extra={"db.name": app.config["MPCONTRIBS_DB"]})
     Compress(app)
     Marshmallow(app)
     MongoEngine(app)
@@ -223,8 +249,8 @@ def create_app():
         module_path = ".".join(["mpcontribs", "api", collection, "views"])
         try:
             module = import_module(module_path)
-        except ModuleNotFoundError as ex:
-            logger.error(f"API module {module_path}: {ex}")
+        except ModuleNotFoundError:
+            logger.exception("API module not found", extra={"module": module_path})
             continue
 
         try:
@@ -232,9 +258,12 @@ def create_app():
             app.register_blueprint(blueprint, url_prefix="/" + collection)
             klass = getattr(module, collection.capitalize() + "View")
             register_class(app, klass, name=collection)
-            logger.info(f"{collection} registered")
-        except AttributeError as ex:
-            logger.error(f"Failed to register {module_path}: {collection} {ex}")
+            logger.info("Collection registered", extra={"collection": collection})
+        except AttributeError:
+            logger.exception(
+                "Failed to register collection",
+                extra={"module": module_path, "collection": collection},
+            )
 
     if getattr(app, "kernels", None):
         from mpcontribs.api.notebooks.views import rq
@@ -248,10 +277,17 @@ def create_app():
         app.register_blueprint(sse, url_prefix="/stream")
         app.add_url_rule("/healthcheck", view_func=healthcheck)
 
+    try:
+        from mp_logging import flask_ext
+    except ImportError:
+        pass
+    else:
+        flask_ext.init_app(app)
+
     @app.after_request
     def add_header(response):
         response.headers["X-Consumer-Id"] = request.headers.get("X-Consumer-Id")
         return response
 
-    logger.info("app created.")
+    logger.info("App created")
     return app

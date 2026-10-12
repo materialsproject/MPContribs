@@ -69,6 +69,7 @@ COPY start.sh .
 COPY maintenance.py .
 COPY gunicorn.conf.py .
 COPY healthchecks.py .
+COPY mp_logging mp_logging
 
 ARG VERSION
 ENV DD_SERVICE=contribs-portals \
@@ -77,7 +78,7 @@ ENV DD_SERVICE=contribs-portals \
   DD_TRACE_HOST=localhost:8126 \
   DD_TRACE_OTEL_ENABLED=false
 
-LABEL com.datadoghq.ad.logs='[{"source": "gunicorn", "service": "contribs-portals"}]'
+LABEL com.datadoghq.ad.logs='[{"source": "mp-backend", "service": "contribs-portals"}]'
 EXPOSE 8080 8082 8083 8085
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["/usr/bin/supervisord", "-c", "supervisord.conf"]
