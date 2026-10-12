@@ -452,7 +452,11 @@ class SwaggerView(OriginalSwaggerView, ResourceView):
                             with open(file_path, "w") as f:
                                 yaml.dump(spec, f)
                                 logger.debug(
-                                    f"{cls.tags[0]}.{method.__name__} written to {file_path}"
+                                    "API spec written",
+                                    extra={
+                                        "spec": f"{cls.tags[0]}.{method.__name__}",
+                                        "file_path": file_path,
+                                    },
                                 )
 
     def get_groups(self, request):

@@ -7,6 +7,9 @@ import logging
 from supervisor.options import ClientOptions
 from supervisor.supervisorctl import Controller
 
+from mp_logging import configure_logging
+
+configure_logging(app_loggers=("__main__",))
 logger = logging.getLogger(__name__)
 client = boto3.client('ecs')
 
@@ -26,7 +29,7 @@ start_rq = True
 
 if metadata_uri:
     # in AWS Fargate with potentially multiple tasks
-    logger.debug("METADATA URI", metadata_uri)
+    logger.debug("Task metadata", extra={"metadata_uri": metadata_uri})
     r = requests.get(metadata_uri)
     labels = r.json()["Labels"]
     prefix = "com.amazonaws.ecs"
@@ -42,7 +45,14 @@ if metadata_uri:
         ntasks += int(v == version)
 
     start_rq = ntasks == 1  # this task included in metadata response
-    logger.info(f"TASKS {ntasks}/{len(tasks)} -> START RQ {start_rq}")
+    logger.info(
+        "RQ workers decision",
+        extra={
+            "tasks.current": ntasks,
+            "tasks.total": len(tasks),
+            "start_rq": start_rq,
+        },
+    )
 
 if start_rq:
     start("rq:*")

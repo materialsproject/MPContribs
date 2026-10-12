@@ -42,12 +42,15 @@ ENV PATH=/root/.local/bin:$PATH \
   DD_LOGS_INJECTION=true \
   DD_TRACE_SAMPLE_RATE=1 \
   DD_TRACE_OTEL_ENABLED=false \
-  DD_PROFILING_LOCK_ENABLED=false
+  DD_PROFILING_LOCK_ENABLED=false \
+  JUPYTER_CONFIG_DIR=/app
 
 EXPOSE 10100
 COPY make_seed.py .
 COPY start.sh .
 COPY healthcheck.sh .
+COPY jupyter_kernel_gateway_config.py .
+COPY mp_logging mp_logging
 RUN python make_seed.py && chmod +x start.sh healthcheck.sh
-LABEL com.datadoghq.ad.logs='[{"source": "gunicorn", "service": "contribs-kernel-gateway"}]'
+LABEL com.datadoghq.ad.logs='[{"source": "mp-backend", "service": "contribs-kernel-gateway"}]'
 CMD ./start.sh

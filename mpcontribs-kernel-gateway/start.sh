@@ -10,4 +10,6 @@ if [[ -n "$DD_TRACE_HOST" ]]; then
   wait-for-it.sh "$DD_TRACE_HOST" -q -s -t 10 && CMD="ddtrace-run $CMD" || echo "WARNING: datadog agent unreachable"
 fi
 
-exec $CMD --KernelGatewayApp.log_format='%(asctime)s,%(msecs)03d %(levelname)s [%(name)s] [%(module)s:%(lineno)d] - %(message)s'
+# Logging (structured JSON, incl. the request log) is configured in
+# jupyter_kernel_gateway_config.py (JUPYTER_CONFIG_DIR)
+exec $CMD
