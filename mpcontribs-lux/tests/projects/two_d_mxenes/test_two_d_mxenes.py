@@ -18,8 +18,10 @@ from mpcontribs.lux.projects.two_d_mxenes.pipelines.build_contributions import (
     CheckResult,
     build_entries,
     build_records,
+    add_relative_stacking_energies,
     check_dataset,
     load_properties,
+    load_provenance,
     main,
     termination_site_table,
     write_properties_template,
@@ -44,9 +46,12 @@ from mpcontribs.lux.projects.two_d_mxenes.schemas import (
     ElasticProperties,
     MXeneEntry,
     MXeneLabel,
+    MXeneProperties,
+    Provenance,
     StructureDescriptors,
 )
 from mpcontribs.lux.projects.two_d_mxenes.schemas.labels import (
+    TERMINATIONS,
     TRANSITION_METALS,
     expected_core_sequence,
     expected_termination_coordination,
@@ -85,6 +90,11 @@ def ideal_mxene(metal, nonmetal, n, sequence, termination=None, a=3.1, dz=1.2):
     elements = [metal, nonmetal] * n + [metal]
     if termination:
         elements = [termination] + elements + [termination]
+    return ideal_slab(elements, sequence, a=a, dz=dz)
+
+
+def ideal_slab(elements, sequence, a=3.1, dz=1.2):
+    """Ideal slab with one atom per layer; `elements` lists the layers bottom-up."""
     assert len(sequence) == len(elements) - 2
     sites = ["A", "B"]
     for coord in sequence:
@@ -111,6 +121,7 @@ def sample_descriptors(**changes):
         "vacuum": 34.8092,
         "layerSequence": "F-Hf-C-Hf-F",
         "coordinationSequence": "O-P-O",
+        "metalArrangement": "single",
         "metalNonmetalBondLength": 2.2874,
         "metalTerminationBondLength": 2.2657,
         "spaceGroupSymbol": "P-6m2",
@@ -121,9 +132,10 @@ def sample_descriptors(**changes):
 
 
 SAMPLE_LABELS = {
-    "metal": "Hf",
-    "nonmetal": "C",
-    "termination": "F",
+    "metals": "Hf",
+    "nMetals": 1,
+    "nonmetals": "C",
+    "terminations": "F",
     "n": 1,
     "stacking": "h",
     "terminationSite": 1,
@@ -151,17 +163,21 @@ def test_ideal_builder_sanity():
 @pytest.mark.parametrize(
     "label, expected",
     [
-        ("t", ("t", None)),
-        ("h-1", ("h", 1)),
-        ("h1a-2", ("h1a", 2)),
-        ("H2", ("h2", None)),
+        ("t", ("t", None, None)),
+        ("h-1", ("h", 1, None)),
+        ("h1a-2", ("h1a", 2, None)),
+        ("H2", ("h2", None, None)),
+        ("t-1-c2", ("t", 1, 2)),
+        ("h1b-C12", ("h1b", None, 12)),
     ],
 )
 def test_parse_folder_label(label, expected):
     assert parse_folder_label(label) == expected
 
 
-@pytest.mark.parametrize("label", ["no-termination", "h3", "t-3", "h1c", "h1"])
+@pytest.mark.parametrize(
+    "label", ["no-termination", "h3", "t-3", "h1c", "h1", "t-c0", "t-1-c", "t-c1-1"]
+)
 def test_parse_folder_label_rejects(label):
     with pytest.raises(ValueError):
         parse_folder_label(label)
@@ -202,15 +218,21 @@ def test_transition_metals_match_pymatgen():
 @pytest.mark.parametrize(
     "changes",
     [
-        {"n": 1, "stacking": "h1a", "termination": None, "terminationSite": None},
+        {"n": 1, "stacking": "h1a", "terminations": None, "terminationSite": None},
         {"n": 2, "stacking": "h"},
         {"terminationSite": None},  # terminated without a site
-        {"termination": None},  # site without a termination
-        {"metal": "C"},  # not a transition metal
-        {"metal": "Xx"},  # not an element
-        {"nonmetal": "B"},  # X not C/N
-        {"termination": "Cl"},
-        {"n": 4},
+        {"terminations": None},  # site without a termination
+        {"metals": "C"},  # not a transition metal
+        {"metals": "Xx"},  # not an element
+        {"metals": "Mo-Ti", "nMetals": 2},  # not ordered by atomic number
+        {"metals": "Ti-Ti", "nMetals": 2},  # repeated
+        {"metals": "Ti-Mo", "nMetals": 1},  # count does not match
+        {"nonmetals": "B"},  # X not C/N
+        {"nonmetals": "N-C"},  # not canonical
+        {"terminations": "H"},  # not a single-element halogen/chalcogen
+        {"terminations": "F-O"},  # not ordered by atomic number (O-F)
+        {"configuration": 0},
+        {"n": 5},
     ],
 )
 def test_label_rejects(changes):
@@ -220,17 +242,21 @@ def test_label_rejects(changes):
 
 def test_label_derived_values():
     lab = MXeneLabel(
-        metal="Ti",
-        nonmetal="C",
+        metals="Ti",
+        nMetals=1,
+        nonmetals="C",
         n=2,
         stacking="h1a",
-        termination="O",
+        terminations="O",
         terminationSite=2,
     )
-    assert lab.formula == "Ti3C2O2"
     assert lab.label == "h1a-2"
-    assert lab.layer_sequence == "O-Ti-C-Ti-C-Ti-O"
     assert lab.coordination_sequence == "O-O-P-O-O"
+    alloy = MXeneLabel(
+        metals="Ti-V-Nb-Mo", nMetals=4, nonmetals="C", n=3, stacking="t",
+        configuration=2,
+    )  # fmt: skip
+    assert alloy.label == "t-c2"
 
 
 # ---- phases 2 and 4: structure analysis -------------------------------------
@@ -243,19 +269,50 @@ def test_label_derived_values():
         ("Mo3N2O2", "Mo3N2O2"),
         ("Ti2C", "Ti2C"),
         ("Hf2CF2", "Hf2CF2"),
+        # electronegativity would put these terminations before X
+        ("Ti2CTe2", "Ti2CTe2"),
+        ("Ti3N2S2", "Ti3N2S2"),
+        ("Nb5C4Br2", "Nb5C4Br2"),
+        # several metals, X or T: each role by atomic number
+        ("Mo2TiC2", "TiMo2C2"),
+        ("MoNbTiVC3", "TiVNbMoC3"),
+        ("Ti3NC", "Ti3CN"),
+        ("Ti2CFO", "Ti2COF"),
     ],
 )
 def test_plain_formula(formula, expected):
     assert plain_formula(Composition(formula) * 2) == expected
 
 
-def test_infer_chemistry():
-    assert infer_chemistry(Composition("Ti4C3O2")) == {
-        "metal": "Ti",
-        "nonmetal": "C",
-        "termination": "O",
-        "n": 3,
-    }
+@pytest.mark.parametrize(
+    "formula, expected",
+    [
+        ("Ti4C3O2", ("Ti", 1, "C", "O", 3)),
+        ("Mo2TiC2F2", ("Ti-Mo", 2, "C", "F", 2)),  # ordered double metal
+        ("Ti2V2Nb2Mo2C6", ("Ti-V-Nb-Mo", 4, "C", None, 3)),  # high entropy
+        ("Ti3CN", ("Ti", 1, "C-N", None, 2)),  # carbonitride
+        ("Ti2COF", ("Ti", 1, "C", "O-F", 1)),  # mixed termination
+    ],
+)
+def test_infer_chemistry(formula, expected):
+    keys = ("metals", "nMetals", "nonmetals", "terminations", "n")
+    assert infer_chemistry(Composition(formula)) == dict(zip(keys, expected))
+
+
+@pytest.mark.parametrize(
+    "formula, match",
+    [
+        ("Ti2CO", "fully terminated"),  # one-sided termination
+        ("Ti2C2", "M_\\(n\\+1\\)X_n"),  # metal vacancy
+        ("Ti3C", "M_\\(n\\+1\\)X_n"),  # not an integer n
+        ("Mo2B", "unsupported"),  # MBene
+        ("Ti2CH2", "unsupported"),
+        ("Ti2", "needs a transition metal and C or N"),
+    ],
+)
+def test_infer_chemistry_rejects(formula, match):
+    with pytest.raises(ValueError, match=match):
+        infer_chemistry(Composition(formula))
 
 
 def test_sample_descriptors(sample_structure):
@@ -305,7 +362,7 @@ def test_thick_descriptor_formula_is_ungrouped():
 def test_mixed_layer_message():
     s = ideal_mxene("Re", "N", 1, ["O"])
     s.translate_sites([1], [0, 0, -1.1 / 30])  # push N into the lower Re layer
-    with pytest.raises(ValueError, match="strongly distorted"):
+    with pytest.raises(ValueError, match="mixes roles"):
         compute_descriptors(s)
 
 
@@ -330,9 +387,11 @@ def test_descriptors_accept_sample():
     "changes, match",
     [
         ({"reducedFormula": "hf2cf2"}, "pattern"),
-        ({"reducedFormula": "Hf2CF2Hf2CF2Hf2"}, "pattern|at most"),
+        ({"reducedFormula": "Hf2C" * 20}, "pattern|at most"),
         ({"layerSequence": "F,Hf,C,Hf,F"}, "pattern"),
         ({"layerSequence": "-".join(["Hf"] * 12)}, "pattern|at most"),
+        ({"layerSequence": "F-Hf,Ti-C-Hf-F"}, "pattern"),
+        ({"metalArrangement": "random"}, "Input should be"),
         ({"coordinationSequence": "O-X-O"}, "pattern"),
         ({"coordinationSequence": "O-P"}, "interior layer"),
         ({"spaceGroupSymbol": "P-6m3"}, "not a Hermann-Mauguin"),
@@ -355,7 +414,9 @@ def test_descriptors_reject(changes, match):
 def test_entry_from_sample(sample_structure):
     entry = entry_from_structure(sample_structure, "h", terminationSite=1)
     assert entry.mxeneId == "Hf2CF2-h-1"
-    assert entry.labels.n == 1 and entry.labels.termination == "F"
+    assert entry.labels.n == 1 and entry.labels.terminations == "F"
+    assert entry.provenance.method == "DFT"
+    assert entry.descriptors.metalArrangement == "single"
 
 
 def test_entry_validates_without_a_structure():
@@ -370,8 +431,19 @@ def test_entry_validates_without_a_structure():
     [
         ("Hf2CF2-h-2", {}, {}, "mxeneId must be"),
         ("hf2cf2-h-1", {}, {}, "pattern"),
-        ("Ti2CF2-h-1", {"metal": "Ti"}, {}, "Labels imply Ti2CF2"),
-        ("Hf2CF2-h-1", {}, {"layerSequence": "F-C-Hf-Hf-F"}, "Labels imply layers"),
+        ("Hf2CF2-h-1", {"metals": "Ti"}, {}, "Labels give metal elements"),
+        ("Hf2CF2-h-1", {"nonmetals": "N"}, {}, "Labels give X elements"),
+        ("Hf2CF2-h-1", {"terminations": "O"}, {}, "Labels give termination"),
+        ("Hf2CF2-h-1", {}, {"layerSequence": "F-C-Hf-Hf-F"}, "should hold"),
+        (
+            "Hf2CF2-h-1",
+            {},
+            {"layerSequence": "F-Hf-C-Hf-C-Hf-F", "coordinationSequence": "O-P-O-P-O"},
+            "atomic layers",
+        ),
+        ("Hf3C2F2-h-1", {}, {"reducedFormula": "Hf3C2F2"}, "not M_\\(n\\+1\\)X_n"),
+        ("Hf2CF-h-1", {}, {"reducedFormula": "Hf2CF"}, "T_2 per formula unit"),
+        ("Hf2CF2-h-1", {}, {"metalArrangement": "in-plane mixed"}, "metalArrangement"),
         ("Hf2CF2-t-1", {"stacking": "t"}, {}, "core coordination"),
         ("Hf2CF2-h-2", {"terminationSite": 2}, {}, "Termination site 2"),
         ("Hf2CF2-h-1", {}, {"coordinationSequence": "O-P-P"}, "Termination site 1"),
@@ -440,11 +512,23 @@ def test_elastic_derivation():
         ({"c11": 300.0, "c12": 90.0, "youngsModulus": 1.0}, "inconsistent"),
         ({"c11": 300.0, "c12": 90.0, "mechanicallyStable": False}, "inconsistent"),
         ({"c11": 2e5, "c12": 90.0}, "less than or equal"),
+        ({"c11": 0.0, "c12": 0.0}, "c11 must be nonzero"),
     ],
 )
 def test_elastic_rejects(data, match):
     with pytest.raises(ValidationError, match=match):
         ElasticProperties(**data)
+
+
+def test_derived_elastic_properties_rejects_zero_c11():
+    from mpcontribs.lux.projects.two_d_mxenes.schemas.properties import (
+        derived_elastic_properties,
+    )
+
+    with pytest.raises(ValueError, match="nonzero"):
+        derived_elastic_properties(0.0, 10.0)
+    unstable = derived_elastic_properties(-50.0, 10.0)  # negative C11 is allowed
+    assert unstable["mechanicallyStable"] is False
 
 
 # ---- phases 1, 6, 7: pipeline -----------------------------------------------
@@ -633,6 +717,24 @@ def test_grid_columns_cover_every_feasible_structure():
     assert (1, None, "h2") not in cols  # h2 needs n >= 2
 
 
+def test_grid_extends_to_vocabulary_found_in_the_data(tmp_path):
+    from mpcontribs.lux.projects.two_d_mxenes.pipelines.dataset_overview import (
+        grid_axes,
+        grid_columns,
+    )
+
+    root = tmp_path / "data"
+    (root / "t-1").mkdir(parents=True)
+    s = ideal_mxene("Nb", "C", 4, ["O"] * 9, termination="Cl")
+    s.to(filename=str(root / "t-1" / "CONTCAR"), fmt="poscar")
+    result = check_dataset(root)
+    assert len(result.valid) == 1
+    ns, terms = grid_axes(result)
+    assert ns == [1, 2, 3, 4]
+    assert terms == [None, "F", "Cl", "O"]
+    assert (4, "Cl", "t-1") in grid_columns(ns, terms)
+
+
 def _break_one_structure(dataset):
     """Prismatic core in a `t` folder: fails the stacking check."""
     (dataset / "Hf/m2x/t-2").mkdir()
@@ -680,7 +782,7 @@ def test_parse_scope_exclusion(text, expected):
     assert parse_scope_exclusion(text) == expected
 
 
-@pytest.mark.parametrize("text", ["Hf", "Xx:O", "Hf:Cl", ":O"])
+@pytest.mark.parametrize("text", ["Hf", "Xx:O", "Hf:H", ":O"])
 def test_parse_scope_exclusion_rejects(text):
     from mpcontribs.lux.projects.two_d_mxenes.pipelines.dataset_overview import (
         parse_scope_exclusion,
@@ -700,7 +802,7 @@ def test_write_overview(dataset, tmp_path):
     _break_one_structure(dataset)
     path = tmp_path / "overview.xlsx"
     with pytest.raises(SystemExit):  # invalid scope is a usage error
-        main([str(dataset), "--overview", str(path), "--out-of-scope", "Hf:Cl"])
+        main([str(dataset), "--overview", str(path), "--out-of-scope", "Hf:H"])
     main(
         [str(dataset), "--overview", str(path)]
         + ["--out-of-scope", "Hf:O", "--out-of-scope", "*:none"]
@@ -730,7 +832,10 @@ def test_columns_are_generated_from_the_schema():
         assert all(part.isalnum() for part in column.split(".")), column
         assert MPCONTRIBS_COLUMN_DESCRIPTIONS[column], column
     assert MPCONTRIBS_COLUMNS["descriptors.a"] == "Å"
-    assert MPCONTRIBS_COLUMNS["labels.n"] == ""
+    assert MPCONTRIBS_COLUMNS["labels.n"] == ""  # ordered: numeric, filterable
+    # categorical integers are labels (text columns), not dimensionless floats
+    assert MPCONTRIBS_COLUMNS["labels.terminationSite"] is None
+    assert MPCONTRIBS_COLUMNS["descriptors.spaceGroupNumber"] is None
     assert MPCONTRIBS_COLUMNS["descriptors.coordinationSequence"] is None
     assert MPCONTRIBS_COLUMNS["properties.elastic.c11"] == "N/m"
 
@@ -768,6 +873,8 @@ def test_contribution_data_is_the_schema(dataset, tmp_path):
     assert flat["properties.elastic.c11"] == "250 N/m"
     assert flat["properties.elastic.mechanicallyStable"] == "Yes"
     assert flat["labels.terminationSite"] == "1"
+    assert flat["descriptors.spaceGroupNumber"] == "187"
+    assert flat["labels.n"] == "1"
 
 
 def test_units_parse_with_mpcontribs_unit_registry():
@@ -801,6 +908,30 @@ def test_calculation_settings():
 @pytest.mark.parametrize(
     "changes",
     [
+        {"codeVersion": "5.4.4.18Apr17-6-g9f103f2a35"},  # OUTCAR header form
+        {"codeVersion": "6.3"},
+        {"potcarSymbols": "Nb_sv_GW,C,Cl"},
+        {"potcarSymbols": "Ti_pv, N, H.75"},
+        {"potcarSet": "PBE_54_W_HASH"},
+    ],
+)
+def test_calculation_settings_accept(changes):
+    assert CalculationSettings(**changes)
+
+
+def test_potcar_sets_are_known_to_pymatgen():
+    from typing import get_args
+
+    from mpcontribs.lux.projects.two_d_mxenes.pipelines.upload import PotcarSet
+    from pymatgen.io.vasp.inputs import PotcarSingle
+
+    # subset, so a new POTCAR set in pymatgen does not fail this test
+    assert set(get_args(PotcarSet)) <= set(PotcarSingle.functional_dir)
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
         {"code": "Quantum ESPRESSO"},
         {"functional": "not-a-functional"},
         {"vdwCorrection": "D5"},
@@ -808,6 +939,7 @@ def test_calculation_settings():
         {"potcarSymbols": "Ti_sv; C"},
         {"potcarSymbols": ", ".join(["Ti_sv"] * 11)},
         {"codeVersion": "six"},
+        {"codeVersion": "6"},
         {"elasticMethod": "fit"},
         {"maxStrain": 20},
         {"nStrainPoints": 1},
@@ -876,6 +1008,34 @@ def test_supercell_is_accepted():
     assert entry.descriptors.nSites == 4 * 7
 
 
+@pytest.mark.parametrize(
+    "metal, nonmetal, n, termination, stacking, site, mxene_id",
+    [
+        ("Ti", "C", 1, "Cl", "t", 1, "Ti2CCl2-t-1"),
+        ("Nb", "C", 1, "Te", "h", 2, "Nb2CTe2-h-2"),
+        ("Ti", "N", 2, "S", "h1a", 1, "Ti3N2S2-h1a-1"),
+        ("Mo", "C", 4, None, "h1b", None, "Mo5C4-h1b"),
+        ("Nb", "C", 4, "Br", "t", 2, "Nb5C4Br2-t-2"),
+    ],
+)
+def test_wider_vocabulary_is_accepted(
+    metal, nonmetal, n, termination, stacking, site, mxene_id
+):
+    from mpcontribs.lux.projects.two_d_mxenes.schemas.labels import (
+        expected_termination_coordination,
+    )
+
+    core = expected_core_sequence(n, stacking)
+    sequence = core
+    if termination:
+        outer = expected_termination_coordination(n, stacking, site)
+        sequence = [outer, *core, outer]
+    s = ideal_mxene(metal, nonmetal, n, sequence, termination=termination)
+    entry = entry_from_structure(s, stacking, terminationSite=site)
+    assert entry.mxeneId == mxene_id
+    assert entry.labels.n == n
+
+
 def _replace(s, index, element):
     s = s.copy()
     s.replace(index, element)
@@ -891,40 +1051,312 @@ def _remove(s, index):
 @pytest.mark.parametrize(
     "make, reason",
     [
-        # mixed terminations: O on the bottom, F on the top
         (
-            lambda: _replace(
-                ideal_mxene("Ti", "C", 1, ["O", "O", "O"], termination="O"), 4, "F"
-            ),
-            "Cannot infer",
-        ),
-        (
-            lambda: ideal_mxene("Ti", "C", 1, ["O", "O", "O"], termination="Cl"),
+            lambda: ideal_mxene("Ti", "C", 1, ["O", "O", "O"], termination="H"),
             "unsupported",
         ),
         (lambda: ideal_mxene("Mo", "B", 1, ["O"]), "unsupported"),  # MBene
-        # double-metal MXene Mo2TiC2
-        (
-            lambda: _replace(ideal_mxene("Mo", "C", 2, ["O", "O", "O"]), 2, "Ti"),
-            "Cannot infer",
-        ),
-        (lambda: ideal_mxene("Ti", "C", 4, ["O"] * 7), "n"),  # n = 4
+        (lambda: ideal_mxene("Ti", "C", 5, ["O"] * 9), "n"),  # n = 5
         # one-sided termination
         (
             lambda: _remove(
                 ideal_mxene("Ti", "C", 1, ["O", "O", "O"], termination="O"), 4
             ),
-            "Labels imply",
+            "fully terminated",
         ),
         # metal vacancy
         (
             lambda: _remove(ideal_mxene("Ti", "C", 2, ["O", "O", "O"]), 0),
-            "M_\\(n\\+1\\)X_n|Labels imply",
+            "M_\\(n\\+1\\)X_n",
         ),
     ],
 )
 def test_rejected_compositions(make, reason):
     with pytest.raises(ValueError, match=reason):
         s = make()
-        n_term = sum(1 for site in s if site.specie.symbol in {"F", "O"})
+        n_term = sum(1 for site in s if site.specie.symbol in TERMINATIONS)
         entry_from_structure(s, "t", terminationSite=1 if n_term else None)
+
+
+# ---- alloys, carbonitrides, mixed terminations, configurations ----------------
+
+
+def mixed_slab(layers, sequence, a=3.1, dz=1.2):
+    """Ideal 2x1 slab: `layers` gives the two elements of each layer, bottom-up."""
+    s = ideal_slab([pair[0] for pair in layers], sequence, a=a, dz=dz)
+    s.make_supercell([[2, 0, 0], [0, 1, 0], [0, 0, 1]])
+    order = sorted(
+        range(len(s)), key=lambda i: (round(s[i].coords[2], 3), s[i].coords[0])
+    )
+    for k, index in enumerate(order):
+        s.replace(index, layers[k // 2][k % 2])
+    return s
+
+
+HE_LAYERS = [
+    ("O", "O"), ("Ti", "V"), ("C", "C"), ("Nb", "Mo"), ("C", "C"),
+    ("Ti", "Mo"), ("C", "C"), ("V", "Nb"), ("O", "O"),
+]  # fmt: skip
+
+MIXED_CASES = {
+    # ordered double-metal MXene Mo2TiC2 (out-of-plane order)
+    "ordered": (
+        lambda: ideal_slab(["Mo", "C", "Ti", "C", "Mo"], ["O"] * 3),
+        ("t", None, None),
+        ("TiMo2C2-t", "Ti-Mo", "C", None, "out-of-plane ordered", "Mo-C-Ti-C-Mo"),
+    ),
+    # solid solution (Ti,V)2C, first configuration
+    "solid solution": (
+        lambda: mixed_slab([("Ti", "V"), ("C", "C"), ("Ti", "V")], ["O"]),
+        ("t", None, 1),
+        ("TiVC-t-c1", "Ti-V", "C", None, "in-plane mixed", "Ti/V-C-Ti/V"),
+    ),
+    # high-entropy (TiVNbMo)4C3O2
+    "high entropy": (
+        lambda: mixed_slab(HE_LAYERS, ["O"] * 7),
+        ("t", 1, 2),
+        (
+            "TiVNbMoC3O2-t-1-c2",
+            "Ti-V-Nb-Mo",
+            "C",
+            "O",
+            "in-plane mixed",
+            "O-Ti/V-C-Nb/Mo-C-Ti/Mo-C-V/Nb-O",
+        ),
+    ),
+    # ordered carbonitride Ti3CN
+    "carbonitride": (
+        lambda: ideal_slab(["Ti", "C", "Ti", "N", "Ti"], ["O"] * 3),
+        ("t", None, None),
+        ("Ti3CN-t", "Ti", "C-N", None, "single", "Ti-C-Ti-N-Ti"),
+    ),
+    # O and F mixed within each termination layer
+    "mixed termination": (
+        lambda: mixed_slab(
+            [("O", "F"), ("Ti", "Ti"), ("C", "C"), ("Ti", "Ti"), ("O", "F")],
+            ["O", "P", "O"],
+        ),
+        ("h", 1, None),
+        ("Ti2COF-h-1", "Ti", "C", "O-F", "single", "O/F-Ti-C-Ti-O/F"),
+    ),
+    # Janus sheet: O below, F above
+    "janus": (
+        lambda: ideal_slab(["O", "Ti", "C", "Ti", "F"], ["O", "P", "O"]),
+        ("h", 1, None),
+        ("Ti2COF-h-1", "Ti", "C", "O-F", "single", "O-Ti-C-Ti-F"),
+    ),
+}
+
+
+@pytest.mark.parametrize("case", MIXED_CASES)
+def test_mixed_compositions_are_accepted(case):
+    make, (stacking, site, configuration), expected = MIXED_CASES[case]
+    mxene_id, metals, nonmetals, terminations, arrangement, layers = expected
+    entry = entry_from_structure(
+        make(), stacking, terminationSite=site, configuration=configuration
+    )
+    assert entry.mxeneId == mxene_id
+    assert (entry.labels.metals, entry.labels.nonmetals) == (metals, nonmetals)
+    assert entry.labels.nMetals == len(metals.split("-"))
+    assert entry.labels.terminations == terminations
+    assert entry.labels.configuration == configuration
+    assert entry.descriptors.metalArrangement == arrangement
+    assert entry.descriptors.layerSequence == layers
+
+
+def test_mixed_layer_must_hold_one_role():
+    layers = [("Ti", "C"), ("C", "C"), ("Ti", "Ti")]  # C in a metal layer
+    with pytest.raises(ValueError):
+        entry_from_structure(mixed_slab(layers, ["O"]), "t")
+
+
+def test_mixed_entry_rejects_wrong_stacking():
+    make, _, _ = MIXED_CASES["high entropy"]
+    with pytest.raises(ValidationError, match="Termination site 2"):
+        entry_from_structure(make(), "t", terminationSite=2, configuration=2)
+
+
+def _elastic(**constants):
+    return MXeneProperties(
+        elastic=ElasticProperties.from_elastic_constants(**constants)
+    )
+
+
+def test_elastic_data_must_match_cell_symmetry(sample_structure):
+    make, _, _ = MIXED_CASES["solid solution"]
+    alloy = make()
+    entry = entry_from_structure(alloy, "t", configuration=1)
+    assert entry.descriptors.spaceGroupNumber not in range(143, 195)
+    with pytest.raises(ValidationError, match="not hexagonal"):
+        entry_from_structure(
+            alloy, "t", configuration=1, properties=_elastic(c11=300.0, c12=90.0)
+        )
+    ok = entry_from_structure(
+        alloy,
+        "t",
+        configuration=1,
+        properties=_elastic(c11=300.0, c12=90.0, c22=280.0, c66=100.0),
+    )
+    assert ok.properties.elastic.youngsModulus is None
+
+    with pytest.raises(ValidationError, match="must equal c11"):
+        entry_from_structure(
+            sample_structure,
+            "h",
+            terminationSite=1,
+            properties=_elastic(c11=300.0, c12=90.0, c22=280.0, c66=100.0),
+        )
+
+
+def test_anisotropic_elastic_constants():
+    el = ElasticProperties.from_elastic_constants(
+        c11=300.0, c12=90.0, c66=100.0, c22=250.0
+    )
+    assert el.youngsModulus is None and el.poissonRatio is None
+    assert el.shearModulus == 100.0 and el.mechanicallyStable
+    # C11 C22 < C12^2: unstable although C11 > |C12|
+    assert not ElasticProperties.from_elastic_constants(
+        c11=300.0, c12=150.0, c66=50.0, c22=50.0
+    ).mechanicallyStable
+    with pytest.raises(ValueError, match="c66 is required"):
+        ElasticProperties.from_elastic_constants(c11=300.0, c12=90.0, c22=250.0)
+    with pytest.raises(ValidationError, match="only for isotropic"):
+        ElasticProperties(
+            c11=300.0, c12=90.0, c22=250.0, c66=100.0, youngsModulus=273.0
+        )
+    with pytest.raises(ValidationError, match="require c11 and c12"):
+        ElasticProperties(c22=250.0)
+
+
+def test_load_properties_c22_needs_c66(tmp_path):
+    path = tmp_path / "props.csv"
+    path.write_text("mxeneId,c11,c12,c22\nTiVC-t-c1,300,90,250\n")
+    with pytest.raises(ValueError, match="c66 together with c22"):
+        load_properties(path)
+
+
+# ---- provenance (DFT or machine-learning potential) --------------------------
+
+
+@pytest.mark.parametrize(
+    "data, match",
+    [
+        ({"method": "MLIP"}, "if and only if"),
+        ({"potential": "MACE-MP-0"}, "if and only if"),
+        ({"method": "MLIP", "potential": "MACE MP 0"}, "pattern"),
+        ({"method": "GW"}, "Input should be"),
+    ],
+)
+def test_provenance_rejects(data, match):
+    with pytest.raises(ValidationError, match=match):
+        Provenance(**data)
+
+
+def test_load_provenance(tmp_path):
+    path = tmp_path / "props.csv"
+    path.write_text(
+        "mxeneId,c11,c12,method,potential\n"
+        "Hf2CF2-h-1,250,60,,\n"
+        "Hf2NF2-h-2,,,MLIP,MACE-MP-0-medium\n"
+        "Hf2CF2-t-1,,,DFT,\n"
+    )
+    found = load_provenance(path)
+    assert set(found) == {"Hf2NF2-h-2", "Hf2CF2-t-1"}
+    assert found["Hf2NF2-h-2"].potential == "MACE-MP-0-medium"
+    assert load_properties(path)["Hf2CF2-h-1"].elastic.c11 == 250.0
+
+    path.write_text("mxeneId,method\nHf2CF2-h-1,MLIP\n")
+    with pytest.raises(ValueError, match="Hf2CF2-h-1: potential"):
+        load_provenance(path)
+
+
+def test_build_records_attaches_provenance(dataset, tmp_path):
+    csv = tmp_path / "props.csv"
+    csv.write_text("mxeneId,method,potential\nHf2NF2-h-2,MLIP,CHGNet-0.3.0\n")
+    records = build_records(dataset, provenance=load_provenance(csv))
+    by_id = {r.entry.mxeneId: r.entry for r in records}
+    assert by_id["Hf2NF2-h-2"].provenance.potential == "CHGNet-0.3.0"
+    assert by_id["Hf2CF2-h-1"].provenance.method == "DFT"
+    data = to_contribution(by_id["Hf2NF2-h-2"], records[0].structure)["data"]
+    assert data["provenance"] == {"method": "MLIP", "potential": "CHGNet-0.3.0"}
+
+    csv.write_text("mxeneId,method,potential\nTi2C-t,MLIP,CHGNet-0.3.0\n")
+    with pytest.raises(ValueError, match="No valid structure"):
+        build_records(dataset, provenance=load_provenance(csv))
+
+
+def test_relative_stacking_energy_compares_one_method():
+    def entry(stacking, energy, provenance=None):
+        seq = ["O", "P" if stacking == "h" else "O", "O"]
+        return entry_from_structure(
+            ideal_mxene("Ti", "C", 1, seq, termination="O"),
+            stacking,
+            terminationSite=1,
+            provenance=provenance,
+            properties=MXeneProperties(energetics={"totalEnergyPerAtom": energy}),
+        )
+
+    mlip = Provenance(method="MLIP", potential="MACE-MP-0")
+    entries = [entry("t", -8.0), entry("h", -8.1, mlip)]
+    add_relative_stacking_energies(entries)
+    assert [e.properties.energetics.relativeStackingEnergy for e in entries] == [0, 0]
+
+    entries = [entry("t", -8.0), entry("h", -8.1)]
+    add_relative_stacking_energies(entries)
+    energies = [e.properties.energetics.relativeStackingEnergy for e in entries]
+    assert energies == pytest.approx([100.0, 0.0])
+
+
+def test_new_columns():
+    assert MPCONTRIBS_COLUMNS["labels.metals"] is None
+    assert MPCONTRIBS_COLUMNS["labels.nMetals"] == ""
+    assert MPCONTRIBS_COLUMNS["labels.configuration"] is None
+    assert MPCONTRIBS_COLUMNS["descriptors.metalArrangement"] is None
+    assert MPCONTRIBS_COLUMNS["provenance.method"] is None
+    assert MPCONTRIBS_COLUMNS["properties.elastic.c22"] == "N/m"
+
+
+# ---- overview with alloys --------------------------------------------------------
+
+
+def test_overview_places_alloys(dataset, tmp_path):
+    from mpcontribs.lux.projects.two_d_mxenes.pipelines.dataset_overview import (
+        GOOD,
+        cell_name,
+        grid_states,
+        systems_in,
+    )
+
+    make, _, _ = MIXED_CASES["solid solution"]
+    for label in ("t-c1", "t-c2"):
+        (dataset / "alloys" / label).mkdir(parents=True)
+        make().to(filename=str(dataset / "alloys" / label / "CONTCAR"), fmt="poscar")
+    result = check_dataset(dataset)
+    assert not result.failures
+    systems = systems_in(result)
+    assert ("Ti-V", "C") in systems and ("Ti-V", "N") not in systems
+    assert ("Hf", "C") in systems and ("Hf", "N") in systems
+
+    states, claims = grid_states(result)
+    key = ("Ti-V", "C", 1, None, "t")
+    assert states[key] == GOOD and len(claims[key]) == 2  # two configurations
+    assert cell_name(key) == "Ti-V C n=1 pristine t"
+    assert cell_name(("Ti", "C", 2, "O", "h1a-2")) == "Ti3C2O2-h1a-2"
+
+    openpyxl = pytest.importorskip("openpyxl")
+    from mpcontribs.lux.projects.two_d_mxenes.pipelines.dataset_overview import (
+        write_overview,
+    )
+
+    path = tmp_path / "overview.xlsx"
+    write_overview(result, path, dataset)
+    rows = [r[0] for r in openpyxl.load_workbook(path)["Overview"].values]
+    assert "Ti-V | C" in rows and "Hf | N" in rows
+
+
+def test_parse_scope_exclusion_for_systems():
+    from mpcontribs.lux.projects.two_d_mxenes.pipelines.dataset_overview import (
+        parse_scope_exclusion,
+    )
+
+    assert parse_scope_exclusion("Mo-Ti:F-O") == ("Ti-Mo", "O-F")

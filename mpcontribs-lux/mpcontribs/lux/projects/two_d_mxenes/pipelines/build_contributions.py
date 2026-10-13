@@ -16,8 +16,9 @@ Build records and contributions from Python::
 
 Labels are assigned independently of how the folders above the label folder
 are named or nested: M, X, T and n come from the composition of each CONTCAR
-(`structure_analysis.infer_chemistry`); the stacking label and termination
-site come from the name of the folder that directly contains it (e.g. `h1a-2`).
+(`structure_analysis.infer_chemistry`); the stacking label, termination site
+and configuration index come from the name of the folder that directly
+contains it (e.g. `h1a-2` or `t-1-c3`).
 """
 
 from __future__ import annotations
@@ -27,6 +28,7 @@ from collections import Counter, defaultdict
 from collections.abc import Iterator, Mapping
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 from mpcontribs.lux.projects.two_d_mxenes.pipelines.structure_analysis import (
@@ -39,10 +41,13 @@ from mpcontribs.lux.projects.two_d_mxenes.schemas import (
     ElasticProperties,
     Energetics,
     MXeneEntry,
-    MXeneLabel,
     MXeneProperties,
+    Provenance,
 )
-from mpcontribs.lux.projects.two_d_mxenes.schemas.labels import parse_folder_label
+from mpcontribs.lux.projects.two_d_mxenes.schemas.labels import (
+    parse_folder_label,
+    split_elements,
+)
 from pydantic import ValidationError
 from pymatgen.core import Element, Structure
 
@@ -54,15 +59,22 @@ SPREADSHEET_COLUMNS: dict[str, str] = {
     "formationEnergyPerAtom": "eV/atom",
     "c11": "N/m",
     "c12": "N/m",
+    "c22": "N/m",
     "c66": "N/m",
+    "method": "",
+    "potential": "",
 }
-"""Property columns read from the spreadsheet, and their units.
+"""Columns read from the spreadsheet, and their units.
 
-These are the values that cannot be computed from a structure. To add a
+These are the values that cannot be computed from a structure: properties
+(`load_properties`) and the calculation method (`load_provenance`). To add a
 property, add the field to `schemas/properties.py`, the column here, and its
 mapping in `load_properties`. The MPContribs columns are generated from the
 schema and need no change.
 """
+
+TEXT_COLUMNS: frozenset[str] = frozenset({"mxeneId", "method", "potential"})
+"""Spreadsheet columns that hold text; all others are numbers."""
 
 TEMPLATE_INFO_COLUMNS: dict[str, str] = {
     "M": "",
@@ -71,6 +83,7 @@ TEMPLATE_INFO_COLUMNS: dict[str, str] = {
     "n": "",
     "stacking": "",
     "terminationSite": "",
+    "configuration": "",
     "coordinationSequence": "",
     "a": "angstrom",
     "thickness": "angstrom",
@@ -86,7 +99,7 @@ TEMPLATE_INFO_COLUMNS: dict[str, str] = {
 """
 
 _HEADER = re.compile(r"^\s*(?P<name>[A-Za-z0-9]+)\s*(?:\[(?P<unit>[^\]]*)\])?\s*$")
-_TERM_ORDER = {None: 0, "F": 1, "O": 2}
+_NONMETAL_ORDER = {"C": 0, "N": 1, "C-N": 2}
 
 
 @dataclass(frozen=True)
@@ -108,10 +121,10 @@ class CheckRecord:
     formula: str = ""
     folderLabel: str = ""
     n: int | None = None
-    metal: str = ""
-    nonmetal: str = ""
-    termination: str = ""
-    cellId: str = ""  # the structure this file claims to be, e.g. `Hf2CF2-t-1`
+    metals: str = ""  # e.g. `Ti` or `Ti-Mo`
+    nonmetals: str = ""  # `C`, `N` or `C-N`
+    terminations: str = ""  # e.g. `O` or `O-F`; empty if pristine
+    cellId: str = ""  # the mxeneId this file claims, e.g. `Hf2CF2-t-1`
     measuredCoordination: str = ""
     record: MXeneRecord | None = None
 
@@ -130,7 +143,11 @@ class CheckResult:
     @property
     def valid(self) -> list[MXeneRecord]:
         """Entries with their structures, for files that passed every check."""
-        return [r.record for r in self.records if r.status == "valid"]
+        return [
+            r.record
+            for r in self.records
+            if r.status == "valid" and r.record is not None
+        ]
 
     @property
     def entries(self) -> list[MXeneEntry]:
@@ -180,13 +197,16 @@ def is_auxiliary(path: Path, root: Path) -> bool:
 
 
 def record_from_file(
-    path: str | Path, properties: MXeneProperties | None = None
+    path: str | Path,
+    properties: MXeneProperties | None = None,
+    provenance: Provenance | None = None,
 ) -> MXeneRecord:
     """Build one validated record from a CONTCAR and the label of its folder.
 
     Args:
         path: Path to the CONTCAR.
         properties: Computed properties for this structure, if any.
+        provenance: Calculation method; DFT if None.
 
     Returns:
         The record.
@@ -196,10 +216,15 @@ def record_from_file(
             the structure fails validation.
     """
     path = Path(path)
-    stacking, site = parse_folder_label(path.parent.name)
+    stacking, site, configuration = parse_folder_label(path.parent.name)
     structure = Structure.from_file(path)
     entry = entry_from_structure(
-        structure, stacking=stacking, terminationSite=site, properties=properties
+        structure,
+        stacking=stacking,
+        terminationSite=site,
+        configuration=configuration,
+        properties=properties,
+        provenance=provenance,
     )
     return MXeneRecord(entry=entry, structure=structure, path=path)
 
@@ -231,15 +256,22 @@ def check_dataset(root: str | Path) -> CheckResult:
             structure = Structure.from_file(path)
             rec.formula = plain_formula(structure.composition)
             chem = infer_chemistry(structure.composition)
-            rec.metal, rec.nonmetal, rec.n = chem["metal"], chem["nonmetal"], chem["n"]
-            rec.termination = chem["termination"] or ""
-            stacking, site = parse_folder_label(path.parent.name)
-            rec.cellId = f"{_cell_formula(chem)}-{path.parent.name.lower()}"
+            rec.metals, rec.nonmetals, rec.n = (
+                chem["metals"],
+                chem["nonmetals"],
+                chem["n"],
+            )
+            rec.terminations = chem["terminations"] or ""
+            stacking, site, configuration = parse_folder_label(path.parent.name)
+            rec.cellId = f"{rec.formula}-{path.parent.name.lower()}"
             rec.measuredCoordination = compute_descriptors(
                 structure
             ).coordinationSequence
             entry = entry_from_structure(
-                structure, stacking=stacking, terminationSite=site
+                structure,
+                stacking=stacking,
+                terminationSite=site,
+                configuration=configuration,
             )
         except (ValueError, KeyError, IndexError, OSError) as exc:
             rec.message = _short_error(exc)
@@ -266,6 +298,7 @@ def build_records(
     root: str | Path,
     properties: Mapping[str, MXeneProperties] | None = None,
     skip_invalid: bool = False,
+    provenance: Mapping[str, Provenance] | None = None,
 ) -> list[MXeneRecord]:
     """Build validated records, with properties, for every CONTCAR under `root`.
 
@@ -278,6 +311,8 @@ def build_records(
         skip_invalid: If False (default), the first invalid or duplicate
             structure raises. If True, structures that `check_dataset`
             reports as failed are left out.
+        provenance: Calculation method keyed by `mxeneId` (see
+            `load_provenance`); entries not listed are DFT.
 
     Returns:
         One record per valid structure.
@@ -287,6 +322,7 @@ def build_records(
             `skip_invalid`), or if a property row has no valid structure.
     """
     properties = dict(properties or {})
+    provenance = dict(provenance or {})
     if skip_invalid:
         found = check_dataset(root).valid
     else:
@@ -305,10 +341,10 @@ def build_records(
     entries = [r.entry.model_copy(deep=True) for r in found]
     for entry in entries:
         entry.properties = properties.pop(entry.mxeneId, None)
-    if properties:
-        raise ValueError(
-            f"No valid structure found for spreadsheet rows {sorted(properties)}"
-        )
+        entry.provenance = provenance.pop(entry.mxeneId, Provenance())
+    unmatched = sorted(set(properties) | set(provenance))
+    if unmatched:
+        raise ValueError(f"No valid structure found for spreadsheet rows {unmatched}")
     add_relative_stacking_energies(entries)
     return [
         MXeneRecord(
@@ -324,33 +360,40 @@ def build_entries(
     root: str | Path,
     properties: Mapping[str, MXeneProperties] | None = None,
     skip_invalid: bool = False,
+    provenance: Mapping[str, Provenance] | None = None,
 ) -> list[MXeneEntry]:
     """Entries of `build_records` (same arguments), without the structures.
 
     Returns:
         One validated entry per valid structure.
     """
-    return [r.entry for r in build_records(root, properties, skip_invalid)]
+    return [r.entry for r in build_records(root, properties, skip_invalid, provenance)]
 
 
 def add_relative_stacking_energies(entries: list[MXeneEntry]) -> None:
-    """Fill `relativeStackingEnergy` (meV/atom) within each composition, in place.
+    """Fill `relativeStackingEnergy` (meV/atom), in place.
+
+    Energies are compared within groups of the same reduced formula and the
+    same calculation method (method and potential), over all stackings and
+    configurations.
 
     Args:
         entries: Entries whose properties may contain total energies.
     """
-    groups: dict[str, list[MXeneEntry]] = defaultdict(list)
+    groups: dict[tuple, list[tuple[Energetics, float]]] = defaultdict(list)
     for entry in entries:
-        energetics = entry.properties and entry.properties.energetics
-        if energetics and energetics.totalEnergyPerAtom is not None:
-            groups[entry.labels.formula].append(entry)
-    for group in groups.values():
-        e_min = min(e.properties.energetics.totalEnergyPerAtom for e in group)
-        for entry in group:
-            energetics = entry.properties.energetics
-            energetics.relativeStackingEnergy = 1000.0 * (
-                energetics.totalEnergyPerAtom - e_min
+        energetics = entry.properties.energetics if entry.properties else None
+        if energetics is not None and energetics.totalEnergyPerAtom is not None:
+            key = (
+                entry.descriptors.reducedFormula,
+                entry.provenance.method,
+                entry.provenance.potential,
             )
+            groups[key].append((energetics, energetics.totalEnergyPerAtom))
+    for group in groups.values():
+        e_min = min(energy for _, energy in group)
+        for energetics, energy in group:
+            energetics.relativeStackingEnergy = 1000.0 * (energy - e_min)
 
 
 def load_properties(path: str | Path) -> dict[str, MXeneProperties]:
@@ -370,6 +413,70 @@ def load_properties(path: str | Path) -> dict[str, MXeneProperties]:
         ValueError: On unknown columns, wrong units, duplicate or missing
             `mxeneId`, incomplete elastic constants or invalid values.
     """
+    df = _spreadsheet(path)
+    out: dict[str, MXeneProperties] = {}
+    for row in df.to_dict(orient="records"):
+        for column in SPREADSHEET_COLUMNS:
+            if column not in TEXT_COLUMNS and row.get(column) is not None:
+                row[column] = _number(row[column], row["mxeneId"], column)
+        c11, c12 = row.get("c11"), row.get("c12")
+        c22, c66 = row.get("c22"), row.get("c66")
+        if (c11 is None) != (c12 is None) or (
+            c11 is None and (c22 is not None or c66 is not None)
+        ):
+            raise ValueError(
+                f"{row['mxeneId']}: give both c11 and c12 (and optionally c66, "
+                "or c22 with c66), or leave all elastic constants blank"
+            )
+        if c22 is not None and c66 is None:
+            raise ValueError(f"{row['mxeneId']}: give c66 together with c22")
+        elastic = (
+            ElasticProperties.from_elastic_constants(c11, c12, c66, c22)
+            if c11 is not None
+            else None
+        )
+        energetics = Energetics(
+            totalEnergyPerAtom=row.get("totalEnergyPerAtom"),
+            formationEnergyPerAtom=row.get("formationEnergyPerAtom"),
+        )
+        out[row["mxeneId"]] = MXeneProperties(energetics=energetics, elastic=elastic)
+    return out
+
+
+def load_provenance(path: str | Path) -> dict[str, Provenance]:
+    """Read the calculation method per `mxeneId` from the properties spreadsheet.
+
+    The `method` column holds `DFT` or `MLIP` and `potential` the name of the
+    machine-learning potential. Rows with both blank are DFT and are not
+    returned.
+
+    Args:
+        path: Spreadsheet file (the same file as for `load_properties`).
+
+    Returns:
+        Provenance per `mxeneId`, for rows that give a method or potential.
+
+    Raises:
+        ValueError: On the errors of `load_properties`, or an unknown method or
+            a potential without `MLIP` (and vice versa).
+    """
+    out: dict[str, Provenance] = {}
+    for row in _spreadsheet(path).to_dict(orient="records"):
+        method, potential = row.get("method"), row.get("potential")
+        if method is None and potential is None:
+            continue
+        try:
+            out[row["mxeneId"]] = Provenance(
+                method=str(method).strip() if method is not None else "DFT",
+                potential=str(potential).strip() if potential is not None else None,
+            )
+        except ValidationError as exc:
+            raise ValueError(f"{row['mxeneId']}: {_short_error(exc)}") from None
+    return out
+
+
+def _spreadsheet(path: str | Path) -> pd.DataFrame:
+    """Read and check the spreadsheet columns; one row per `mxeneId`."""
     path = Path(path)
     df = _read_table(path)
     renamed = {}
@@ -392,29 +499,7 @@ def load_properties(path: str | Path) -> dict[str, MXeneProperties]:
         dupes = df.loc[df["mxeneId"].duplicated(), "mxeneId"].tolist()
         raise ValueError(f"Duplicate mxeneId values: {dupes}")
 
-    df = df.astype(object).where(pd.notna(df), None)
-    out: dict[str, MXeneProperties] = {}
-    for row in df.to_dict(orient="records"):
-        for column in SPREADSHEET_COLUMNS:
-            if column != "mxeneId" and row.get(column) is not None:
-                row[column] = _number(row[column], row["mxeneId"], column)
-        c11, c12, c66 = row.get("c11"), row.get("c12"), row.get("c66")
-        if (c11 is None) != (c12 is None) or (c66 is not None and c11 is None):
-            raise ValueError(
-                f"{row['mxeneId']}: give both c11 and c12 (and optionally c66), "
-                "or leave all three blank"
-            )
-        elastic = (
-            ElasticProperties.from_elastic_constants(c11, c12, c66)
-            if c11 is not None
-            else None
-        )
-        energetics = Energetics(
-            totalEnergyPerAtom=row.get("totalEnergyPerAtom"),
-            formationEnergyPerAtom=row.get("formationEnergyPerAtom"),
-        )
-        out[row["mxeneId"]] = MXeneProperties(energetics=energetics, elastic=elastic)
-    return out
+    return df.astype(object).where(pd.notna(df), None)
 
 
 def template_rows(
@@ -434,12 +519,13 @@ def template_rows(
     for entry in sorted(entries, key=_entry_sort_key):
         lab, desc = entry.labels, entry.descriptors
         info = {
-            "M": lab.metal,
-            "X": lab.nonmetal,
-            "T": lab.termination or "none",
+            "M": lab.metals,
+            "X": lab.nonmetals,
+            "T": lab.terminations or "none",
             "n": lab.n,
             "stacking": lab.stacking,
             "terminationSite": lab.terminationSite or "none",
+            "configuration": lab.configuration or "",
             "coordinationSequence": desc.coordinationSequence,
             "a": round(desc.a, 4),
             "thickness": round(desc.thickness, 4),
@@ -453,7 +539,7 @@ def template_rows(
             "spaceGroup": desc.spaceGroupSymbol,
             "file": files.get(entry.mxeneId, ""),
         }
-        row = {_header("mxeneId", ""): entry.mxeneId}
+        row: dict[str, Any] = {_header("mxeneId", ""): entry.mxeneId}
         row.update({_header(k, TEMPLATE_INFO_COLUMNS[k]): v for k, v in info.items()})
         row.update({c: None for c in _fill_columns()})
         rows.append(row)
@@ -537,7 +623,7 @@ def termination_site_table(result: CheckResult) -> dict[tuple, Counter]:
         if rec.status == "skipped" or not rec.measuredCoordination:
             continue
         try:
-            stacking, site = parse_folder_label(rec.folderLabel)
+            stacking, site, _ = parse_folder_label(rec.folderLabel)
         except ValueError:
             continue
         seq = rec.measuredCoordination.split("-")
@@ -582,7 +668,9 @@ def main(argv: list[str] | None = None) -> int:
     """
     import argparse
 
-    parser = argparse.ArgumentParser(description=main.__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser(
+        description=(main.__doc__ or "").strip().split("\n")[0]
+    )
     parser.add_argument("root", help="Root folder of the CONTCAR tree")
     parser.add_argument("--report", help="Write a per-structure CSV report here")
     parser.add_argument(
@@ -612,11 +700,12 @@ def main(argv: list[str] | None = None) -> int:
     counts: dict[tuple, int] = defaultdict(int)
     for e in result.entries:
         lab = e.labels
-        counts[(lab.metal, lab.nonmetal, lab.termination or "-", lab.n)] += 1
+        counts[(lab.metals, lab.nonmetals, lab.terminations or "-", lab.n)] += 1
     if counts:
-        print(f"{'M':<4}{'X':<4}{'T':<4}{'n':<4}count")
+        width = max(4, *(len(k[0]) + 2 for k in counts))
+        print(f"{'M':<{width}}{'X':<5}{'T':<8}{'n':<4}count")
         for (m, x, t, n), count in sorted(counts.items()):
-            print(f"{m:<4}{x:<4}{t:<4}{n:<4}{count}")
+            print(f"{m:<{width}}{x:<5}{t:<8}{n:<4}{count}")
         print()
 
     table = termination_site_table(result)
@@ -647,15 +736,19 @@ def main(argv: list[str] | None = None) -> int:
         write_overview(result, args.overview, root, out_of_scope=scope)
         print(f"Overview written to {args.overview}")
     if args.template:
-        files = {r.entry.mxeneId: str(r.path.relative_to(root)) for r in result.valid}
-        counts = write_properties_template(result.entries, args.template, files)
+        files = {
+            r.entry.mxeneId: str(r.path.relative_to(root))
+            for r in result.valid
+            if r.path is not None
+        }
+        written = write_properties_template(result.entries, args.template, files)
         print(
-            f"Properties template written to {args.template}: {counts['rows']} "
-            f"structures, values kept for {counts['kept']}"
+            f"Properties template written to {args.template}: {written['rows']} "
+            f"structures, values kept for {written['kept']}"
         )
-        if counts["orphaned"]:
+        if written["orphaned"]:
             print(
-                f"  {counts['orphaned']} filled rows no longer match a valid "
+                f"  {written['orphaned']} filled rows no longer match a valid "
                 f"structure; moved to {Path(args.template).with_suffix('.orphaned.csv')}"
             )
     return 1 if result.failures else 0
@@ -669,12 +762,6 @@ def _is_label(name: str) -> bool:
     return True
 
 
-def _cell_formula(chem: dict) -> str:
-    return MXeneLabel(
-        **chem, stacking="t", terminationSite=1 if chem["termination"] else None
-    ).formula
-
-
 def _short_error(exc: Exception) -> str:
     if isinstance(exc, ValidationError):
         msgs = [e["msg"].removeprefix("Value error, ") for e in exc.errors()]
@@ -683,15 +770,20 @@ def _short_error(exc: Exception) -> str:
 
 
 def _entry_sort_key(entry: MXeneEntry) -> tuple:
-    """Order of the overview grid: metal (by Z), X, n, termination, label."""
+    """Order of the overview grid: metals (by Z), X, n, terminations, label."""
     lab = entry.labels
     return (
-        Element(lab.metal).Z,
-        lab.nonmetal,
+        lab.nMetals,
+        _z_key(lab.metals),
+        _NONMETAL_ORDER[lab.nonmetals],
         lab.n,
-        _TERM_ORDER[lab.termination],
+        (0, ()) if lab.terminations is None else (1, _z_key(lab.terminations)),
         lab.label,
     )
+
+
+def _z_key(elements: str) -> tuple[int, ...]:
+    return tuple(Element(s).Z for s in split_elements(elements))
 
 
 def _number(value, mxene_id: str, column: str) -> float:
@@ -725,7 +817,11 @@ def _read_table(path: Path) -> pd.DataFrame:
     pandas would otherwise turn placeholders such as `N/A` or `null` into
     blanks silently; here they are kept as text and rejected on validation.
     """
-    options = {"dtype": {"mxeneId": str}, "keep_default_na": False, "na_values": [""]}
+    options = {
+        "dtype": dict.fromkeys(TEXT_COLUMNS, str),
+        "keep_default_na": False,
+        "na_values": [""],
+    }
     if path.suffix.lower() == ".csv":
         return pd.read_csv(path, encoding="utf-8-sig", **options)
     return pd.read_excel(path, **options)

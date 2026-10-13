@@ -13,20 +13,27 @@ lattice vectors a and b, and c points along the surface normal.
 from __future__ import annotations
 
 from functools import cache
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 UNIT = "unit"
 """Key of the unit in a field's `json_schema_extra`; absent for text fields."""
 
-FORMULA_PATTERN = r"^(?:[A-Z][a-z]?[0-9]{0,2}){2,3}$"
-"""Reduced formula of an M_{n+1}X_nT_x slab: two or three element symbols."""
+FORMULA_PATTERN = r"^(?:[A-Z][a-z]?[0-9]{0,3}){2,16}$"
+"""Reduced formula of an M_{n+1}X_nT_x slab: 2 to 16 element symbols with
+integer counts (up to 10 metals, 2 X elements and 4 terminations)."""
 
-LAYER_SEQUENCE_PATTERN = r"^[A-Z][a-z]?(?:-[A-Z][a-z]?){2,8}$"
-"""3 to 9 element symbols joined by `-`."""
+_LAYER = r"[A-Z][a-z]?(?:/[A-Z][a-z]?){0,9}"
+LAYER_SEQUENCE_PATTERN = rf"^{_LAYER}(?:-{_LAYER}){{2,10}}$"
+"""3 to 11 layers joined by `-` (up to M5X4T2). A layer is an element symbol,
+or the symbols of a mixed layer joined by `/`, e.g. `Ti/V`."""
 
 COORDINATION_SEQUENCE_PATTERN = r"^[OP](?:-[OP]){0,8}$"
-"""1 to 9 coordination letters joined by `-`."""
+"""1 to 9 coordination letters joined by `-` (up to M5X4T2)."""
+
+MetalArrangement = Literal["single", "out-of-plane ordered", "in-plane mixed"]
+"""How the metals are distributed over the metal layers."""
 
 
 @cache
@@ -37,7 +44,8 @@ def space_group_numbers() -> dict[str, int]:
     table = {}
     for hall_number in range(1, 531):
         sg_type = spglib.get_spacegroup_type(hall_number)
-        table[sg_type.international_short] = sg_type.number
+        if sg_type is not None:
+            table[sg_type.international_short] = sg_type.number
     return table
 
 
@@ -47,10 +55,11 @@ class StructureDescriptors(BaseModel):
     model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
 
     reducedFormula: str = Field(
-        max_length=16,
+        max_length=80,
         pattern=FORMULA_PATTERN,
-        description="Reduced chemical formula of the slab in M, X, T order, "
-        "e.g. `Hf2CF2` or `Ti3C2O2`.",
+        description="Reduced chemical formula of the slab: metals, then X, "
+        "then terminations, each group by atomic number, e.g. `Hf2CF2`, "
+        "`Ti3C2O2` or `TiMo2C2`.",
     )
     nSites: int = Field(
         ge=3,
@@ -105,10 +114,11 @@ class StructureDescriptors(BaseModel):
         json_schema_extra={UNIT: "Å"},
     )
     layerSequence: str = Field(
-        max_length=32,
+        max_length=256,
         pattern=LAYER_SEQUENCE_PATTERN,
-        description="Element of each atomic layer from bottom to top, joined "
-        "by `-`, e.g. `F-Hf-C-Hf-F`.",
+        description="Elements of each atomic layer from bottom to top, joined "
+        "by `-`; a mixed layer lists its elements by atomic number joined by "
+        "`/`, e.g. `F-Hf-C-Hf-F`, `Mo-C-Ti-C-Mo` or `Ti/V-C-Ti/V`.",
     )
     coordinationSequence: str = Field(
         max_length=17,
@@ -117,6 +127,12 @@ class StructureDescriptors(BaseModel):
         "joined by `-`: `O` (octahedral) if the layers directly below and "
         "above it are staggered, `P` (trigonal prismatic) if they are "
         "eclipsed, e.g. `O-P-O`. The outermost layers have no entry.",
+    )
+    metalArrangement: MetalArrangement = Field(
+        description="Distribution of the metals over the metal layers: "
+        "`single` (one metal), `out-of-plane ordered` (each metal layer holds "
+        "one element, e.g. Mo2TiC2) or `in-plane mixed` (at least one metal "
+        "layer holds several elements: in-plane ordered or solid solution).",
     )
     metalNonmetalBondLength: float = Field(
         gt=0,
@@ -140,8 +156,8 @@ class StructureDescriptors(BaseModel):
     spaceGroupNumber: int = Field(
         ge=1,
         le=230,
-        description="International number of `spaceGroupSymbol`.",
-        json_schema_extra={UNIT: ""},
+        description="International number of `spaceGroupSymbol`. Stored as a "
+        "label (text column), not as a quantity.",
     )
 
     @model_validator(mode="after")

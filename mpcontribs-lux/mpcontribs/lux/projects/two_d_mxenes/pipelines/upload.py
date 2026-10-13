@@ -19,7 +19,7 @@ import json
 from collections.abc import Iterator, Sequence
 from pathlib import Path
 from types import UnionType
-from typing import Literal, Union, get_args, get_origin
+from typing import Any, Literal, Union, get_args, get_origin
 
 from emmet.core.vasp.calc_types import RunType
 from mpcontribs.lux.projects.two_d_mxenes.schemas import MXeneEntry
@@ -39,17 +39,24 @@ VdwCorrection = Literal[
 """Dispersion corrections available in VASP (`IVDW` settings)."""
 
 PotcarSet = Literal[
-    "PBE", "PBE_52", "PBE_54", "PBE_64", "LDA", "LDA_52", "LDA_54", "LDA_64"
-]
-"""VASP POTCAR sets."""
+    "PBE", "PBE_52", "PBE_52_W_HASH", "PBE_54", "PBE_54_W_HASH", "PBE_64",
+    "LDA", "LDA_52", "LDA_52_W_HASH", "LDA_54", "LDA_54_W_HASH", "LDA_64",
+    "PW91", "LDA_US", "PW91_US", "Perdew_Zunger81",
+]  # fmt: skip
+"""VASP POTCAR sets, as named by pymatgen (`PotcarSingle.functional_dir`)."""
 
 ElasticMethod = Literal["stress-strain", "energy-strain"]
 """Methods for computing elastic constants from finite strains."""
 
-POTCAR_SYMBOLS_PATTERN = (
-    r"^[A-Z][a-z]?(?:_[A-Za-z0-9]{1,4})?(?:, [A-Z][a-z]?(?:_[A-Za-z0-9]{1,4})?){0,9}$"
+_POTCAR_SYMBOL = r"[A-Z][a-z]?(?:_[A-Za-z0-9]{1,4}){0,2}(?:\.[0-9]{1,3})?"
+POTCAR_SYMBOLS_PATTERN = rf"^{_POTCAR_SYMBOL}(?:,\s*{_POTCAR_SYMBOL}){{0,9}}$"
+"""Comma-separated POTCAR symbols, e.g. `Ti_sv, C, O` or `Nb_sv_GW,C,Cl`."""
+
+CODE_VERSION_PATTERN = (
+    r"^\d{1,2}\.\d{1,2}(?:\.\d{1,2})?(?:[.-][0-9A-Za-z][0-9A-Za-z.-]{0,30})?$"
 )
-"""Comma-separated POTCAR symbols, e.g. `Ti_sv, C, O`."""
+"""A version number with an optional build tag, e.g. `6.4.2` or
+`5.4.4.18Apr17-6-g9f103f2a35` (as printed in the OUTCAR header)."""
 
 
 class CalculationSettings(BaseModel):
@@ -67,8 +74,8 @@ class CalculationSettings(BaseModel):
     )
     codeVersion: str | None = Field(
         None,
-        max_length=16,
-        pattern=r"^\d{1,2}\.\d{1,2}(?:\.\d{1,2}){0,2}$",
+        max_length=40,
+        pattern=CODE_VERSION_PATTERN,
         description="Version of the simulation code, e.g. `6.4.2`.",
     )
     functional: RunType | None = Field(
@@ -156,8 +163,9 @@ def _iter_fields(model: type[BaseModel], prefix: str = "") -> Iterator[tuple]:
         if nested is not None:
             yield from _iter_fields(nested, f"{path}.")
         else:
-            extra = info.json_schema_extra or {}
-            yield path, extra.get(UNIT), info.description or ""
+            extra = info.json_schema_extra
+            unit = extra.get(UNIT) if isinstance(extra, dict) else None
+            yield path, unit, info.description or ""
 
 
 MPCONTRIBS_COLUMNS: dict[str, str | None] = {
@@ -292,7 +300,7 @@ def read_parquet(
 
 def _format_data(data: dict, prefix: str = "") -> dict:
     """Write numbers as strings with units, following `MPCONTRIBS_COLUMNS`."""
-    out = {}
+    out: dict[str, Any] = {}
     for key, value in data.items():
         path = f"{prefix}{key}"
         if isinstance(value, dict):

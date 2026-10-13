@@ -14,6 +14,7 @@ from mpcontribs.lux.projects.two_d_mxenes.schemas.properties import (
     Energetics,
     MXeneProperties,
 )
+from mpcontribs.lux.projects.two_d_mxenes.schemas.provenance import Provenance
 
 __all__ = [
     "ElasticProperties",
@@ -21,5 +22,6 @@ __all__ = [
     "MXeneEntry",
     "MXeneLabel",
     "MXeneProperties",
+    "Provenance",
     "StructureDescriptors",
 ]

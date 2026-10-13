@@ -24,8 +24,8 @@ Code that converts a tree of relaxed VASP `CONTCAR` files and a properties sprea
 
 | module | purpose | main contents |
 |---|---|---|
-| `structure_analysis.py` | Turns a pymatgen `Structure` into an `MXeneEntry`: reads M, X, T and n from the composition, groups atoms into layers, measures the O/P coordination of every interior layer, and computes the geometric descriptors. | `infer_chemistry`, `compute_descriptors`, `entry_from_structure`, `plain_formula`; tolerances `LAYER_Z_TOLERANCE`, `ECLIPSED_XY_TOLERANCE`, `SYMPREC` |
-| `build_contributions.py` | Works on a folder tree: finds the `CONTCAR` files, checks all of them (command line), reads and writes the properties spreadsheet, and builds records. A record (`MXeneRecord`) pairs a validated entry with the structure it was computed from and its file. | `check_dataset`, `build_records`, `build_entries`, `load_properties`, `write_properties_template`, `main` |
+| `structure_analysis.py` | Turns a pymatgen `Structure` into an `MXeneEntry`: reads M, X, T (one or more elements each) and n from the composition, groups atoms into layers (a layer may mix elements of one role), measures the O/P coordination of every interior layer, and computes the geometric descriptors. | `infer_chemistry`, `compute_descriptors`, `entry_from_structure`, `plain_formula`; tolerances `LAYER_Z_TOLERANCE`, `ECLIPSED_XY_TOLERANCE`, `SYMPREC` |
+| `build_contributions.py` | Works on a folder tree: finds the `CONTCAR` files, checks all of them (command line), reads and writes the properties spreadsheet, and builds records. A record (`MXeneRecord`) pairs a validated entry with the structure it was computed from and its file. | `check_dataset`, `build_records`, `build_entries`, `load_properties`, `load_provenance`, `write_properties_template`, `main` |
 | `upload.py` | Everything that leaves the project: the MPContribs column definitions (generated from the schema), contributions, the project's `other` metadata including the DFT settings, and Parquet files. | `CalculationSettings`, `MPCONTRIBS_COLUMNS`, `MPCONTRIBS_COLUMN_DESCRIPTIONS`, `to_contribution`, `project_other`, `write_parquet`, `read_parquet` |
 | `dataset_overview.py` | Excel overview of which structures are present, failing or missing. | `write_overview`, `grid_states`, `parse_scope_exclusion` |
 
@@ -35,6 +35,7 @@ Data flow:
 CONTCAR ──structure_analysis──▶ MXeneEntry (schemas) ──build_contributions──▶ MXeneRecord (entry + Structure)
                                                                                     │
 spreadsheet ──load_properties──▶ MXeneProperties ───────────────────────────────────┤
+            └─load_provenance──▶ Provenance (DFT/MLIP) ─────────────────────────────┤
                                                                                     ▼
                                                     upload: to_contribution ──▶ MPContribs (data + structures)
                                                             write_parquet   ──▶ Parquet
@@ -63,13 +64,15 @@ DATA_ROOT/
 ├── Ti/carbides/n1/pristine/t/CONTCAR     pristine: no suffix
 ├── Ti/carbides/n2/O/h1a-2/CONTCAR
 ├── Mo/nitrides/n3/F/h1b-1/CONTCAR        any names and depth above the label folder
+├── TiVNbMo/carbides/n3/O/t-1-c1/CONTCAR  configuration 1 of a high-entropy MXene
+├── TiVNbMo/carbides/n3/O/t-1-c2/CONTCAR  configuration 2: same composition and label
 └── Mo/carbides/n2/pristine/h1a/
     ├── CONTCAR                           the entry
     └── supercell/phonon/CONTCAR          auxiliary calculation: skipped
 ```
 
 - Structure files are named `CONTCAR`.
-- The folder directly containing a `CONTCAR` is its **label**: `t` or `h` (n = 1), or `t`, `h1a`, `h1b`, `h2` (n ≥ 2), followed by `-1` or `-2` for terminated MXenes. Labels are case-insensitive; the hyphen is required.
+- The folder directly containing a `CONTCAR` is its **label**: `t` or `h` (n = 1), or `t`, `h1a`, `h1b`, `h2` (n ≥ 2), followed by `-1` or `-2` for terminated MXenes, and optionally by `-c<k>` (k = 1–999) to number different atomic arrangements of the same composition and stacking (e.g. special quasirandom structures). Labels are case-insensitive; the hyphens are required.
 - Folders above the label folder are not read.
 - A `CONTCAR` in a sub-folder of a label folder is an auxiliary calculation on that entry and is skipped. A `CONTCAR` in any other folder is reported as an error.
 
@@ -89,7 +92,7 @@ python -m mpcontribs.lux.projects.two_d_mxenes.pipelines.build_contributions DAT
 | *(none)* | console summary |
 | `--report FILE.csv` | one row per `CONTCAR` with status and reason |
 | `--overview FILE.xlsx` | Excel overview grid (requires `openpyxl`) |
-| `--out-of-scope M:T` | marks a metal/termination combination as not expected in the overview, e.g. `Hf:O`, `Re:none` (pristine) or `*:O` (every metal); repeatable |
+| `--out-of-scope M:T` | marks a metal/termination combination as not expected in the overview, e.g. `Hf:O`, `Re:none` (pristine), `*:O` (every system) or `Ti-Mo:O-F` (element lists joined by `-`); repeatable |
 | `--template FILE.csv` | properties spreadsheet with one row per valid structure; an existing file is refreshed and its entered values are kept |
 
 The exit code is `0` if every structure passes and `1` otherwise.
@@ -97,7 +100,7 @@ The exit code is `0` if every structure passes and `1` otherwise.
 Console output:
 
 1. **Counts**: `N structures valid, N failed, N skipped (auxiliary calculations)`.
-2. **Composition table**: valid structures per M, X, T and n.
+2. **Composition table**: valid structures per metals, X, terminations and n.
 3. **Termination-site table**: the outer-metal coordination measured on the bottom and top surfaces for each n/label combination, including failed structures. Each row of a conforming set shows a single value matching the [termination-site rule](../README.md#termination-site).
 4. **Failures**: one line per failing file with its reason.
 
@@ -111,7 +114,7 @@ Console output:
 |---|---|
 | `path` | path relative to `DATA_ROOT` |
 | `status` | `valid`, `failed` or `skipped` |
-| `formula` | reduced formula of the atoms in the file, e.g. `Hf3C2F2` |
+| `formula` | reduced formula of the atoms in the file, e.g. `Hf3C2F2` or `TiMo2C2` |
 | `folderLabel` | name of the folder containing the file |
 | `measuredCoordination` | full O/P sequence, also for failed files where it can be measured |
 | `mxeneId` | ID of the accepted record (valid files only) |
@@ -119,8 +122,8 @@ Console output:
 
 ### `--overview` (Excel)
 
-- **Overview**: one row per M–X system (every transition metal found, in order of atomic number, with C and N) and one column per possible structure (50 columns: n → termination → label). Cell symbols:
-  - ✓ the `CONTCAR` passes every check
+- **Overview**: one row per M–X system (every single transition metal found, in order of atomic number, with C and with N; then every other system found, e.g. `Ti-Mo | C` or `Ti | C-N`) and one column per possible structure, grouped n → termination → label (50 columns for n = 1–3 and none/F/O; any other n or termination found in the data, including mixed terminations such as `O-F`, adds its columns). Cell symbols:
+  - ✓ the `CONTCAR` passes every check (several configurations `-c<k>` share one cell)
   - ✗ the `CONTCAR` fails; the cell comment gives the file and reason
   - ○ no `CONTCAR`
   - grey: excluded with `--out-of-scope`
@@ -146,7 +149,7 @@ Each failing file reports one of the messages below. Failures are resolved by co
 |---|---|---|
 | `Unrecognized MXene folder label 'X'` | the containing folder is not a label and is not inside a label folder | rename the folder to the label, or move the auxiliary calculation into its entry folder |
 | `Stacking 'h1a' is not defined for n=1; expected one of ['h', 't']` | the label is not allowed for this thickness | move the file to the correct folder, or correct the folder name |
-| `terminationSite must be set if and only if termination is set` | a pristine structure in a `-1`/`-2` folder, or a terminated structure in a folder without a suffix | move the file, or correct the folder name |
+| `terminationSite must be set if and only if terminations is set` | a pristine structure in a `-1`/`-2` folder, or a terminated structure in a folder without a suffix | move the file, or correct the folder name |
 | pymatgen `ValueError`, `IndexError` or `OSError` | the file is empty, truncated or not in POSCAR/CONTCAR format | replace the file with the complete output of the calculation |
 | `Lattice vectors a and b must lie in the xy plane (sheet plane)` | the sheet is not in the a–b plane | re-orient the cell so that c is the surface normal |
 | pydantic messages on `descriptors` fields, e.g. `String should match pattern`, `should be less than 180`, `at most 12 characters` | a computed descriptor is outside its allowed range or form, e.g. a cell angle of 180° or more, or a sheet with more than 9 layers | the structure is outside the schema; check the file |
@@ -156,10 +159,13 @@ Each failing file reports one of the messages below. Failures are resolved by co
 
 | message | meaning | resolution |
 |---|---|---|
-| `Cannot infer MXene labels from <formula>` (optionally `: unsupported element(s) [...]`) | not exactly one transition metal, one of C/N and at most one of F/O (e.g. a double-metal sheet, mixed terminations, or another element such as Cl or B) | outside the schema: remove the file, or extend the schema (see [Extending the schema](../README.md#extending-the-schema)) |
-| `Not an M_(n+1)X_n composition: <formula>` | the metal count is not one more than the X count per formula unit | replace the file |
-| `Labels imply <A> but the structure is <B>` | e.g. a termination on only one surface (M₂XT₁) | outside the schema: remove the file |
-| `Labels imply layers <A> but the structure has <B>` | the atomic layers are not in the order M, X, …, M (with T outside) | outside the schema: remove the file |
+| `Cannot infer MXene labels from <formula>: unsupported element(s) [...]` | an element other than a transition metal, C, N, F, Cl, Br, I, O, S, Se or Te (e.g. H or B) | outside the schema: remove the file, or extend the schema (see [Extending the schema](../README.md#extending-the-schema)) |
+| `Cannot infer MXene labels from <formula>: needs a transition metal and C or N` | no metal or no X element | replace the file |
+| `Not an M_(n+1)X_n composition: <formula>` | the total amounts of M and X are not (n+1) : n for an integer n (e.g. a vacancy) | replace the file |
+| `Not a fully terminated M_(n+1)X_nT_2 composition` | e.g. a termination on only one surface (M₂XT₁) | outside the schema: remove the file |
+| `Labels give <role> elements [...] but the structure ... has [...]`, `... is not M_(n+1)X_n with n=…`, `... does not have T_2 per formula unit` | a hand-written record whose labels disagree with its formula | only occurs for hand-written records |
+| `Labels imply N atomic layers (...) but the structure has M` / `Layer k (...) of <sequence> should hold <role> elements [...]` | the atomic layers are not in the order M, X, …, M (with T outside), e.g. an antisite atom | outside the schema: remove the file |
+| `metalArrangement is ... but the metal layers [...] are ...` | a hand-written record whose arrangement disagrees with its layer sequence | only occurs for hand-written records |
 | `mxeneId must be '<id>', got '<other>'` | a hand-written record has an ID that does not match its labels | only occurs for hand-written records |
 | `Duplicate '<id>': also claimed by <other file>` | two or more files describe the same `mxeneId`; all are rejected | see [Duplicates](#duplicates) |
 
@@ -169,7 +175,8 @@ Each failing file reports one of the messages below. Failures are resolved by co
 |---|---|---|
 | `Stacking 's' implies core coordination X but the structure has Y` | the metal/X layers are not stacked as the label states | see [Structure does not match its label](#structure-does-not-match-its-label) |
 | `Termination site k of 's' (n=…) implies outer-metal coordination C on both surfaces but the structure has (…)` | the termination occupies the other site, or different sites on the two surfaces | see [Structure does not match its label](#structure-does-not-match-its-label) |
-| `Mixed-species atomic layer found: [...] at z = [...] Å; ...` | atoms of different elements lie within 0.4 Å of each other along the normal | see [Strongly distorted structures](#strongly-distorted-structures) |
+| `Atomic layer mixes roles: [...] at z = [...] Å; ...` | metal, X or termination atoms lie within 0.4 Å of each other along the normal (several elements of one role in a layer are allowed) | see [Strongly distorted structures](#strongly-distorted-structures) |
+| `Space group <s> is not hexagonal: give c22 and c66` / `Space group <s> is hexagonal, so c22 must equal c11` | the elastic constants do not fit the symmetry of the cell (alloy and supercell cells are often not hexagonal) | give C22 and C66 for non-hexagonal cells; leave C22 blank for hexagonal ones |
 
 ### Duplicates
 
@@ -212,20 +219,24 @@ The template has one row per valid structure, in the order of the overview grid.
 | columns | content |
 |---|---|
 | `mxeneId` | key matching rows to structures; not edited |
-| `M`, `X`, `T`, `n`, `stacking`, `terminationSite`, `coordinationSequence`, `a [angstrom]`, `thickness [angstrom]`, `vacuum [angstrom]`, `metalNonmetalBondLength [angstrom]`, `metalTerminationBondLength [angstrom]`, `spaceGroup`, `file` | read-only information computed from the structures; ignored when the file is read |
-| `totalEnergyPerAtom [eV/atom]` | DFT total energy of the relaxed slab per atom; used to compute `relativeStackingEnergy` |
+| `M`, `X`, `T`, `n`, `stacking`, `terminationSite`, `configuration`, `coordinationSequence`, `a [angstrom]`, `thickness [angstrom]`, `vacuum [angstrom]`, `metalNonmetalBondLength [angstrom]`, `metalTerminationBondLength [angstrom]`, `spaceGroup`, `file` | read-only information computed from the structures; ignored when the file is read |
+| `totalEnergyPerAtom [eV/atom]` | total energy of the relaxed slab per atom; used to compute `relativeStackingEnergy` |
 | `formationEnergyPerAtom [eV/atom]` | formation energy per atom; the reference states are stated in the project description |
 | `c11 [N/m]`, `c12 [N/m]` | 2D elastic constants per unit area (not GPa) |
-| `c66 [N/m]` | optional; (C11 − C12)/2 when blank |
+| `c22 [N/m]` | only for non-hexagonal cells (e.g. alloy or supercell cells of lower symmetry); blank means C22 = C11 |
+| `c66 [N/m]` | (C11 − C12)/2 when blank for a hexagonal sheet; required with `c22` |
+| `method` | `DFT` (or blank) or `MLIP` |
+| `potential` | for `MLIP`: name and version of the potential, e.g. `MACE-MP-0-medium`; blank for DFT |
 
 Filling rules:
 
 - Property cells contain numbers or are blank. Placeholders such as `N/A`, `-` or `0` for unknown values are not used.
-- `c11` and `c12` are given together (optionally with `c66`), or all three are blank.
+- `c11` and `c12` are given together (optionally with `c66`), or all elastic constants are blank. For a non-hexagonal cell `c22` and `c66` are also given.
+- The method applies to the relaxation and all properties of the row; a structure computed with both methods is entered as two structures (e.g. two configurations or folders).
 - Headers keep their units. A header with a different unit (e.g. `[GPa]`) is rejected when the file is read.
 - The file may be saved as `.csv` or `.xlsx`.
 
-Young's modulus, Poisson's ratio, shear modulus and Born stability are computed from C11, C12 and C66. The relative stacking energy is computed from total energies within each composition.
+Young's modulus, Poisson's ratio (for C22 = C11 only), shear modulus and Born stability are computed from the elastic constants. The relative stacking energy is computed from total energies within each reduced formula and method.
 
 ### Refreshing the template
 
@@ -246,7 +257,9 @@ The MPContribs columns, units and descriptions are generated from the schema, so
 |---|---|
 | `Spreadsheet has unrecognized column 'X'` | restore the template column, or add the property as above |
 | `Column 'c11 [GPa]' has unit 'GPa', expected 'N/m'` | convert the values and restore the header |
-| `<id>: give both c11 and c12 (and optionally c66), or leave all three blank` | complete or clear the row's elastic constants |
+| `<id>: give both c11 and c12 (and optionally c66, or c22 with c66), or leave all elastic constants blank` | complete or clear the row's elastic constants |
+| `<id>: give c66 together with c22` | add C66, or clear C22 for a hexagonal cell |
+| `<id>: potential must be given if and only if method is MLIP` | name the potential for `MLIP` rows; clear it for DFT rows |
 | `Duplicate mxeneId values: [...]` | remove the duplicated row |
 | `Spreadsheet is missing required column 'mxeneId'` | restore the key column |
 | `<id>: <column> must be a number or blank, got 'N/A'` | replace the text in the numeric cell with a number, or clear it |
@@ -274,14 +287,15 @@ export MPCONTRIBS_API_KEY="<api key>"                  # macOS/Linux
 
 ```python
 from mpcontribs.lux.projects.two_d_mxenes.pipelines.build_contributions import (
-    build_records, load_properties,
+    build_records, load_properties, load_provenance,
 )
 from mpcontribs.lux.projects.two_d_mxenes.pipelines.upload import (
     to_contribution, write_parquet,
 )
 
 props = load_properties("properties.csv")          # or .xlsx
-records = build_records("DATA_ROOT", properties=props)
+methods = load_provenance("properties.csv")        # rows marked MLIP; others are DFT
+records = build_records("DATA_ROOT", properties=props, provenance=methods)
 contributions = [to_contribution(r.entry, r.structure) for r in records]
 write_parquet(
     [r.entry for r in records], "two_d_mxenes.parquet", [r.structure for r in records]
@@ -334,6 +348,8 @@ client.update_project({
     ],
     "other": project_other(settings),   # column descriptions and DFT settings
 })
+# For MLIP entries, add a reference to the potential and its training data
+# (e.g. a DOI on MDF or Zenodo) to "references".
 client.init_columns(MPCONTRIBS_COLUMNS)
 ```
 
@@ -402,13 +418,14 @@ client.make_public(recursive=True)   # project and contributions
 |---|---|---|
 | `structure_analysis` | `infer_chemistry(composition)` | M, X, T and n of a composition |
 | `structure_analysis` | `compute_descriptors(structure)` | validated `StructureDescriptors` of a slab |
-| `structure_analysis` | `entry_from_structure(structure, stacking, terminationSite=None, properties=None)` | validated `MXeneEntry` |
-| `structure_analysis` | `plain_formula(composition)` | ungrouped reduced formula, e.g. `Hf3C2F2` |
+| `structure_analysis` | `entry_from_structure(structure, stacking, terminationSite=None, properties=None, configuration=None, provenance=None)` | validated `MXeneEntry` |
+| `structure_analysis` | `plain_formula(composition)` | ungrouped reduced formula, e.g. `Hf3C2F2` or `TiMo2C2` |
 | `build_contributions` | `check_dataset(root)` | check every `CONTCAR`, collecting all failures; returns `CheckResult` (`.records`, `.valid`, `.entries`, `.failures`, `.skipped`) |
-| `build_contributions` | `build_records(root, properties=None, skip_invalid=False)` | `MXeneRecord`s (entry, structure, path) with properties and relative stacking energies |
+| `build_contributions` | `build_records(root, properties=None, skip_invalid=False, provenance=None)` | `MXeneRecord`s (entry, structure, path) with properties, provenance and relative stacking energies |
 | `build_contributions` | `build_entries(...)` | the entries of `build_records` |
 | `build_contributions` | `record_from_file(path)` | one record from one `CONTCAR` |
 | `build_contributions` | `load_properties(path)` | properties CSV/XLSX as `{mxeneId: MXeneProperties}` |
+| `build_contributions` | `load_provenance(path)` | method columns of the same file as `{mxeneId: Provenance}` (non-DFT or explicit rows) |
 | `build_contributions` | `write_properties_template(entries, path, files=None)` | write or refresh the properties CSV |
 | `build_contributions` | `termination_site_table(result)`, `write_report(result, path, root)` | console table and `--report` CSV |
 | `upload` | `CalculationSettings` | DFT settings of the project |
@@ -417,7 +434,7 @@ client.make_public(recursive=True)   # project and contributions
 | `upload` | `project_other(settings=None)` | project `other` metadata |
 | `upload` | `write_parquet(entries, path, structures=None)`, `read_parquet(path)` | entries (and structures) to and from Parquet |
 | `dataset_overview` | `write_overview(result, path, root, out_of_scope=())` | the `--overview` workbook |
-| `dataset_overview` | `grid_states(result, out_of_scope=())`, `parse_scope_exclusion(text)` | grid-cell states; `M:T` parsing |
+| `dataset_overview` | `grid_states(result, out_of_scope=())`, `systems_in(result)`, `cell_name(key)`, `parse_scope_exclusion(text)` | grid-cell states, grid rows and cell names; `M:T` parsing |
 
 ---
 

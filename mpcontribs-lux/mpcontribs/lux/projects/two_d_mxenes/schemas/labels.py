@@ -2,10 +2,16 @@
 
 An MXene has the general formula M_{n+1} X_n T_x, where
 
-- ``M`` is a transition metal,
-- ``X`` is carbon or nitrogen,
-- ``T`` is a surface termination (F or O, or none for pristine sheets),
-- ``n`` is the thickness index (1, 2 or 3), i.e. the number of X layers.
+- ``M`` is one or more transition metals (single-metal, ordered double-metal,
+  solid-solution and high-entropy MXenes),
+- ``X`` is carbon, nitrogen or both (carbonitrides),
+- ``T`` is one or more single-element surface terminations (halogens F, Cl,
+  Br, I and chalcogens O, S, Se, Te), or none for pristine sheets,
+- ``n`` is the thickness index (1 to 4), i.e. the number of X layers.
+
+Element lists are strings of element symbols ordered by atomic number and
+joined by ``-``, e.g. ``Ti-V-Nb-Mo`` or ``C-N``; MPContribs data contains no
+lists.
 
 Variants also differ in how the layers are stacked. Each atomic layer that
 sits between two other layers is either **octahedrally** (``O``) or
@@ -19,10 +25,10 @@ label      n       core coordination sequence (X-M-X-... centres)
 =========  ======  =================================================
 ``t``      1       O
 ``h``      1       P
-``t``      2, 3    O-O-O..., all octahedral
-``h2``     2, 3    P-P-P..., all prismatic
-``h1a``    2, 3    O-P-O..., alternating, starting octahedral
-``h1b``    2, 3    P-O-P..., alternating, starting prismatic
+``t``      2-4     O-O-O..., all octahedral
+``h2``     2-4     P-P-P..., all prismatic
+``h1a``    2-4     O-P-O..., alternating, starting octahedral
+``h1b``    2-4     P-O-P..., alternating, starting prismatic
 =========  ======  =================================================
 
 For terminated MXenes a suffix ``-1`` or ``-2`` (e.g. ``h-1``, ``h1a-2``)
@@ -33,15 +39,21 @@ records the termination site:
 - n >= 2: ``1`` gives the outer metal layers the **same** coordination as the
   inner metal layers of the stacking and ``2`` the **opposite** (inner metal
   layers are ``O`` in ``t``/``h1b`` and ``P`` in ``h1a``/``h2``).
+
+A further suffix ``-c<k>`` (e.g. ``t-1-c2``) numbers different atomic
+arrangements of the same composition and stacking, such as special
+quasirandom structures of a solid solution.
 """
 
 from __future__ import annotations
 
 import re
+from collections.abc import Iterable
 from typing import Literal, get_args
 
 from mpcontribs.lux.projects.two_d_mxenes.schemas.descriptors import UNIT
 from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pymatgen.core import Element
 
 TransitionMetal = Literal[
     "Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn",
@@ -52,8 +64,15 @@ TransitionMetal = Literal[
 """Transition metals as defined by pymatgen (`Element.is_transition_metal`)."""
 
 NonMetal = Literal["C", "N"]
-Termination = Literal["F", "O"]
-Thickness = Literal[1, 2, 3]
+"""X elements."""
+
+NonMetals = Literal["C", "N", "C-N"]
+"""The X elements of an MXene: carbide, nitride or carbonitride."""
+
+Termination = Literal["F", "Cl", "Br", "I", "O", "S", "Se", "Te"]
+"""Single-element terminations: halogens and chalcogens."""
+
+Thickness = Literal[1, 2, 3, 4]
 StackingLabel = Literal["t", "h", "h1a", "h1b", "h2"]
 TerminationSite = Literal[1, 2]
 
@@ -61,13 +80,45 @@ TRANSITION_METALS: frozenset[str] = frozenset(get_args(TransitionMetal))
 NONMETALS: frozenset[str] = frozenset(get_args(NonMetal))
 TERMINATIONS: frozenset[str] = frozenset(get_args(Termination))
 
+MAX_METALS = 10
+"""Largest number of distinct metals in one MXene."""
+
+MAX_TERMINATIONS = 4
+"""Largest number of distinct termination elements in one MXene."""
+
+METALS_PATTERN = rf"^[A-Z][a-z]?(?:-[A-Z][a-z]?){{0,{MAX_METALS - 1}}}$"
+"""1 to 10 element symbols joined by `-`, e.g. `Ti` or `Ti-V-Nb-Mo`."""
+
+TERMINATIONS_PATTERN = rf"^[A-Z][a-z]?(?:-[A-Z][a-z]?){{0,{MAX_TERMINATIONS - 1}}}$"
+"""1 to 4 element symbols joined by `-`, e.g. `O` or `O-F`."""
+
 N1_STACKINGS: frozenset[str] = frozenset({"t", "h"})
 THICK_STACKINGS: frozenset[str] = frozenset({"t", "h1a", "h1b", "h2"})
 
-FOLDER_LABEL = re.compile(r"^(?P<stacking>h1a|h1b|h2|h|t)(?:-(?P<site>[12]))?$")
-"""A folder label: stacking, optionally followed by `-1` or `-2`."""
+FOLDER_LABEL = re.compile(
+    r"^(?P<stacking>h1a|h1b|h2|h|t)(?:-(?P<site>[12]))?"
+    r"(?:-c(?P<configuration>[1-9][0-9]{0,2}))?$"
+)
+"""A folder label: stacking, optionally `-1`/`-2`, optionally `-c<k>`."""
 
 _OPPOSITE = {"O": "P", "P": "O"}
+
+
+def join_elements(symbols: Iterable[str]) -> str:
+    """Join distinct element symbols in canonical order (by atomic number).
+
+    Args:
+        symbols: Element symbols; duplicates are removed.
+
+    Returns:
+        The symbols joined by `-`, e.g. `Ti-V-Nb-Mo`.
+    """
+    return "-".join(sorted(set(symbols), key=lambda s: Element(s).Z))
+
+
+def split_elements(text: str) -> list[str]:
+    """Split a `-`-joined element list, e.g. `C-N` -> `["C", "N"]`."""
+    return text.split("-")
 
 
 def expected_core_sequence(n: int, stacking: str) -> list[str]:
@@ -125,15 +176,16 @@ def expected_termination_coordination(n: int, stacking: str, site: int) -> str:
     return same if site == 1 else _OPPOSITE[same]
 
 
-def parse_folder_label(label: str) -> tuple[str, int | None]:
-    """Split a folder label such as `h1a-2` into stacking and termination site.
+def parse_folder_label(label: str) -> tuple[str, int | None, int | None]:
+    """Split a folder label such as `h1a-2-c3` into its parts.
 
     Args:
         label: Name of the folder that contains the structure, e.g. `t`,
-            `h-1` or `h1b-2`. Case-insensitive.
+            `h-1`, `h1b-2` or `t-1-c2`. Case-insensitive.
 
     Returns:
-        The stacking label and the termination site (None if absent).
+        The stacking label, the termination site and the configuration index
+        (None where absent).
 
     Raises:
         ValueError: If `label` is not a valid folder label.
@@ -141,8 +193,28 @@ def parse_folder_label(label: str) -> tuple[str, int | None]:
     match = FOLDER_LABEL.match(label.strip().lower())
     if match is None:
         raise ValueError(f"Unrecognized MXene folder label {label!r}")
-    site = match.group("site")
-    return match.group("stacking"), int(site) if site else None
+    site, configuration = match.group("site"), match.group("configuration")
+    return (
+        match.group("stacking"),
+        int(site) if site else None,
+        int(configuration) if configuration else None,
+    )
+
+
+def _check_element_list(
+    name: str, text: str, vocabulary: frozenset[str], kind: str
+) -> list[str]:
+    symbols = split_elements(text)
+    unknown = [s for s in symbols if s not in vocabulary]
+    if unknown:
+        raise ValueError(f"{name}: {unknown} are not {kind}")
+    canonical = join_elements(symbols)
+    if text != canonical:
+        raise ValueError(
+            f"{name} must list distinct elements by atomic number: "
+            f"{canonical!r}, got {text!r}"
+        )
+    return symbols
 
 
 class MXeneLabel(BaseModel):
@@ -150,20 +222,34 @@ class MXeneLabel(BaseModel):
 
     model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
 
-    metal: TransitionMetal = Field(
-        description="Symbol of the transition metal M, e.g. `Ti`.",
+    metals: str = Field(
+        max_length=3 * MAX_METALS - 1,
+        pattern=METALS_PATTERN,
+        description="Transition metals M, by atomic number and joined by `-`, "
+        "e.g. `Ti` (single metal), `Ti-Mo` (double metal) or `Ti-V-Nb-Mo` "
+        "(high entropy).",
     )
-    nonmetal: NonMetal = Field(
-        description="Symbol of the X element: `C` (carbide) or `N` (nitride).",
+    nMetals: int = Field(
+        ge=1,
+        le=MAX_METALS,
+        description="Number of distinct transition metals (1 for a "
+        "single-metal MXene; 4 or more is usually called high entropy).",
+        json_schema_extra={UNIT: ""},
     )
-    termination: Termination | None = Field(
+    nonmetals: NonMetals = Field(
+        description="X elements: `C` (carbide), `N` (nitride) or `C-N` "
+        "(carbonitride).",
+    )
+    terminations: str | None = Field(
         None,
-        description="Symbol of the surface termination T, or null for a "
-        "pristine (unterminated) MXene.",
+        max_length=3 * MAX_TERMINATIONS - 1,
+        pattern=TERMINATIONS_PATTERN,
+        description="Termination elements T, by atomic number and joined by "
+        "`-`, e.g. `O` or `O-F`; null for a pristine (unterminated) MXene.",
     )
     n: Thickness = Field(
         description="Thickness index n in M_{n+1}X_n: the number of X layers "
-        "(1 for M2X, 2 for M3X2, 3 for M4X3).",
+        "(1 for M2X, 2 for M3X2, 3 for M4X3, 4 for M5X4).",
         json_schema_extra={UNIT: ""},
     )
     stacking: StackingLabel = Field(
@@ -177,47 +263,55 @@ class MXeneLabel(BaseModel):
         description="Termination site (the `-1`/`-2` suffix of the label). For "
         "n=1, 1 = octahedral and 2 = prismatic outer metal layers; for n>=2, "
         "1 = same coordination as the inner metal layers and 2 = opposite. "
-        "Required for terminated MXenes and null for pristine ones.",
-        json_schema_extra={UNIT: ""},
+        "Required for terminated MXenes and null for pristine ones. Stored "
+        "as a label (text column), not as a quantity.",
+    )
+    configuration: int | None = Field(
+        None,
+        ge=1,
+        le=999,
+        description="Index of the atomic arrangement (the `-c<k>` suffix of "
+        "the label), distinguishing structures with the same composition and "
+        "stacking, e.g. special quasirandom structures of a solid solution. "
+        "Null if the label has no such suffix. Stored as a label (text "
+        "column), not as a quantity.",
     )
 
     @model_validator(mode="after")
     def _check_consistency(self) -> MXeneLabel:
+        metals = _check_element_list(
+            "metals", self.metals, TRANSITION_METALS, "transition metals"
+        )
+        if self.nMetals != len(metals):
+            raise ValueError(
+                f"nMetals={self.nMetals} but metals {self.metals!r} lists "
+                f"{len(metals)}"
+            )
+        if self.terminations is not None:
+            _check_element_list(
+                "terminations", self.terminations, TERMINATIONS, "terminations"
+            )
         allowed = N1_STACKINGS if self.n == 1 else THICK_STACKINGS
         if self.stacking not in allowed:
             raise ValueError(
                 f"Stacking {self.stacking!r} is not defined for n={self.n}; "
                 f"expected one of {sorted(allowed)}"
             )
-        if (self.termination is None) != (self.terminationSite is None):
+        if (self.terminations is None) != (self.terminationSite is None):
             raise ValueError(
-                "terminationSite must be set if and only if termination is set"
+                "terminationSite must be set if and only if terminations is set"
             )
         return self
 
     @property
-    def formula(self) -> str:
-        """Formula per formula unit, e.g. `Ti3C2O2`."""
-        m, x = self.n + 1, self.n
-        formula = f"{self.metal}{m}{self.nonmetal}{x if x > 1 else ''}"
-        if self.termination:
-            formula += f"{self.termination}2"
-        return formula
-
-    @property
     def label(self) -> str:
-        """Folder label, e.g. `h1a-2` or `t`."""
-        if self.terminationSite is None:
-            return self.stacking
-        return f"{self.stacking}-{self.terminationSite}"
-
-    @property
-    def layer_sequence(self) -> str:
-        """Atomic layers from bottom to top implied by the labels, e.g. `F-Hf-C-Hf-F`."""
-        layers = [self.metal, self.nonmetal] * self.n + [self.metal]
-        if self.termination:
-            layers = [self.termination, *layers, self.termination]
-        return "-".join(layers)
+        """Folder label, e.g. `h1a-2`, `t` or `t-1-c2`."""
+        label: str = self.stacking
+        if self.terminationSite is not None:
+            label += f"-{self.terminationSite}"
+        if self.configuration is not None:
+            label += f"-c{self.configuration}"
+        return label
 
     @property
     def coordination_sequence(self) -> str:
