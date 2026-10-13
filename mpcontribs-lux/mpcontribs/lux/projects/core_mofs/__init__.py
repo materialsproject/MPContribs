@@ -1,5 +1,5 @@
-"""CoRE MOF schemas for native MPContribs contributions."""
+"""Public models for the CoRE MOF project."""
 
-from .schemas import CoreMofData, RacFeatures, Topology, ZeoFeatures
+from .schemas import Data, RacFeatures, Topology, ZeoFeatures
 
-__all__ = ["CoreMofData", "ZeoFeatures", "Topology", "RacFeatures"]
+__all__ = ["Data", "ZeoFeatures", "RacFeatures", "Topology"]

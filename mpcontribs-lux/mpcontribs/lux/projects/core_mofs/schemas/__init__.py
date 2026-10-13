@@ -1,8 +1,39 @@
-"""Public data and Table row schemas; no native Contribution wrapper."""
+"""CoRE MOF data and Table-row models.
 
-from .data import CoreMofData
+One eligible structure_id is one Contribution. Data describes its
+nested data summaries. ZeoFeatures, Topology, and RacFeatures describe rows
+of the associated native Tables. Native identifiers, formulas, and Structures
+are assembled by upload code, not redefined as schema fields here.
+"""
+
+from .data import (
+    Data,
+    ReleaseData,
+    SourceData,
+    ReferenceData,
+    MofidData,
+    CrystallographyData,
+    MetalData,
+    CheckerData,
+    TopologyData,
+    GeometryData,
+)
+from .zeo_features import ZeoFeatures
 from .rac_features import RacFeatures
 from .topology import Topology
-from .zeo_features import ZeoFeatures
 
-__all__ = ["CoreMofData", "ZeoFeatures", "RacFeatures", "Topology"]
+__all__ = [
+    "Data",
+    "ReleaseData",
+    "SourceData",
+    "ReferenceData",
+    "MofidData",
+    "CrystallographyData",
+    "MetalData",
+    "CheckerData",
+    "TopologyData",
+    "GeometryData",
+    "ZeoFeatures",
+    "RacFeatures",
+    "Topology",
+]
