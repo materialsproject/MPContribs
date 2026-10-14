@@ -282,7 +282,7 @@ pymatgen==2026.9.24
     # via mpcontribs-client
 pymatgen-core==2026.10.2
     # via pymatgen
-pymongo==4.18.3
+pymongo==4.18.2
     # via mpcontribs-client
 pyparsing==3.3.3
     # via
