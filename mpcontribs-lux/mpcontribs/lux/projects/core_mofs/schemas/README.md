@@ -43,9 +43,26 @@ if some of their leaves are optional. Scientific zero and false are preserved.
 
 `sourceId` has a 1–64 character bound. Counts are integers, dimensions are 0–3,
 and geometric fractions are 0–1. No numerical ceiling is derived from the
-observed dataset maximum. Strict validation rejects numeric strings, booleans
-used as numbers, and NaN/infinity; CSV parsing happens before validation.
-MOFid strings are preserved without truncation.
+observed dataset maximum. Data models allow Pydantic's default type conversion
+while retaining field constraints. All Table-row models also permit type conversion; RAC fields use regular floats.
+All numeric values must be finite; CSV parsing happens before validation.
+MOFid strings are preserved without truncation. Both versions may coexist for
+the same MOF. V1 uses SMILES node/linker representations; V2 postprocesses V1
+calculation outputs using metal-node categories and SELFIES linkers.
+The outer format is `<components> MOFid-v1.<topology>.cat<n>` or its `v2`
+counterpart, with optional `.<revision>` and `;<name>` suffixes. Patterns check
+this format while allowing topology placeholders and multiple topology labels;
+they do not validate the chemistry of the encoded components.
+
+`metalElements` is a semicolon-separated string. Each supplied symbol must be
+a valid element classified as a metal by `pymatgen.core.Element.is_metal`.
+The validator preserves the supplied string. Missing values may be `None`;
+metalloids are represented separately in `metalloidElements`.
+
+Checker votes use the shared `CheckerStatus` StrEnum (`PASS`, `FAIL`), and
+consensus fields use `ConsensusStatus` (`CR`, `NCR`, `AMBIGUOUS`). Values remain
+strings in serialized output. These enums constrain labels; consensus agreement
+is checked before model validation.
 
 ## Geometry and Table correspondence
 
@@ -101,7 +118,10 @@ The proposed auxiliary-result policy is:
 - Topology: include summary details and subnet rows only for a successful,
   available parent result. ERROR/PARTIAL parents contribute only
   `data.topology.topologyAvailable = False`.
-- RAC: omit an unavailable Table entirely. A supplied row requires all 264
+- RAC: revised autocorrelation descriptors encode atomic properties and
+  connectivity for machine-learning use, with a maximum graph depth of 5
+  (bond distances 0 through 5). Omit an unavailable Table entirely.
+  A supplied row requires all 264
   finite numeric descriptors. Negative and zero descriptors remain valid;
   no common physical unit or rescaling is imposed.
 

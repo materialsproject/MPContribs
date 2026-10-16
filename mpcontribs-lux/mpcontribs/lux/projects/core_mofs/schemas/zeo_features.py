@@ -20,7 +20,7 @@ class ZeoFeatures(BaseModel):
     Probe radii are N2 1.655 angstrom and He 1.32 angstrom.
     """
 
-    model_config = ConfigDict(extra="forbid", allow_inf_nan=False, strict=True)
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
 
     n2HeAvailable: bool = Field(
         description="Verified availability of the N2/He result group; not an execution error message."

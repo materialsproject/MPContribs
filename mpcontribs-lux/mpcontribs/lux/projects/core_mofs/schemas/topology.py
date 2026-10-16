@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field, PositiveInt
 class Topology(BaseModel):
     """One subnet from a successful, available parent topology result."""
 
-    model_config = ConfigDict(extra="forbid", allow_inf_nan=False, strict=True)
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
 
     subnetIndex: PositiveInt = Field(
         description="One-based subnet index within this Contribution's successful topology result."
