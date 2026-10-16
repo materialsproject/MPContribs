@@ -88,7 +88,7 @@ dnspython==2.9.0
     # via
     #   mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
     #   pymongo
-entrypoints==0.4.1
+entrypoints==0.4.2
     # via jupyter-client
 envier==0.6.1
     # via ddtrace
@@ -321,11 +321,11 @@ parso==0.8.7
     # via jedi
 pexpect==4.9.0
     # via ipython
-pillow==12.3.0
+pillow==13.0.0
     # via matplotlib
 pint==0.26.1
     # via mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
-platformdirs==4.13.0
+platformdirs==4.13.3
     # via
     #   jupyter-core
     #   pint
@@ -543,7 +543,7 @@ wrapt==2.5.1
     # via ddtrace
 zope-event==6.2
     # via gevent
-zope-interface==8.6
+zope-interface==8.7
     # via gevent
 zstandard==0.25.0
     # via mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)

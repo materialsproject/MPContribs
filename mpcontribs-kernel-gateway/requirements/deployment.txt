@@ -34,7 +34,7 @@ bravado-core==6.4.1
     # via bravado
 bytecode==0.19.1
     # via ddtrace
-cachetools==7.2.1
+cachetools==7.2.2
     # via mpcontribs-client
 certifi==2026.7.22
     # via requests
@@ -242,11 +242,11 @@ parso==0.8.7
     # via jedi
 pexpect==4.9.0
     # via ipython
-pillow==12.3.0
+pillow==13.0.0
     # via matplotlib
 pint==0.26.1
     # via mpcontribs-client
-platformdirs==4.13.0
+platformdirs==4.13.3
     # via
     #   choreographer
     #   jupyter-core
