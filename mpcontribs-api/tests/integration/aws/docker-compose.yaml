@@ -1,0 +1,43 @@
+# MiniStack — a local AWS cloud emulator standing in for S3 + SQS so you can
+# exercise the uploads flow end to end without touching real AWS.
+#
+#   cd tests/integration/aws
+#   docker compose up --wait   # starts MiniStack on :4566 and provisions buckets/queues
+#
+# Point the app at it with the variables in env.aws.example (same directory).
+# Docs: https://ministack.org/docs/configuration
+services:
+  ministack:
+    container_name: mpcontribs-ministack
+    # Slim image covers the core services (S3, SQS). The :full variant is only needed for
+    # optional features (Athena, S3 Tables, CloudFormation SAM, IoT, DBs, Transfer Family).
+    image: ministackorg/ministack:1.5.27
+    ports:
+      - "4566:4566" # GATEWAY_PORT: single edge port for S3, SQS, and the /_ministack admin API
+    environment:
+      - SERVICES=s3,sqs # only start what we use -> faster boot
+      - MINISTACK_REGION=us-east-1
+      - MINISTACK_HOST=localhost # hostname advertised in returned endpoints (e.g. SQS queue URLs)
+      - LOG_LEVEL=INFO
+      # Persist state + S3 bytes across restarts (dev convenience; disable for CI).
+      - PERSIST_STATE=1
+      - S3_PERSIST=1
+    volumes:
+      # Provisioning hook: scripts in ready.d run (async) once the gateway is up.
+      - "./init-aws.sh:/docker-entrypoint-initaws.d/ready.d/init-aws.sh:ro"
+      # Persisted state. Delete ./volume to start completely clean.
+      - "${MINISTACK_VOLUME_DIR:-./volume}/state:/tmp/ministack-state"
+      - "${MINISTACK_VOLUME_DIR:-./volume}/s3:/tmp/ministack-data/s3"
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      # MiniStack is python-based (no curl in the image); hit the admin health endpoint via urllib.
+      # `docker compose up --wait` blocks until this passes.
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://localhost:4566/_ministack/health')"
+      interval: 10s
+      timeout: 3s
+      retries: 5
