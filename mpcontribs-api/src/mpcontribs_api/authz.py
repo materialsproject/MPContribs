@@ -22,6 +22,12 @@ consumer_username_scheme = APIKeyHeader(
     auto_error=False,
     description="[dev only] Impersonate a Kong-authenticated username",
 )
+consumer_id_scheme = APIKeyHeader(
+    name="X-Consumer-Id",
+    scheme_name="X-Consumer-Id",
+    auto_error=False,
+    description="[dev only] Impersonate a Kong consumer id (partitions uploads per consumer)",
+)
 authenticated_groups_scheme = APIKeyHeader(
     name="X-Authenticated-Groups",
     scheme_name="X-Authenticated-Groups",
