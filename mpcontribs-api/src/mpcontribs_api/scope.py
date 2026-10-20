@@ -51,6 +51,24 @@ class Owned:
 
 
 @dataclass(frozen=True)
+class ScopedToConsumer:
+    """Visibility of the caller's own documents, keyed on ``consumer_id`` field.
+
+    Mirrors Owned, but since Upload doesn't carry owner = user.username, we use consumer_id.
+
+    Inapplicable to anonymous callers: ``{consumer_id: None}`` would wrongly match consumer_id-less documents, so
+    the clause is dropped rather than emitted.
+    """
+
+    field: str = "consumer_id"
+
+    def to_query(self, user: User) -> dict[str, Any] | None:
+        if user.is_anonymous:
+            return None
+        return {self.field: user.consumer_id}
+
+
+@dataclass(frozen=True)
 class Granted:
     """Visibility granted by the caller's role grants, as a ``{field: {"$in": [...]}}`` membership test.
 
