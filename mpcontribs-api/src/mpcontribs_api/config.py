@@ -106,26 +106,65 @@ class S3Settings(BaseModel):
         default=10,
         description="The maximum number of connections the app is allowed to have to S3",
     )
-    health_bucket: str = Field(
-        default="contributions",
-        description="The S3 bucket probed by the healthcheck to verify connectivity",
+    staging_bucket: str = Field(
+        default="mpcontribs-staging",
+        description="The S3 bucket users upload into directly (presigned PUT/multipart). Contents are graduated "
+        "into the raw bucket once an upload session completes.",
     )
-    downloads_bucket: str = Field(
-        default="mpcontribs-downloads",
-        description="The S3 bucket holding generated download objects",
+    raw_data_bucket: str = Field(
+        default="mpcontribs-raw",
+        description="The S3 bucket that holds graduated raw user data (promoted from the staging bucket) before "
+        "any transformation into production format.",
+    )
+    processed_data_bucket: str = Field(
+        default="mpcontribs-processed",
+        description="The S3 bucket that holds producion-formatted user data.",
+    )
+    blobs_bucket: str = Field(
+        default="mpcontribs-blobs",
+        description="The S3 bucket that holds non-delta-table formattable user data. Ie. Components",
     )
     expires_in: int = Field(
-        default=60,
+        default=60 * 15,
         description="Duration (in seconds) for presigned url expiration",
+    )
+    multipart_threshold: int = Field(
+        default=101 * 1024 * 1024,
+        description="Size cutoff (bytes) at/below which an upload uses a single presigned PUT and above "
+        "which it uses a multipart upload. Defaults to 100 MiB.",
+    )
+    part_size: int = Field(
+        default=100 * 1024 * 1024,
+        description="Part size (bytes) for multipart uploads. Must be >= AWS's 5 MiB minimum (except the "
+        "final part) and keep the resulting part count under the 10,000-part limit.",
+    )
+    checksum_algorithm: str = Field(
+        default="",
+        description="Optional S3 checksum algorithm (e.g. 'CRC32', 'SHA256') passed to multipart uploads. "
+        "Empty disables server-side checksums.",
+    )
+    max_files_per_session: int = Field(
+        default=1000,
+        description="Maximum number of files a single upload session (manifest) may declare. Larger "
+        "manifests are rejected at initiate with 422 so one session can't fan out unbounded presigns.",
+    )
+    max_file_bytes: int = Field(
+        default=5 * 1024 * 1024 * 1024,
+        description="Hard ceiling (bytes) on a single declared file in an upload manifest. Defaults to "
+        "S3's 5 GiB single-object limit.",
+    )
+    max_session_bytes: int = Field(
+        default=20 * 1024 * 1024 * 1024,
+        description="Hard ceiling (bytes) on the summed declared size of all files in one upload session.",
     )
 
 
 class SqsSettings(BaseModel):
     """AWS SQS Settings for MPContribs"""
 
-    download_queue_url: str = Field(default="", description="The url to connect to the download queue")
-    transform_queue_url: str = Field(default="", description="The url to connect to the transform queue")
-    projection_queue_url: str = Field(default="", description="The url to connect to the projection queue")
+    download_queue_url: str = Field(description="The url to connect to the download queue")
+    transform_queue_url: str = Field(description="The url to connect to the transform queue")
+    projection_queue_url: str = Field(description="The url to connect to the projection queue")
 
 
 class AwsSettings(BaseModel):
