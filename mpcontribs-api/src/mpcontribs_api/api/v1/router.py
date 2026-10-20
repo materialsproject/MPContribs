@@ -9,6 +9,7 @@ from mpcontribs_api.domains.project_groups.router import router as project_group
 from mpcontribs_api.domains.projects.router import router as projects_router
 from mpcontribs_api.domains.structures.router import router as structures_router
 from mpcontribs_api.domains.tables.router import router as tables_router
+from mpcontribs_api.domains.uploads.router import router as uploads_router
 
 router = APIRouter()
 
@@ -20,6 +21,7 @@ router.include_router(project_groups_router, prefix="/project_groups", tags=["pr
 router.include_router(projects_router, prefix="/projects", tags=["projects"])
 router.include_router(structures_router, prefix="/structures", tags=["structures"])
 router.include_router(tables_router, prefix="/tables", tags=["tables"])
+router.include_router(uploads_router, prefix="/uploads", tags=["uploads"])
 # Admin-only override management. Hidden from the OpenAPI schema (include_in_schema=False) but
 # still routable; every route additionally enforces require_admin.
 router.include_router(
