@@ -15,6 +15,7 @@ from mpcontribs_api.api.v1.router import router as v1_router
 from mpcontribs_api.authz import (
     api_key_scheme,
     authenticated_groups_scheme,
+    consumer_id_scheme,
     consumer_username_scheme,
 )
 from mpcontribs_api.config import Settings, get_settings
@@ -28,6 +29,7 @@ from mpcontribs_api.domains.project_groups.models import ProjectGroup
 from mpcontribs_api.domains.projects.models import Project
 from mpcontribs_api.domains.structures.models import Structure
 from mpcontribs_api.domains.tables.models import Table
+from mpcontribs_api.domains.uploads.models import Upload
 from mpcontribs_api.exceptions import register_exception_handlers
 from mpcontribs_api.logging import configure_logging, get_logger
 from mpcontribs_api.middleware import (
@@ -49,6 +51,7 @@ DOCUMENT_MODELS: list[Any] = [
     Structure,
     Table,
     Consumer,
+    Upload,
 ]
 
 
@@ -146,6 +149,7 @@ def create_app(settings: Settings) -> FastAPI:
     if settings.environment != "prod":
         security_deps += [
             Depends(dependency=consumer_username_scheme),
+            Depends(dependency=consumer_id_scheme),
             Depends(dependency=authenticated_groups_scheme),
         ]
 
