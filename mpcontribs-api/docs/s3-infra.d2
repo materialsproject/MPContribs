@@ -1,0 +1,109 @@
+# MPContribs API — infrastructure relationships
+#
+# How the FastAPI server (src/mpcontribs_api) relates to MongoDB, S3, SQS and the
+# Lambda workers. Grounded in app.py (client setup), config.py (buckets/queues),
+# domains/uploads/service.py (direct-to-S3 sessions + transform enqueue) and the
+# out-of-repo mpcontribs-serverless workers.
+#
+#   solid edge  = wired in the API today
+#   dashed edge = configured/planned, driven elsewhere (worker) or still TODO
+#
+# Render:  d2 docs/s3-infra.d2 docs/s3-infra.svg
+
+direction: right
+
+classes: {
+  planned: {
+    style.stroke-dash: 4
+    style.opacity: 0.8
+  }
+  store: {
+    style.fill: "#eef6ff"
+  }
+}
+
+client: "Client\n(portal / python client)" {
+  shape: person
+}
+
+kong: "Kong Gateway" {
+  style.fill: "#f3e9ff"
+  tooltip: "Terminates auth; injects identity headers. Trust boundary — API trusts these headers."
+}
+
+api: "MPContribs REST API\n(FastAPI + Beanie)" {
+  style.fill: "#e8ffe8"
+  style.bold: true
+  tooltip: "aioboto3 S3 + SQS clients and an AsyncMongoClient are opened once in the lifespan (app.py)."
+}
+
+mongo: "MongoDB (Atlas)" {
+  class: store
+  tooltip: "Primary datastore. All domain CRUD via Beanie; pinged on startup."
+}
+
+redis: "Redis" {
+  class: store
+  tooltip: "Download-job progress/status. Written by the make-download worker; API has RedisSettings (read path still TODO)."
+}
+
+aws: "AWS" {
+  style.fill: "#fff7e6"
+
+  s3: "S3" {
+    raw: "mpcontribs-raw\n(raw uploads + manifest.json)" { class: store }
+    processed: "mpcontribs-processed\n(production-formatted data)" { class: store }
+    blobs: "mpcontribs-blobs\n(component blobs)" { class: store }
+  }
+
+  sqs: "SQS" {
+    transform_q: "mpcontribs-transform"
+    download_q: "mpcontribs-download"
+    projection_q: "mpcontribs-projection"
+  }
+
+  lambda: "Lambda workers\n(mpcontribs-serverless)" {
+    transform_worker: "Transform worker" { class: planned }
+    projection_worker: "Projection worker" { class: planned }
+    download_worker: "make-download worker" {
+      tooltip: "mpcontribs-make-download: builds a zip export, writes it to S3, tracks progress in Redis."
+    }
+  }
+}
+
+# --- request path -------------------------------------------------------------
+client -> kong: "HTTPS"
+kong -> api: "proxied + identity headers"
+
+# --- API <-> MongoDB ----------------------------------------------------------
+api <-> mongo: "domain CRUD (Beanie)"
+
+# --- API -> S3 (uploads) ------------------------------------------------------
+api -> aws.s3.raw: "write manifest.json,\npresign PUT/multipart, complete, head"
+client -> aws.s3.raw: "PUT bytes\n(presigned, direct)"
+
+# --- API -> S3 (downloads) ----------------------------------------------------
+# Today downloads stream from MongoDB; the S3 export cache is a TODO.
+api -> aws.s3.processed: "read export cache" { class: planned }
+
+# --- API -> SQS ---------------------------------------------------------------
+api -> aws.sqs.transform_q: "{bucket, manifest_key}\non upload complete"
+api -> aws.sqs.download_q: "enqueue download job" { class: planned }
+api -> aws.sqs.projection_q: "enqueue projection job" { class: planned }
+
+# --- SQS -> Lambda (event source) ---------------------------------------------
+aws.sqs.transform_q -> aws.lambda.transform_worker: "trigger" { class: planned }
+aws.sqs.projection_q -> aws.lambda.projection_worker: "trigger" { class: planned }
+aws.sqs.download_q -> aws.lambda.download_worker: "trigger"
+
+# --- Lambda -> stores ---------------------------------------------------------
+aws.lambda.transform_worker -> aws.s3.raw: "read raw" { class: planned }
+aws.lambda.transform_worker -> aws.s3.processed: "write" { class: planned }
+aws.lambda.transform_worker -> aws.s3.blobs: "write blobs" { class: planned }
+aws.lambda.transform_worker -> mongo: "upsert" { class: planned }
+aws.lambda.projection_worker -> mongo: "project / index" { class: planned }
+
+aws.lambda.download_worker -> api: "download contributions\n(via client)"
+aws.lambda.download_worker -> aws.s3.processed: "write zip export"
+aws.lambda.download_worker -> redis: "progress / READY"
+api -> redis: "poll job status" { class: planned }

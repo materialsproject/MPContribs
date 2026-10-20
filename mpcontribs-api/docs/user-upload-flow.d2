@@ -1,0 +1,91 @@
+# User upload flow — creating a new project, start to finish
+#
+# End-to-end orchestration of a direct-to-S3 upload session for operation
+# "create_project". Grounded in domains/uploads/{router,service,models,sanitization}.py,
+# config.py (limits, buckets, queues) and app.py (client wiring).
+#
+# Shape: a sequence diagram. Groups are the phases; self-messages on the API are
+# in-process steps (validation, key planning). The client transfers bytes straight
+# to S3 on presigned URLs — those PUTs never pass through the API.
+#
+# Render:  d2 docs/user-upload-flow.d2 docs/user-upload-flow.svg
+
+flow: "User uploads a new project — end to end" {
+  shape: sequence_diagram
+
+  # participants, left -> right
+  user: "User\n(mpcontribs-client / portal)" { shape: person }
+  kong: "Kong Gateway"
+  api: "Upload API\n(router + UploadService)"
+  s3: "S3"
+  mongo: "MongoDB\n(uploads collection)"
+  sqs: "SQS\n(transform queue)"
+  worker: "Transform worker\n(Lambda)"
+
+  auth: "Every request — auth terminates at the edge" {
+    user -> kong: "HTTPS request (API key / session)"
+    kong -> api: "forward + identity headers\n(consumer_id, username, groups)"
+    api -> api: "require_user: 401 if anonymous;\nparse headers into frozen User"
+  }
+
+  initiate: "1. Initiate session — POST /api/v1/uploads" {
+    user -> api: "UploadManifest\n{ project, operation: create_project, files[] }"
+    api -> api: "require consumer_id on caller (else 422)"
+    api -> api: "authorize: User.can_write(projects, project)\n→ 403 PermissionError if not"
+    api -> api: "validate manifest:\nrole↔operation coherence (create_project needs a 'project' json file),\nformat↔extension, component cid/kind/name, unique resolved keys → 422"
+    api -> api: "enforce limits:\n≤ max_files_per_session, each ≤ max_file_bytes,\nsum ≤ max_session_bytes → 422"
+    api -> api: "sanitize project to a single safe key segment (else 422)"
+    api -> api: "allocate session id (ObjectId); mint a contribution id (ObjectId) per distinct client cid;\nbucket = mpcontribs-staging\nper file key: {project}/{id}/… \n(project/, source/, patches/, contributions/<generated-id>/files/) + filename"
+
+    small: "per file — small (size ≤ multipart_threshold, 100 MiB)" {
+      api -> s3: "generate_presigned_url(put_object, ExpiresIn=15m)"
+    }
+    large: "per file — large (size > multipart_threshold)" {
+      api -> s3: "create_multipart_upload → upload_id"
+      api -> api: "plan parts: part_size (100 MiB), num_parts = ceil(size/part_size)"
+    }
+
+    api -> s3: "put_object manifest.json\nkey {project}/{id}/manifest.json (resolved intent = source of truth)"
+    api -> mongo: "insert Upload doc (status = pending)"
+    api -> user: "201 SessionInitiated\n{ id, project, operation, files:[FileInitiated:\nname, key, type, num_parts, part_size, url? ] }"
+  }
+
+  transfer: "2. Transfer bytes — client → S3 directly (API not in the data path)" {
+    single: "single-shot file (handle carried its url)" {
+      user -> s3: "PUT object bytes → presigned put_object url"
+      s3 -> user: "200 + ETag"
+    }
+    multi: "multipart file — looped & resumable from start_part" {
+      user -> api: "POST /uploads/{id}/files/{name}/parts\n{ start_part }"
+      api -> mongo: "read session (consumer-scoped) → 404 if not caller's"
+      api -> api: "reject start_part > num_parts → 422"
+      api -> s3: "presign upload_part for parts start_part..num_parts"
+      api -> user: "PartUrls [{ part_number, url }]"
+      user -> s3: "PUT each part to its url (parallel)"
+      s3 -> user: "200 + per-part ETag"
+    }
+  }
+
+  complete: "3. Complete session — POST /uploads/{id}/complete" {
+    user -> api: "CompleteIn\n{ files:[{ name, parts:[{ part_number, etag }] }] }"
+    api -> mongo: "read session (consumer-scoped) → 404 if not caller's"
+    api -> s3: "multipart: complete_multipart_upload(ordered parts + ETags)\nsingle: head_object asserts object exists → 422 if missing"
+    api -> mongo: "update status = completed; touch last_modified"
+    api -> sqs: "send_message { bucket, manifest_key }"
+    api -> user: "200 UploadCompleted { id, status: completed }"
+  }
+
+  process: "4. Async processing — worker materializes the project" {
+    sqs -> worker: "deliver { bucket: mpcontribs-staging, manifest_key }"
+    worker -> s3: "get manifest.json, then staged files by key"
+    worker -> s3: "graduate: promote staged files → mpcontribs-raw"
+    worker -> worker: "parse per role/format;\ncreate project, contributions, components"
+    worker -> s3: "write production data → mpcontribs-processed / mpcontribs-blobs"
+    worker -> mongo: "upsert project + contributions + components"
+  }
+
+  observe: "5. Observe result" {
+    user -> api: "GET /uploads/{id} → poll status (pending → completed)"
+    user -> api: "GET /api/v1/projects/{project} → new project now visible"
+  }
+}
