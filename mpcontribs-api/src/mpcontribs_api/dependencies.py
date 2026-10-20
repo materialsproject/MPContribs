@@ -6,6 +6,7 @@ from fastapi import Depends, Request
 from pymongo import AsyncMongoClient
 from pymongo.asynchronous.database import AsyncDatabase
 from types_aiobotocore_s3 import S3Client
+from types_aiobotocore_sqs.client import SQSClient
 
 from mpcontribs_api.authz import PROJECT_PATH, ROOT_PATH, User
 from mpcontribs_api.exceptions import AuthenticationError, PermissionError
@@ -30,6 +31,13 @@ def get_s3(request: Request) -> S3Client:
 
 
 S3Dep = Annotated[S3Client, Depends(get_s3)]
+
+
+def get_sqs(request: Request) -> SQSClient:
+    return request.app.state.sqs
+
+
+SQSDep = Annotated[SQSClient, Depends(get_sqs)]
 
 
 def get_mongo_client(request: Request) -> AsyncMongoClient:
