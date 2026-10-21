@@ -1,6 +1,6 @@
 import re
 from datetime import UTC, datetime
-from typing import Annotated, Literal, Self
+from typing import Annotated, Any, Literal, Self
 
 from beanie import PydanticObjectId
 from bson.errors import InvalidId
@@ -18,9 +18,13 @@ UploadType = Literal["single", "multipart"]
 UploadStatus = Literal["pending", "completed"]
 
 # What an upload session does. S3 is the system of record; a worker syncs the result into MongoDB.
-UploadOperation = Literal["create_project", "add_contributions", "add_component", "set_data"]
-# What a single file in the session IS. See the module/domain docs for the full semantics.
-FileRole = Literal["project", "contributions", "component", "data"]
+# ``replace`` overwrites the resource at each file's manifest location; ``update`` merges the supplied
+# content into what is already there.
+# add_contribution and add_component are different from update. update operates on fields, while add_* operates
+# on whole objects (an entire contribution, not a single field in a contribution).
+UploadOperation = Literal["create_project", "add_contributions", "add_component", "replace", "update"]
+# What a single file in the session is. See the domain docs for the full semantics.
+FileRole = Literal["project", "contributions", "component"]
 # The kind of component a ``component``-role file materializes into.
 ComponentKind = Literal["table", "structure", "attachment"]
 # The declared payload format of a file (drives how the worker parses it).
@@ -30,7 +34,6 @@ UploadFormat = Literal["json", "jsonl", "csv", "parquet", "cif", "image"]
 _ROLE_FORMATS: dict[FileRole, frozenset[UploadFormat]] = {
     "project": frozenset({"json"}),
     "contributions": frozenset({"csv", "json", "jsonl"}),
-    "data": frozenset({"csv", "json", "jsonl"}),
     "component": frozenset({"csv", "parquet", "cif", "image"}),
 }
 # Extensions that may carry each format. The filename extension must be one of these.
@@ -53,14 +56,18 @@ _OPERATION_ROLES: dict[UploadOperation, frozenset[FileRole]] = {
     "create_project": frozenset({"project", "contributions", "component"}),
     "add_contributions": frozenset({"contributions", "component"}),
     "add_component": frozenset({"component"}),
-    "set_data": frozenset({"data", "project"}),
+    "replace": frozenset({"project", "contributions", "component"}),
+    "update": frozenset({"project", "contributions"}),
 }
 _OPERATION_REQUIRES: dict[UploadOperation, frozenset[FileRole]] = {
     "create_project": frozenset({"project"}),
     "add_contributions": frozenset({"contributions"}),
     "add_component": frozenset({"component"}),
-    "set_data": frozenset({"data", "project"}),  # at least one of these
+    "replace": frozenset({"project", "contributions", "component"}),  # at least one of these
+    "update": frozenset({"project", "contributions"}),  # at least one of these
 }
+
+_UPDATE_FORMATS: frozenset[UploadFormat] = frozenset({"json", "jsonl"})
 
 _CONTENT_TYPE_RE = re.compile(r"^[a-z0-9][a-z0-9!#$&^_.+-]*/[a-z0-9][a-z0-9!#$&^_.+-]*$")
 
@@ -110,22 +117,15 @@ UploadStrategy = Annotated[SingleStrategy | MultipartStrategy, Field(discriminat
 
 
 class ManifestFile(BaseModel):
-    """One declared file in an upload session: what it is (``role``/``format``) and where it goes.
+    """One declared file in an upload session: what it is (``role``/``format``) and where it goes."""
 
-    ``filename`` becomes a sanitized S3 key segment (see :func:`sanitize_segment`). Role coherence
-    (allowed formats, matching extension, and the ``component``-only ``cid``/``component_kind``/
-    ``component_name``) is enforced here so an incoherent manifest is rejected at ``initiate``.
-    """
-
+    # Becomes a sanitized S3 key segment (see `sanitize_segment`)
     filename: str
     role: FileRole
     format: UploadFormat
     content_type: ContentType
     size: int = Field(gt=0)
-    # Component-only: a client-chosen grouping label tying this file's contribution together with its
-    # sibling component files *within the session*. It is NOT the S3 key segment and is NOT written to
-    # ``manifest.json``: at ``initiate`` the server mints a generated contribution id (an ObjectId) per
-    # distinct cid, and that id is what appears in the key. Still sanitized so grouping stays stable.
+    # Contribution id to link components to their owning contributions in S3
     cid: str | None = None
     # Optional natural identity, for the worker to match/create the target contribution.
     contribution: ContributionIdentity | None = None
@@ -195,17 +195,33 @@ class UploadManifest(BaseModel):
                 f"operation '{self.operation}' requires at least one file with role in {sorted(required)}",
                 operation=self.operation,
             )
-        # Resolved keys must be unique: a role's prefix + (cid, filename) identifies the slot. The cid
-        # is a 1:1 grouping label for the generated contribution id minted at initiate, so uniqueness on
-        # (role, cid, filename) is equivalent to uniqueness on the resolved (role, contribution_id, filename).
+        # ``update`` is a field-level merge, so every file must carry the structured ``{identity, update}`` envelope.
+        if self.operation == "update":
+            if bad := [file.filename for file in self.files if file.format not in _UPDATE_FORMATS]:
+                raise ValidationError(
+                    "operation 'update' requires structured files (json/jsonl)",
+                    files=bad,
+                    allowed=sorted(_UPDATE_FORMATS),
+                )
+        # Prevent uploading duplicate files
         slots = [(file.role, file.cid, file.filename) for file in self.files]
         if len(set(slots)) != len(slots):
             raise ValidationError("two files resolve to the same storage key (role + cid + filename must be unique)")
         return self
 
 
-# Alias kept for the repository's generic binding / router import.
-UploadIn = UploadManifest
+class UpdateRecord(BaseModel):
+    """One record in an ``update`` file body: locate an existing resource by ``identity``, apply ``update``.
+
+    identity: the composite key used to uniquely identify a single resource
+    update: the information used to update the resource. Can update nested fields via dot notation. Ie.
+    {"update": {"data.foo": "bar"}} would update Contribution.data.foo to "bar".
+
+    This is not a request body, just a documented contract.
+    """
+
+    identity: dict[str, Any]
+    update: dict[str, Any]
 
 
 # --- Stored session document ------------------------------------------------------------------

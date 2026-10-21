@@ -8,7 +8,7 @@ from types_aiobotocore_s3 import S3Client
 from types_aiobotocore_s3.literals import ChecksumAlgorithmType
 from types_aiobotocore_sqs.client import SQSClient
 
-from mpcontribs_api.authz import PROJECT_PATH, User
+from mpcontribs_api.authz import PROJECT_PATH, ROOT_PATH, User
 from mpcontribs_api.config import get_settings
 from mpcontribs_api.domains.uploads.models import (
     CompletedFile,
@@ -249,21 +249,29 @@ class UploadService:
             case "project":
                 return f"{base}/project/{spec.filename}"
             case "contributions":
-                return f"{base}/source/{spec.filename}"
-            case "data":
-                return f"{base}/patches/{spec.filename}"
+                return f"{base}/contributions/{spec.filename}"
             case "component":
                 assert contribution_key is not None, "component files must carry a generated contribution_key"
                 return f"{base}/contributions/{contribution_key}/files/{spec.filename}"
 
-    @staticmethod
-    def _manifest_payload(doc: Upload) -> dict[str, Any]:
-        """The resolved manifest written to S3 - everything the worker needs."""
+    def _manifest_payload(self, doc: Upload) -> dict[str, Any]:
+        """The resolved manifest written to S3 - everything the worker needs.
+
+        This server only checks whether a caller can write to the project being uploaded to, not field level rules.
+        We add authz information into the manifest so the worker can assess the validity of the palyoad coming from
+        the user
+        """
+        project_role = self._user.role_for(*PROJECT_PATH, doc.project)
         return {
             "upload_id": str(doc.id),
             "consumer_id": doc.consumer_id,
             "project": doc.project,
             "operation": doc.operation,
+            "authz": {
+                "username": self._user.username,
+                "is_admin": self._user.is_admin(*ROOT_PATH),
+                "project_role": project_role.value if project_role is not None else None,
+            },
             "files": [
                 {
                     "key": file.key,
