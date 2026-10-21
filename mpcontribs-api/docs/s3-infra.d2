@@ -51,7 +51,8 @@ aws: "AWS" {
   style.fill: "#fff7e6"
 
   s3: "S3" {
-    raw: "mpcontribs-raw\n(raw uploads + manifest.json)" { class: store }
+    staging: "mpcontribs-staging\n(staged uploads + manifest.json)" { class: store }
+    raw: "mpcontribs-raw\n(graduated raw uploads)" { class: store }
     processed: "mpcontribs-processed\n(production-formatted data)" { class: store }
     blobs: "mpcontribs-blobs\n(component blobs)" { class: store }
   }
@@ -79,8 +80,8 @@ kong -> api: "proxied + identity headers"
 api <-> mongo: "domain CRUD (Beanie)"
 
 # --- API -> S3 (uploads) ------------------------------------------------------
-api -> aws.s3.raw: "write manifest.json,\npresign PUT/multipart, complete, head"
-client -> aws.s3.raw: "PUT bytes\n(presigned, direct)"
+api -> aws.s3.staging: "write manifest.json,\npresign PUT/multipart, complete, head"
+client -> aws.s3.staging: "PUT bytes\n(presigned, direct)"
 
 # --- API -> S3 (downloads) ----------------------------------------------------
 # Today downloads stream from MongoDB; the S3 export cache is a TODO.
@@ -97,7 +98,8 @@ aws.sqs.projection_q -> aws.lambda.projection_worker: "trigger" { class: planned
 aws.sqs.download_q -> aws.lambda.download_worker: "trigger"
 
 # --- Lambda -> stores ---------------------------------------------------------
-aws.lambda.transform_worker -> aws.s3.raw: "read raw" { class: planned }
+aws.lambda.transform_worker -> aws.s3.staging: "read manifest + staged files" { class: planned }
+aws.lambda.transform_worker -> aws.s3.raw: "graduate staged -> raw" { class: planned }
 aws.lambda.transform_worker -> aws.s3.processed: "write" { class: planned }
 aws.lambda.transform_worker -> aws.s3.blobs: "write blobs" { class: planned }
 aws.lambda.transform_worker -> mongo: "upsert" { class: planned }

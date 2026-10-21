@@ -33,9 +33,10 @@ flow: "User uploads a new project — end to end" {
     api -> api: "require consumer_id on caller (else 422)"
     api -> api: "authorize: User.can_write(projects, project)\n→ 403 PermissionError if not"
     api -> api: "validate manifest:\nrole↔operation coherence (create_project needs a 'project' json file),\nformat↔extension, component cid/kind/name, unique resolved keys → 422"
+    api -> api: "operations: create_project / add_contributions / add_component (create),\nplus replace & update (edits; set_data folded into these).\nreplace = whole-object overwrite (any role); update = field merge (project/contributions only,\njson/jsonl only — no components). The session operation tells the worker how; files are laid out identically"
     api -> api: "enforce limits:\n≤ max_files_per_session, each ≤ max_file_bytes,\nsum ≤ max_session_bytes → 422"
     api -> api: "sanitize project to a single safe key segment (else 422)"
-    api -> api: "allocate session id (ObjectId); mint a contribution id (ObjectId) per distinct client cid;\nbucket = mpcontribs-staging\nper file key: {project}/{id}/… \n(project/, source/, patches/, contributions/<generated-id>/files/) + filename"
+    api -> api: "allocate session id (ObjectId); mint a contribution id (ObjectId) per distinct client cid;\nbucket = mpcontribs-staging\nper file key: {project}/{id}/… \n(project/ + filename, contributions/ + filename for the bulk file,\ncontributions/<generated-id>/files/ + filename for components)"
 
     small: "per file — small (size ≤ multipart_threshold, 100 MiB)" {
       api -> s3: "generate_presigned_url(put_object, ExpiresIn=15m)"
@@ -45,7 +46,7 @@ flow: "User uploads a new project — end to end" {
       api -> api: "plan parts: part_size (100 MiB), num_parts = ceil(size/part_size)"
     }
 
-    api -> s3: "put_object manifest.json\nkey {project}/{id}/manifest.json (resolved intent = source of truth)"
+    api -> s3: "put_object manifest.json\nkey {project}/{id}/manifest.json (resolved intent = source of truth)\nincludes authz block { username, is_admin } — the caller's privileges,\nstamped server-side so the async worker can enforce field-level rules"
     api -> mongo: "insert Upload doc (status = pending)"
     api -> user: "201 SessionInitiated\n{ id, project, operation, files:[FileInitiated:\nname, key, type, num_parts, part_size, url? ] }"
   }
@@ -80,6 +81,7 @@ flow: "User uploads a new project — end to end" {
     worker -> s3: "get manifest.json, then staged files by key"
     worker -> s3: "graduate: promote staged files → mpcontribs-raw"
     worker -> worker: "parse per role/format;\ncreate project, contributions, components"
+    worker -> worker: "for replace/update: apply per session operation —\nreplace overwrites the resource; update applies an identity+update envelope per record\n(contributions: JSONL, one per line; project: one json record) — locate by identity, set the dotted fields.\nworker validates content + enforces field authz from manifest.authz — API stays domain-free.\nSee docs/workflows/updating_information.md"
     worker -> s3: "write production data → mpcontribs-processed / mpcontribs-blobs"
     worker -> mongo: "upsert project + contributions + components"
   }
