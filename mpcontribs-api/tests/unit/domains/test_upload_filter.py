@@ -27,8 +27,8 @@ class TestScalarAndIn:
         assert conditions["status"] == "completed"
 
     def test_operation(self):
-        conditions = _flatten(UploadFilter(operation="set_data")._get_filter_conditions())
-        assert conditions["operation"] == "set_data"
+        conditions = _flatten(UploadFilter(operation="update")._get_filter_conditions())
+        assert conditions["operation"] == "update"
 
     def test_operation_in(self):
         conditions = _flatten(UploadFilter(operation__in=["create_project", "add_component"])._get_filter_conditions())

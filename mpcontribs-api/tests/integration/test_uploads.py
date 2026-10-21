@@ -113,7 +113,7 @@ class TestInitiate:
             files=[
                 FileInitiated(
                     name="contributions.csv",
-                    key=f"myproject/{OID}/source/contributions.csv",
+                    key=f"myproject/{OID}/contributions/contributions.csv",
                     type="single",
                     num_parts=1,
                     part_size=1024,
@@ -148,6 +148,30 @@ class TestInitiate:
         bad = {**MANIFEST, "files": [{**MANIFEST["files"][0], "size": 0}]}
         r = client.post("/api/v1/uploads", json=bad, headers=AUTHED_HEADERS)
         assert r.status_code == 422
+
+    def test_update_operation_accepted_201(self, client, upload_service):
+        # A metadata ``update`` session: one project.json the worker will merge field-by-field.
+        project_file = {
+            "filename": "project.json",
+            "role": "project",
+            "format": "json",
+            "content_type": "application/json",
+            "size": 256,
+        }
+        upload_service.initiate.return_value = SessionInitiated(
+            id=PydanticObjectId(OID), operation="update", project="myproject", files=[]
+        )
+        body = {"project": "myproject", "operation": "update", "files": [project_file]}
+        r = client.post("/api/v1/uploads", json=body, headers=AUTHED_HEADERS)
+        assert r.status_code == 201
+        assert upload_service.initiate.await_args.kwargs["manifest"].operation == "update"
+
+    def test_update_csv_contributions_rejected_422(self, client, upload_service):
+        # ``update`` is a field merge and needs a structured file; a CSV contributions file is rejected.
+        body = {**MANIFEST, "operation": "update"}  # MANIFEST carries a lone contributions.csv file
+        r = client.post("/api/v1/uploads", json=body, headers=AUTHED_HEADERS)
+        assert r.status_code == 422
+        upload_service.initiate.assert_not_called()
 
 
 # ---------------------------------------------------------------------------

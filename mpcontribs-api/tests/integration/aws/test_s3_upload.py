@@ -84,7 +84,7 @@ class UploadFileSpec:
             case "project":
                 return f"{base}/project/{self.filename}"
             case "contributions":
-                return f"{base}/source/{self.filename}"
+                return f"{base}/contributions/{self.filename}"
         raise AssertionError(f"expected_key is not defined for role {self.role}")
 
 

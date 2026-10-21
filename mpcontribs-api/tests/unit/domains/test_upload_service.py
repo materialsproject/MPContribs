@@ -22,6 +22,7 @@ from mpcontribs_api.domains.uploads.models import (
     MultipartStrategy,
     SingleStrategy,
     Upload,
+    UpdateRecord,
     UploadFile,
     UploadManifest,
     UploadOut,
@@ -140,7 +141,7 @@ class TestInitiate:
         oid = doc.id
         by_role = {file.spec.role: file for file in doc.files}
         assert by_role["project"].key == f"myproject/{oid}/project/meta.json"
-        assert by_role["contributions"].key == f"myproject/{oid}/source/contributions.csv"
+        assert by_role["contributions"].key == f"myproject/{oid}/contributions/contributions.csv"
         # The component key uses the server-minted contribution id (an ObjectId), never the client cid.
         component = by_role["component"]
         assert PydanticObjectId.is_valid(component.contribution_key)
@@ -223,6 +224,96 @@ class TestInitiate:
 
 
 # ---------------------------------------------------------------------------
+# replace / update — session-level operation drives the worker; files are uniform
+# ---------------------------------------------------------------------------
+
+
+# ALICE is a plain editor on ``myproject``; ADMIN additionally holds the domain admin grant.
+ADMIN = User(username="google:admin@example.com", consumer_id="cid-admin", groups=("mpcontribs=admin",))
+
+
+def _contrib_jsonl(filename="contrib_updates.jsonl", **kw):
+    """A contributions-role JSONL file — the carrier for ``update`` envelope records."""
+    return _file(role="contributions", filename=filename, fmt="jsonl", content_type="application/x-ndjson", **kw)
+
+
+class TestReplaceUpdate:
+    async def test_replace_mixed_session_routes_every_role(self):
+        # ``replace`` is whole-object and permits every role in one session; each file is keyed by its
+        # role exactly as for create_project — the operation only tells the worker how, not the layout.
+        svc, uploads, *_ = _service()
+        files = [_project_file(filename="project.json"), _file(filename="contributions.csv"), _component()]
+        await svc.initiate(manifest=_manifest(files, operation="replace"))
+        doc = uploads.insert_one.await_args.args[0]
+        oid = doc.id
+        by_role = {file.spec.role: file for file in doc.files}
+        assert by_role["project"].key == f"myproject/{oid}/project/project.json"
+        assert by_role["contributions"].key == f"myproject/{oid}/contributions/contributions.csv"
+        assert by_role["component"].key.endswith("/files/Si.cif")
+        assert doc.operation == "replace"
+
+    async def test_update_mixes_project_and_contributions(self):
+        # ``update`` is a field merge: project + contributions (JSONL), never a component. Files are keyed
+        # identically to any other session; the worker applies the {identity, update} envelope per record.
+        svc, uploads, *_ = _service()
+        files = [_project_file(filename="project.json"), _contrib_jsonl()]
+        await svc.initiate(manifest=_manifest(files, operation="update"))
+        doc = uploads.insert_one.await_args.args[0]
+        oid = doc.id
+        by_role = {file.spec.role: file for file in doc.files}
+        assert by_role["project"].key == f"myproject/{oid}/project/project.json"
+        assert by_role["contributions"].key == f"myproject/{oid}/contributions/contrib_updates.jsonl"
+        assert doc.operation == "update"
+
+    async def test_update_rejects_component_role(self):
+        # Components are opaque blobs with no fields to merge, so ``update`` must not accept them.
+        with pytest.raises(ValidationError):
+            _manifest([_project_file(), _component()], operation="update")
+
+    async def test_update_rejects_csv_contributions(self):
+        # A field merge needs a structured, absence-meaningful payload; CSV can't express a partial.
+        with pytest.raises(ValidationError):
+            _manifest([_file(filename="c.csv", fmt="csv")], operation="update")
+
+    async def test_update_record_envelope_round_trips(self):
+        # Guards the documented {identity, update} contract the worker consumes.
+        record = UpdateRecord.model_validate(
+            {
+                "identity": {"project": "myproject", "chemical_system_id": "Si-O", "formula": "SiO2"},
+                "update": {"data.bandgap": 1.2, "formula": "SiO3", "data.notes": None},
+            }
+        )
+        assert record.identity["chemical_system_id"] == "Si-O"
+        assert record.update["data.bandgap"] == 1.2
+        assert record.update["data.notes"] is None  # JSON null clears a field
+
+    async def test_update_can_be_project_only(self):
+        # A metadata-only update: a single project.json the worker merges field-by-field.
+        svc, uploads, s3, _ = _service()
+        await svc.initiate(manifest=_manifest([_project_file(filename="project.json")], operation="update"))
+        doc = uploads.insert_one.await_args.args[0]
+        assert [file.spec.role for file in doc.files] == ["project"]
+        assert json.loads(s3.put_object.await_args.kwargs["Body"])["operation"] == "update"
+
+    async def test_manifest_stamps_authz_block_for_non_admin(self):
+        # The worker runs without request identity, so the API records the caller's privileges in the
+        # manifest. A plain editor is not an admin, so the worker must refuse admin-only field edits.
+        # ALICE holds the legacy owner grant on ``myproject``, recorded as her effective project role.
+        svc, _, s3, _ = _service(ALICE)
+        await svc.initiate(manifest=_manifest([_project_file()], operation="update"))
+        authz = json.loads(s3.put_object.await_args.kwargs["Body"])["authz"]
+        assert authz == {"username": "google:alice@example.com", "is_admin": False, "project_role": "owner"}
+
+    async def test_manifest_stamps_authz_block_for_admin(self):
+        # The admin's power comes from ``is_admin`` (a root grant), not a project role: with no grant on
+        # ``myproject`` itself, ``project_role`` is None, yet the worker still permits admin-only fields.
+        svc, _, s3, _ = _service(ADMIN)
+        await svc.initiate(manifest=_manifest([_project_file()], operation="replace"))
+        authz = json.loads(s3.put_object.await_args.kwargs["Body"])["authz"]
+        assert authz == {"username": "google:admin@example.com", "is_admin": True, "project_role": None}
+
+
+# ---------------------------------------------------------------------------
 # generate_part_urls — per-file within a session
 # ---------------------------------------------------------------------------
 
@@ -231,7 +322,7 @@ class TestGenerateParts:
     async def test_multipart_returns_urls_from_start_part(self):
         oid = PydanticObjectId()
         strategy = MultipartStrategy(upload_id="s3-upload-id", part_size=PART_SIZE, num_parts=3)
-        file = UploadFile(spec=_file(filename="big.csv"), key="myproject/x/source/big.csv", strategy=strategy)
+        file = UploadFile(spec=_file(filename="big.csv"), key="myproject/x/contributions/big.csv", strategy=strategy)
         svc, _, s3, _ = _service(read=_session([file], oid=oid))
         result = await svc.generate_part_urls(upload_id=oid, name="big.csv", start_part=2)
         assert [p.part_number for p in result.urls] == [2, 3]
@@ -240,7 +331,7 @@ class TestGenerateParts:
     async def test_single_returns_one_put_url(self):
         oid = PydanticObjectId()
         file = UploadFile(
-            spec=_file(filename="small.csv"), key="myproject/x/source/small.csv", strategy=SingleStrategy()
+            spec=_file(filename="small.csv"), key="myproject/x/contributions/small.csv", strategy=SingleStrategy()
         )
         svc, _, s3, _ = _service(read=_session([file], oid=oid))
         result = await svc.generate_part_urls(upload_id=oid, name="small.csv", start_part=1)
@@ -251,7 +342,7 @@ class TestGenerateParts:
     async def test_unknown_file_name_is_404(self):
         oid = PydanticObjectId()
         file = UploadFile(
-            spec=_file(filename="small.csv"), key="myproject/x/source/small.csv", strategy=SingleStrategy()
+            spec=_file(filename="small.csv"), key="myproject/x/contributions/small.csv", strategy=SingleStrategy()
         )
         svc, *_ = _service(read=_session([file], oid=oid))
         with pytest.raises(NotFoundError):
@@ -260,7 +351,7 @@ class TestGenerateParts:
     async def test_start_part_beyond_count_rejected(self):
         oid = PydanticObjectId()
         strategy = MultipartStrategy(upload_id="s3-upload-id", part_size=PART_SIZE, num_parts=3)
-        file = UploadFile(spec=_file(filename="big.csv"), key="myproject/x/source/big.csv", strategy=strategy)
+        file = UploadFile(spec=_file(filename="big.csv"), key="myproject/x/contributions/big.csv", strategy=strategy)
         svc, *_ = _service(read=_session([file], oid=oid))
         with pytest.raises(ValidationError):
             await svc.generate_part_urls(upload_id=oid, name="big.csv", start_part=4)
@@ -278,7 +369,7 @@ class TestGenerateParts:
 
 def _completed_session(oid):
     """A stored ``Upload`` (not UploadOut) as returned by ``update_one`` — carries ``manifest_key``."""
-    file = UploadFile(spec=_file(filename="small.csv"), key="myproject/x/source/small.csv", strategy=SingleStrategy())
+    file = UploadFile(spec=_file(filename="small.csv"), key="myproject/x/contributions/small.csv", strategy=SingleStrategy())
     return _session([file], oid=oid, status="completed", cls=Upload)
 
 
@@ -286,7 +377,7 @@ class TestComplete:
     async def test_single_verifies_object_then_enqueues_pointer(self, monkeypatch):
         oid = PydanticObjectId()
         file = UploadFile(
-            spec=_file(filename="small.csv"), key="myproject/x/source/small.csv", strategy=SingleStrategy()
+            spec=_file(filename="small.csv"), key="myproject/x/contributions/small.csv", strategy=SingleStrategy()
         )
         svc, uploads, s3, sqs = _service(read=_session([file], oid=oid), updated=_completed_session(oid))
         monkeypatch.setattr(svc._settings.aws.sqs, "transform_queue_url", "https://sqs.example/q")
@@ -306,7 +397,7 @@ class TestComplete:
     async def test_multipart_completes_with_its_parts(self, monkeypatch):
         oid = PydanticObjectId()
         strategy = MultipartStrategy(upload_id="s3-upload-id", part_size=PART_SIZE, num_parts=2)
-        file = UploadFile(spec=_file(filename="big.csv"), key="myproject/x/source/big.csv", strategy=strategy)
+        file = UploadFile(spec=_file(filename="big.csv"), key="myproject/x/contributions/big.csv", strategy=strategy)
         svc, uploads, s3, sqs = _service(read=_session([file], oid=oid), updated=_completed_session(oid))
         monkeypatch.setattr(svc._settings.aws.sqs, "transform_queue_url", "https://sqs.example/q")
         parts = [CompletedPart(part_number=1, etag="e1"), CompletedPart(part_number=2, etag="e2")]
@@ -320,7 +411,7 @@ class TestComplete:
     async def test_multipart_requires_parts(self):
         oid = PydanticObjectId()
         strategy = MultipartStrategy(upload_id="s3-upload-id", part_size=PART_SIZE, num_parts=2)
-        file = UploadFile(spec=_file(filename="big.csv"), key="myproject/x/source/big.csv", strategy=strategy)
+        file = UploadFile(spec=_file(filename="big.csv"), key="myproject/x/contributions/big.csv", strategy=strategy)
         svc, uploads, s3, _ = _service(read=_session([file], oid=oid))
         with pytest.raises(ValidationError):
             await svc.complete(upload_id=oid, files=[])  # no parts supplied for the multipart file
@@ -330,7 +421,7 @@ class TestComplete:
     async def test_single_missing_object_rejected(self):
         oid = PydanticObjectId()
         file = UploadFile(
-            spec=_file(filename="small.csv"), key="myproject/x/source/small.csv", strategy=SingleStrategy()
+            spec=_file(filename="small.csv"), key="myproject/x/contributions/small.csv", strategy=SingleStrategy()
         )
         svc, uploads, s3, _ = _service(read=_session([file], oid=oid))
         s3.head_object.side_effect = Exception("404")
