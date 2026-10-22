@@ -1,154 +1,96 @@
-from typing import Annotated, Self
+from typing import ClassVar
 
 from beanie import PydanticObjectId
-from pydantic import BaseModel, BeforeValidator, ConfigDict, model_validator
-from pymatgen.core import Element
+from pydantic import BaseModel
+from pymongo import ASCENDING, IndexModel
 
 from mpcontribs_api.domains._shared.filters import BaseFilter
-from mpcontribs_api.domains._shared.models import Component, ComponentIdentity, ComponentIn, DocumentOut
-from mpcontribs_api.domains._shared.types import MD5Hash, NFKCStr
-from mpcontribs_api.exceptions import ValidationError
-from mpcontribs_api.projection import SparseFieldsModel
+from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
+from mpcontribs_api.domains._shared.types import Identity, NFKCStr, ShortStr
 
 
-def _validate_lattice_matrix(value: object) -> list[list[float]]:
-    """Validate a lattice matrix as exactly three rows of three numbers (row-major 3x3).
+class StructureVersionIdentity(Identity):
+    """Identity of a structure version: the immutable S3 object version that stores its content.
 
-    A crystal lattice matrix is nine floats with a fixed shape, so it is stored and typed as a plain
-    nested list.
-
-    Args:
-        value: the raw ``matrix`` payload from a request body or a stored document.
-
-    Returns:
-        list[list[float]]: the validated 3x3 matrix with every cell coerced to ``float``.
-
-    Raises:
-        ValidationError: if ``value`` is not a 3x3 nested sequence of numbers.
+    S3 is the version authority. The bytes live at the key ``{project}/structures/{name}`` on a
+    versioning-enabled bucket, and the record's natural key is the immutable S3 ``version_id`` it pins.
     """
-    if not isinstance(value, (list, tuple)):
-        raise ValidationError(f"lattice matrix must be a 3x3 nested list, got {type(value).__name__}")
-    rows = list(value)
-    if len(rows) != 3:
-        raise ValidationError(f"lattice matrix must be 3x3: got {len(rows)} rows, expected 3")
-    matrix: list[list[float]] = []
-    for i, row in enumerate(rows):
-        if not isinstance(row, (list, tuple)):
-            raise ValidationError(f"lattice matrix row {i} must be a list of 3 numbers, got {type(row).__name__}")
-        cells = list(row)
-        if len(cells) != 3:
-            raise ValidationError(f"lattice matrix must be 3x3: row {i} has {len(cells)} columns, expected 3")
-        converted: list[float] = []
-        for j, cell in enumerate(cells):
-            # ``bool`` is an ``int`` subclass but is not a valid matrix entry.
-            if isinstance(cell, bool) or not isinstance(cell, (int, float)):
-                raise ValidationError(f"lattice matrix cell [{i}][{j}] must be numeric, got {cell!r}")
-            converted.append(float(cell))
-        matrix.append(converted)
-    return matrix
+
+    s3_version_id: str
 
 
-# Row-major 3x3 matrix of floats; validated for shape, matching the stored (pymatgen) representation.
-LatticeMatrix = Annotated[list[list[float]], BeforeValidator(_validate_lattice_matrix)]
+class Structure(BaseDocumentWithInput[PydanticObjectId]):
+    """Thin index record locating one S3-stored structure version.
 
+    The content itself lives in S3; this record is a self-contained S3 locator plus a little
+    metadata. It serves to:
 
-class SiteProperties(BaseModel):
-    magmom: float
+    - address the exact object - ``{project}/structures/{name}`` at ``s3_version_id`` — without a
+      round trip through the referencing contribution,
+    - be the pin target of a contribution ``Link`` (so a contribution references an exact,
+      immutable version), and
+    - aggregations (e.g. sort/count by ``size``).
 
+    A structure is never shared across projects, so ``project`` is a property of the record (1:1).
+    There is one document per S3 version.
+    """
 
-class Species(BaseModel):
-    element: Element
-    occu: int
-
-
-class Lattice(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-    matrix: LatticeMatrix
-    pbc: list[bool]
-    a: float
-    b: float
-    c: float
-    alpha: float
-    beta: float
-    gamma: float
-    volume: float
-
-
-class Site(BaseModel):
-    species: list[Species]
-    abc: list[float]
-    properties: SiteProperties
-    label: str
-    xyz: list[float]
-
-
-# Some things in Emmet-core that could assist in translating the pymatgen string to BaseModel
-# In Mongo it is a single long string, but we could try to parse it into something typed
-# It looks like it has some fields, then a table for n_atom_site_* with the subsequent lines being tab/space delimited
-# rows
-class Cif(BaseModel):
-    pass
-
-
-class Structure(Component):
-    hash_fields = frozenset({"lattice", "sites", "charge"})
-    lattice: Lattice
-    sites: list[Site]
-    charge: float | None
-    cif: str  # Cif
+    # Structures are no longer content-addressed `Component`s; their natural key is the S3 version.
+    identity_model: ClassVar[type[Identity]] = StructureVersionIdentity
+    # Owning project - the first segment of the S3 key. Written at ingest by the worker.
+    project: ShortStr
+    # Author-supplied object name, unique within a project (NFKC-normalized like other names).
+    name: NFKCStr
+    # The immutable S3 object version this record pins. Natural key.
+    s3_version_id: str
+    # Byte size of the stored structure object, for aggregations (sort/sum by size).
+    size: int
 
     class Settings:
         name = "structures"
-        indexes = [ComponentIdentity.index_model(name="md5")]
+        indexes = [
+            # Deployed index names are kept stable — renaming forces a drop/recreate.
+            StructureVersionIdentity.index_model(name="s3_version_id", unique=True),
+            IndexModel(keys=[("name", ASCENDING), ("project", ASCENDING)], name="name_project"),
+            IndexModel(keys=[("size", ASCENDING)], name="size"),
+        ]
 
 
-class StructureIn(ComponentIn):
-    """User-supplied structure content."""
+class StructureIn(BaseModel):
+    """A by-name reference to a structure lineage within the contribution's project.
 
-    lattice: Lattice
-    sites: list[Site]
-    charge: float | None = None
-    cif: str
+    Structure content is in S3. MongoDB just tracks the structure's name and (optional) version.
+    """
+
+    # NFKC-normalized so compatibility-equivalent spellings of a name collapse to one stored form.
+    name: NFKCStr
+    version_id: str | None = None
 
 
 class StructureOut(DocumentOut[PydanticObjectId]):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    """Structure version metadata served from Mongo. Content is served separately from S3."""
+
+    project: str | None = None
     name: str | None = None
-    md5: MD5Hash | None = None
-    lattice: Lattice | None = None
-    sites: list[Site] | None = None
-    charge: float | None = None
-    cif: str | None = None
+    s3_version_id: str | None = None
+    size: int | None = None
 
     @staticmethod
     def default_fields() -> tuple[str, ...]:
         return (
             "id",
+            "project",
             "name",
-            "md5",
+            "s3_version_id",
+            "size",
         )
 
 
-class StructurePatch(SparseFieldsModel):
-    name: str | None = None
-    lattice: Lattice | None = None
-    sites: list[Site] | None = None
-    charge: float | None = None
-    cif: str | None = None
+class StructurePatch(BaseModel):
+    """Structure versions are immutable — no fields are patchable.
 
-    @model_validator(mode="after")
-    def require_all_data_fields(self) -> Self:
-        """If any of {lattice, sites, charge, cif} are being updated, all must be specified.
-
-        charge is nullable; lattice, sites, and cif must be non-null when patched.
-        """
-        data_fields = frozenset({"lattice", "sites", "charge", "cif"})
-        set_fields = data_fields & self.model_fields_set
-        if set_fields and set_fields != data_fields:
-            raise ValidationError("must specify all {lattice, sites, charge, cif} if updating one.", update=self)
-        if set_fields and (self.lattice is None or self.sites is None or self.cif is None):
-            raise ValidationError("lattice, sites, and cif must be non-null.", update=self)
-        return self
+    Present only to satisfy the repository's generic ``TPatch`` parameter; there is no PATCH endpoint.
+    """
 
 
 class StructureFilter(BaseFilter):
@@ -156,18 +98,22 @@ class StructureFilter(BaseFilter):
     id__in: list[PydanticObjectId] | None = None
     id__neq: PydanticObjectId | None = None
 
-    md5: MD5Hash | None = None
-    md5__in: list[MD5Hash] | None = None
-    md5__neq: MD5Hash | None = None
+    project: str | None = None
+    project__in: list[str] | None = None
 
     name: NFKCStr | None = None
     name__in: list[NFKCStr] | None = None
     name__neq: NFKCStr | None = None
     name__ilike: NFKCStr | None = None
 
-    # sites
+    s3_version_id: str | None = None
+    s3_version_id__in: list[str] | None = None
 
-    # sorting
+    size: int | None = None
+    size__gte: int | None = None
+    size__lte: int | None = None
+
+    # sorting (e.g. ``order_by=size`` or ``order_by=-size``)
     order_by: list[str] | None = None
 
     class Constants(BaseFilter.Constants):
