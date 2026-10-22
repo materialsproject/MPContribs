@@ -20,7 +20,7 @@ bravado-core==5.17.1
     # via bravado
 bytecode==0.13.0
     # via ddtrace
-certifi==2024.7.4
+certifi==2026.10.19
     # via requests
 charset-normalizer==2.1.1
     # via requests

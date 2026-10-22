@@ -38,7 +38,7 @@ bytecode==0.18.1
     # via ddtrace
 cachetools==7.1.4
     # via mpcontribs-client
-certifi==2026.6.17
+certifi==2026.10.19
     # via requests
 charset-normalizer==3.4.9
     # via requests
@@ -232,7 +232,7 @@ parso==0.8.7
     # via jedi
 pexpect==4.9.0
     # via ipython
-pillow==12.3.0
+pillow==13.0.0
     # via matplotlib
 pint==0.25.3
     # via mpcontribs-client
