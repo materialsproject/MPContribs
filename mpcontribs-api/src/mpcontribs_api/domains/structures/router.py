@@ -1,16 +1,13 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
-from fastapi.responses import RedirectResponse, StreamingResponse
+from fastapi.responses import RedirectResponse
 from fastapi_filter import FilterDepends
 
 from mpcontribs_api.dependencies import S3Dep, require_user
 from mpcontribs_api.domains._shared.models import DeleteResult
 from mpcontribs_api.domains._shared.types import (
-    DownloadFormat,
     FieldSelector,
-    ShortMimeFormat,
-    download_filename,
 )
 from mpcontribs_api.domains.structures.dependencies import StructureServiceDep
 from mpcontribs_api.domains.structures.models import StructureFilter, StructureOut, StructureVersionIdentity
@@ -47,33 +44,6 @@ async def delete_one_by_identity(
 ) -> DeleteResult:
     """Delete a single structure version addressed by its ``s3_version_id`` (its natural key)."""
     return await service.delete_one(identifiers=identity.as_dict())
-
-
-@router.get("/download/{short_mime}")
-async def download_structure(
-    service: StructureServiceDep,
-    format: DownloadFormat,
-    s3: S3Dep,
-    short_mime: ShortMimeFormat = ShortMimeFormat.GZ,
-    ignore_cache: bool = False,
-    filter: StructureFilter = FilterDepends(StructureFilter),
-    fields: FieldSelector = None,
-) -> StreamingResponse:
-    selected = StructureOut.parse_fields(fields)
-    body = await service.download(
-        format=format,
-        short_mime=short_mime,
-        ignore_cache=ignore_cache,
-        filter=filter,
-        fields=selected,
-        s3=s3,
-    )
-    filename = download_filename("structures", format, short_mime)
-    return StreamingResponse(
-        body,
-        media_type="application/gzip",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
-    )
 
 
 @router.get("/{id}", response_model_exclude_unset=True)
