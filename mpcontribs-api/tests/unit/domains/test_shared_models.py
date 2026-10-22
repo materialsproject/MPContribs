@@ -14,7 +14,7 @@ from mpcontribs_api.domains.contributions.models import Contribution, Contributi
 from mpcontribs_api.domains.initiatives.models import Initiative, InitiativeIdentity
 from mpcontribs_api.domains.project_groups.models import ProjectGroup, ProjectGroupIdentity
 from mpcontribs_api.domains.projects.models import Project, ProjectIdentity, ProjectIn
-from mpcontribs_api.domains.structures.models import Structure, ComponentIdentity
+from mpcontribs_api.domains.structures.models import Structure, StructureVersionIdentity
 from mpcontribs_api.domains.tables.models import Table, ComponentIdentity
 from mpcontribs_api.pagination import encode_cursor
 
@@ -114,7 +114,7 @@ _DOMAIN_IDENTITIES = [
     (Initiative, InitiativeIdentity, {"slug"}),
     (ProjectGroup, ProjectGroupIdentity, {"name", "owner"}),
     (Consumer, ConsumerIdentity, {"consumer_id"}),
-    (Structure, ComponentIdentity, {"md5"}),
+    (Structure, StructureVersionIdentity, {"s3_version_id"}),
     (Table, ComponentIdentity, {"md5"}),
     (Attachment, ComponentIdentity, {"md5"}),
     (

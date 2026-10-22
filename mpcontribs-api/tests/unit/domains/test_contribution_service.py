@@ -4,7 +4,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import polars as pl
 import pytest
 from beanie import PydanticObjectId
-from pymatgen.core import Element
 from pymongo.errors import BulkWriteError
 
 from mpcontribs_api.authz import User
@@ -27,14 +26,7 @@ from mpcontribs_api.domains.contributions.models import (
 from mpcontribs_api.domains.contributions import service as service_module
 from mpcontribs_api.domains.contributions.service import ContributionService
 from mpcontribs_api.domains.contributions.stats import ProjectAggregate
-from mpcontribs_api.domains.structures.models import (
-    Lattice,
-    Site,
-    SiteProperties,
-    Species,
-    Structure,
-    StructureIn,
-)
+from mpcontribs_api.domains.structures.models import StructureIn
 from mpcontribs_api.domains.tables.models import Attributes, Labels, Table, TableIn
 from mpcontribs_api.exceptions import ConflictError, NotFoundError, PermissionError, ValidationError
 
@@ -76,29 +68,9 @@ def _table_in(**overrides) -> TableIn:
 
 
 def _structure_in(**overrides) -> StructureIn:
-    defaults = {
-        "_id": _oid(),
-        "name": "test-struct",
-        "md5": "c" * 32,
-        "lattice": Lattice(
-            matrix=[[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]],
-            pbc=[True, True, True],
-            a=1.0, b=1.0, c=1.0,
-            alpha=90.0, beta=90.0, gamma=90.0,
-            volume=1.0,
-        ),
-        "sites": [
-            Site(
-                species=[Species(element=Element("Fe"), occu=1)],
-                abc=[0.0, 0.0, 0.0],
-                properties=SiteProperties(magmom=0.0),
-                label="Fe",
-                xyz=[0.0, 0.0, 0.0],
-            )
-        ],
-        "charge": None,
-        "cif": "",
-    }
+    # Structures are now a by-name reference (content is uploaded to S3, never inline). Used here only
+    # to make a contribution "have components" for routing/quota/guard tests.
+    defaults = {"name": "test-struct"}
     defaults.update(overrides)
     return StructureIn(**defaults)
 
@@ -255,12 +227,6 @@ def _unapproved_projects_repo() -> AsyncMock:
     repo.unique_columns_by_id.side_effect = lambda ids: {pid: None for pid in ids}
     repo.column_paths_by_id.side_effect = lambda ids: {pid: set() for pid in ids}
     return repo
-
-
-def _fake_structure() -> Structure:
-    s = MagicMock(spec=Structure)
-    s.id = _oid()
-    return s
 
 
 def _fake_table() -> Table:
@@ -803,11 +769,13 @@ class TestInsertContributionsNoComponentPath:
 
 
 class TestInsertContributionsTransactionPath:
+    # Structures are S3-versioned and created/linked by the worker, not inline, so the synchronous
+    # insert pipeline (sessions, transactions, links, rollback) is exercised with *tables*, which
+    # retain the inline-build content-addressed-component behavior structures used to have.
     async def test_with_components_opens_session_per_contribution(self):
         svc, contrib_repo, struct_repo, table_repo, attach_repo, client = _make_service()
 
-        struct_repo.insert_many.return_value = _components_result(_fake_structure())
-        table_repo.insert_many.return_value = _components_result()
+        table_repo.insert_many.return_value = _components_result(_fake_table())
         attach_repo.insert_many.return_value = []
 
         async def _insert(doc, session=None):
@@ -815,7 +783,7 @@ class TestInsertContributionsTransactionPath:
 
         contrib_repo.insert_one.side_effect = _insert
 
-        contribs = [_contrib_in(identifier=f"c{i}", structures=[_structure_in()]) for i in range(3)]
+        contribs = [_contrib_in(identifier=f"c{i}", tables=[_table_in()]) for i in range(3)]
         summary = await svc.insert_many(contribs)
 
         assert client.start_session.call_count == 3
@@ -827,7 +795,6 @@ class TestInsertContributionsTransactionPath:
         client, session = _make_fake_client()
         svc, contrib_repo, struct_repo, table_repo, _, _ = _make_service(client=client)
 
-        struct_repo.insert_many.return_value = _components_result(_fake_structure())
         table_repo.insert_many.return_value = _components_result(_fake_table())
 
         async def _insert(doc, session=None):
@@ -836,20 +803,17 @@ class TestInsertContributionsTransactionPath:
         contrib_repo.insert_one.side_effect = _insert
 
         contrib = _contrib_in(
-            structures=[_structure_in()],
             tables=[_table_in()],
             attachments=[_attachment_in()],
         )
         await svc.insert_many([contrib])
-        assert struct_repo.insert_many.call_args.kwargs["session"] is session
         assert table_repo.insert_many.call_args.kwargs["session"] is session
         assert contrib_repo.insert_one.call_args.kwargs["session"] is session
 
     async def test_failure_on_second_of_three_yields_summary(self):
         svc, contrib_repo, struct_repo, table_repo, attach_repo, _ = _make_service()
 
-        struct_repo.insert_many.return_value = _components_result(_fake_structure())
-        table_repo.insert_many.return_value = _components_result()
+        table_repo.insert_many.return_value = _components_result(_fake_table())
         attach_repo.insert_many.return_value = []
 
         async def _insert(doc, session=None):
@@ -861,9 +825,9 @@ class TestInsertContributionsTransactionPath:
         contrib_repo.insert_one.side_effect = _insert
 
         contribs = [
-            _contrib_in(identifier="ok-1", structures=[_structure_in()]),
-            _contrib_in(identifier="fail", structures=[_structure_in()]),
-            _contrib_in(identifier="ok-2", structures=[_structure_in()]),
+            _contrib_in(identifier="ok-1", tables=[_table_in()]),
+            _contrib_in(identifier="fail", tables=[_table_in()]),
+            _contrib_in(identifier="ok-2", tables=[_table_in()]),
         ]
         summary = await svc.insert_many(contribs)
 
@@ -876,10 +840,9 @@ class TestInsertContributionsTransactionPath:
     async def test_component_links_wired_per_contribution(self):
         svc, contrib_repo, struct_repo, table_repo, attach_repo, _ = _make_service()
 
-        struct_a, struct_b = _fake_structure(), _fake_structure()
-        struct_calls = iter([_components_result(struct_a), _components_result(struct_b)])
-        struct_repo.insert_many.side_effect = lambda *_args, **_kwargs: next(struct_calls)
-        table_repo.insert_many.return_value = _components_result()
+        table_a, table_b = _fake_table(), _fake_table()
+        table_calls = iter([_components_result(table_a), _components_result(table_b)])
+        table_repo.insert_many.side_effect = lambda *_args, **_kwargs: next(table_calls)
         attach_repo.insert_many.return_value = []
 
         captured: list[Contribution] = []
@@ -891,21 +854,20 @@ class TestInsertContributionsTransactionPath:
         contrib_repo.insert_one.side_effect = _insert
 
         contribs = [
-            _contrib_in(identifier="a", structures=[_structure_in()]),
-            _contrib_in(identifier="b", structures=[_structure_in()]),
+            _contrib_in(identifier="a", tables=[_table_in()]),
+            _contrib_in(identifier="b", tables=[_table_in()]),
         ]
         await svc.insert_many(contribs)
 
         captured = {c.material_id: c for c in captured}
-        assert captured[_mp_id_for("a")].structures == [struct_a]
-        assert captured[_mp_id_for("b")].structures == [struct_b]
+        assert captured[_mp_id_for("a")].tables == [table_a]
+        assert captured[_mp_id_for("b")].tables == [table_b]
 
     async def test_pivoting_submission_shares_components_across_rows(self):
         svc, contrib_repo, struct_repo, table_repo, attach_repo, client = _make_service()
 
-        shared = _fake_structure()
-        struct_repo.insert_many.return_value = _components_result(shared)
-        table_repo.insert_many.return_value = _components_result()
+        shared = _fake_table()
+        table_repo.insert_many.return_value = _components_result(shared)
         attach_repo.insert_many.return_value = []
 
         captured: list[Contribution] = []
@@ -916,21 +878,21 @@ class TestInsertContributionsTransactionPath:
 
         contrib_repo.insert_one.side_effect = _insert
 
-        # One submission that pivots into two rows (T=300K / T=400K) and carries a structure.
+        # One submission that pivots into two rows (T=300K / T=400K) and carries a table.
         contrib = _contrib_in(
             identifier="mp-1",
             data={"x (eV, t=300K)": 1, "x (eV, t=400K)": 2},
-            structures=[_structure_in()],
+            tables=[_table_in()],
         )
         summary = await svc.insert_many([contrib])
 
         # Components inserted once for the whole submission; both rows written in one transaction.
-        assert struct_repo.insert_many.call_count == 1
+        assert table_repo.insert_many.call_count == 1
         assert client.start_session.call_count == 1
         assert contrib_repo.insert_one.call_count == 2
-        # Both pivoted rows link to the same shared structure and carry distinct condition keys.
+        # Both pivoted rows link to the same shared table and carry distinct condition keys.
         assert len(captured) == 2
-        assert all(doc.structures == [shared] for doc in captured)
+        assert all(doc.tables == [shared] for doc in captured)
         assert len({doc.condition_key for doc in captured}) == 2
         # Summary is sized to the single submission but reports both pivoted rows as succeeded.
         assert summary.total == 1
@@ -947,8 +909,7 @@ class TestInsertContributionsMixedBatch:
     async def test_mixed_batch_routes_correctly(self):
         svc, contrib_repo, struct_repo, table_repo, attach_repo, client = _make_service()
 
-        struct_repo.insert_many.return_value = _components_result(_fake_structure())
-        table_repo.insert_many.return_value = _components_result()
+        table_repo.insert_many.return_value = _components_result(_fake_table())
         attach_repo.insert_many.return_value = []
         contrib_repo.insert_many.return_value = None
 
@@ -959,9 +920,9 @@ class TestInsertContributionsMixedBatch:
 
         contribs = [
             _contrib_in(identifier="bare-1"),
-            _contrib_in(identifier="with-1", structures=[_structure_in()]),
+            _contrib_in(identifier="with-1", tables=[_table_in()]),
             _contrib_in(identifier="bare-2"),
-            _contrib_in(identifier="with-2", structures=[_structure_in()]),
+            _contrib_in(identifier="with-2", tables=[_table_in()]),
         ]
         summary = await svc.insert_many(contribs)
 

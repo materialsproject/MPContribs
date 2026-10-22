@@ -15,6 +15,7 @@ from beanie import PydanticObjectId
 
 from mpcontribs_api.authz import User
 from mpcontribs_api.config import get_settings
+from mpcontribs_api.domains.uploads.contracts import RepinRecord, UpdateRecord
 from mpcontribs_api.domains.uploads.models import (
     CompletedFile,
     CompletedPart,
@@ -22,7 +23,6 @@ from mpcontribs_api.domains.uploads.models import (
     MultipartStrategy,
     SingleStrategy,
     Upload,
-    UpdateRecord,
     UploadFile,
     UploadManifest,
     UploadOut,
@@ -311,6 +311,43 @@ class TestReplaceUpdate:
         await svc.initiate(manifest=_manifest([_project_file()], operation="replace"))
         authz = json.loads(s3.put_object.await_args.kwargs["Body"])["authz"]
         assert authz == {"username": "google:admin@example.com", "is_admin": True, "project_role": None}
+
+
+class TestRepin:
+    async def test_repin_accepts_contributions_jsonl(self):
+        # ``repin`` moves structure references to another version; it carries no bytes, only RepinRecords
+        # in a contributions-role JSONL, keyed like any other contributions file.
+        svc, uploads, s3, _ = _service()
+        await svc.initiate(manifest=_manifest([_contrib_jsonl(filename="repin.jsonl")], operation="repin"))
+        doc = uploads.insert_one.await_args.args[0]
+        oid = doc.id
+        assert doc.operation == "repin"
+        assert doc.files[0].key == f"myproject/{oid}/contributions/repin.jsonl"
+        assert json.loads(s3.put_object.await_args.kwargs["Body"])["operation"] == "repin"
+
+    async def test_repin_rejects_component_role(self):
+        # repin re-points existing versions; it never uploads component bytes.
+        with pytest.raises(ValidationError):
+            _manifest([_component()], operation="repin")
+
+    async def test_repin_rejects_csv(self):
+        # A re-pin record is a structured {identity, lineage_name, to_version_id, mode}; CSV is rejected.
+        with pytest.raises(ValidationError):
+            _manifest([_file(filename="r.csv", fmt="csv")], operation="repin")
+
+    async def test_repin_record_envelope_round_trips(self):
+        # Guards the documented RepinRecord contract the worker consumes; mode defaults to representation.
+        record = RepinRecord.model_validate(
+            {
+                "identity": {"project": "myproject", "chemical_system_id": "Si-O", "formula": "SiO2"},
+                "lineage_name": "relaxed-cell",
+                "to_version_id": "v-abc123",
+            }
+        )
+        assert record.lineage_name == "relaxed-cell"
+        assert record.to_version_id == "v-abc123"
+        assert record.mode == "representation"
+        assert RepinRecord.model_validate({**record.model_dump(), "mode": "physical"}).mode == "physical"
 
 
 # ---------------------------------------------------------------------------

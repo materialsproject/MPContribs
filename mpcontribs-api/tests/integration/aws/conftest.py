@@ -128,6 +128,12 @@ def _provision(s3, sqs) -> None:
         except ClientError as exc:
             if exc.response["Error"]["Code"] not in ("BucketAlreadyOwnedByYou", "BucketAlreadyExists"):
                 raise
+    # Structure versions are pinned by S3 object version under ``{project}/structures/{name}``, so the
+    # processed bucket must have versioning enabled (mirrors the production infra requirement).
+    s3.put_bucket_versioning(
+        Bucket="mpcontribs-processed",
+        VersioningConfiguration={"Status": "Enabled"},
+    )
     for queue in ("mpcontribs-download", "mpcontribs-transform", "mpcontribs-projection"):
         sqs.create_queue(QueueName=queue)  # idempotent: returns the existing queue if present
 

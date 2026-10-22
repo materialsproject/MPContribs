@@ -5,22 +5,21 @@ Every contribution insert/delete recomputes the owning project's rollup (see
 assert the project's persisted ``stats``/``columns`` after each step of the lifecycle:
 
   create project -> empty
-  insert 1 contribution with two structures + two tables (and data) -> filled
+  insert 1 contribution with two tables (and data) -> filled
   delete it -> empty
   insert 1 contribution with no components -> filled from data only
   delete it -> empty
   insert two contributions whose data overlaps and diverges -> merged columns (a new column appears)
 
-Attachments are intentionally excluded from the "two of each component" step: the contribution
-insert path only wires structures and tables (see ContributionService._do_insert_group), so
-attachments submitted on a contribution would be dropped and never counted. Structure/table/
-attachment counting is symmetric in the aggregation, so this still exercises the component path.
+The component-count step uses tables only. Structures are now S3-versioned and are created/linked by
+the transform worker (not inline on a contribution insert — see ContributionService._do_insert_group),
+so a structure submitted on a synchronous insert is not linked and would never be counted. Attachments
+are likewise not wired by the insert path. Structure/table/attachment counting is symmetric in the
+aggregation, so exercising it via tables still covers the component path.
 """
 
 import polars as pl
 import pytest
-from beanie import PydanticObjectId
-from pymatgen.core import Element
 
 from mpcontribs_api.authz import User
 from mpcontribs_api.domains.contributions.models import ContributionFilter, ContributionIn
@@ -29,7 +28,6 @@ from mpcontribs_api.domains.contributions.service import ContributionService
 from mpcontribs_api.domains.attachments.repository import MongoDbAttachmentRepository
 from mpcontribs_api.domains.projects.models import Column, Project, ProjectIn, Stats
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
-from mpcontribs_api.domains.structures.models import Lattice, Site, SiteProperties, Species, StructureIn
 from mpcontribs_api.domains.structures.repository import MongoDbStructureRepository
 from mpcontribs_api.domains.tables.models import TableIn
 from mpcontribs_api.domains.tables.repository import MongoDbTableRepository
@@ -68,35 +66,6 @@ async def _make_project() -> Project:
         owner="google:admin@example.com",
     )
     return await MongoDbProjectRepository(ADMIN).upsert_one(Project.from_input_model(project_in, id=PID))
-
-
-def _structure(charge: float | None) -> StructureIn:
-    """A valid structure; ``charge`` is a hash field, so varying it yields a distinct md5."""
-    return StructureIn(
-        name="struct",
-        lattice=Lattice(
-            matrix=[[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]],
-            pbc=[True, True, True],
-            a=1.0,
-            b=1.0,
-            c=1.0,
-            alpha=90.0,
-            beta=90.0,
-            gamma=90.0,
-            volume=1.0,
-        ),
-        sites=[
-            Site(
-                species=[Species(element=Element("Fe"), occu=1)],
-                abc=[0.0, 0.0, 0.0],
-                properties=SiteProperties(magmom=0.0),
-                label="Fe",
-                xyz=[0.0, 0.0, 0.0],
-            )
-        ],
-        charge=charge,
-        cif="",
-    )
 
 
 def _table(value: float) -> TableIn:
@@ -154,13 +123,14 @@ class TestStatsRecomputeLifecycle:
         await _make_project()
         await _assert_empty()
 
-        # --- insert one contribution with two structures + two tables (+ data) ---
+        # --- insert one contribution with two tables (+ data) ---
+        # Structures are not wired by the synchronous insert path (worker-linked, S3-versioned), so the
+        # component-count step uses tables; structures stay at 0.
         summary = await svc.insert_many(
             [
                 _contrib_in(
                     "with-components",
                     data={"bandGap": 2.1, "energy": -5.0},
-                    structures=[_structure(charge=None), _structure(charge=1.0)],
                     tables=[_table(1.0), _table(2.0)],
                 )
             ]
@@ -170,7 +140,7 @@ class TestStatsRecomputeLifecycle:
 
         project = await _project()
         assert project.stats.contributions == 1
-        assert project.stats.structures == 2
+        assert project.stats.structures == 0
         assert project.stats.tables == 2
         assert project.stats.attachments == 0
         assert project.stats.size > 0

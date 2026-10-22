@@ -53,7 +53,7 @@ def attachment_service(test_app):
     test_app.dependency_overrides.pop(get_attachment_service, None)
 
 
-SAMPLE_STRUCTURE = StructureOut(name="Fe2O3.cif", md5="a" * 32)
+SAMPLE_STRUCTURE = StructureOut(name="relaxed-cell", s3_version_id="v-abc123", size=2048)
 SAMPLE_TABLE = TableOut(name="bandgaps", md5="b" * 32)
 
 
@@ -89,14 +89,12 @@ class TestStructuresList:
         # parse_fields always includes the id identity field.
         assert structure_service.read_many.call_args.kwargs["fields"] == frozenset({"id", "name"})
 
-    def test_content_fields_are_selectable(self, client, structure_service):
-        # Regression for #4: structure content must be reachable via _fields (on the Out model).
+    def test_index_fields_are_selectable(self, client, structure_service):
+        # The thin index exposes name/s3_version_id/size; content is served separately from S3.
         structure_service.read_many.return_value = Page(items=[], next_cursor=None)
-        r = client.get("/api/v1/structures?_fields=lattice&_fields=sites&_fields=charge&_fields=cif")
+        r = client.get("/api/v1/structures?_fields=s3_version_id&_fields=size")
         assert r.status_code == 200
-        assert structure_service.read_many.call_args.kwargs["fields"] == frozenset(
-            {"id", "lattice", "sites", "charge", "cif"}
-        )
+        assert structure_service.read_many.call_args.kwargs["fields"] == frozenset({"id", "s3_version_id", "size"})
 
 
 class TestStructuresDelete:
@@ -112,17 +110,14 @@ class TestStructuresDelete:
         structure_service.delete_many.assert_awaited_once()
 
 
-class TestStructuresInsert:
-    def test_post_route_exists(self, client, structure_service):
-        # Empty body -> handler invoked; service returns a summary-shaped object.
-        structure_service.insert_many.return_value = {"total": 0, "succeeded": [], "failed": []}
-        r = client.post("/api/v1/structures", json=[])
-        assert r.status_code != 404
+class TestStructuresNoInlineWrite:
+    # Structures are S3-versioned and created by the worker from uploads, so the direct content-write
+    # routes (POST insert, PATCH) no longer exist on the API.
+    def test_post_not_allowed(self, client, structure_service):
+        assert client.post("/api/v1/structures", json=[]).status_code == 405
 
-    def test_post_forwards_to_service(self, client, structure_service):
-        structure_service.insert_many.return_value = {"total": 0, "succeeded": [], "failed": []}
-        client.post("/api/v1/structures", json=[])
-        structure_service.insert_many.assert_awaited_once()
+    def test_patch_by_id_not_allowed(self, client, structure_service):
+        assert client.patch(f"/api/v1/structures/{PydanticObjectId()}", json={"name": "x"}).status_code == 405
 
 
 class TestStructuresByIdRouting:
@@ -134,49 +129,42 @@ class TestStructuresByIdRouting:
         structure_service.delete_one.return_value = DeleteResult(num_deleted=1)
         assert client.delete(f"/api/v1/structures/{PydanticObjectId()}").status_code == 200
 
-    def test_patch_by_id_conventional_path(self, client, structure_service):
-        structure_service.update_one.return_value = SAMPLE_STRUCTURE
-        r = client.patch(f"/api/v1/structures/{PydanticObjectId()}", json={"name": "renamed"})
-        assert r.status_code == 200
+    def test_content_endpoint_redirects_to_presigned_url(self, client, structure_service):
+        # ``GET /{id}/content`` no longer proxies bytes: the service mints a presigned GET URL and the
+        # route 307-redirects to it, so the object streams straight from S3.
+        presigned = "https://bucket.s3.amazonaws.com/proj/structures/Fe2O3?X-Amz-Signature=deadbeef&versionId=v1"
+        structure_service.read_content.return_value = presigned
+        r = client.get(f"/api/v1/structures/{PydanticObjectId()}/content", follow_redirects=False)
+        assert r.status_code == 307
+        assert r.headers["location"] == presigned
 
     def test_download_conventional_path(self, client, structure_service):
         structure_service.download.return_value = iter([b"x"])
         assert client.get("/api/v1/structures/download/gz?format=csv").status_code == 200
 
 
-class TestStructuresByMd5Routing:
-    """The ``/item?md5=`` path addresses a component by its content hash — previously advertised in
-    docstrings but unreachable (a 32-hex md5 was rejected as a bad ObjectId on ``/{id}``)."""
+class TestStructuresByVersionRouting:
+    """``/item?s3_version_id=`` addresses a structure version by its S3 object version (its natural key)."""
 
-    MD5 = "a" * 32
+    VERSION = "v-abc123"
 
-    def test_get_by_md5_forwards_identifiers(self, client, structure_service):
+    def test_get_by_version_forwards_identifiers(self, client, structure_service):
         structure_service.read_one.return_value = SAMPLE_STRUCTURE
-        r = client.get(f"/api/v1/structures/item?md5={self.MD5}")
+        r = client.get(f"/api/v1/structures/item?s3_version_id={self.VERSION}")
         assert r.status_code == 200
-        assert structure_service.read_one.await_args.kwargs["identifiers"] == {"md5": self.MD5}
+        assert structure_service.read_one.await_args.kwargs["identifiers"] == {"s3_version_id": self.VERSION}
 
-    def test_delete_by_md5_forwards_identifiers(self, client, structure_service):
+    def test_delete_by_version_forwards_identifiers(self, client, structure_service):
         structure_service.delete_one.return_value = DeleteResult(num_deleted=1)
-        r = client.delete(f"/api/v1/structures/item?md5={self.MD5}")
+        r = client.delete(f"/api/v1/structures/item?s3_version_id={self.VERSION}")
         assert r.status_code == 200
-        assert structure_service.delete_one.await_args.kwargs["identifiers"] == {"md5": self.MD5}
-
-    def test_patch_by_md5_forwards_identifiers(self, client, structure_service):
-        structure_service.update_one.return_value = SAMPLE_STRUCTURE
-        r = client.patch(f"/api/v1/structures/item?md5={self.MD5}", json={"name": "renamed"})
-        assert r.status_code == 200
-        assert structure_service.update_one.await_args.kwargs["identifiers"] == {"md5": self.MD5}
-
-    def test_malformed_md5_returns_422(self, client, structure_service):
-        # Typed with MD5Hash, so a non-32-hex value is rejected before reaching the service.
-        assert client.get("/api/v1/structures/item?md5=nothex").status_code == 422
+        assert structure_service.delete_one.await_args.kwargs["identifiers"] == {"s3_version_id": self.VERSION}
 
     def test_item_is_not_captured_as_an_id(self, client, structure_service):
-        # ``/item`` must be routed to the md5 handler, not matched as ``/{id}`` with id="item".
+        # ``/item`` must route to the version handler, not match as ``/{id}`` with id="item".
         structure_service.read_one.return_value = SAMPLE_STRUCTURE
-        client.get(f"/api/v1/structures/item?md5={self.MD5}")
-        assert structure_service.read_one.await_args.kwargs["identifiers"] == {"md5": self.MD5}
+        client.get(f"/api/v1/structures/item?s3_version_id={self.VERSION}")
+        assert structure_service.read_one.await_args.kwargs["identifiers"] == {"s3_version_id": self.VERSION}
 
 
 # ===========================================================================
@@ -333,11 +321,6 @@ class TestComponentDownloads:
 
 
 class TestComponentMutationsRequireAuth:
-    def test_structures_post_anon_401(self, client, structure_service):
-        r = client.post("/api/v1/structures", json=[], headers=FORCE_ANON_HEADERS)
-        assert r.status_code == 401
-        structure_service.insert_many.assert_not_called()
-
     def test_structures_delete_anon_401(self, client, structure_service):
         r = client.delete("/api/v1/structures", headers=FORCE_ANON_HEADERS)
         assert r.status_code == 401
@@ -347,11 +330,6 @@ class TestComponentMutationsRequireAuth:
         r = client.delete(f"/api/v1/structures/{PydanticObjectId()}", headers=FORCE_ANON_HEADERS)
         assert r.status_code == 401
         structure_service.delete_one.assert_not_called()
-
-    def test_structure_patch_by_id_anon_401(self, client, structure_service):
-        r = client.patch(f"/api/v1/structures/{PydanticObjectId()}", json={"name": "x"}, headers=FORCE_ANON_HEADERS)
-        assert r.status_code == 401
-        structure_service.update_one.assert_not_called()
 
     def test_tables_delete_anon_401(self, client, table_service):
         r = client.delete("/api/v1/tables", headers=FORCE_ANON_HEADERS)
@@ -410,19 +388,14 @@ NON_WRITER_HEADERS = {
 
 
 class TestComponentInsertRequiresWriter:
-    def test_structures_post_non_writer_403(self, client, structure_service):
-        r = client.post("/api/v1/structures", json=[], headers=NON_WRITER_HEADERS)
-        assert r.status_code == 403
-        structure_service.insert_many.assert_not_called()
-
     def test_tables_post_non_writer_403(self, client, table_service):
         r = client.post("/api/v1/tables", json=[], headers=NON_WRITER_HEADERS)
         assert r.status_code == 403
         table_service.insert_many.assert_not_called()
 
-    def test_structures_post_writer_allowed(self, client, structure_service):
+    def test_tables_post_writer_allowed(self, client, table_service):
         # The default AUTHED_HEADERS identity carries the mp-team group -> writer.
-        structure_service.insert_many.return_value = {"total": 0, "succeeded": [], "failed": []}
-        r = client.post("/api/v1/structures", json=[])
+        table_service.insert_many.return_value = {"total": 0, "succeeded": [], "failed": []}
+        r = client.post("/api/v1/tables", json=[])
         assert r.status_code == 200
-        structure_service.insert_many.assert_awaited_once()
+        table_service.insert_many.assert_awaited_once()
