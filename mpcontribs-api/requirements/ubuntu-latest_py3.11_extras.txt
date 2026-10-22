@@ -424,7 +424,7 @@ pymatgen==2026.9.24
     #   mpcontribs-api (pyproject.toml)
 pymatgen-core==2026.10.16
     # via pymatgen
-pymongo==4.17.0
+pymongo==4.18.2
     # via
     #   flask-mongorest-mpcontribs
     #   mongoengine
