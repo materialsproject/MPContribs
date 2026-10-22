@@ -127,10 +127,6 @@ class ZeoFeatures(BaseModel):
     omsAvailable: bool = Field(
         description="Verified availability of the open-metal-site result group."
     )
-    hasOpenMetalSites: bool | None = Field(
-        default=None,
-        description="Whether open metal sites were detected; false is a valid successful result.",
-    )
     openMetalSiteCount: NonNegativeInt | None = Field(
         default=None, description="Number of detected open metal sites, dimensionless."
     )

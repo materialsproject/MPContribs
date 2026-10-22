@@ -8,7 +8,7 @@ client serialization.
 | Module / model | Component | Shape |
 |---|---|---|
 | `data.py` / `Data` | `Contribution.data` | 9 groups, 45 leaf fields |
-| `zeo_features.py` / `ZeoFeatures` | `zeoFeatures` Table row | 1 row, 27 columns |
+| `zeo_features.py` / `ZeoFeatures` | `zeoFeatures` Table row | 1 row, 26 columns |
 | `topology.py` / `Topology` | `topologySubnets` Table row | 1 row per successful subnet, 10 columns |
 | `rac_features.py` / `RacFeatures` | `rac5Features` Table row | Optional Table; exactly 1 complete row, 264 numeric columns |
 
@@ -124,6 +124,12 @@ The proposed auxiliary-result policy is:
   A supplied row requires all 264
   finite numeric descriptors. Negative and zero descriptors remain valid;
   no common physical unit or rescaling is imposed.
+
+OMS presence is derived as `openMetalSiteCount > 0` when `omsAvailable` is
+true. The redundant `hasOpenMetalSites` column is not included. A zero count
+means no detected OMS; an unavailable result remains missing, rather than zero.
+Preparation requires a count for available OMS results and checks it against
+availability and diagnostics.
 
 Topology keys are required nonempty strings. The four optional topology
 name/genome columns permit the source's empty strings as well as `None`.
