@@ -6,7 +6,7 @@
 #
 arrow==1.4.0
     # via isoduration
-asttokens==3.0.1
+asttokens==3.0.2
     # via stack-data
 attrs==26.1.0
     # via
@@ -14,7 +14,7 @@ attrs==26.1.0
     #   referencing
 bibtexparser==1.4.4
     # via pymatgen-core
-boltons==26.0.0
+boltons==26.2.0
     # via
     #   mpcontribs-client
     #   mpcontribs-client (pyproject.toml)
@@ -24,35 +24,35 @@ bravado==12.0.1
     #   mpcontribs-client (pyproject.toml)
 bravado-core==6.4.1
     # via bravado
-cachetools==7.1.4
+cachetools==7.2.4
     # via
     #   mpcontribs-client
     #   mpcontribs-client (pyproject.toml)
-certifi==2026.6.17
+certifi==2026.10.19
     # via requests
-charset-normalizer==3.4.9
+charset-normalizer==3.5.2
     # via requests
-contourpy==1.3.3
+cloudpickle==3.1.2
+    # via joblib
+contourpy==1.4.0
     # via matplotlib
-coverage[toml]==7.15.0
+coverage[toml]==7.16.2
     # via pytest-cov
 cycler==0.12.1
     # via matplotlib
-decorator==5.3.1
-    # via ipython
-dnspython==2.8.0
+dnspython==2.9.0
     # via
     #   pyisemail
     #   pymongo
 execnet==2.1.2
     # via pytest-xdist
-executing==2.2.1
+executing==2.3.0
     # via stack-data
 filetype==1.2.0
     # via
     #   mpcontribs-client
     #   mpcontribs-client (pyproject.toml)
-flake8==7.3.0
+flake8==7.4.1
     # via
     #   mpcontribs-client
     #   mpcontribs-client (pyproject.toml)
@@ -64,19 +64,19 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.63.0
+fonttools==4.67.0
     # via matplotlib
-fqdn==1.5.1
+fqdn==1.6.0
     # via jsonschema
-idna==3.18
+idna==3.20
     # via
     #   jsonschema
     #   requests
 importlib-resources==7.1.0
     # via swagger-spec-validator
-iniconfig==2.3.0
+iniconfig==2.3.1
     # via pytest
-ipython==9.15.0
+ipython==9.17.1
     # via
     #   mpcontribs-client
     #   mpcontribs-client (pyproject.toml)
@@ -84,15 +84,15 @@ ipython-pygments-lexers==1.1.1
     # via ipython
 isoduration==20.11.0
     # via jsonschema
-jedi==0.20.0
+jedi==0.20.1
     # via ipython
-joblib==1.5.3
+joblib==1.6.0
     # via pymatgen-core
 json2html==1.3.0
     # via
     #   mpcontribs-client
     #   mpcontribs-client (pyproject.toml)
-jsonpointer==3.1.1
+jsonpointer==3.4
     # via jsonschema
 jsonref==1.1.0
     # via bravado-core
@@ -102,13 +102,13 @@ jsonschema[format-nongpl]==4.26.0
     #   swagger-spec-validator
 jsonschema-specifications==2025.9.1
     # via jsonschema
-kiwisolver==1.5.0
+kiwisolver==1.5.1
     # via matplotlib
 lark==1.3.1
     # via rfc3987-syntax
-lxml==6.1.1
+lxml==6.1.3
     # via pymatgen-core
-matplotlib==3.11.0
+matplotlib==3.11.2
     # via pymatgen-core
 matplotlib-inline==0.2.2
     # via ipython
@@ -116,21 +116,21 @@ mccabe==0.7.0
     # via flake8
 monotonic==1.6
     # via bravado
-monty==2026.5.18
+monty==2026.10.21
     # via pymatgen-core
 mpcontribs-client[dev] @ file:///home/runner/work/MPContribs/MPContribs/mpcontribs-client
     # via mpcontribs-client (pyproject.toml)
 mpmath==1.3.0
     # via sympy
-msgpack==1.2.1
+msgpack==1.2.3
     # via
     #   bravado
     #   bravado-core
-narwhals==2.23.0
+narwhals==2.27.1
     # via plotly
-networkx==3.6.1
+networkx==3.7
     # via pymatgen-core
-numpy==2.5.1
+numpy==2.5.4
     # via
     #   contourpy
     #   matplotlib
@@ -141,16 +141,16 @@ numpy==2.5.1
     #   pymatgen-core
     #   scipy
     #   spglib
-orjson==3.11.9
+orjson==3.13.0
     # via pymatgen-core
-packaging==26.2
+packaging==26.3
     # via
     #   matplotlib
     #   plotly
     #   pytest
 palettable==3.3.3
     # via pymatgen-core
-pandas==3.0.3
+pandas==3.0.6
     # via
     #   mpcontribs-client
     #   mpcontribs-client (pyproject.toml)
@@ -159,42 +159,42 @@ parso==0.8.7
     # via jedi
 pexpect==4.9.0
     # via ipython
-pillow==12.3.0
+pillow==13.0.0
     # via matplotlib
-pint==0.25.3
+pint==0.26.2
     # via
     #   mpcontribs-client
     #   mpcontribs-client (pyproject.toml)
-platformdirs==4.10.0
+platformdirs==4.13.5
     # via pint
-plotly==6.9.0
+plotly==7.1.0
     # via
     #   mpcontribs-client
     #   mpcontribs-client (pyproject.toml)
     #   pymatgen-core
-pluggy==1.6.0
+pluggy==1.7.0
     # via
     #   pytest
     #   pytest-cov
-prompt-toolkit==3.0.52
+prompt-toolkit==3.0.53
     # via ipython
 psutil==7.2.2
     # via ipython
 ptyprocess==0.7.0
     # via pexpect
-pure-eval==0.2.3
+pure-eval==0.2.4
     # via stack-data
 py==1.11.0
     # via
     #   mpcontribs-client
     #   mpcontribs-client (pyproject.toml)
-pycodestyle==2.14.0
+pycodestyle==2.15.0
     # via
     #   flake8
     #   pytest-pycodestyle
-pyflakes==3.4.0
+pyflakes==4.0.3
     # via flake8
-pygments==2.20.0
+pygments==2.21.0
     # via
     #   ipython
     #   ipython-pygments-lexers
@@ -203,17 +203,17 @@ pyisemail==2.0.1
     # via
     #   mpcontribs-client
     #   mpcontribs-client (pyproject.toml)
-pymatgen==2026.5.4
+pymatgen==2026.9.24
     # via
     #   mpcontribs-client
     #   mpcontribs-client (pyproject.toml)
-pymatgen-core==2026.5.18
+pymatgen-core==2026.10.16
     # via pymatgen
-pymongo==4.17.0
+pymongo==4.19.0
     # via
     #   mpcontribs-client
     #   mpcontribs-client (pyproject.toml)
-pyparsing==3.3.2
+pyparsing==3.3.3
     # via
     #   bibtexparser
     #   matplotlib
@@ -236,14 +236,14 @@ pytest-xdist==3.8.0
     # via
     #   mpcontribs-client
     #   mpcontribs-client (pyproject.toml)
-python-dateutil==2.9.0.post0
+python-dateutil==3.0.0
     # via
     #   arrow
     #   bravado
     #   bravado-core
     #   matplotlib
     #   pandas
-pytz==2026.2
+pytz==2026.5
     # via bravado-core
 pyyaml==6.0.3
     # via
@@ -260,7 +260,7 @@ requests==2.34.2
     #   bravado-core
     #   pymatgen-core
     #   requests-futures
-requests-futures==1.0.2
+requests-futures==1.1.0
     # via
     #   mpcontribs-client
     #   mpcontribs-client (pyproject.toml)
@@ -270,15 +270,15 @@ rfc3986-validator==0.1.1
     # via jsonschema
 rfc3987-syntax==1.1.0
     # via jsonschema
-rpds-py==2026.6.3
+rpds-py==2026.9.1
     # via
     #   jsonschema
     #   referencing
 ruamel-yaml==0.19.1
     # via monty
-scipy==1.18.0
+scipy==1.18.1
     # via pymatgen-core
-simplejson==4.1.1
+simplejson==4.2.0
     # via
     #   bravado
     #   bravado-core
@@ -288,7 +288,7 @@ six==1.17.0
     #   bravado-core
     #   python-dateutil
     #   rfc3339-validator
-spglib==2.7.0
+spglib==2.8.0
     # via pymatgen-core
 stack-data==0.6.3
     # via ipython
@@ -301,12 +301,12 @@ sympy==1.14.0
     # via pymatgen-core
 tabulate==0.10.0
     # via pymatgen-core
-tqdm==4.68.4
+tqdm==4.70.1
     # via
     #   mpcontribs-client
     #   mpcontribs-client (pyproject.toml)
     #   pymatgen-core
-traitlets==5.15.1
+traitlets==5.16.1
     # via
     #   ipython
     #   matplotlib-inline
@@ -319,9 +319,11 @@ typing-extensions==4.16.0
     #   referencing
     #   spglib
     #   swagger-spec-validator
-tzdata==2026.2
-    # via arrow
-ujson==5.13.0
+tzdata==2026.5
+    # via
+    #   arrow
+    #   python-dateutil
+ujson==6.0.0
     # via
     #   mpcontribs-client
     #   mpcontribs-client (pyproject.toml)
@@ -329,9 +331,9 @@ uncertainties==3.2.3
     # via pymatgen-core
 uri-template==1.3.0
     # via jsonschema
-urllib3==2.7.0
+urllib3==2.8.0
     # via requests
-wcwidth==0.8.2
+wcwidth==0.9.3
     # via prompt-toolkit
 webcolors==25.10.0
     # via jsonschema
