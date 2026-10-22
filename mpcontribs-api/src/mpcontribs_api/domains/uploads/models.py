@@ -1,6 +1,6 @@
 import re
 from datetime import UTC, datetime
-from typing import Annotated, Any, Literal, Self
+from typing import Annotated, Literal, Self
 
 from beanie import PydanticObjectId
 from bson.errors import InvalidId
@@ -22,7 +22,8 @@ UploadStatus = Literal["pending", "completed"]
 # content into what is already there.
 # add_contribution and add_component are different from update. update operates on fields, while add_* operates
 # on whole objects (an entire contribution, not a single field in a contribution).
-UploadOperation = Literal["create_project", "add_contributions", "add_component", "replace", "update"]
+# ``repin`` updates a contribution's `Structure` reference to a new version and records (RepinRecord).
+UploadOperation = Literal["create_project", "add_contributions", "add_component", "replace", "update", "repin"]
 # What a single file in the session is. See the domain docs for the full semantics.
 FileRole = Literal["project", "contributions", "component"]
 # The kind of component a ``component``-role file materializes into.
@@ -58,6 +59,7 @@ _OPERATION_ROLES: dict[UploadOperation, frozenset[FileRole]] = {
     "add_component": frozenset({"component"}),
     "replace": frozenset({"project", "contributions", "component"}),
     "update": frozenset({"project", "contributions"}),
+    "repin": frozenset({"contributions"}),
 }
 _OPERATION_REQUIRES: dict[UploadOperation, frozenset[FileRole]] = {
     "create_project": frozenset({"project"}),
@@ -65,9 +67,10 @@ _OPERATION_REQUIRES: dict[UploadOperation, frozenset[FileRole]] = {
     "add_component": frozenset({"component"}),
     "replace": frozenset({"project", "contributions", "component"}),  # at least one of these
     "update": frozenset({"project", "contributions"}),  # at least one of these
+    "repin": frozenset({"contributions"}),
 }
 
-_UPDATE_FORMATS: frozenset[UploadFormat] = frozenset({"json", "jsonl"})
+UPDATE_FORMATS: frozenset[UploadFormat] = frozenset({"json", "jsonl"})
 
 _CONTENT_TYPE_RE = re.compile(r"^[a-z0-9][a-z0-9!#$&^_.+-]*/[a-z0-9][a-z0-9!#$&^_.+-]*$")
 
@@ -195,33 +198,18 @@ class UploadManifest(BaseModel):
                 f"operation '{self.operation}' requires at least one file with role in {sorted(required)}",
                 operation=self.operation,
             )
-        # ``update`` is a field-level merge, so every file must carry the structured ``{identity, update}`` envelope.
-        if self.operation == "update":
-            if bad := [file.filename for file in self.files if file.format not in _UPDATE_FORMATS]:
+        if self.operation in ("update", "repin"):
+            if bad := [file.filename for file in self.files if file.format not in UPDATE_FORMATS]:
                 raise ValidationError(
-                    "operation 'update' requires structured files (json/jsonl)",
+                    f"operation '{self.operation}' requires structured files (json/jsonl)",
                     files=bad,
-                    allowed=sorted(_UPDATE_FORMATS),
+                    allowed=sorted(UPDATE_FORMATS),
                 )
         # Prevent uploading duplicate files
         slots = [(file.role, file.cid, file.filename) for file in self.files]
         if len(set(slots)) != len(slots):
             raise ValidationError("two files resolve to the same storage key (role + cid + filename must be unique)")
         return self
-
-
-class UpdateRecord(BaseModel):
-    """One record in an ``update`` file body: locate an existing resource by ``identity``, apply ``update``.
-
-    identity: the composite key used to uniquely identify a single resource
-    update: the information used to update the resource. Can update nested fields via dot notation. Ie.
-    {"update": {"data.foo": "bar"}} would update Contribution.data.foo to "bar".
-
-    This is not a request body, just a documented contract.
-    """
-
-    identity: dict[str, Any]
-    update: dict[str, Any]
 
 
 # --- Stored session document ------------------------------------------------------------------
