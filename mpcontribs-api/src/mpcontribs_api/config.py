@@ -162,9 +162,15 @@ class S3Settings(BaseModel):
 class SqsSettings(BaseModel):
     """AWS SQS Settings for MPContribs"""
 
-    download_queue_url: str = Field(description="The url to connect to the download queue")
-    transform_queue_url: str = Field(description="The url to connect to the transform queue")
-    projection_queue_url: str = Field(description="The url to connect to the projection queue")
+    download_queue_url: str = Field(
+        default="mpcontribs-download", description="The url to connect to the download queue"
+    )
+    transform_queue_url: str = Field(
+        default="mpcontribs-transform", description="The url to connect to the transform queue"
+    )
+    projection_queue_url: str = Field(
+        default="mpcontribs-projection", description="The url to connect to the projection queue"
+    )
 
 
 class AwsSettings(BaseModel):
