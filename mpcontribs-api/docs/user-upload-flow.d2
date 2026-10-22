@@ -82,7 +82,7 @@ flow: "User uploads a new project — end to end" {
     worker -> s3: "graduate: promote staged files → mpcontribs-raw"
     worker -> worker: "parse per role/format;\ncreate project, contributions, components"
     worker -> worker: "for replace/update: apply per session operation —\nreplace overwrites the resource; update applies an identity+update envelope per record\n(contributions: JSONL, one per line; project: one json record) — locate by identity, set the dotted fields.\nworker validates content + enforces field authz from manifest.authz — API stays domain-free.\nSee docs/workflows/updating_information.md"
-    worker -> s3: "write production data → mpcontribs-processed / mpcontribs-blobs"
+    worker -> s3: "write production data → mpcontribs-processed (structures as S3 versions\nat {project}/structures/{name}) / mpcontribs-blobs (tables, attachments)"
     worker -> mongo: "upsert project + contributions + components"
   }
 

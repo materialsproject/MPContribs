@@ -53,8 +53,8 @@ aws: "AWS" {
   s3: "S3" {
     staging: "mpcontribs-staging\n(staged uploads + manifest.json)" { class: store }
     raw: "mpcontribs-raw\n(graduated raw uploads)" { class: store }
-    processed: "mpcontribs-processed\n(production-formatted data)" { class: store }
-    blobs: "mpcontribs-blobs\n(component blobs)" { class: store }
+    processed: "mpcontribs-processed\n(production data, self-contained per project;\nversioned: {project}/structures/{name})" { class: store }
+    blobs: "mpcontribs-blobs\n(table/attachment blobs)" { class: store }
   }
 
   sqs: "SQS" {
@@ -100,9 +100,9 @@ aws.sqs.download_q -> aws.lambda.download_worker: "trigger"
 # --- Lambda -> stores ---------------------------------------------------------
 aws.lambda.transform_worker -> aws.s3.staging: "read manifest + staged files" { class: planned }
 aws.lambda.transform_worker -> aws.s3.raw: "graduate staged -> raw" { class: planned }
-aws.lambda.transform_worker -> aws.s3.processed: "write" { class: planned }
-aws.lambda.transform_worker -> aws.s3.blobs: "write blobs" { class: planned }
-aws.lambda.transform_worker -> mongo: "upsert" { class: planned }
+aws.lambda.transform_worker -> aws.s3.processed: "write; structures as S3 versions\nat {project}/structures/{name}" { class: planned }
+aws.lambda.transform_worker -> aws.s3.blobs: "write table/attachment blobs" { class: planned }
+aws.lambda.transform_worker -> mongo: "upsert (incl. thin structure index:\nname, s3_version_id, size)" { class: planned }
 aws.lambda.projection_worker -> mongo: "project / index" { class: planned }
 
 aws.lambda.download_worker -> api: "download contributions\n(via client)"

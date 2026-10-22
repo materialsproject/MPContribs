@@ -14,6 +14,7 @@ with a different session `operation`.
 |-------------|-------|------------|
 | `replace`   | Overwrite the whole object at the file's location | project, contributions, components |
 | `update`    | Merge only the named fields into what's already there | project, contributions |
+| `repin`     | Move contributions' structure references to another (existing) version | structures |
 
 - **`replace`** takes a complete object. A whole `project.json`, a whole contributions file (each row a
   complete contribution, matched by identity), or a whole component file (CIF/parquet/image). Any format
@@ -21,8 +22,13 @@ with a different session `operation`.
 - **`update`** takes a *partial*. It merges the fields you name and leaves everything else untouched.
   Because a partial must distinguish "unchanged" from "set to null", `update` files must be **JSON or
   JSONL** — CSV is rejected at session initiate (a blank cell is ambiguous).
-- **Components have no fields to merge** (a CIF is an opaque blob), so they are `replace`-only. `update`
-  does not accept the `component` role.
+- **Tables and attachments have no fields to merge** (a CIF/parquet/image is an opaque blob), so they
+  are `replace`-only. `update` does not accept the `component` role.
+- **Structures are immutable and S3-versioned.** A structure *lineage* is the stable key
+  `{project}/structures/{name}` on a versioning-enabled bucket; a `replace` of a structure does not
+  overwrite anything — it **registers a new S3 version** of that lineage. Existing contributions keep
+  the exact version they pinned, so a calculation's structure never changes under it. To move
+  contributions onto a newer version, use `repin` (below), never `update`.
 
 The rest of this doc is about `update`. (`replace` is just "upload the whole thing again.")
 
@@ -77,7 +83,8 @@ re-key), `is_public`.
 **Not allowed:** `project` (moving a contribution between projects is not an update), `unique_value`
 (it's derived — change it by updating the `data` field at the project's `unique_column` path and the
 server re-derives it), `condition_key` / `_id` / `last_modified` (server-owned), and the
-`structures` / `tables` / `attachments` reference lists (manage components by uploading them).
+`structures` / `tables` / `attachments` reference lists (manage tables/attachments by uploading them;
+move a structure reference to another version with the `repin` operation — see below).
 
 ## End to end: fix one field
 
@@ -124,6 +131,39 @@ project id; the id itself cannot change.
 { "identity": { "project": "solar_cells" },
   "update":   { "title": "Updated title", "other.doi": "10.1234/abcd" } }
 ```
+
+## Structures: versions and re-pinning
+
+A structure is a **versioned object owned by S3**. Its lineage is the stable key
+`{project}/structures/{name}` on a versioning-enabled bucket; each upload under that `name` is a new,
+immutable S3 version. Mongo keeps only a thin index record per version (`name`, `s3_version_id`,
+`size`) — the content lives in S3. A contribution **pins** an exact version, so it is immune to later
+uploads of the same lineage.
+
+Two kinds of structure update, both deliberate:
+
+1. **Add a version** — upload a structure as a `component` file (role `component`, `component_kind`
+   `structure`, `component_name` = the lineage `name`) under `replace` (or the usual create/add flow).
+   The worker writes a new S3 version and a new index record. **No existing contribution is touched.**
+
+2. **Re-pin referencers** — move chosen contributions onto a newer version with the `repin` operation.
+   Each record is a `RepinRecord`:
+
+   ```json
+   { "identity": { <contribution composite key> },
+     "lineage_name": "relaxed-cell",
+     "to_version_id": "<the target S3 version_id>",
+     "mode": "representation" }
+   ```
+
+   - `mode: "representation"` — a byte/format fix for the *same* physical structure. The worker fans
+     the new version out to the named referencers; their computed data stays valid.
+   - `mode: "physical"` — the structure itself changed. The worker **refuses** a silent re-point: the
+     affected contributions must be recomputed and re-submitted, because their data is only valid for
+     the version they were computed against.
+
+   Put one `RepinRecord` per line in a JSONL file (role `contributions`), the same way `update` records
+   are batched. Discover the versions of a lineage and who pins each from the structures read endpoints.
 
 ## Deleting
 
