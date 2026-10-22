@@ -46,7 +46,7 @@ from mpcontribs_api.domains.contributions.repository import MongoDbContributionR
 from mpcontribs_api.domains.contributions.stats import iter_leaves
 from mpcontribs_api.domains.projects.models import Column, Stats, validate_column_limit
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
-from mpcontribs_api.domains.structures.models import Structure, StructureFilter
+from mpcontribs_api.domains.structures.models import StructureFilter
 from mpcontribs_api.domains.structures.repository import MongoDbStructureRepository
 from mpcontribs_api.domains.tables.models import Table, TableFilter
 from mpcontribs_api.domains.tables.repository import MongoDbTableRepository
@@ -688,33 +688,30 @@ class ContributionService:
             return bulk_failure_from_exception(index, contrib.identity_dict(unique_value, condition_key), exc)
 
     async def _do_insert_group(self, group: list[PreparedWrite], session: AsyncClientSession) -> list[Contribution]:
-        """Perform the insert of Contributions and their components within a single session."""
+        """Perform the insert of Contributions and their components within a single session.
+
+        Structures are managed in an out-of-repo worker, so are not inserted here.
+        """
         template = group[0].contribution
         try:
-            structure_docs = [Structure.from_input(s) for s in (template.structures or [])]
             table_docs = [Table.from_input(t) for t in (template.tables or [])]
         except PydanticValidationError as exc:
             raise ValidationError(str(exc)) from exc
-        structure_successes, structure_failures = await self._structures.insert_many(structure_docs, session=session)
         table_successes, table_failures = await self._tables.insert_many(table_docs, session=session)
         # A contribution and its components commit or roll back together, so any per-component failure
         # aborts the whole transaction. Re-raise it here; ``_insert_with_components`` maps the raised
         # error onto this contribution's ``BulkFailure``.
-        component_failures = structure_failures + table_failures
-        if component_failures:
-            first = component_failures[0]
+        if table_failures:
+            first = table_failures[0]
             message = f"Component insert failed: {first.message}"
             raise ConflictError(message) if first.error_code == ConflictError.error_code else ValidationError(message)
-        structures = [doc for _, doc in structure_successes]
         tables = [doc for _, doc in table_successes]
-        struct_links = cast(list[Link[Structure]] | None, structures or None)
         table_links = cast(list[Link[Table]] | None, tables or None)
         inserted: list[Contribution] = []
         for item in group:
             doc = self._contributions.document_model.from_input_model(item.contribution)
             doc.unique_value = item.unique_value
             doc.condition_key = item.condition_key
-            doc.structures = struct_links
             doc.tables = table_links
             inserted.append(await self._contributions.insert_one(doc, session=session))
         return inserted
