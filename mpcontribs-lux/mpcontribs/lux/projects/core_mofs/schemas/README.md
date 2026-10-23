@@ -1,153 +1,162 @@
 # CoRE MOF contribution schemas
 
-Each Contribution represents one CoRE MOF structure, identified by `structure_id`.
-ASR, FSR, and ION records with different identifiers are separate Contributions.
-These Pydantic models describe typed scientific results before MPContribs
-client serialization.
+Each Contribution represents one CoRE MOF structure with a unique identifier.
+The native `identifier`, `formula`, `structures`, and `tables` components describe
+the record identity, chemical formula, pymatgen Structures, and attached Tables.
 
-| Module / model | Component | Shape |
+| Module | Model | Component |
 |---|---|---|
-| `data.py` / `Data` | `Contribution.data` | 9 groups, 45 leaf fields |
-| `zeo_features.py` / `ZeoFeatures` | `zeoFeatures` Table row | 1 row, 26 columns |
-| `topology.py` / `Topology` | `topologySubnets` Table row | 1 row per successful subnet, 10 columns |
-| `rac_features.py` / `RacFeatures` | `rac5Features` Table row | Optional Table; exactly 1 complete row, 264 numeric columns |
+| `data.py` | `Data` | `Contribution.data`: 9 groups, 44 input fields and 2 computed output fields |
+| `zeo_features.py` | `ZeoFeatures` | One `zeoFeatures` Table row, with 26 columns |
+| `topology.py` | `Topology` | One row per subnet in `topologySubnets`, with 10 columns |
+| `rac_features.py` | `RacFeatures` | An optional `rac5Features` Table with one row and 264 numeric columns |
 
-The containing Contribution supplies the native `identifier`, `formula`,
-`structures`, and `tables`. Its formula is the metadata
-`chemical_formula`. Upload preparation reads the corresponding CIF with
-`pymatgen.core.Structure.from_file` and supplies the resulting object in
-`structures`. A CIF path is not itself a Structure. Each Table is a pandas
-DataFrame named using `attrs["name"]`; its rows are validated with the
-corresponding model above. The parent Contribution supplies the association,
-so `structure_id` is not repeated as a Table column.
+Table names identify the attached components. Each row is described by its
+corresponding Pydantic model; the containing Contribution associates the Tables
+with the structure.
 
-## Searchable data
+## Data groups
 
-| Group | Required group? | Required / optional leaves |
-|---|---|---|
-| `release` | Yes | 1 / 0 |
-| `source` | Yes | 3 / 1 |
-| `reference` | No | 0 / 3 |
-| `mofid` | No | 0 / 2 |
-| `crystallography` | No | 0 / 2 |
-| `metal` | Yes | 2 / 3 |
-| `checker` | Yes | 8 / 0 |
-| `topology` | Yes | 1 / 5 |
-| `geometry` | No | 0 / 14 |
-| **Total** | **5 required, 4 optional** | **15 / 30** |
+| Group | Required group | Required input fields | Optional input fields |
+|---|---|---:|---:|
+| `release` | Yes | 1 | 0 |
+| `source` | Yes | 3 | 1 |
+| `reference` | No | 0 | 3 |
+| `mofid` | No | 0 | 2 |
+| `crystallography` | No | 0 | 2 |
+| `metal` | Yes | 2 | 3 |
+| `checker` | Yes | 8 | 0 |
+| `topology` | Yes | 1 | 5 |
+| `geometry` | No | 0 | 13 |
+| **Total** | **5 required groups** | **15** | **29** |
 
-All supplied values must meet their declared types and constraints. Optional
-leaves and optional groups default to `None`. Preparation omits missing data
-keys and entirely empty optional groups. Required groups remain required even
-if some of their leaves are optional. Scientific zero and false are preserved.
+These counts describe field declarations. When topology is available, its five
+summary keys are additionally required by model validation. The geometry group
+has two computed fields, giving 15 geometry output fields and 46 data output
+fields overall.
 
-`sourceId` has a 1–64 character bound. Counts are integers, dimensions are 0–3,
-and geometric fractions are 0–1. No numerical ceiling is derived from the
-observed dataset maximum. Data models allow Pydantic's default type conversion
-while retaining field constraints. All Table-row models also permit type conversion; RAC fields use regular floats.
-All numeric values must be finite; CSV parsing happens before validation.
-MOFid strings are preserved without truncation. Both versions may coexist for
-the same MOF. V1 uses SMILES node/linker representations; V2 postprocesses V1
-calculation outputs using metal-node categories and SELFIES linkers.
-The outer format is `<components> MOFid-v1.<topology>.cat<n>` or its `v2`
-counterpart, with optional `.<revision>` and `;<name>` suffixes. Patterns check
-this format while allowing topology placeholders and multiple topology labels;
-they do not validate the chemistry of the encoded components.
+Optional fields default to `None`. Numeric values must be finite, and their
+declared ranges apply after ordinary Pydantic type conversion. Booleans are
+rejected as numeric inputs. Scientific zero and false are valid values.
 
-`metalElements` is a semicolon-separated string. Each supplied symbol must be
-a valid element classified as a metal by `pymatgen.core.Element.is_metal`.
-The validator preserves the supplied string. Missing values may be `None`;
-metalloids are represented separately in `metalloidElements`.
+`sourceId` is a 1–64 character source identifier. Counts are nonnegative or
+positive integers as specified by each field. Network dimensions range from
+0 to 3, space-group numbers from 1 to 230, and volume fractions from 0 to 1.
 
-Checker votes use the shared `CheckerStatus` StrEnum (`PASS`, `FAIL`), and
-consensus fields use `ConsensusStatus` (`CR`, `NCR`, `AMBIGUOUS`). Values remain
-strings in serialized output. These enums constrain labels; consensus agreement
-is checked before model validation.
+## MOF identifiers and metal annotations
 
-## Geometry and Table correspondence
+A structure may have both `mofidV1` and `mofidV2`. V1 uses SMILES node/linker
+representations. V2 is generated from V1 calculation outputs using metal-node
+categories and SELFIES linkers. The outer formats are
+`<components> MOFid-v1.<topology>.cat<n>` and the corresponding `v2` format,
+with optional `.<revision>` and `;<name>` suffixes. Pattern validation checks
+this syntax rather than the chemical validity of the encoded components.
 
-The API names below adapt the MOFSimplify descriptor names to camelCase.
-The laboratory calculations use N2/He probe radii of 1.655/1.32 angstrom.
-Matching descriptor definitions does not imply identical values to a calculation
-using MOFSimplify's 1.86 angstrom setting.
+`metalElements` contains semicolon-separated element symbols. Each symbol is
+validated using `pymatgen.core.Element.is_metal`. `metalElementCount` and
+`metalAtomCount` are nonnegative integers; `metalloidElements` describes
+metalloids separately.
 
-| Data path | MOFSimplify name | Source | Unit |
+## Checker results
+
+`CheckerStatus` contains `PASS` and `FAIL`. `ConsensusStatus` contains `CR`,
+`NCR`, and `AMBIGUOUS`.
+
+| Consensus | Checkers |
+|---|---|
+| `consensus3` | MOFClassifier, MOFChecker, Chen–Manz |
+| `consensus4` | MOFClassifier, MOFChecker, Chen–Manz, MOSAEC |
+| `consensus5` | MOFClassifier, MOFChecker, Chen–Manz, MOSAEC, SETC-GAT |
+
+`CheckerData` validates each consensus against the corresponding votes:
+all PASS gives CR, all FAIL gives NCR, and mixed votes give AMBIGUOUS.
+
+## Geometry
+
+Geometry fields correspond to the MOFSimplify descriptors, using camelCase
+API names. Density is an additional input for the GPOV calculation.
+
+| Geometry field | MOFSimplify name | Corresponding Zeo field or definition | Unit |
 |---|---|---|---|
-| `geometry.di` | Di | Zeo `largestCavityDiameter` | angstrom |
-| `geometry.df` | Df | Zeo `poreLimitingDiameter` | angstrom |
-| `geometry.dif` | Dif | Zeo `largestFreePathDiameter` | angstrom |
-| `geometry.gsa` | GSA | Zeo `n2AccessibleSurfaceAreaGravimetric` | m^2/g |
-| `geometry.vsa` | VSA | Zeo `n2AccessibleSurfaceAreaVolumetric` | m^2/cm^3 |
-| `geometry.gpoav` | GPOAV | Zeo `n2AccessibleVolumeGravimetric` | cm^3/g |
-| `geometry.gponav` | GPONAV | Zeo `n2NonaccessibleVolumeGravimetric` | cm^3/g |
-| `geometry.poav` | POAV | Zeo `n2AccessibleVolumePerCell` | angstrom^3 |
-| `geometry.ponav` | PONAV | Zeo `n2NonaccessibleVolumePerCell` | angstrom^3 |
-| `geometry.poavVolFrac` | POAV_vol_frac | Zeo `n2AccessibleVolumeFraction` | dimensionless |
-| `geometry.ponavVolFrac` | PONAV_vol_frac | Zeo `n2NonaccessibleVolumeFraction` | dimensionless |
-| `geometry.cellV` | cell_v | Metadata `cell_volume_A3` | angstrom^3 |
-| `geometry.vpov` | VPOV | `poavVolFrac + ponavVolFrac` | dimensionless |
-| `geometry.gpov` | GPOV | `vpov / Zeo.density` | cm^3/g |
+| `di` | Di | `largestCavityDiameter` | angstrom |
+| `df` | Df | `poreLimitingDiameter` | angstrom |
+| `dif` | Dif | `largestFreePathDiameter` | angstrom |
+| `gsa` | GSA | `n2AccessibleSurfaceAreaGravimetric` | m^2/g |
+| `vsa` | VSA | `n2AccessibleSurfaceAreaVolumetric` | m^2/cm^3 |
+| `gpoav` | GPOAV | `n2AccessibleVolumeGravimetric` | cm^3/g |
+| `gponav` | GPONAV | `n2NonaccessibleVolumeGravimetric` | cm^3/g |
+| `poav` | POAV | `n2AccessibleVolumePerCell` | angstrom^3 |
+| `ponav` | PONAV | `n2NonaccessibleVolumePerCell` | angstrom^3 |
+| `poavVolFrac` | POAV_vol_frac | `n2AccessibleVolumeFraction` | dimensionless |
+| `ponavVolFrac` | PONAV_vol_frac | `n2NonaccessibleVolumeFraction` | dimensionless |
+| `cellV` | cell_v | Unit-cell volume | angstrom^3 |
+| `density` | Additional input | `density` | g/cm^3 |
+| `vpov` | VPOV | `poavVolFrac + ponavVolFrac` | dimensionless |
+| `gpov` | GPOV | `vpov / density` | cm^3/g |
 
-Eleven values are copied from the Zeo row; one comes from metadata; two are
-derived during preparation. The Zeo Table retains its existing names and
-columns. Density remains in that Table and is used for the derivation.
-`cellV` can exist independently of N2/He availability. `heVoidFraction`
-is not a substitute for `vpov`. All derivations and cross-component equality
-checks are performed upstream, not by field declarations.
+`GeometryData` computes `vpov` and `gpov` as read-only properties exposed by
+Pydantic `computed_field`. They are included in `model_dump()` output rather
+than supplied as inputs. `model_dump(round_trip=True)` produces input values
+for revalidation without these computed fields.
 
-Field descriptions state the physical units, including the Zeo Table's mixed
-units. `client.init_columns` configures data paths such as
-`geometry.di: "angstrom"`; it does not configure individual Table columns.
-Use `""` for dimensionless numerical data and `None` for nonnumeric data.
-Unit-bearing data values are prepared after Pydantic validation. No separate
-unit file needs to be imported into this schema package.
+VPOV requires both volume fractions; GPOV also requires positive density.
+Missing calculation inputs produce `None`. The model validates that VPOV is
+between 0 and 1 and that a computed GPOV is finite. Zero is valid.
 
-## Final results and missing values
+## Zeo++ Table
 
-The current preparation policy requires all five checkers to finish
-successfully and produce scientific PASS/FAIL votes. For each checker subset,
-all PASS means CR, all FAIL means NCR, and mixed votes mean AMBIGUOUS.
-Crash, timeout, incomplete checker outputs, runtime details, and
-operational error payloads are not scientific fields in these schemas.
+`ZeoFeatures` describes pore diameters, surface areas, pore volumes, framework
+dimensions, and open metal sites. The N2 and He probe radii are 1.655 and
+1.32 angstrom, respectively. Field descriptions specify the physical units.
 
-The proposed auxiliary-result policy is:
+`n2HeAvailable`, `periodicityAvailable`, and `omsAvailable` describe the
+availability of the corresponding result groups. Missing numeric cells are
+represented by `None` in the row model.
 
-- Zeo: retain the three verified availability flags; populate only successful
-  result groups. An unavailable group's result cells are Python `None`.
-  Even if all three flags are false, retain a one-row Table carrying those flags.
-- Topology: include summary details and subnet rows only for a successful,
-  available parent result. ERROR/PARTIAL parents contribute only
-  `data.topology.topologyAvailable = False`.
-- RAC: revised autocorrelation descriptors encode atomic properties and
-  connectivity for machine-learning use, with a maximum graph depth of 5
-  (bond distances 0 through 5). Omit an unavailable Table entirely.
-  A supplied row requires all 264
-  finite numeric descriptors. Negative and zero descriptors remain valid;
-  no common physical unit or rescaling is imposed.
+The OMS validator requires a nonnegative integer `openMetalSiteCount` when
+`omsAvailable` is true. A positive count indicates open metal sites, while
+zero indicates none. When `omsAvailable` is false, the count must be absent
+or `None`.
 
-OMS presence is derived as `openMetalSiteCount > 0` when `omsAvailable` is
-true. The redundant `hasOpenMetalSites` column is not included. A zero count
-means no detected OMS; an unavailable result remains missing, rather than zero.
-Preparation requires a count for available OMS results and checks it against
-availability and diagnostics.
+## Topology summaries and subnet Table
 
-Topology keys are required nonempty strings. The four optional topology
-name/genome columns permit the source's empty strings as well as `None`.
-These have different in-memory meanings; Table serialization may not retain
-that distinction.
+`TopologyData` describes availability and five summary fields.
+When `topologyAvailable` is true, all five summary keys must be supplied.
+`singleAllAgree` must be a boolean and `catenationDegree` a positive integer.
+`networkDimension`, `singleNodeNet`, and `allNodeNet` represent common subnet
+values and may be `None` when there is no common value. When topology is
+unavailable, summary values must be absent or `None`.
 
-These are application-level types. The currently inspected MPContribs client
-converts data booleans to "Yes"/"No", Table cells to strings, and missing Table
-cells to empty strings. The row schemas are therefore not direct schemas for
-unconverted API responses. Live storage, filtering, and display still require
-verification with the deployed client and API.
+Each `Topology` row describes SingleNodes and AllNodes representations of one
+subnet. Their topology keys must contain a non-whitespace character. Optional
+name and genome fields allow empty strings and `None`. The row validator
+checks that `singleAllAgree` matches equality of the two topology keys.
 
-## Validation responsibilities
+The exported `validate_topology(summary, rows)` function checks the relationship
+between a validated summary and its validated rows:
 
-The schemas validate shape, types, field constraints, and finite numbers.
-Preparation checks execution states, availability,
-diagnostics, consensus consistency, joins, and geometric derivations.
-Pydantic declarations do not run calculations or submit data.
+- Available topology has a positive number of rows equal to `catenationDegree`.
+- Unavailable topology has no rows.
+- `subnetIndex` values are unique within the Contribution.
+- Dimension and net summaries match the common corresponding row values,
+  or `None` when those values differ.
+- The summary agreement flag is true exactly when every row agrees.
 
-Native components and unit setup follow the
+This function is called separately from individual model validation because
+the summary and Table are separate Contribution components.
+
+## RAC Table
+
+Revised autocorrelation descriptors encode atomic properties and connectivity
+as machine-learning features. `RacFeatures` uses a maximum graph depth of 5,
+covering bond distances from 0 to 5. A supplied Table contains exactly one row
+with all 264 finite numeric values. Signed and zero descriptor values are
+valid. An absent RAC result is represented by omission of the Table.
+
+## Units and native components
+
+Field descriptions specify units. `client.init_columns` configures the units
+of data paths, such as `geometry.di` in angstrom; individual Table-column
+units are described by their row fields. Native components and data-column
+configuration follow the
 [MPContribs Quickstart](https://docs.materialsproject.org/uploading-data/what-is-mpcontribs#quickstart).

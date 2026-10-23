@@ -22,7 +22,7 @@ from .data import (
 )
 from .zeo_features import ZeoFeatures
 from .rac_features import RacFeatures
-from .topology import Topology
+from .topology import Topology, validate_topology
 
 __all__ = [
     "Data",
@@ -40,4 +40,5 @@ __all__ = [
     "ZeoFeatures",
     "RacFeatures",
     "Topology",
+    "validate_topology",
 ]

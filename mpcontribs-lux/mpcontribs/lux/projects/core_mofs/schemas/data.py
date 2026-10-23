@@ -1,14 +1,14 @@
 """Searchable data for one CoRE MOF structure.
 
-One native identifier identifies one Contribution. Data describes
-its data component; the corresponding CIF is submitted as a native Structure,
-and detailed results are attached as zeoFeatures, topologySubnets, and optional
-rac5Features Tables. Selection and derived-value calculation are preprocessing
-responsibilities, not operations performed by these models.
+Data describes the nested scientific summaries of Contribution.data.
+The models validate field values and their relationships. GeometryData
+computes VPOV and GPOV from volume fractions and density. Structures and
+the Zeo, topology, and RAC Tables are separate native components.
 """
 
 from enum import StrEnum
-from typing import Literal
+from math import isfinite
+from typing import Any, Literal
 
 from pydantic import (
     BaseModel,
@@ -18,9 +18,19 @@ from pydantic import (
     NonNegativeInt,
     PositiveFloat,
     PositiveInt,
+    computed_field,
     field_validator,
+    model_validator,
 )
+from numpy import bool_ as NumpyBool
 from pymatgen.core import Element
+
+
+def reject_boolean_number(value: Any) -> Any:
+    """Reject boolean scalars without disabling ordinary numeric coercion."""
+    if isinstance(value, (bool, NumpyBool)):
+        raise ValueError("A boolean is not a scientific count or magnitude")
+    return value
 
 
 class ReleaseData(BaseModel):
@@ -66,6 +76,11 @@ class ReferenceData(BaseModel):
     publicationYear: int | None = Field(
         default=None, ge=1000, le=9999, description="Publication year."
     )
+
+    validate_numeric_inputs = field_validator(
+        "publicationYear",
+        mode="before",
+    )(reject_boolean_number)
 
 
 class MofidData(BaseModel):
@@ -114,6 +129,12 @@ class CrystallographyData(BaseModel):
         default=None, ge=1, le=230, description="Metadata space-group number."
     )
 
+    validate_numeric_inputs = field_validator(
+        "nAtoms",
+        "spaceGroupNumber",
+        mode="before",
+    )(reject_boolean_number)
+
 
 class MetalData(BaseModel):
     """Metal and metalloid annotations."""
@@ -131,7 +152,7 @@ class MetalData(BaseModel):
         description="Number of distinct metal elements."
     )
     metalAtomCount: NonNegativeInt = Field(
-        description="Metal atom count; fractional values are not rounded."
+        description="Number of metal atoms; must be a nonnegative integer."
     )
     metalClasses: str | None = Field(
         default=None, description="Original metal classifications."
@@ -154,6 +175,12 @@ class MetalData(BaseModel):
                 raise ValueError(f"Element {symbol!r} is not classified as a metal")
         return value
 
+    validate_numeric_inputs = field_validator(
+        "metalElementCount",
+        "metalAtomCount",
+        mode="before",
+    )(reject_boolean_number)
+
 
 class CheckerStatus(StrEnum):
     """Completed scientific checker result."""
@@ -174,8 +201,8 @@ class CheckerData(BaseModel):
     """Completed scientific votes, with execution checked upstream.
 
     Within each named checker subset, all PASS means CR, all FAIL means
-    NCR, and mixed PASS/FAIL means AMBIGUOUS. The upstream preparation
-    checks these relationships; Enum constraints only validate labels.
+    NCR, and mixed PASS/FAIL means AMBIGUOUS. This model validates these
+    relationships after validating the individual labels.
     """
 
     model_config = ConfigDict(extra="forbid", allow_inf_nan=False, use_enum_values=True)
@@ -191,11 +218,42 @@ class CheckerData(BaseModel):
         description="Recorded agreement of MOFClassifier, MOFChecker, and Chen-Manz."
     )
     consensus4: ConsensusStatus = Field(
-        description="Recorded agreement of those three checkers and MOSAEC."
+        description=(
+            "Recorded agreement of MOFClassifier, MOFChecker, Chen-Manz, and MOSAEC."
+        )
     )
     consensus5: ConsensusStatus = Field(
         description="Recorded agreement of all five checkers."
     )
+
+    @model_validator(mode="after")
+    def validate_consensus(self) -> "CheckerData":
+        votes = (
+            self.mofClassifierStatus,
+            self.mofCheckerStatus,
+            self.chenManzStatus,
+            self.mosaecStatus,
+            self.setcGatStatus,
+        )
+
+        for count in (3, 4, 5):
+            observed = set(votes[:count])
+
+            if observed == {CheckerStatus.PASS}:
+                expected = ConsensusStatus.CR
+            elif observed == {CheckerStatus.FAIL}:
+                expected = ConsensusStatus.NCR
+            else:
+                expected = ConsensusStatus.AMBIGUOUS
+
+            field = f"consensus{count}"
+            if getattr(self, field) != expected:
+                raise ValueError(
+                    f"{field} must be {expected.value} "
+                    f"for the recorded checker votes"
+                )
+
+        return self
 
 
 class TopologyData(BaseModel):
@@ -207,28 +265,65 @@ class TopologyData(BaseModel):
         description="Verified availability of final topology results."
     )
     networkDimension: int | None = Field(
-        default=None, ge=0, le=3, description="Topology network dimension."
+        default=None,
+        ge=0,
+        le=3,
+        description="Common subnet network dimension, or null when subnet dimensions differ.",
     )
     singleNodeNet: str | None = Field(
-        default=None, description="Original SingleNodes net summary."
+        default=None,
+        description="Common SingleNodes topology key, or null when subnet keys differ.",
     )
     allNodeNet: str | None = Field(
-        default=None, description="Original AllNodes net summary."
+        default=None,
+        description="Common AllNodes topology key, or null when subnet keys differ.",
     )
     singleAllAgree: bool | None = Field(
-        default=None, description="Agreement between the two net summaries."
+        default=None,
+        description="True when SingleNodes and AllNodes topology keys agree in every subnet.",
     )
     catenationDegree: PositiveInt | None = Field(
         default=None, description="Number of topology subnets."
     )
 
+    @model_validator(mode="after")
+    def validate_topology_summary(self) -> "TopologyData":
+        summary_fields = {
+            "networkDimension",
+            "singleNodeNet",
+            "allNodeNet",
+            "singleAllAgree",
+            "catenationDegree",
+        }
+        if self.topologyAvailable:
+            missing = summary_fields - self.model_fields_set
+            if missing:
+                raise ValueError(
+                    "Available topology requires explicit summary fields: "
+                    + ", ".join(sorted(missing))
+                )
+            if self.singleAllAgree is None or self.catenationDegree is None:
+                raise ValueError(
+                    "Available topology requires singleAllAgree and catenationDegree"
+                )
+        elif any(getattr(self, name) is not None for name in summary_fields):
+            raise ValueError("Unavailable topology must not contain summary values")
+        return self
+
+    validate_numeric_inputs = field_validator(
+        "networkDimension",
+        "catenationDegree",
+        mode="before",
+    )(reject_boolean_number)
+
 
 class GeometryData(BaseModel):
     """Geometric descriptors corresponding to MOFSimplify, with camelCase API names.
 
-    Eleven values copy the corresponding Zeo Table cells, cellV copies metadata,
-    and vpov/gpov are calculated before validation. The descriptor definitions
-    match MOFSimplify, while the laboratory probe settings determine the values.
+    Twelve inputs copy the corresponding Zeo Table cells, including density;
+    cellV copies metadata. vpov and gpov are read-only computed output fields.
+    The fourteen MOFSimplify descriptor definitions are retained, with density
+    as an additional calculation input. Probe settings determine the values.
     """
 
     model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
@@ -248,15 +343,9 @@ class GeometryData(BaseModel):
             "free-sphere path, angstrom; source sign policy is handled upstream."
         ),
     )
-    gpov: NonNegativeFloat | None = Field(
+    density: PositiveFloat | None = Field(
         default=None,
-        description="MOFSimplify GPOV: vpov divided by Zeo density, cm^3/g.",
-    )
-    vpov: float | None = Field(
-        default=None,
-        ge=0,
-        le=1,
-        description="MOFSimplify VPOV: poavVolFrac plus ponavVolFrac, dimensionless.",
+        description="Structure density used in the MOFSimplify GPOV calculation, g/cm^3.",
     )
     gsa: NonNegativeFloat | None = Field(
         default=None,
@@ -299,15 +388,59 @@ class GeometryData(BaseModel):
         description="MOFSimplify PONAV_vol_frac: probe-nonaccessible volume fraction.",
     )
 
+    @computed_field(
+        description="MOFSimplify VPOV: total probe-occupiable volume fraction, dimensionless.",
+        json_schema_extra={"minimum": 0, "maximum": 1},
+    )
+    @property
+    def vpov(self) -> float | None:
+        if self.poavVolFrac is None or self.ponavVolFrac is None:
+            return None
+        return self.poavVolFrac + self.ponavVolFrac
+
+    @computed_field(
+        description="MOFSimplify GPOV: gravimetric total probe-occupiable volume, cm^3/g.",
+        json_schema_extra={"minimum": 0},
+    )
+    @property
+    def gpov(self) -> float | None:
+        if self.vpov is None or self.density is None:
+            return None
+        return self.vpov / self.density
+
+    @model_validator(mode="after")
+    def validate_computed_volumes(self) -> "GeometryData":
+        if self.vpov is not None and not 0 <= self.vpov <= 1:
+            raise ValueError("poavVolFrac plus ponavVolFrac must be between 0 and 1")
+        if self.gpov is not None and not isfinite(self.gpov):
+            raise ValueError("Computed gpov must be finite")
+        return self
+
+    validate_numeric_inputs = field_validator(
+        "di",
+        "df",
+        "dif",
+        "density",
+        "gsa",
+        "vsa",
+        "cellV",
+        "gpoav",
+        "gponav",
+        "poav",
+        "ponav",
+        "poavVolFrac",
+        "ponavVolFrac",
+        mode="before",
+    )(reject_boolean_number)
+
 
 class Data(BaseModel):
-    """Contribution.data for one CoRE MOF structure, linked by native identifier.
+    """Nested scientific summaries for one CoRE MOF Contribution.
 
-    Required groups preserve the fifteen required leaf fields. Groups containing
-    only optional leaves default to None; preprocessing omits empty optional
-    groups. Native identifier, formula, structures, and Tables are not redefined.
-    Completed checker FAIL is distinct from pipeline failure; submission policy
-    and successful auxiliary-result selection belong to preprocessing.
+    Five required groups contain fifteen required input fields. Four optional
+    groups default to None. Geometry adds two computed output fields, and
+    available topology requires explicit summary inputs. The native identifier,
+    formula, structures, and Tables are separate Contribution components.
     """
 
     model_config = ConfigDict(extra="forbid", allow_inf_nan=False)

@@ -1,6 +1,8 @@
 """One complete row of the optional depth-5 RAC table."""
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
+
+from .data import reject_boolean_number
 
 
 class RacFeatures(BaseModel):
@@ -283,3 +285,8 @@ class RacFeatures(BaseModel):
     racsMetalMcChi3All: float
     racsMetalMcChi4All: float
     racsMetalMcChi5All: float
+
+    validate_numeric_inputs = field_validator(
+        "*",
+        mode="before",
+    )(reject_boolean_number)

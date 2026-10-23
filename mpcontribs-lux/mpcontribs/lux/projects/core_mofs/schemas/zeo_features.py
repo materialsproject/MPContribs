@@ -7,7 +7,12 @@ from pydantic import (
     NonNegativeFloat,
     NonNegativeInt,
     PositiveFloat,
+    field_validator,
+    model_validator,
 )
+
+
+from .data import reject_boolean_number
 
 
 class ZeoFeatures(BaseModel):
@@ -130,3 +135,39 @@ class ZeoFeatures(BaseModel):
     openMetalSiteCount: NonNegativeInt | None = Field(
         default=None, description="Number of detected open metal sites, dimensionless."
     )
+
+    @model_validator(mode="after")
+    def validate_oms(self) -> "ZeoFeatures":
+        if self.omsAvailable:
+            if self.openMetalSiteCount is None:
+                raise ValueError("Available OMS requires openMetalSiteCount")
+        elif self.openMetalSiteCount is not None:
+            raise ValueError("Unavailable OMS must not contain openMetalSiteCount")
+        return self
+
+    validate_numeric_inputs = field_validator(
+        "density",
+        "largestCavityDiameter",
+        "poreLimitingDiameter",
+        "largestFreePathDiameter",
+        "n2ChannelDimension",
+        "n2AccessibleSurfaceAreaPerCell",
+        "n2AccessibleSurfaceAreaVolumetric",
+        "n2AccessibleSurfaceAreaGravimetric",
+        "n2NonaccessibleSurfaceAreaPerCell",
+        "n2NonaccessibleSurfaceAreaVolumetric",
+        "n2NonaccessibleSurfaceAreaGravimetric",
+        "n2AccessibleVolumePerCell",
+        "n2AccessibleVolumeGravimetric",
+        "n2AccessibleVolumeFraction",
+        "n2NonaccessibleVolumePerCell",
+        "n2NonaccessibleVolumeGravimetric",
+        "n2NonaccessibleVolumeFraction",
+        "heVoidFraction",
+        "structurePeriodicDimension",
+        "framework1DCount",
+        "framework2DCount",
+        "framework3DCount",
+        "openMetalSiteCount",
+        mode="before",
+    )(reject_boolean_number)
