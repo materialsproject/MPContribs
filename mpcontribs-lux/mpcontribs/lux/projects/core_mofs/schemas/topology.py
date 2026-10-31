@@ -14,6 +14,9 @@ from pydantic import (
 from .data import TopologyData, reject_boolean_number
 
 
+TOPOLOGICAL_GENOME_PATTERN = r"\A(?:-?[0-9]+(?: -?[0-9]+)*)?\z"
+
+
 class Topology(BaseModel):
     """One subnet from a successful, available parent topology result."""
 
@@ -30,30 +33,38 @@ class Topology(BaseModel):
     )
     singleNodeTopologyKey: str = Field(
         min_length=1,
+        max_length=256,
         description="Nonblank SingleNodes topology key from the successful source result.",
     )
     singleNodeTopologyName: str | None = Field(
         default=None,
+        max_length=256,
         description="Recorded SingleNodes topology name; original empty strings are retained.",
     )
     singleNodeTopologicalGenome: str | None = Field(
         default=None,
-        description="Recorded SingleNodes topological genome; original empty strings are retained.",
+        max_length=200_000,
+        pattern=TOPOLOGICAL_GENOME_PATTERN,
+        description="SingleNodes topological genome as space-separated integers; empty strings are retained.",
     )
     allNodeDimension: int = Field(
         ge=0, le=3, description="AllNodes network dimension, 0 to 3, dimensionless."
     )
     allNodeTopologyKey: str = Field(
         min_length=1,
+        max_length=256,
         description="Nonblank AllNodes topology key from the successful source result.",
     )
     allNodeTopologyName: str | None = Field(
         default=None,
+        max_length=256,
         description="Recorded AllNodes topology name; original empty strings are retained.",
     )
     allNodeTopologicalGenome: str | None = Field(
         default=None,
-        description="Recorded AllNodes topological genome; original empty strings are retained.",
+        max_length=200_000,
+        pattern=TOPOLOGICAL_GENOME_PATTERN,
+        description="AllNodes topological genome as space-separated integers; empty strings are retained.",
     )
 
     @field_validator("singleNodeTopologyKey", "allNodeTopologyKey")

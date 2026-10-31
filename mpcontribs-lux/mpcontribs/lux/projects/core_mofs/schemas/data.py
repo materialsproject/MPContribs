@@ -7,8 +7,8 @@ the Zeo, topology, and RAC Tables are separate native components.
 """
 
 from enum import StrEnum
-from math import isfinite
-from typing import Any, Literal
+from math import isclose, isfinite
+from typing import Annotated, Any, Literal
 
 from pydantic import (
     BaseModel,
@@ -18,7 +18,6 @@ from pydantic import (
     NonNegativeInt,
     PositiveFloat,
     PositiveInt,
-    computed_field,
     field_validator,
     model_validator,
 )
@@ -54,12 +53,30 @@ class SourceData(BaseModel):
     )
     ccdcUrl: str | None = Field(
         default=None,
-        pattern=r"^https?://[^/\s?#]+(?:[/?#][^\s]*)?$",
-        description="Verified CCDC record URL; absent when unverified.",
+        pattern=(
+            r"\Ahttps://www\.ccdc\.cam\.ac\.uk/structures/Search"
+            r"\?Ccdcid=[A-Z]{6}(?:[0-9]{2})?&DatabaseToSearch=Published\z"
+        ),
+        description="CCDC published-structure search URL matching the CSD sourceId.",
     )
     structureVariant: Literal["ASR", "FSR", "ION"] = Field(
         description="Structure variant."
     )
+
+    @model_validator(mode="after")
+    def validate_ccdc_reference(self) -> "SourceData":
+        """Allow a matching CCDC search URL only for a CSD source record."""
+        if self.ccdcUrl is None:
+            return self
+        if self.sourceDatabase != "CSD":
+            raise ValueError("ccdcUrl is only allowed for CSD source records")
+        expected_url = (
+            "https://www.ccdc.cam.ac.uk/structures/Search"
+            f"?Ccdcid={self.sourceId}&DatabaseToSearch=Published"
+        )
+        if self.ccdcUrl != expected_url:
+            raise ValueError("The CCDC URL refcode must match sourceId")
+        return self
 
 
 class ReferenceData(BaseModel):
@@ -71,7 +88,10 @@ class ReferenceData(BaseModel):
         default=None, max_length=512, description="Reported structure name."
     )
     doi: str | None = Field(
-        default=None, max_length=128, description="Reported publication DOI."
+        default=None,
+        max_length=128,
+        pattern=r"^10\.\d{4,9}(\.\d+)*/\S+$",
+        description="Reported publication DOI.",
     )
     publicationYear: int | None = Field(
         default=None, ge=1000, le=9999, description="Publication year."
@@ -136,12 +156,22 @@ class CrystallographyData(BaseModel):
     )(reject_boolean_number)
 
 
+ElementSymbolList = Annotated[
+    str,
+    Field(
+        min_length=1,
+        max_length=512,
+        pattern=r"\A[A-Z][a-z]?(?:;[A-Z][a-z]?)*\z",
+    ),
+]
+
+
 class MetalData(BaseModel):
     """Metal and metalloid annotations."""
 
     model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
 
-    metalElements: str | None = Field(
+    metalElements: ElementSymbolList | None = Field(
         default=None,
         description=(
             "Semicolon-separated element symbols, each classified as a metal "
@@ -155,9 +185,9 @@ class MetalData(BaseModel):
         description="Number of metal atoms; must be a nonnegative integer."
     )
     metalClasses: str | None = Field(
-        default=None, description="Original metal classifications."
+        default=None, max_length=256, description="Original metal classifications."
     )
-    metalloidElements: str | None = Field(
+    metalloidElements: ElementSymbolList | None = Field(
         default=None, description="Semicolon-separated metalloid symbols."
     )
 
@@ -321,7 +351,8 @@ class GeometryData(BaseModel):
     """Geometric descriptors corresponding to MOFSimplify, with camelCase API names.
 
     Twelve inputs copy the corresponding Zeo Table cells, including density;
-    cellV copies metadata. vpov and gpov are read-only computed output fields.
+    cellV copies metadata. vpov and gpov are optional validated fields; missing
+    values are calculated when the necessary inputs are available.
     The fourteen MOFSimplify descriptor definitions are retained, with density
     as an additional calculation input. Probe settings determine the values.
     """
@@ -336,11 +367,11 @@ class GeometryData(BaseModel):
         default=None,
         description="MOFSimplify Df: maximum free-sphere diameter, angstrom.",
     )
-    dif: float | None = Field(
+    dif: NonNegativeFloat | None = Field(
         default=None,
         description=(
             "MOFSimplify Dif: maximum included-sphere diameter along the "
-            "free-sphere path, angstrom; source sign policy is handled upstream."
+            "free-sphere path, angstrom."
         ),
     )
     density: PositiveFloat | None = Field(
@@ -388,32 +419,62 @@ class GeometryData(BaseModel):
         description="MOFSimplify PONAV_vol_frac: probe-nonaccessible volume fraction.",
     )
 
-    @computed_field(
+    vpov: float | None = Field(
+        default=None,
+        ge=0,
+        le=1,
         description="MOFSimplify VPOV: total probe-occupiable volume fraction, dimensionless.",
-        json_schema_extra={"minimum": 0, "maximum": 1},
     )
-    @property
-    def vpov(self) -> float | None:
-        if self.poavVolFrac is None or self.ponavVolFrac is None:
-            return None
-        return self.poavVolFrac + self.ponavVolFrac
-
-    @computed_field(
+    gpov: NonNegativeFloat | None = Field(
+        default=None,
         description="MOFSimplify GPOV: gravimetric total probe-occupiable volume, cm^3/g.",
-        json_schema_extra={"minimum": 0},
     )
-    @property
-    def gpov(self) -> float | None:
-        if self.vpov is None or self.density is None:
-            return None
-        return self.vpov / self.density
 
     @model_validator(mode="after")
-    def validate_computed_volumes(self) -> "GeometryData":
-        if self.vpov is not None and not 0 <= self.vpov <= 1:
+    def calculate_and_validate_volumes(self) -> "GeometryData":
+        """Fill missing volumes and check supplied values against their inputs.
+
+        Comparisons allow 0.01% relative error or 0.0001 absolute error
+        (dimensionless for VPOV; cm^3/g for GPOV), whichever is larger.
+        Supplied values within tolerance are preserved.
+        """
+        if self.poavVolFrac is None or self.ponavVolFrac is None:
+            if self.vpov is not None or self.gpov is not None:
+                raise ValueError(
+                    "vpov and gpov require both poavVolFrac and ponavVolFrac"
+                )
+            return self
+
+        expected_vpov = self.poavVolFrac + self.ponavVolFrac
+        if not 0 <= expected_vpov <= 1:
             raise ValueError("poavVolFrac plus ponavVolFrac must be between 0 and 1")
-        if self.gpov is not None and not isfinite(self.gpov):
-            raise ValueError("Computed gpov must be finite")
+
+        if self.vpov is not None and not isclose(
+            self.vpov, expected_vpov, rel_tol=1e-4, abs_tol=1e-4
+        ):
+            raise ValueError("vpov must match poavVolFrac plus ponavVolFrac")
+
+        expected_gpov = None
+        if self.density is None:
+            if self.gpov is not None:
+                raise ValueError("gpov requires density")
+        else:
+            # Use the fractions directly, not an approximately supplied VPOV.
+            expected_gpov = expected_vpov / self.density
+            if not isfinite(expected_gpov):
+                raise ValueError("Calculated gpov must be finite")
+            if self.gpov is not None and not isclose(
+                self.gpov, expected_gpov, rel_tol=1e-4, abs_tol=1e-4
+            ):
+                raise ValueError(
+                    "gpov must match (poavVolFrac plus ponavVolFrac) divided by density"
+                )
+
+        # Assign only after all relationship checks have succeeded.
+        if self.vpov is None:
+            self.vpov = expected_vpov
+        if self.gpov is None and expected_gpov is not None:
+            self.gpov = expected_gpov
         return self
 
     validate_numeric_inputs = field_validator(
@@ -430,6 +491,8 @@ class GeometryData(BaseModel):
         "ponav",
         "poavVolFrac",
         "ponavVolFrac",
+        "vpov",
+        "gpov",
         mode="before",
     )(reject_boolean_number)
 
@@ -438,8 +501,9 @@ class Data(BaseModel):
     """Nested scientific summaries for one CoRE MOF Contribution.
 
     Five required groups contain fifteen required input fields. Four optional
-    groups default to None. Geometry adds two computed output fields, and
-    available topology requires explicit summary inputs. The native identifier,
+    groups default to None. Geometry calculates missing volume fields and
+    validates supplied values. Available topology requires explicit summary
+    inputs. The native identifier,
     formula, structures, and Tables are separate Contribution components.
     """
 
