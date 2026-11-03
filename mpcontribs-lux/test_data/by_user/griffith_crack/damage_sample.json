@@ -1,6 +1,5 @@
 {
  "version": 2,
-    "run_dir": "runs/01_bernoulli_lse_2D/lse_b000_m0_ip_m35746p8_t494p393",
  "parameters": {
   "SAMPLE_ID": "0",
   "BATCH": "0",
