@@ -3,7 +3,7 @@
 Each row is one entry of a run's ``damage.json["frames"]`` list, i.e. one
 measurement derived from a single LAMMPS dump file (``dump.<step>.cracked``)
 by ``scripts/metric.py``. This is the table meant to accompany a
-:class:`~mpcontribs.lux.projects.mirage.griffith_crack.schema.CrackSimulation`
+:class:`~mpcontribs.lux.projects.griffith_crack.schema.CrackSimulation`
 contribution: the baseline frame plus every dump in the analyzed window
 (every 100 ps, per the workflow's dump interval), not only the frames that
 land on a cycle boundary -- ``cycle`` is null on both the baseline frame and
@@ -12,20 +12,26 @@ coincide with a cycle end.
 
 The raw per-atom dump contents backing each row are not modeled here; they are
 uploaded as MPContribs Attachments (see ``atom.py`` for why) and referenced by
-``timestep`` / ``runId``, not duplicated into a table.
+``timestepId`` / ``runId``, not duplicated into a table.
+
+Field names deliberately carry no unit suffixes; see each field's
+``description`` for units.
 """
 
 from __future__ import annotations
 
+import math
 from collections.abc import Mapping
 from typing import Any, Literal
 
 import pandas as pd
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from .schema import CrackSimulation
 
 _MODEL_CONFIG = ConfigDict(extra="forbid", allow_inf_nan=False)
+
+_CNA_SUM_TOLERANCE = 1e-6
 
 
 class CnaFractions(BaseModel):
@@ -34,22 +40,44 @@ class CnaFractions(BaseModel):
     Diagnostic only -- CNA "other" fraction is dominated by stacking faults at
     the stresses this workflow explores and does not vote on the crack-growth
     verdict (see scripts/metric.py). Not computed by default, so this is null
-    on most frames.
+    on most frames. When present, all five fractions are always populated
+    together: scripts/metric.py builds them from a single
+    ``np.bincount(..., minlength=5) / n_atoms`` call and assigns the whole
+    dict in one place, so there is no code path that produces a partial
+    record -- enforced below by requiring the fractions to sum to ~1.
     """
 
     model_config = _MODEL_CONFIG
 
     other: float = Field(
-        description="Fraction of atoms classified as 'other' (incl. surfaces, defects)."
+        ge=0.0,
+        le=1.0,
+        description="Fraction of atoms classified as 'other' (incl. surfaces, defects).",
     )
-    fcc: float = Field(description="Fraction of atoms classified as FCC-coordinated.")
+    fcc: float = Field(
+        ge=0.0, le=1.0, description="Fraction of atoms classified as FCC-coordinated."
+    )
     hcp: float = Field(
-        description="Fraction of atoms classified as HCP-coordinated (e.g. stacking faults)."
+        ge=0.0,
+        le=1.0,
+        description="Fraction of atoms classified as HCP-coordinated (e.g. stacking faults).",
     )
-    bcc: float = Field(description="Fraction of atoms classified as BCC-coordinated.")
+    bcc: float = Field(
+        ge=0.0, le=1.0, description="Fraction of atoms classified as BCC-coordinated."
+    )
     ico: float = Field(
-        description="Fraction of atoms classified as icosahedral-coordinated."
+        ge=0.0,
+        le=1.0,
+        description="Fraction of atoms classified as icosahedral-coordinated.",
     )
+
+    @model_validator(mode="after")
+    def check_fractions_sum_to_one(self) -> CnaFractions:
+        """Every atom falls into exactly one of the five bins, by construction."""
+        total = self.other + self.fcc + self.hcp + self.bcc + self.ico
+        if not math.isclose(total, 1.0, abs_tol=_CNA_SUM_TOLERANCE):
+            raise ValueError(f"CNA fractions must sum to ~1.0, got {total}")
+        return self
 
 
 class CrackFrame(BaseModel):
@@ -67,69 +95,92 @@ class CrackFrame(BaseModel):
     model_config = _MODEL_CONFIG
 
     runId: str = Field(
+        max_length=256,
         description=(
             "Identifier of the parent CrackSimulation contribution this frame "
             "belongs to, repeated on every row (same convention as e.g. the "
             "A-Lab schema's rgNumber on every Heating row)."
-        )
+        ),
     )
     timestepId: int = Field(
-        description="LAMMPS timestep at which this frame was dumped."
+        ge=0, description="LAMMPS timestep at which this frame was dumped."
     )
     cycle: int | None = Field(
-        description="Strain cycle this frame ends, or null for the baseline (end-of-prep) frame."
+        default=None,
+        ge=1,
+        description="Strain cycle this frame ends, or null for the baseline (end-of-prep) frame.",
     )
     isBaseline: bool = Field(
         description="Whether this is the baseline (end-of-prep, pre-cycling) frame."
     )
-    nAtoms: int = Field(description="Number of atoms in this frame.")
-    lxAngstrom: float = Field(
-        description="Orthogonal simulation box edge length along x, in Angstrom."
+    nAtoms: int = Field(gt=0, description="Number of atoms in this frame.")
+    lx: float = Field(
+        gt=0.0,
+        description="Orthogonal simulation box edge length along x, in Angstrom.",
     )
-    lyAngstrom: float = Field(
-        description="Orthogonal simulation box edge length along y, in Angstrom."
+    ly: float = Field(
+        gt=0.0,
+        description="Orthogonal simulation box edge length along y, in Angstrom.",
     )
-    lzAngstrom: float = Field(
-        description="Orthogonal simulation box edge length along z, in Angstrom."
+    lz: float = Field(
+        gt=0.0,
+        description="Orthogonal simulation box edge length along z, in Angstrom.",
     )
-    volumeAngstrom3: float = Field(
-        description="Simulation cell volume, in cubic Angstrom."
+    volume: float = Field(
+        gt=0.0, description="Simulation cell volume, in cubic Angstrom."
     )
-    aYAngstrom: float = Field(
-        description="Circular (periodic) y-extent of the notch-connected void component, in Angstrom."
+    aY: float = Field(
+        ge=0.0,
+        description="Circular (periodic) y-extent of the notch-connected void component, in Angstrom.",
     )
-    wXAngstrom: float = Field(
-        description="Circular (periodic) x-extent (opening) of the notch-connected void component, in Angstrom."
+    wX: float = Field(
+        ge=0.0,
+        description="Circular (periodic) x-extent (opening) of the notch-connected void component, in Angstrom.",
     )
-    notchAreaAngstrom2: float = Field(
-        description="Area of the notch-connected void component, in square Angstrom."
+    notchArea: float = Field(
+        ge=0.0,
+        description="Area of the notch-connected void component, in square Angstrom.",
     )
     notchAspect: float = Field(
-        description="aYAngstrom / wXAngstrom for the notch-connected component."
+        ge=0.0, description="aY / wX for the notch-connected component."
     )
     nVoidComponents: int = Field(
-        description="Number of distinct void connected-components detected in this frame."
+        ge=0,
+        description="Number of distinct void connected-components detected in this frame.",
     )
-    voidAreaOtherAngstrom2: float = Field(
-        description="Total area of void components other than the notch-connected one, in square Angstrom."
+    voidAreaOther: float = Field(
+        ge=0.0,
+        description="Total area of void components other than the notch-connected one, in square Angstrom.",
     )
-    aYLargestAngstrom: float = Field(
-        description="Circular y-extent of the largest void component present (which may differ from the notch), in Angstrom."
+    aYLargest: float = Field(
+        ge=0.0,
+        description="Circular y-extent of the largest void component present (which may differ from the notch), in Angstrom.",
     )
-    areaLargestAngstrom2: float = Field(
-        description="Area of the largest void component present, in square Angstrom."
+    areaLargest: float = Field(
+        ge=0.0,
+        description="Area of the largest void component present, in square Angstrom.",
     )
     nSurf: int = Field(
-        description="Count of atoms above the robust per-atom-energy free-surface cut, anywhere in the cell."
+        ge=0,
+        description="Count of atoms above the robust per-atom-energy free-surface cut, anywhere in the cell.",
     )
     nSurfNotch: int = Field(
-        description="Count of free-surface atoms belonging to the notch-connected component."
+        ge=0,
+        description="Count of free-surface atoms belonging to the notch-connected component.",
     )
-    peMedianEv: float = Field(
-        description="Median per-atom potential energy, in eV/atom."
+    peMedian: float = Field(
+        description=(
+            "Median per-atom potential energy, in eV/atom. Deliberately "
+            "unbounded: 55 known-corrupted runs in the corpus have "
+            "physically overlapping atoms with per-atom energies around "
+            "+1.3e4 eV, and those runs are intentionally still representable "
+            "(they're flagged, not silently dropped) -- see the workflow "
+            "AGENTS.md."
+        )
     )
-    peSigmaMadEv: float = Field(
-        description="Robust (MAD-based) per-atom potential-energy spread, in eV/atom."
+    peSigmaMad: float = Field(
+        ge=0.0,
+        description="Robust (MAD-based) per-atom potential-energy spread, in eV/atom.",
     )
     cna: CnaFractions | None = Field(
         default=None,
@@ -158,22 +209,22 @@ def frames_table(damage: Mapping[str, Any], *, run_id: str) -> pd.DataFrame:
                 cycle=frame["cycle"],
                 isBaseline=frame["is_baseline"],
                 nAtoms=frame["n_atoms"],
-                lxAngstrom=frame["lx"],
-                lyAngstrom=frame["ly"],
-                lzAngstrom=frame["lz"],
-                volumeAngstrom3=frame["volume"],
-                aYAngstrom=frame["a_y"],
-                wXAngstrom=frame["w_x"],
-                notchAreaAngstrom2=frame["notch_area"],
+                lx=frame["lx"],
+                ly=frame["ly"],
+                lz=frame["lz"],
+                volume=frame["volume"],
+                aY=frame["a_y"],
+                wX=frame["w_x"],
+                notchArea=frame["notch_area"],
                 notchAspect=frame["notch_aspect"],
                 nVoidComponents=frame["n_void_components"],
-                voidAreaOtherAngstrom2=frame["void_area_other"],
-                aYLargestAngstrom=frame["a_y_largest"],
-                areaLargestAngstrom2=frame["area_largest"],
+                voidAreaOther=frame["void_area_other"],
+                aYLargest=frame["a_y_largest"],
+                areaLargest=frame["area_largest"],
                 nSurf=frame["n_surf"],
                 nSurfNotch=frame["n_surf_notch"],
-                peMedianEv=frame["pe_median"],
-                peSigmaMadEv=frame["pe_sigma_mad"],
+                peMedian=frame["pe_median"],
+                peSigmaMad=frame["pe_sigma_mad"],
                 cna=CnaFractions(**cna) if cna else None,
                 boxSource=frame["box_source"],
             ).model_dump()
@@ -216,10 +267,8 @@ def validate_simulation(
     baseline_rows = [row for row in frame_rows if row.isBaseline]
     if len(baseline_rows) != 1:
         raise ValueError("frames must contain exactly one baseline row")
-    if baseline_rows[0].aYAngstrom != simulation.aYBaselineAngstrom:
-        raise ValueError(
-            "baseline row's aYAngstrom must equal simulation.aYBaselineAngstrom"
-        )
+    if baseline_rows[0].aY != simulation.aYBaseline:
+        raise ValueError("baseline row's aY must equal simulation.aYBaseline")
 
     cycle_rows = [row for row in frame_rows if row.cycle is not None]
     if len(cycle_rows) != simulation.nCyclesObserved:

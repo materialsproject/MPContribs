@@ -10,13 +10,18 @@ notch-connected void grew (``crack-growth``) or not (``no-crack-growth``).
 One :class:`CrackSimulation` corresponds to one run directory produced by
 ``scripts/crack.py`` (one row in an MPContribs upload). The per-dumped-frame
 measurements that back the ``verdict`` fields below live in a separate table,
-see ``frame.py``'s :class:`~mpcontribs.lux.projects.mirage.griffith_crack.frame.CrackFrame`.
+see ``frame.py``'s :class:`~mpcontribs.lux.projects.griffith_crack.frame.CrackFrame`.
 The raw LAMMPS dump files themselves (hundreds of MB per run) are uploaded as
 MPContribs Attachments, not modeled as a table -- see ``atom.py`` for why.
+
+Field names deliberately carry no unit suffixes (MPContribs infers/attaches
+units separately, e.g. via the client's ``init_columns``); see each field's
+``description`` for units instead.
 """
 
 from __future__ import annotations
 
+import math
 from collections.abc import Mapping
 from typing import Any, Literal
 
@@ -84,7 +89,14 @@ class CrackDiagnostics(BaseModel):
         )
     )
     atomLossFrac: float = Field(
-        description="Fractional decrease in atom count from baseline to the last analyzed frame."
+        ge=0.0,
+        le=1.0,
+        description=(
+            "Fractional decrease in atom count from baseline to the last "
+            "analyzed frame. Bounded to [0, 1]: this workflow's LAMMPS decks "
+            "never create atoms, so the final count can only be less than or "
+            "equal to the baseline count."
+        ),
     )
     atomLoss: bool = Field(
         description="Whether atomLossFrac exceeded the configured atom-loss threshold."
@@ -96,13 +108,22 @@ class CrackDiagnostics(BaseModel):
         )
     )
     dLx: float = Field(
-        description="Fractional change in box length along x, baseline to last analyzed frame."
+        description=(
+            "Fractional change in box length along x, baseline to last "
+            "analyzed frame. Deliberately unbounded: a 'cell exploded' "
+            "blowup (volume > 10x baseline) is treated by metric.py as "
+            "strong positive evidence, not as corrupted data, so this field "
+            "must be able to represent that."
+        )
     )
     dLy: float = Field(
         description="Fractional change in box length along y, baseline to last analyzed frame."
     )
     dVolume: float = Field(
-        description="Fractional change in cell volume, baseline to last analyzed frame."
+        description=(
+            "Fractional change in cell volume, baseline to last analyzed "
+            "frame. Deliberately unbounded, same reasoning as dLx."
+        )
     )
 
 
@@ -121,19 +142,31 @@ class EarlyStopInfo(BaseModel):
     model_config = _MODEL_CONFIG
 
     stoppedAfterCycle: int = Field(
-        description="Last cycle end whose dumps were analyzed before the run was killed."
+        ge=1,
+        description="Last cycle end whose dumps were analyzed before the run was killed.",
     )
     stopStepId: int = Field(
-        description="LAMMPS timestep at which the run was terminated."
+        ge=0, description="LAMMPS timestep at which the run was terminated."
     )
     firstCrossingCycle: int | None = Field(
-        description="Cycle at which the sustained growth-threshold crossing was first observed."
+        default=None,
+        ge=1,
+        description="Cycle at which the sustained growth-threshold crossing was first observed.",
     )
     numCyclesPlanned: int = Field(
-        description="Number of cycles the run was configured to execute before truncation."
+        gt=0,
+        description="Number of cycles the run was configured to execute before truncation.",
     )
     reason: str = Field(
-        description="Human-readable justification recorded by crack.py for stopping early."
+        max_length=160,
+        description=(
+            "Human-readable justification recorded by crack.py for stopping "
+            "early. In the current code this is always the single string "
+            "'verdict decided by a prefix of the run; later cycles cannot "
+            "revoke it' (one call site in scripts/metric.py), but modeled as "
+            "a bounded free string rather than a Literal so a future wording "
+            "change doesn't require a schema update to keep ingesting data."
+        ),
     )
 
 
@@ -151,28 +184,32 @@ class CrackSimulation(BaseModel):
 
     # --- Provenance -----------------------------------------------------
     runId: str = Field(
+        max_length=256,
         description=(
             "Unique identifier for this run, '<campaign>/<run directory name>', "
             "e.g. '01_bernoulli_lse_2D/lse_b000_m0_ip_m35746p8_t494p393'."
-        )
+        ),
     )
     campaign: str = Field(
-        description="Name of the runs/<N>_<name> campaign directory this run belongs to."
+        max_length=64,
+        pattern=r"^[0-9]{1,2}[a-zA-Z]?_[A-Za-z0-9_]+$",
+        description="Name of the runs/<N>_<name> campaign directory this run belongs to.",
     )
     templateVariant: str | None = Field(
         default=None,
+        max_length=64,
+        pattern=r"^templates[A-Za-z0-9_]*$",
         description=(
             "basename() of the LAMMPS template directory that machined this "
             "sample's notch, e.g. 'templates' (current/wide), "
             "'templates_legacy_narrow', 'templates_reissue', 'templates_wide3', "
             "'templates_wide4' (see the workflow AGENTS.md for the narrow-vs-wide "
-            "slot-width history). Deliberately a free string, not an enum: only "
-            "a subset of campaigns' batch.sh record TEMPLATE_VARIANT in "
-            "parameters.env at all, and new template trees get added over time. "
-            "Null means the campaign did not record it, not that the template is "
-            "unknown -- infer it from the campaign name if needed. Template "
-            "identity is not interchangeable across runs; see AGENTS.md's "
-            "repeated 'not poolable' caveats."
+            "slot-width history). Only a subset of campaigns' batch.sh record "
+            "TEMPLATE_VARIANT in parameters.env at all, and new template trees "
+            "get added over time. Null means the campaign did not record it, "
+            "not that the template is unknown -- infer it from the campaign "
+            "name if needed. Template identity is not interchangeable across "
+            "runs; see AGENTS.md's repeated 'not poolable' caveats."
         ),
     )
     backend: Literal["kokkos-gpu", "cpu"] | None = Field(
@@ -183,47 +220,102 @@ class CrackSimulation(BaseModel):
             "historical corpus ran on kokkos-gpu."
         ),
     )
-    sampleId: int = Field(description="Sample index within its campaign (SAMPLE_ID).")
+    sampleId: int = Field(
+        ge=0, description="Sample index within its campaign (SAMPLE_ID)."
+    )
     batch: int | None = Field(
         default=None,
+        ge=0,
         description="Strict-batch index (BATCH), for campaigns using libe_lse.py --strict-batches.",
     )
     member: int | None = Field(
         default=None,
+        ge=0,
         description="Member index within its batch (MEMBER), for strict-batch campaigns.",
     )
     randSeed1: int = Field(
-        description="First LAMMPS velocity-initialization random seed (RAND1)."
+        ge=0,
+        le=32767,
+        description=(
+            "First LAMMPS velocity-initialization random seed (RAND1). "
+            "crack.py/libe_lse.py always draw unset seeds as "
+            "random.randint(0, 32767), inclusive of both ends."
+        ),
     )
     randSeed2: int = Field(
-        description="Second LAMMPS velocity-initialization random seed (RAND2)."
+        ge=0,
+        le=32767,
+        description="Second LAMMPS velocity-initialization random seed (RAND2).",
     )
     randSeed3: int = Field(
-        description="Third LAMMPS velocity-initialization random seed (RAND3)."
+        ge=0,
+        le=32767,
+        description="Third LAMMPS velocity-initialization random seed (RAND3).",
     )
 
     # --- DOE / physical parameters ---------------------------------------
-    temperatureK: float = Field(description="Target thermostat temperature, in K.")
-    normalPrestressBar: float = Field(
-        description="Target normal (crack-opening-direction) prestress, in bar."
+    temperature: float = Field(
+        gt=0,
+        le=2000,
+        description=(
+            "Target thermostat temperature, in K. Every executed campaign so "
+            "far sweeps 50-800 K; the upper bound here is a generous sanity "
+            "envelope, not the campaign domain."
+        ),
     )
-    inPlanePrestressBar: float = Field(
-        description="Target in-plane prestress, in bar; the dominant driver of crack growth."
+    normalPrestress: float = Field(
+        ge=-200000,
+        le=200000,
+        description=(
+            "Target normal (crack-opening-direction) prestress, in bar. "
+            "Every executed campaign so far sweeps -50000 to +30000 bar; the "
+            "bound here is a generous sanity envelope, not the campaign domain."
+        ),
+    )
+    inPlanePrestress: float = Field(
+        ge=-200000,
+        le=200000,
+        description=(
+            "Target in-plane prestress, in bar; the dominant driver of crack "
+            "growth. Every executed campaign so far sweeps -50000 to -20000 "
+            "bar (LSE domain) or -50000 to +5000 bar (parameter scans); the "
+            "bound here is a generous sanity envelope, not the campaign domain."
+        ),
     )
     strainAmplitude: float = Field(
-        description="Oscillatory strain amplitude, dimensionless (fractional strain)."
+        gt=0,
+        le=0.1,
+        description=(
+            "Oscillatory strain amplitude, dimensionless (fractional strain). "
+            "Every executed campaign so far sweeps 0.001-0.01; the upper "
+            "bound here is a generous sanity envelope, not the campaign domain."
+        ),
     )
-    strainPeriodPs: float = Field(
-        description="Oscillatory strain period, in picoseconds."
+    strainPeriod: float = Field(
+        gt=0,
+        le=10000,
+        description=(
+            "Oscillatory strain period, in picoseconds. Fixed at 200 ps in "
+            "every campaign run so far, though the underlying code supports "
+            "sweeping it."
+        ),
     )
-    angleRad: float = Field(
-        description="Crack angle relative to the template's default, in radians."
+    angle: float = Field(
+        ge=-math.pi,
+        le=math.pi,
+        description=(
+            "Crack angle relative to the template's default, in radians. "
+            "Always 0 in every campaign run so far; bounded to one full "
+            "rotation either way since angles are periodic."
+        ),
     )
     orientation: Literal["100", "110", "111"] = Field(
         description="Crystal orientation preset, which also fixes the default sample geometry."
     )
     numCyclesPlanned: int = Field(
-        description="Number of strain cycles the run was configured to execute."
+        gt=0,
+        le=100,
+        description="Number of strain cycles the run was configured to execute.",
     )
     earlyStopEnabled: bool = Field(
         description="Whether crack.py --early-stop was active for this run (EARLY_STOP)."
@@ -231,46 +323,79 @@ class CrackSimulation(BaseModel):
 
     # --- Metric configuration (scripts/metric.py knobs in effect) --------
     thetaA: float = Field(
+        gt=1.0,
+        le=10.0,
         description=(
             "Growth-ratio threshold: a_y(cycle)/a_y(baseline) must exceed this "
             "value for two consecutive cycle ends for the verdict to be "
-            "crack-growth."
-        )
+            "crack-growth. Fixed at 1.5 in every campaign run so far; "
+            "metric.py's CLI supports arbitrary values for sensitivity sweeps "
+            "(1.3-2.0 have been explored ad hoc per the workflow AGENTS.md). "
+            "Bounded to (1, 10]: a threshold at or below 1 would mean any "
+            "size at all counts as growth, which cannot be intentional, "
+            "though this is an inferred convention, not one scripts/metric.py "
+            "itself asserts."
+        ),
     )
-    gridCellTargetAngstrom: float = Field(
-        description="Target fractional-grid cell size used to bin atoms for void detection, in Angstrom."
+    gridCellTarget: float = Field(
+        gt=0,
+        le=50,
+        description=(
+            "Target fractional-grid cell size used to bin atoms for void "
+            "detection, in Angstrom. Fixed at 2.5 A in every campaign run so far."
+        ),
     )
     gridNx: int = Field(
-        description="Number of grid columns along x used for void detection."
+        gt=0, description="Number of grid columns along x used for void detection."
     )
     gridNy: int = Field(
-        description="Number of grid columns along y used for void detection."
+        gt=0, description="Number of grid columns along y used for void detection."
     )
     depletionFraction: float = Field(
-        description="Column occupancy fraction (relative to the median) below which a column counts as void."
+        gt=0.0,
+        lt=1.0,
+        description="Column occupancy fraction (relative to the median) below which a column counts as void.",
     )
     surfaceSigma: float = Field(
-        description="Robust-sigma cut on per-atom potential energy used to count free-surface atoms."
+        gt=0,
+        le=50,
+        description="Robust-sigma cut on per-atom potential energy used to count free-surface atoms.",
     )
     baselineStepId: int = Field(
-        description="LAMMPS timestep used as the baseline (end-of-prep) frame for growth ratios."
+        ge=0,
+        description="LAMMPS timestep used as the baseline (end-of-prep) frame for growth ratios.",
     )
     metricVersion: int = Field(
-        description="Schema version of damage.json written by scripts/metric.py."
+        ge=1, description="Schema version of damage.json written by scripts/metric.py."
     )
     metricSource: Literal["dump", "vtp"] = Field(
         description="Whether the metric was computed from raw LAMMPS dumps or from post-processed VTP files."
     )
+    interatomicPotential: str = Field(
+        default="Cu_mishin1.eam.alloy",
+        max_length=64,
+        description=(
+            "EAM/alloy interatomic potential file used for all pair "
+            "interactions (pair_style eam/alloy). Mishin Cu EAM potential, "
+            "Mishin, Phys. Rev. B 63, 224106 (2001); static across every run "
+            "in this workflow. The ~700 KB file itself is not duplicated "
+            "into every contribution -- see the workflow's Attachments "
+            "strategy for whether/how it is referenced once, separately."
+        ),
+    )
 
     # --- Outcome / verdict -------------------------------------------------
     crackGrowth: bool | None = Field(
+        default=None,
         description=(
             "The verdict: true if notch extension was observed, false if not, "
             "null if undecidable (no baseline frame or no completed cycle)."
-        )
+        ),
     )
     firstCrossingCycle: int | None = Field(
-        description="First cycle end at which the sustained growth-threshold crossing began, if any."
+        default=None,
+        ge=1,
+        description="First cycle end at which the sustained growth-threshold crossing began, if any.",
     )
     trackedFeature: Literal["notch", "largest-void"] = Field(
         description=(
@@ -279,26 +404,33 @@ class CrackSimulation(BaseModel):
             "largest void present."
         )
     )
-    aYBaselineAngstrom: float = Field(
-        description="y-extent of the tracked component at the baseline (end-of-prep) frame, in Angstrom."
+    aYBaseline: float = Field(
+        ge=0.0,
+        description="y-extent of the tracked component at the baseline (end-of-prep) frame, in Angstrom.",
     )
-    aYReferenceAngstrom: float = Field(
+    aYReference: float = Field(
+        gt=0.0,
         description=(
             "Reference length used as the denominator for growth ratios, in "
-            "Angstrom (a floor is applied when the baseline is very small)."
-        )
+            "Angstrom (a floor is applied when the baseline is very small, "
+            "so this is always strictly positive)."
+        ),
     )
     aYRatioMax: float = Field(
-        description="Maximum a_y(cycle)/a_y(reference) observed over all analyzed cycle ends."
+        ge=0.0,
+        description="Maximum a_y(cycle)/a_y(reference) observed over all analyzed cycle ends.",
     )
     aYRatioMin: float = Field(
-        description="Minimum a_y(cycle)/a_y(reference) observed over all analyzed cycle ends."
+        ge=0.0,
+        description="Minimum a_y(cycle)/a_y(reference) observed over all analyzed cycle ends.",
     )
     nCyclesObserved: int = Field(
-        description="Number of completed cycle ends included in the verdict (<= numCyclesPlanned)."
+        ge=0,
+        description="Number of completed cycle ends included in the verdict (<= numCyclesPlanned).",
     )
     nFramesAnalyzed: int = Field(
-        description="Total number of dumped frames analyzed, including the baseline frame."
+        gt=0,
+        description="Total number of dumped frames analyzed, including the baseline frame.",
     )
     cycleStageCompleted: bool = Field(
         description=(
@@ -346,17 +478,17 @@ class CrackSimulation(BaseModel):
             randSeed1=int(params["RAND1"]),
             randSeed2=int(params["RAND2"]),
             randSeed3=int(params["RAND3"]),
-            temperatureK=float(params["TEMPERATURE"]),
-            normalPrestressBar=float(params["NORMAL_PRESTRESS"]),
-            inPlanePrestressBar=float(params["IN_PLANE_PRESTRESS"]),
+            temperature=float(params["TEMPERATURE"]),
+            normalPrestress=float(params["NORMAL_PRESTRESS"]),
+            inPlanePrestress=float(params["IN_PLANE_PRESTRESS"]),
             strainAmplitude=float(params["STRAIN_AMP"]),
-            strainPeriodPs=float(params["STRAIN_PERIOD"]),
-            angleRad=float(params["ANGLE"]),
+            strainPeriod=float(params["STRAIN_PERIOD"]),
+            angle=float(params["ANGLE"]),
             orientation=params["ORIENTATION"],
             numCyclesPlanned=int(params["NUM_CYCLES"]),
             earlyStopEnabled=bool(int(params.get("EARLY_STOP", 0))),
             thetaA=damage["theta_a"],
-            gridCellTargetAngstrom=grid["cell_target"],
+            gridCellTarget=grid["cell_target"],
             gridNx=grid["nx"],
             gridNy=grid["ny"],
             depletionFraction=grid["depletion_fraction"],
@@ -364,11 +496,14 @@ class CrackSimulation(BaseModel):
             baselineStepId=damage["baseline_step"],
             metricVersion=damage["version"],
             metricSource=damage["source"],
+            interatomicPotential=params.get(
+                "INTERATOMIC_POTENTIAL", "Cu_mishin1.eam.alloy"
+            ),
             crackGrowth=verdict.get("crack_growth"),
             firstCrossingCycle=verdict.get("first_crossing_cycle"),
             trackedFeature=verdict["tracked"],
-            aYBaselineAngstrom=verdict["a_y_baseline"],
-            aYReferenceAngstrom=verdict["a_y_reference"],
+            aYBaseline=verdict["a_y_baseline"],
+            aYReference=verdict["a_y_reference"],
             aYRatioMax=verdict["a_y_ratio_max"],
             aYRatioMin=verdict["a_y_ratio_min"],
             nCyclesObserved=verdict["n_cycles"],
