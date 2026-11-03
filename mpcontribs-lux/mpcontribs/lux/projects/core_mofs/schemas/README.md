@@ -42,6 +42,13 @@ rejected as numeric inputs. Scientific zero and false are valid values.
 positive integers as specified by each field. Network dimensions range from
 0 to 3, space-group numbers from 1 to 230, and volume fractions from 0 to 1.
 
+## Dataset version
+
+`release.releaseVersion` is a required string matching
+`\Av[0-9]+\.[0-9]+\.[0-9]+\z`, for example `v26.0.2`.
+The lowercase `v` is followed by three numeric components separated by dots.
+Whitespace and suffixes are not allowed.
+
 ## CCDC source links
 
 `source.ccdcUrl` is optional and defaults to `None`. A supplied URL is allowed
@@ -74,6 +81,9 @@ semicolons and no whitespace. Each symbol in `metalElements` is additionally
 validated using `pymatgen.core.Element.is_metal`. `metalElementCount` and
 `metalAtomCount` are nonnegative integers; `metalloidElements` describes
 metalloids separately.
+When `metalElementCount` is positive, `metalElements` is required and must contain
+unique symbols whose number matches the count. When the count is zero, the metal
+list must be absent or `None`. Metalloid symbols do not contribute to this count.
 `metalClasses` is an optional classification string with a maximum length of
 256 characters.
 

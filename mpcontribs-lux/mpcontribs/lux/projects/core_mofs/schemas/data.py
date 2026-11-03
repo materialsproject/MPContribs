@@ -37,7 +37,11 @@ class ReleaseData(BaseModel):
 
     model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
 
-    releaseVersion: str = Field(min_length=1, description="CoRE dataset version.")
+    releaseVersion: str = Field(
+        min_length=1,
+        pattern=r"\Av[0-9]+\.[0-9]+\.[0-9]+\z",
+        description="CoRE dataset version, in the form v26.0.2.",
+    )
 
 
 class SourceData(BaseModel):
@@ -204,6 +208,24 @@ class MetalData(BaseModel):
             if not element.is_metal:
                 raise ValueError(f"Element {symbol!r} is not classified as a metal")
         return value
+
+    @model_validator(mode="after")
+    def validate_metal_element_count(self) -> "MetalData":
+        """Require a unique metal list matching the declared element count."""
+        if self.metalElements is None:
+            if self.metalElementCount != 0:
+                raise ValueError(
+                    "metalElements is required when metalElementCount is positive"
+                )
+            return self
+        symbols = self.metalElements.split(";")
+        if len(symbols) != len(set(symbols)):
+            raise ValueError("metalElements must not contain duplicate symbols")
+        if self.metalElementCount != len(symbols):
+            raise ValueError(
+                "metalElementCount must match the number of distinct metalElements"
+            )
+        return self
 
     validate_numeric_inputs = field_validator(
         "metalElementCount",
