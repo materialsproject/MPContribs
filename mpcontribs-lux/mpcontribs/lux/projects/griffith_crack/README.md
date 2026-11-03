@@ -106,8 +106,12 @@ data to reject. Bounding these would silently discard real corpus data.
 Both models were validated end to end against a real run,
 `runs/01_bernoulli_lse_2D/lse_b000_m0_ip_m35746p8_t494p393` (a copy of its
 `damage.json` and `parameters.env` lives in
-`test_data/by_user/griffith_crack/damage_sample.json` / `parameters_sample.env`;
-`damage.json`'s `run_dir` field, an absolute `$PSCRATCH` path, was dropped
-entirely rather than masked -- it isn't read by anything here), via
-`tests/projects/griffith_crack/test_griffith_crack_schemas.py`, and against
-`tests/test_models_for_arrow_compatibility.py`.
+`test_data/by_user/griffith_crack/damage_sample.json` / `parameters_sample.env`,
+trimmed of fields nothing here reads: `run_dir` (an absolute `$PSCRATCH`
+path), `criterion` (static descriptive text, identical on every run),
+`cycle_end_steps`, and `verdict.a_y_per_cycle` /
+`verdict.a_y_ratio_per_cycle` / `verdict.n_surf_ratio_per_cycle` (each
+exactly reconstructable from the `frames` table already in the fixture,
+e.g. `a_y_per_cycle` is just `frame["a_y"]` for the frames where `cycle`
+is set)), via `tests/projects/griffith_crack/test_griffith_crack_schemas.py`,
+and against `tests/test_models_for_arrow_compatibility.py`.

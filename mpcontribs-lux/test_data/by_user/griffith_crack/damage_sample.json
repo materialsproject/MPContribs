@@ -24,17 +24,9 @@
   "ny": 242,
   "depletion_fraction": 0.25
  },
- "criterion": "a_y(cycle)/a_y(baseline) > theta_a for 2 consecutive cycles, a_y = y-extent of the notch-connected void",
  "theta_a": 1.5,
  "surface_sigma": 8.0,
  "baseline_step": 200000,
- "cycle_end_steps": [
-  500000,
-  800000,
-  1100000,
-  1400000,
-  1700000
- ],
  "n_frames": 16,
  "truncated": null,
  "frames": [
@@ -427,32 +419,11 @@
   "crack_growth": true,
   "first_crossing_cycle": 4,
   "tracked": "notch",
-  "a_y_baseline": 59.887636497190066,
-  "a_y_reference": 59.887636497190066,
-  "a_y_per_cycle": [
-   67.17042132684674,
-   75.28562202253953,
-   88.84019727626696,
-   96.00380525470734,
-   115.97895976903519
-  ],
-  "a_y_ratio_per_cycle": [
-   1.1216074845431308,
-   1.2571145970349311,
-   1.4834480449138339,
-   1.6030655218663012,
-   1.9366093997460883
-  ],
-  "a_y_ratio_max": 1.9366093997460883,
-  "a_y_ratio_min": 1.1216074845431308,
-  "n_surf_ratio_per_cycle": [
-   1.3087557603686637,
-   1.3993855606758832,
-   1.6451612903225807,
-   1.706605222734255,
-   2.0076804915514592
-  ],
-  "n_cycles": 5,
+   "a_y_baseline": 59.887636497190066,
+   "a_y_reference": 59.887636497190066,
+   "a_y_ratio_max": 1.9366093997460883,
+   "a_y_ratio_min": 1.1216074845431308,
+   "n_cycles": 5,
   "diagnostics": {
    "notch_closed_at_baseline": false,
    "damage_nucleated": false,
