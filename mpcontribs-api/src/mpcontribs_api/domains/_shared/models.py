@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from pymongo.results import DeleteResult as MongoDeleteResult
 
 from mpcontribs_api import pagination
-from mpcontribs_api.domains._shared.types import Identity, MD5Hash, NFKCStr
+from mpcontribs_api.domains._shared.types import Identity, MD5Hash, NFKCStr, ShortStr
 from mpcontribs_api.projection import SparseFieldsModel
 
 
@@ -104,11 +104,13 @@ def canonical_md5(payload: Mapping[str, Any]) -> str:
 
 
 class ComponentIdentity(Identity):
-    """Identity of a content-addressed component: its ``md5`` content hash.
+    """Natural key of an S3-first component: its owner-scoped location.
 
-    Shared by every component domain (structures/tables/attachments).
+    WARNING: field declaration order is the unique-index column order (see ``Identity.index_model``);
+    change it only intentionally.
     """
 
+    project: ShortStr
     md5: MD5Hash
 
 
