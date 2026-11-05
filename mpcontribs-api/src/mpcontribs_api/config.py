@@ -106,23 +106,21 @@ class S3Settings(BaseModel):
         default=10,
         description="The maximum number of connections the app is allowed to have to S3",
     )
-    staging_bucket: str = Field(
-        default="mpcontribs-staging",
-        description="The S3 bucket users upload into directly (presigned PUT/multipart). Contents are graduated "
-        "into the raw bucket once an upload session completes.",
+    bronze_bucket: str = Field(
+        default="lbnl-msd-bronze",
+        description="Institution-owned Bronze medallion bucket. MPContribs writes raw user uploads as a tenant "
+        "under the 'mpcontribs/{project_id}/{upload_id}/...' prefix via presigned PUT/multipart. Immutable, "
+        "append-only; the worker promotes from here to Silver.",
     )
-    raw_data_bucket: str = Field(
-        default="mpcontribs-raw",
-        description="The S3 bucket that holds graduated raw user data (promoted from the staging bucket) before "
-        "any transformation into production format.",
+    silver_bucket: str = Field(
+        default="lbnl-msd-silver",
+        description="Institution-owned Silver medallion bucket (prefix 'mpcontribs/'). Holds worker-converted "
+        "canonical data (e.g. structures as pymatgen JSON, tables as parquet); the API reads components from here.",
     )
-    processed_data_bucket: str = Field(
-        default="mpcontribs-processed",
-        description="The S3 bucket that holds producion-formatted user data.",
-    )
-    blobs_bucket: str = Field(
-        default="mpcontribs-blobs",
-        description="The S3 bucket that holds non-delta-table formattable user data. Ie. Components",
+    gold_bucket: str = Field(
+        default="lbnl-msd-gold",
+        description="Institution-owned Gold medallion bucket (prefix 'mpcontribs/'). Holds published, "
+        "public-read data after is_public promotion.",
     )
     expires_in: int = Field(
         default=60 * 15,
@@ -139,9 +137,10 @@ class S3Settings(BaseModel):
         "final part) and keep the resulting part count under the 10,000-part limit.",
     )
     checksum_algorithm: str = Field(
-        default="",
-        description="Optional S3 checksum algorithm (e.g. 'CRC32', 'SHA256') passed to multipart uploads. "
-        "Empty disables server-side checksums.",
+        default="SHA256",
+        description="S3 checksum algorithm used for multipart uploads (ChecksumAlgorithm). Per-file SHA-256 "
+        "integrity binding on the presign is gated on the file declaring a 'sha256', independent of this. "
+        "Empty disables the multipart checksum algorithm.",
     )
     max_files_per_session: int = Field(
         default=1000,
