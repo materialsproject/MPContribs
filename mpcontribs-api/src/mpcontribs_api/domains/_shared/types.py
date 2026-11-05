@@ -209,6 +209,21 @@ def _md5_like(v: str) -> str:
 MD5Hash = Annotated[str, BeforeValidator(_md5_like)]
 
 
+_SHA256 = re.compile(r"^[a-f0-9]{64}$")
+
+
+def _sha256_like(v: str) -> str:
+    v = v.strip().lower()
+    if not _SHA256.match(v):
+        raise ValidationError("must be a 64-character SHA-256 hex digest", sha256=v)
+    return v
+
+
+# A client-supplied SHA-256 content digest (hex). The server never computes it (it never sees the
+# bytes); it is bound into the presigned upload so S3 rejects a body whose hash does not match.
+Sha256Hash = Annotated[str, BeforeValidator(_sha256_like)]
+
+
 def _mime_like(v: str) -> str:
     v = v.strip().lower()
     parts = v.split("/")
