@@ -1,15 +1,11 @@
-import hashlib
-import json
-import unicodedata
-from collections.abc import Mapping
 from typing import Annotated, Any, ClassVar, Self
 
 from beanie import Document, PydanticObjectId
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field
 from pymongo.results import DeleteResult as MongoDeleteResult
 
 from mpcontribs_api import pagination
-from mpcontribs_api.domains._shared.types import Identity, MD5Hash, NFKCStr, ShortStr
+from mpcontribs_api.domains._shared.types import Identity
 from mpcontribs_api.projection import SparseFieldsModel
 
 
@@ -94,78 +90,3 @@ class DeleteResult(BaseModel):
     @classmethod
     def from_delete_result(cls, delete_result: MongoDeleteResult) -> Self:
         return cls(num_deleted=delete_result.deleted_count)
-
-
-def canonical_md5(payload: Mapping[str, Any]) -> str:
-    """MD5 hex digest of a content mapping, stable across processes/hosts."""
-    text = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
-    normalized = unicodedata.normalize("NFC", text)
-    return hashlib.md5(normalized.encode("utf-8")).hexdigest()
-
-
-class ComponentIdentity(Identity):
-    """Natural key of an S3-first component: its owner-scoped location.
-
-    WARNING: field declaration order is the unique-index column order (see ``Identity.index_model``);
-    change it only intentionally.
-    """
-
-    project: ShortStr
-    md5: MD5Hash
-
-
-class ComponentIn(BaseModel):
-    """Base for component input payloads.
-
-    Components are content-addressed: the server computes ``md5`` from the content and assigns the
-    ``_id`` on insert, so neither is part of the input contract. Subclasses add the required content
-    fields for their resource.
-    """
-
-    # NFKC-normalized so compatibility-equivalent spellings of a name collapse to one stored form.
-    name: NFKCStr
-
-
-class Component(BaseDocumentWithInput[PydanticObjectId]):
-    """Stored component document.
-
-    ``md5`` is server-authoritative: it is (re)computed from ``hash_fields`` whenever a full document
-    is validated — on insert, on update, and on full-document reads — so a client-supplied value can
-    never define a component's content identity.
-    """
-
-    HAS_DERIVED_FIELDS: ClassVar[bool] = True
-    identity_model: ClassVar[type[Identity]] = ComponentIdentity
-    name: NFKCStr
-    # Server-computed; the placeholder default is overwritten by ``_recompute_md5`` on validation.
-    md5: MD5Hash = Field(default="0" * 32)
-
-    hash_fields: ClassVar[frozenset[str]]
-
-    def derived_field_updates(self) -> dict[str, Any]:
-        """Recompute ``md5`` from the (patched-in-memory) content so the write stays authoritative."""
-        return {"md5": self.compute_md5()}
-
-    # The md5 functions look redundant but aren't, we should keep both
-    # Used in patching to compute the hash after an update - should not return self
-    def compute_md5(self) -> str:
-        payload = self.model_dump(mode="json", include=set(self.hash_fields), by_alias=False)
-        return canonical_md5(payload)
-
-    # Used on validation - must return self
-    @model_validator(mode="after")
-    def _recompute_md5(self) -> Self:
-        self.md5 = self.compute_md5()
-        return self
-
-    @classmethod
-    def from_input(cls, input: ComponentIn) -> Self:
-        """Build a stored document from an input payload, assigning a fresh id (md5 is computed).
-
-        The default maps every input field onto the document one-to-one. Subclasses whose document
-        carries fields that are absent from the input or derived from it should override this - see
-        ``Table.from_input``, which computes ``total_data_rows`` from the data frame.
-        """
-        payload = input.model_dump()
-        payload["_id"] = PydanticObjectId()
-        return cls.model_validate(payload)
