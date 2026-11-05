@@ -67,6 +67,6 @@ jobs:
           git lfs install
           git lfs pull
           cd mpcontribs-lux
-          python${{ matrix.python-version }} -m pip install -r requirements/requirements-${{ matrix.os }}_py${{ matrix.python-version }}_extras.txt
+          python${{ matrix.python-version }} -m pip install -r requirements/${{ matrix.os }}_py${{ matrix.python-version }}_extras.txt
           python${{ matrix.python-version }} -m pip install -e .
           python${{ matrix.python-version }} -m pytest -n auto -x --cov=mpcontribs/lux --cov-report=xml
