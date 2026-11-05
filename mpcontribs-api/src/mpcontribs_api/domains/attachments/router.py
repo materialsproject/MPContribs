@@ -1,25 +1,18 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
-from fastapi.responses import StreamingResponse
+from fastapi.responses import RedirectResponse
 from fastapi_filter import FilterDepends
 
-from mpcontribs_api.dependencies import S3Dep, require_user
-from mpcontribs_api.domains._shared.models import ComponentIdentity, DeleteResult
-from mpcontribs_api.domains._shared.types import (
-    DownloadFormat,
-    FieldSelector,
-    ShortMimeFormat,
-    download_filename,
-)
+from mpcontribs_api.dependencies import S3Dep
+from mpcontribs_api.domains._shared.types import FieldSelector
 from mpcontribs_api.domains.attachments.dependencies import AttachmentServiceDep
-from mpcontribs_api.domains.attachments.models import (
-    AttachmentFilter,
-    AttachmentOut,
-    AttachmentPatch,
-)
+from mpcontribs_api.domains.attachments.models import AttachmentFilter, AttachmentOut
+from mpcontribs_api.domains.components.models import ComponentIdentity
 from mpcontribs_api.pagination import CursorParams, Page
 
+# Attachments are immutable, worker-written S3 objects: these endpoints are read-only. Creation,
+# replacement, and deletion all flow through the /uploads endpoints.
 router = APIRouter()
 
 
@@ -40,27 +33,9 @@ async def read_one_by_identity(
     identity: Annotated[ComponentIdentity, Depends()],
     fields: FieldSelector = None,
 ) -> AttachmentOut | None:
-    """Return the attachment addressed by its content ``md5`` (its natural key), or None when none matches."""
+    """Return the attachment addressed by its content-addressed location (``project``, ``hash``), or None."""
     selected = AttachmentOut.parse_fields(fields)
     return await service.read_one(identifiers=identity.as_dict(), fields=selected)
-
-
-@router.delete("/item", dependencies=[Depends(require_user)])
-async def delete_one_by_identity(
-    service: AttachmentServiceDep, identity: Annotated[ComponentIdentity, Depends()]
-) -> DeleteResult:
-    """Delete a single attachment addressed by its content ``md5`` (its natural key)."""
-    return await service.delete_one(identifiers=identity.as_dict())
-
-
-@router.patch("/item", dependencies=[Depends(require_user)])
-async def update_one_by_identity(
-    service: AttachmentServiceDep,
-    identity: Annotated[ComponentIdentity, Depends()],
-    update: AttachmentPatch,
-) -> AttachmentOut:
-    """Patch a single attachment addressed by its content ``md5`` (its natural key)."""
-    return await service.update_one(identifiers=identity.as_dict(), update=update)
 
 
 @router.get("/{id}", response_model_exclude_unset=True)
@@ -74,51 +49,12 @@ async def read_one(
     return await service.read_one(identifiers={"id": id}, fields=selected)
 
 
-@router.get("/download/{short_mime}")
-async def download_attachment(
-    service: AttachmentServiceDep,
-    format: DownloadFormat,
-    s3: S3Dep,
-    short_mime: ShortMimeFormat = ShortMimeFormat.GZ,
-    ignore_cache: bool = False,
-    filter: AttachmentFilter = FilterDepends(AttachmentFilter),
-    fields: FieldSelector = None,
-) -> StreamingResponse:
-    selected = AttachmentOut.parse_fields(fields)
-    body = await service.download(
-        format=format,
-        short_mime=short_mime,
-        ignore_cache=ignore_cache,
-        filter=filter,
-        fields=selected,
-        s3=s3,
-    )
-    filename = download_filename("attachments", format, short_mime)
-    return StreamingResponse(
-        body,
-        media_type="application/gzip",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
-    )
-
-
-@router.delete("", dependencies=[Depends(require_user)])
-async def delete_many(
-    service: AttachmentServiceDep, filter: AttachmentFilter = FilterDepends(AttachmentFilter)
-) -> DeleteResult:
-    return await service.delete_many(filter=filter)
-
-
-@router.delete("/{id}", dependencies=[Depends(require_user)])
-async def delete_one(service: AttachmentServiceDep, id: str) -> DeleteResult:
-    """Delete a single attachment addressed by its ``_id``."""
-    return await service.delete_one(identifiers={"id": id})
-
-
-@router.patch("/{id}", dependencies=[Depends(require_user)])
-async def update_one(
+@router.get("/{id}/content")
+async def read_attachment_content(
     service: AttachmentServiceDep,
     id: str,
-    update: AttachmentPatch,
-) -> AttachmentOut:
-    """Patch a single attachment addressed by its ``_id``."""
-    return await service.update_one(identifiers={"id": id}, update=update)
+    s3: S3Dep,
+) -> RedirectResponse:
+    """Redirect (307) to a short-lived presigned GET URL for the attachment object in S3."""
+    url = await service.read_content(identifiers={"id": id}, s3=s3)
+    return RedirectResponse(url, status_code=307)

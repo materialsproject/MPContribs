@@ -1,68 +1,51 @@
 from beanie import PydanticObjectId
-from pydantic import field_validator
+from pydantic import BaseModel
+from pymongo import ASCENDING, IndexModel
 
 from mpcontribs_api.domains._shared.filters import BaseFilter
-from mpcontribs_api.domains._shared.models import Component, ComponentIdentity, ComponentIn, DocumentOut
-from mpcontribs_api.domains._shared.types import FileLike, MD5Hash, MimeFormat, NFKCStr
-from mpcontribs_api.exceptions import ValidationError
-from mpcontribs_api.projection import SparseFieldsModel
-
-ACCEPTED_FORMATS = ["jpg", "jpeg", "png", "csv", "parquet", "gz"]
-
-
-def _validate_attachment_name(v: str) -> str:
-    parts = v.strip().split(".")
-    if parts[-1].lower() not in ACCEPTED_FORMATS:
-        raise ValidationError(
-            f"Attachment extension not in allowed formats: {ACCEPTED_FORMATS}",
-            found_extension=parts[-1],
-        )
-    return v
+from mpcontribs_api.domains._shared.types import MimeFormat, NFKCStr, Sha256Hash, ShortStr
+from mpcontribs_api.domains.components.models import Component, ComponentIdentity, ComponentOut
 
 
 class Attachment(Component):
-    hash_fields = frozenset({"mime", "content"})
+    """Thin index record locating one content-addressed S3 attachment object.
+
+    The attachment content lives in S3 at ``mpcontribs/{project}/components/attachments/{hash}.{ext}``;
+    this record is a self-contained locator plus the MIME type clients filter on.
+    """
+
+    # Content type of the stored object, for display/filtering.
     mime: MimeFormat
-    content: int
 
     class Settings:
         name = "attachments"
-        indexes = [ComponentIdentity.index_model(name="md5")]
-
-    @field_validator("name", mode="before")
-    @classmethod
-    def _name_with_extension(cls, v: str) -> str:
-        return _validate_attachment_name(v)
-
-
-class AttachmentIn(ComponentIn):
-    """User-supplied attachment content. ``_id`` and ``md5`` are server-assigned, so absent here."""
-
-    mime: MimeFormat
-    content: int
-
-    @field_validator("name", mode="before")
-    @classmethod
-    def _name_with_extension(cls, v: str) -> str:
-        return _validate_attachment_name(v)
+        indexes = [
+            # Deployed index names are kept stable — renaming forces a drop/recreate.
+            ComponentIdentity.index_model(name="identity", unique=True),
+            IndexModel(keys=[("size", ASCENDING)], name="size"),
+        ]
 
 
-class AttachmentOut(DocumentOut[PydanticObjectId]):
-    name: FileLike | None = None
-    md5: MD5Hash | None = None
+class AttachmentIn(BaseModel):
+    """A by-name reference to an attachment from a contribution row.
+
+    Not a component write model — components are worker-created in S3 and never inserted via the API.
+    A contribution row names its attachments; the worker resolves each name to the content-addressed
+    object and links it. Mirrors :class:`StructureIn`/:class:`TableIn`.
+    """
+
+    # NFKC-normalized so compatibility-equivalent spellings of a name collapse to one stored form.
+    name: NFKCStr
+
+
+class AttachmentOut(ComponentOut):
+    """Attachment metadata served from Mongo. Content is served separately from S3 (presigned GET)."""
+
     mime: MimeFormat | None = None
-    content: int | None = None
 
     @staticmethod
     def default_fields() -> tuple[str, ...]:
-        # Light default; content fetched via ?_fields=.
-        return ("id", "name", "md5", "mime")
-
-
-class AttachmentPatch(SparseFieldsModel):
-    name: FileLike | None = None
-    mime: MimeFormat | None = None
-    content: int | None = None
+        return ("id", "project", "hash", "size", "ext", "mime")
 
 
 class AttachmentFilter(BaseFilter):
@@ -70,14 +53,16 @@ class AttachmentFilter(BaseFilter):
     id__in: list[PydanticObjectId] | None = None
     id__neq: PydanticObjectId | None = None
 
-    md5: MD5Hash | None = None
-    md5__in: list[MD5Hash] | None = None
-    md5__neq: MD5Hash | None = None
+    project: ShortStr | None = None
+    project__in: list[ShortStr] | None = None
 
-    name: NFKCStr | None = None
-    name__in: list[NFKCStr] | None = None
-    name__neq: NFKCStr | None = None
-    name__ilike: NFKCStr | None = None
+    hash: Sha256Hash | None = None
+    hash__in: list[Sha256Hash] | None = None
+    hash__neq: Sha256Hash | None = None
+
+    size: int | None = None
+    size__gte: int | None = None
+    size__lte: int | None = None
 
     mime: MimeFormat | None = None
     mime__in: list[MimeFormat] | None = None

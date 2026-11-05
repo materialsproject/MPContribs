@@ -3,24 +3,19 @@ from typing import Annotated
 from fastapi import Depends
 
 from mpcontribs_api.dependencies import UserDep
-from mpcontribs_api.domains._shared.service import ComponentService
-from mpcontribs_api.domains.attachments.models import (
-    Attachment,
-    AttachmentFilter,
-    AttachmentIn,
-    AttachmentOut,
-    AttachmentPatch,
-)
+from mpcontribs_api.domains.attachments.models import AttachmentFilter, AttachmentOut
 from mpcontribs_api.domains.attachments.repository import MongoDbAttachmentRepository
+from mpcontribs_api.domains.components.service import ComponentService
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
 
-AttachmentService = ComponentService[Attachment, AttachmentIn, AttachmentOut, AttachmentFilter, AttachmentPatch]
+AttachmentService = ComponentService[AttachmentOut, AttachmentFilter]
 
 
 def get_attachment_service(user: UserDep) -> AttachmentService:
     return ComponentService(
         MongoDbAttachmentRepository(user),
         MongoDbContributionRepository(user),
+        subtype="attachment",
         ref_field="attachments",
     )
 

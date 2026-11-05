@@ -1,103 +1,56 @@
-from collections.abc import Mapping
-from typing import Any, Self
-
-import polars as pl
 from beanie import PydanticObjectId
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    field_serializer,
-    model_validator,
-)
+from pydantic import BaseModel
+from pymongo import ASCENDING, IndexModel
 
 from mpcontribs_api.domains._shared.filters import BaseFilter
-from mpcontribs_api.domains._shared.models import Component, ComponentIdentity, ComponentIn, DocumentOut
-from mpcontribs_api.domains._shared.types import DisplayStr, MD5Hash, NFKCStr, PolarsFrame, nfc_normalize
-from mpcontribs_api.projection import SparseFieldsModel
-
-
-class Labels(BaseModel):
-    # Column labels are NFC-normalized so equivalent Unicode spellings render/compare consistently.
-    index: DisplayStr
-    value: DisplayStr
-    variable: DisplayStr
-
-
-class Attributes(BaseModel):
-    title: DisplayStr
-    labels: Labels
-
-
-def frame_to_storage(frame: pl.DataFrame) -> tuple[list[str], list[str], list[list[str]]]:
-    """Split a DataFrame into (index, columns, data) for storage.
-
-    The first column is the index; the rest are the data columns. Every value is stringified.
-    """
-    if not frame.columns:
-        return [], [], []
-    index_col, *data_cols = frame.columns
-    index = [str(v) for v in frame[index_col].to_list()]
-    data = [[str(v) for v in row] for row in frame.select(data_cols).iter_rows()]
-    # NFC-normalize the column labels (not the cell values) so equivalent spellings store identically.
-    return index, [nfc_normalize(str(c)) for c in data_cols], data
-
-
-def storage_to_frame(index_label: str, index: list[str], columns: list[str], data: list[list[str]]) -> pl.DataFrame:
-    """Rebuild the DataFrame from stored (index, columns, data), all columns typed as strings."""
-    schema = {name: pl.Utf8 for name in [index_label, *columns]}
-    rows = [[idx, *row] for idx, row in zip(index, data, strict=True)]
-    return pl.DataFrame(rows, schema=schema, orient="row")
-
-
-def _index_label(attrs: Any) -> str:
-    """The DataFrame's index-column name comes from ``attrs.labels.index`` (dict or model)."""
-    if attrs is None:
-        return "index"
-    if isinstance(attrs, Mapping):
-        return attrs.get("labels", {}).get("index", "index")
-    return getattr(getattr(attrs, "labels", None), "index", "index")
+from mpcontribs_api.domains._shared.types import DisplayStr, NFKCStr, Sha256Hash, ShortStr
+from mpcontribs_api.domains.components.models import Component, ComponentIdentity, ComponentOut
 
 
 class Table(Component):
-    """Stored table document — matches the existing MongoDB shape (index/columns/data as strings)."""
+    """Thin index record locating one content-addressed S3 table object.
 
-    hash_fields = frozenset({"attrs", "index", "columns", "data"})
+    The tabular payload lives in S3 (a parquet/csv object) at
+    ``mpcontribs/{project}/components/tables/{hash}.{ext}``; this record is a self-contained locator
+    plus the table-only stats clients commonly sort/filter on.
+    """
 
-    attrs: Attributes
-    index: list[str]
-    columns: list[str]
-    data: list[list[str]]
-    total_data_rows: int
+    # Number of data rows, promoted out of the payload for cheap sort/count/filter.
+    num_rows: int
+    # Human-facing table title.
+    title: DisplayStr
 
     class Settings:
         name = "tables"
-        indexes = [ComponentIdentity.index_model(name="md5")]
-
-    @classmethod
-    def from_input(cls, input: TableIn) -> Self:  # pyright: ignore[reportIncompatibleMethodOverride]
-        # The input frame's first column is the index; the rest are the data columns. total_data_rows
-        # is derived from the data, so it is always consistent by construction.
-        index, columns, data = frame_to_storage(input.data)
-        return cls(
-            _id=PydanticObjectId(),
-            name=input.name,
-            attrs=input.attrs,
-            index=index,
-            columns=columns,
-            data=data,
-            total_data_rows=len(data),
-        )
+        indexes = [
+            # Deployed index names are kept stable — renaming forces a drop/recreate.
+            ComponentIdentity.index_model(name="identity", unique=True),
+            IndexModel(keys=[("size", ASCENDING)], name="size"),
+            IndexModel(keys=[("num_rows", ASCENDING)], name="num_rows"),
+        ]
 
 
-class TableIn(ComponentIn):
-    """User-supplied table content as a DataFrame (first column = index).
+class TableIn(BaseModel):
+    """A by-name reference to a table from a contribution row.
 
-    ``_id`` and ``md5`` are server-assigned, so absent here.
+    Not a component write model — components are worker-created in S3 and never inserted via the API.
+    A contribution row names its tables; the worker resolves each name to the content-addressed object
+    and links it. Mirrors :class:`StructureIn`/:class:`AttachmentIn`.
     """
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-    attrs: Attributes
-    data: PolarsFrame
+    # NFKC-normalized so compatibility-equivalent spellings of a name collapse to one stored form.
+    name: NFKCStr
+
+
+class TableOut(ComponentOut):
+    """Table metadata served from Mongo. Content (parquet/csv) is served separately from S3."""
+
+    num_rows: int | None = None
+    title: str | None = None
+
+    @staticmethod
+    def default_fields() -> tuple[str, ...]:
+        return ("id", "project", "hash", "size", "ext", "num_rows", "title")
 
 
 class TableFilter(BaseFilter):
@@ -105,92 +58,28 @@ class TableFilter(BaseFilter):
     id__in: list[PydanticObjectId] | None = None
     id__neq: PydanticObjectId | None = None
 
-    md5: MD5Hash | None = None
-    md5__in: list[MD5Hash] | None = None
-    md5__neq: MD5Hash | None = None
+    project: ShortStr | None = None
+    project__in: list[ShortStr] | None = None
 
-    name: NFKCStr | None = None
-    name__in: list[NFKCStr] | None = None
-    name__neq: NFKCStr | None = None
-    name__ilike: NFKCStr | None = None
+    hash: Sha256Hash | None = None
+    hash__in: list[Sha256Hash] | None = None
+    hash__neq: Sha256Hash | None = None
 
-    # Columns
-    # Attrs
+    size: int | None = None
+    size__gte: int | None = None
+    size__lte: int | None = None
 
-    # sorting
+    num_rows: int | None = None
+    num_rows__gte: int | None = None
+    num_rows__lte: int | None = None
+
+    title: str | None = None
+    title__in: list[str] | None = None
+    title__neq: str | None = None
+    title__ilike: str | None = None
+
+    # sorting (e.g. ``order_by=size`` or ``order_by=-num_rows``)
     order_by: list[str] | None = None
 
     class Constants(BaseFilter.Constants):
         model = Table
-
-    @field_serializer("id", "id__in", "id__neq")
-    def id_to_str(self, v: PydanticObjectId | list[PydanticObjectId] | None) -> str | list[str] | None:
-        if v is None:
-            return None
-        if isinstance(v, list):
-            return sorted(str(o) for o in v)
-        return str(v)
-
-
-class TableOut(DocumentOut[PydanticObjectId]):
-    # extra="allow" so that when ``data`` is requested the full document (including the stored
-    # ``index``/``columns``) is fetched — Beanie derives the Mongo projection from a plain model's
-    # fields, and the frame can only be rebuilt from all three. ``_assemble_frame`` drops the raw
-    # storage keys so they never surface on the response.
-    model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
-    name: str | None = None
-    md5: MD5Hash | None = None
-    attrs: Attributes | None = None
-    total_data_rows: int | None = None
-    data: PolarsFrame | None = None
-
-    @model_validator(mode="before")
-    @classmethod
-    def _assemble_frame(cls, value: Any) -> Any:
-        """Rebuild ``data`` as a DataFrame from the stored ``index``/``columns``/``data`` triple.
-
-        Accepts either a Mongo dict (read path) or a ``Table``-like object (download path,
-        ``from_attributes``). When the storage triple is absent (e.g. a light projection without
-        ``data``, or a TableOut built directly with a frame) the input passes through unchanged.
-        """
-        getter = value.get if isinstance(value, Mapping) else lambda key: getattr(value, key, None)
-        index, columns, raw = getter("index"), getter("columns"), getter("data")
-        if index is None or columns is None or not isinstance(raw, list):
-            return value
-
-        attrs = getter("attrs")
-        index_label = _index_label(attrs)
-        normalized: dict[str, Any] = {
-            "_id": getter("id") if isinstance(value, Mapping) and "id" in value else getter("_id") or getter("id"),
-            "name": getter("name"),
-            "md5": getter("md5"),
-            "attrs": attrs,
-            "total_data_rows": getter("total_data_rows"),
-            "data": storage_to_frame(index_label, index, columns, raw),
-        }
-        return {key: val for key, val in normalized.items() if val is not None}
-
-    @staticmethod
-    def default_fields() -> tuple[str, ...]:
-        # Light default; the tabular payload (data) is fetched via ?_fields=.
-        return (
-            "id",
-            "name",
-            "md5",
-            "attrs",
-            "total_data_rows",
-        )
-
-    @classmethod
-    def projection(cls, fields):
-        # Light reads use the normal partial-projection (no data/index/columns fetched). When the
-        # frame is requested, fall back to the full model so index+columns+data come back together
-        # and ``_assemble_frame`` can rebuild it.
-        if fields is not None and "data" not in fields:
-            return super().projection(fields)
-        return cls
-
-
-class TablePatch(SparseFieldsModel):
-    name: str | None = None
-    attrs: Attributes | None = None
