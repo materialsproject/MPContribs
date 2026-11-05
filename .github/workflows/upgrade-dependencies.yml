@@ -17,6 +17,7 @@ jobs:
             "mpcontribs-client",
             "mpcontribs-api",
             "mpcontribs-portal",
+            "mpcontribs-lux",
           ]
         python-version: ["3.11", "3.12"]
     steps:
