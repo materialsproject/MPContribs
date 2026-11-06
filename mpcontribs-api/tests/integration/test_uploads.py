@@ -188,6 +188,25 @@ class TestInitiate:
         assert r.json()["status"] == "completed"
         assert upload_service.initiate.await_args.kwargs["manifest"].operation == "delete"
 
+    def test_set_public_without_files_accepted_201(self, client, upload_service):
+        # ``set_public`` carries no bytes: a bare {project, operation} body is accepted and finalized.
+        upload_service.initiate.return_value = SessionInitiated(
+            id=PydanticObjectId(OID), seq=5, operation="set_public", project="myproject", status="completed", files=[]
+        )
+        body = {"project": "myproject", "operation": "set_public"}
+        r = client.post("/api/v1/uploads", json=body, headers=AUTHED_HEADERS)
+        assert r.status_code == 201
+        assert r.json()["status"] == "completed"
+        assert upload_service.initiate.await_args.kwargs["manifest"].operation == "set_public"
+
+    def test_set_public_with_files_rejected_422(self, client, upload_service):
+        # ``set_public`` uploads nothing; declaring files is rejected at manifest validation.
+        project_file = {"type": "project", "name": "project.json", "size_bytes": 256}
+        body = {"project": "myproject", "operation": "set_public", "files": [project_file]}
+        r = client.post("/api/v1/uploads", json=body, headers=AUTHED_HEADERS)
+        assert r.status_code == 422
+        upload_service.initiate.assert_not_called()
+
 
 # ---------------------------------------------------------------------------
 # POST /api/v1/uploads/{id}/files/parts  (file identified by its object ``key`` in the body)

@@ -88,9 +88,13 @@ def _component_key(plural: str, sha256: str, ext: str) -> str:
 
 
 def _manifest(files=None, *, operation="update", project=PROJECT, deletions=None):
-    return UploadManifest(
-        project=project, operation=operation, files=[] if deletions else (files or [_file()]), deletions=deletions
-    )
+    if deletions is not None:
+        resolved = []
+    elif files is None:
+        resolved = [_file()]  # convenience default for byte-carrying ops that don't care which file
+    else:
+        resolved = files  # honor an explicit list, including an empty one (no-byte ops)
+    return UploadManifest(project=project, operation=operation, files=resolved, deletions=deletions)
 
 
 def _session(ufiles, *, oid=None, operation="create_project", status="pending", seq=SEQ, cls=UploadOut):
@@ -428,17 +432,28 @@ class TestDeleteSetPublic:
                 project=PROJECT, operation="update", files=[_file()], deletions=_deletions(project=True)
             )
 
-    async def test_set_public_requires_project_file(self):
-        svc, uploads, *_ = _service()
-        await svc.initiate(manifest=_manifest([_project_file()], operation="set_public"))
-        doc = uploads.insert_one.await_args.args[0]
-        assert [f.spec.type for f in doc.files] == ["project"]
-        assert doc.files[0].key == _upload_key(SEQ, "project.json")
-        assert doc.operation == "set_public"
+    async def test_set_public_is_one_shot(self):
+        # ``set_public`` uploads no bytes: only manifest.json is written and the worker is notified in the
+        # one initiate call; the session comes back already completed, with no file handles and nothing to
+        # presign. The worker flips is_public from the recorded operation alone.
+        svc, uploads, s3, sqs = _service()
+        result = await svc.initiate(manifest=_manifest(operation="set_public", files=[]))
 
-    async def test_set_public_rejects_non_project_files(self):
+        assert result.status == "completed"
+        assert result.files == []
+        assert result.seq == SEQ
+        s3.generate_presigned_url.assert_not_called()
+        # Only manifest.json is written (no deletions.json, no uploaded objects).
+        keys = {call.kwargs["Key"] for call in s3.put_object.await_args_list}
+        assert keys == {f"mpcontribs/{PROJECT}/{SEQ}/manifest.json"}
+        # the stored session is recorded completed with no files, and the thin pointer is enqueued once
+        doc = uploads.insert_one.await_args.args[0]
+        assert doc.status == "completed" and doc.operation == "set_public" and doc.files == []
+        sqs.send_message.assert_awaited_once()
+
+    async def test_set_public_rejects_files(self):
         with pytest.raises(ValidationError):
-            _manifest([_file(name="contributions.csv")], operation="set_public")
+            _manifest([_project_file()], operation="set_public")
 
 
 # ---------------------------------------------------------------------------

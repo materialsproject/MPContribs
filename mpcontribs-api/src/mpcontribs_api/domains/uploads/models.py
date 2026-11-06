@@ -10,7 +10,7 @@ from mpcontribs_api.domains._shared.filters import BaseFilter
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
 from mpcontribs_api.domains._shared.sanitization import file_extension, sanitize_segment
 from mpcontribs_api.domains._shared.types import Sha256Hash, ShortStr
-from mpcontribs_api.exceptions import ValidationError
+from mpcontribs_api.exceptions import AppError, ValidationError
 
 UploadType = Literal["single", "multipart"]
 
@@ -71,14 +71,14 @@ _OPERATION_TYPES: dict[UploadOperation, frozenset[FileType]] = {
     "create_project": frozenset({"project", "contribution", "component"}),
     "update": frozenset({"project", "contribution", "component"}),
     "replace": frozenset({"project", "contribution", "component"}),
-    "set_public": frozenset({"project"}),
+    "set_public": frozenset(),  # carries no bytes; the worker flips is_public from the operation alone
     "delete": frozenset(),
 }
 _OPERATION_REQUIRES: dict[UploadOperation, frozenset[FileType]] = {
     "create_project": frozenset({"project"}),
     "update": frozenset({"project", "contribution", "component"}),  # at least one of these
     "replace": frozenset({"project", "contribution", "component"}),  # at least one of these
-    "set_public": frozenset({"project"}),
+    "set_public": frozenset(),
     "delete": frozenset(),
 }
 
@@ -205,10 +205,10 @@ class DeletionsPayload(BaseModel):
 class UploadManifest(BaseModel):
     """A declared upload session: one operation against one project.
 
-    Byte-carrying operations (``create_project``/``update``/``replace``/``set_public``) declare a set
-    of ``files``; ``delete`` instead carries a ``deletions`` payload and uploads no bytes. Validates
-    operation↔role coherence and that resolved names are unique, so the server never presigns two
-    files onto the same key.
+    Byte-carrying operations (``create_project``/``update``/``replace``) declare a set of ``files``.
+    ``delete`` carries a ``deletions`` payload, and ``set_public`` carries nothing - the worker knows what to do
+    from the `operation` alone. Validates operation↔role coherence and that resolved names are unique, so the server
+    never presigns two files onto the same key.
     """
 
     project: ShortStr
@@ -216,19 +216,22 @@ class UploadManifest(BaseModel):
     files: list[ManifestFile] = Field(default_factory=list)
     deletions: DeletionsPayload | None = None
 
-    @model_validator(mode="after")
-    def _validate_operation_coherence(self) -> Self:
-        # set_public doesn't require any files, so we return early. Downstream methods ignore other fields
-        if self.operation == "set_public":
-            return self
+    def _validate_set_public(self) -> Self:
+        if self.files:
+            raise ValidationError("a 'set_public' upload must not declare files", operation=self.operation)
+        if self.deletions is not None:
+            raise ValidationError("only a 'delete' upload may carry a 'deletions' payload", operation=self.operation)
+        return self
 
-        if self.operation == "delete":
-            if self.files:
-                raise ValidationError("a 'delete' upload must not declare files", operation=self.operation)
-            if self.deletions is None:
-                raise ValidationError("a 'delete' upload requires a 'deletions' payload", operation=self.operation)
-            return self
+    def _validate_delete(self) -> Self:
+        if self.files:
+            raise ValidationError("a 'delete' upload must not declare files", operation=self.operation)
+        if self.deletions is None:
+            raise ValidationError("a 'delete' upload requires a 'deletions' payload", operation=self.operation)
+        return self
 
+    def _validate_modify(self) -> Self:
+        """Handles validating writing-like operations: create_project, update, replace"""
         if self.deletions is not None:
             raise ValidationError("only a 'delete' upload may carry a 'deletions' payload", operation=self.operation)
         if not self.files:
@@ -253,6 +256,22 @@ class UploadManifest(BaseModel):
             if sum(1 for file in self.files if file.type == role) > 1:
                 raise ValidationError(f"an upload session may declare at most one '{role}' file")
         return self
+
+    @model_validator(mode="after")
+    def _validate_operation_coherence(self) -> Self:
+        match self.operation:
+            case "set_public":
+                return self._validate_set_public()
+            case "delete":
+                return self._validate_delete()
+            case "create_project" | "update" | "replace":
+                # Modifying operations: {"create_project", "update", "replace"}
+                return self._validate_modify()
+            case _:
+                # Should be impossible. Only time this would hit is if we forget to handle a new operation here
+                raise AppError(
+                    message="unhandled operation. Please contact MP Staff with this error.", operation=self.operation
+                )
 
 
 class UploadFile(BaseModel):
@@ -468,11 +487,7 @@ class FileInitiated(BaseModel):
 
 
 class SessionInitiated(BaseModel):
-    """Result of creating an upload session: the session id, the per-project ``seq``, and a handle per file.
-
-    A ``delete`` upload is finalized in this one call (no files to transfer), so it comes back with
-    ``status='completed'`` and an empty ``files`` list.
-    """
+    """Result of creating an upload session: the session id, the per-project ``seq``, and a handle per file."""
 
     id: PydanticObjectId
     seq: int

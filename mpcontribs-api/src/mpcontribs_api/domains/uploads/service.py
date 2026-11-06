@@ -87,9 +87,11 @@ class UploadService:
         oid = PydanticObjectId()
         bucket = self._settings.aws.s3.bronze_bucket
 
-        # Deletes require API server writing and special handling, so we branch here
+        # The no-byte operations are finalized here in the one call — nothing to transfer, no /complete.
         if manifest.operation == "delete":
             return await self._initiate_delete(consumer_id, project, seq, oid, bucket, manifest)
+        if manifest.operation == "set_public":
+            return await self._initiate_set_public(consumer_id, project, seq, oid, bucket)
 
         return await self._initiate_write(consumer_id, project, seq, oid, bucket, manifest)
 
@@ -185,6 +187,33 @@ class UploadService:
         await self._write_json(bucket, doc.manifest_key, self._manifest_payload(doc))
         await self._enqueue(bucket, doc.manifest_key)
         return SessionInitiated(id=oid, seq=seq, operation="delete", project=project, status="completed", files=[])
+
+    async def _initiate_set_public(
+        self,
+        consumer_id: str,
+        project: str,
+        seq: int,
+        oid: PydanticObjectId,
+        bucket: str,
+    ) -> SessionInitiated:
+        """Finalize a ``set_public`` in one call: no bytes are transferred by the client.
+
+        The upload is marked ``completed`` immediately, and the thin pointer is enqueued, so no ``/complete``
+        call is required.
+        """
+        doc = Upload(
+            _id=oid,
+            consumer_id=consumer_id,
+            project=project,
+            seq=seq,
+            operation="set_public",
+            files=[],
+            status="completed",
+        )
+        await self._uploads.insert_one(doc)
+        await self._write_json(bucket, doc.manifest_key, self._manifest_payload(doc))
+        await self._enqueue(bucket, doc.manifest_key)
+        return SessionInitiated(id=oid, seq=seq, operation="set_public", project=project, status="completed", files=[])
 
     async def read_many(
         self, pagination: CursorParams, filter: UploadFilter, fields: frozenset[str] | None

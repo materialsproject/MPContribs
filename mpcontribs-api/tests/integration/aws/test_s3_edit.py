@@ -331,22 +331,52 @@ def test_replace_project_contributions_and_components(
 
 
 # =============================================================================== set_public
-# Publish the project. Carries a single project.json whose is_public the worker applies; the manifest
-# records the operation and authz so the worker can enforce the admin-gated is_public => is_approved rule.
+# Publish the project. The client uploads NO bytes: the worker flips is_public to True from the
+# ``operation`` recorded in the manifest, so the session is finalized in the one initiate call. The
+# manifest records the operation and authz so the worker can enforce the admin-gated is_public rule.
 
 
-def test_set_public_single_project_file(client, s3, sqs, mongo, bronze, transform_queue_url, project, auth_headers):
-    """``set_public`` uploads a project.json; it is keyed like any project file and recorded in the manifest."""
-    body = json.dumps({"name": project, "is_public": True}).encode()
-    specs = [EditFileSpec("project", "project.json", body)]
-    upload_id, seq, handles, _ = run_session(client, auth_headers, project, "set_public", specs)
-    manifest = assert_golden(
-        s3, sqs, mongo, bronze, transform_queue_url, project, upload_id, seq, handles, specs, "set_public"
+def test_set_public_is_one_shot_no_bytes(
+    client, s3, sqs, mongo, bronze, transform_queue_url, project, auth_headers
+):
+    """A set_public writes only manifest.json, records the op in Mongo, and enqueues one pointer — no files."""
+    r = client.post(
+        "/api/v1/uploads", json={"project": project, "operation": "set_public"}, headers=auth_headers
     )
-    (entry,) = manifest["files"]
-    assert entry["type"] == "project"
-    assert entry["key"] == f"mpcontribs/{project}/{seq}/project.json"
-    assert json.loads(fetch_object_bytes(s3, bronze, entry["key"]))["is_public"] is True
+    assert r.status_code == 201, r.text
+    session = r.json()
+    assert session["status"] == "completed"
+    assert session["files"] == []
+    upload_id, seq = session["id"], session["seq"]
+    prefix = f"mpcontribs/{project}/{seq}/"
+
+    # manifest.json records the publish, with no files and no deletions payload.
+    manifest = fetch_manifest(s3, bronze, project, seq)
+    assert manifest["operation"] == "set_public"
+    assert manifest["upload_id"] == seq
+    assert manifest["files"] == []
+    assert "deletions_key" not in manifest
+
+    # Mongo: the session is recorded completed for this consumer/project.
+    raw = mongo["uploads"].find_one({"_id": ObjectId(upload_id)})
+    assert raw is not None
+    assert raw["operation"] == "set_public"
+    assert raw["status"] == "completed"
+    assert raw["consumer_id"] == CONSUMER_ID
+
+    # SQS: exactly one thin transform message pointing at this session's manifest.
+    messages = poll_transform_messages(sqs, transform_queue_url)
+    assert len(messages) == 1, messages
+    assert json.loads(messages[0]["Body"]) == {"bucket": bronze, "manifest_key": f"{prefix}manifest.json"}
+
+
+def test_set_public_rejects_files(client, project, auth_headers):
+    """A set_public that declares files is rejected at manifest validation (it carries no bytes)."""
+    body = json.dumps({"name": project}).encode()
+    specs = [EditFileSpec("project", "project.json", body)]
+    manifest = {"project": project, "operation": "set_public", "files": [s.to_manifest() for s in specs]}
+    r = client.post("/api/v1/uploads", json=manifest, headers=auth_headers)
+    assert r.status_code == 422, r.text
 
 
 # =============================================================================== delete
