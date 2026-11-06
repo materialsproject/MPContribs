@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=MPContribs/mpcontribs-kernel-gateway/requirements/deployment.txt MPContribs/mpcontribs-kernel-gateway/requirements.in python/requirements.txt
 #
-anyio==4.15.1
+anyio==4.16.0
     # via jupyter-server
 argon2-cffi==25.1.0
     # via jupyter-server
@@ -34,9 +34,9 @@ bravado-core==6.4.1
     # via bravado
 bytecode==0.19.1
     # via ddtrace
-cachetools==7.2.4
+cachetools==7.3.0
     # via mpcontribs-client
-certifi==2026.10.19
+certifi==2026.10.23
     # via requests
 cffi==2.1.1
     # via argon2-cffi-bindings
@@ -60,7 +60,7 @@ debugpy==1.8.22
     # via ipykernel
 defusedxml==0.7.1
     # via nbconvert
-dnspython==2.9.0
+dnspython==2.9.2
     # via
     #   pyisemail
     #   pymongo
@@ -68,7 +68,7 @@ envier==0.6.1
     # via ddtrace
 executing==2.3.0
     # via stack-data
-fastjsonschema==2.22.2
+fastjsonschema==2.22.3
     # via nbformat
 filetype==1.2.0
     # via mpcontribs-client
@@ -78,7 +78,7 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-fonttools==4.67.0
+fonttools==4.68.0
     # via matplotlib
 fqdn==1.6.0
     # via jsonschema
@@ -91,7 +91,7 @@ importlib-resources==7.1.0
     # via swagger-spec-validator
 ipykernel==7.4.0
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
-ipython==9.17.1
+ipython==9.18.1
     # via
     #   ipykernel
     #   ipywidgets
@@ -112,7 +112,7 @@ joblib==1.6.0
     # via pymatgen-core
 json2html==1.3.0
     # via mpcontribs-client
-jsonpointer==3.4
+jsonpointer==3.10
     # via jsonschema
 jsonref==1.1.0
     # via bravado-core
@@ -186,11 +186,11 @@ mpcontribs-client==5.10.5
     # via -r MPContribs/mpcontribs-kernel-gateway/requirements.in
 mpmath==1.3.0
     # via sympy
-msgpack==1.2.3
+msgpack==1.2.4
     # via
     #   bravado
     #   bravado-core
-narwhals==2.27.1
+narwhals==2.28.0
     # via plotly
 nbclient==0.11.0
     # via nbconvert
@@ -216,7 +216,7 @@ numpy==2.4.6
     #   pymatgen-core
     #   scipy
     #   spglib
-opentelemetry-api==1.45.1
+opentelemetry-api==1.45.2
     # via ddtrace
 orjson==3.13.0
     # via pymatgen-core
@@ -231,7 +231,7 @@ packaging==26.3
     #   plotly
 palettable==3.3.3
     # via pymatgen-core
-pandas==3.1.0
+pandas==3.1.1
     # via
     #   -r python/requirements.txt
     #   mpcontribs-client
@@ -246,7 +246,7 @@ pillow==13.0.0
     # via matplotlib
 pint==0.26.2
     # via mpcontribs-client
-platformdirs==4.13.5
+platformdirs==4.14.5
     # via
     #   choreographer
     #   jupyter-core
@@ -278,9 +278,9 @@ pygments==2.21.0
     #   nbconvert
 pyisemail==2.0.1
     # via mpcontribs-client
-pymatgen==2026.9.24
+pymatgen==2026.10.24
     # via mpcontribs-client
-pymatgen-core==2026.10.16
+pymatgen-core==2026.10.31
     # via pymatgen
 pymongo==4.19.0
     # via mpcontribs-client
@@ -288,7 +288,7 @@ pyparsing==3.3.3
     # via
     #   bibtexparser
     #   matplotlib
-python-dateutil==3.0.0
+python-dateutil==4.0.0
     # via
     #   arrow
     #   bravado
@@ -298,7 +298,7 @@ python-dateutil==3.0.0
     #   pandas
 python-json-logger==4.2.0
     # via jupyter-events
-pytz==2026.5
+pytz==2026.6
     # via bravado-core
 pyyaml==6.0.3
     # via
@@ -306,7 +306,7 @@ pyyaml==6.0.3
     #   bravado-core
     #   jupyter-events
     #   swagger-spec-validator
-pyzmq==27.2.0
+pyzmq==27.3.0
     # via
     #   ipykernel
     #   jupyter-client
@@ -356,9 +356,8 @@ six==1.17.0
     # via
     #   bravado
     #   bravado-core
-    #   python-dateutil
     #   rfc3339-validator
-soupsieve==3.0.4
+soupsieve==4.0.1
     # via beautifulsoup4
 spglib==2.8.0
     # via pymatgen-core
@@ -416,11 +415,11 @@ typing-extensions==4.16.0
     #   referencing
     #   spglib
     #   swagger-spec-validator
-tzdata==2026.5
+tzdata==2026.6
     # via
     #   arrow
     #   python-dateutil
-ujson==6.0.0
+ujson==6.1.0
     # via mpcontribs-client
 uncertainties==3.2.3
     # via pymatgen-core
@@ -428,7 +427,7 @@ uri-template==1.3.0
     # via jsonschema
 urllib3==2.8.0
     # via requests
-wcwidth==0.9.3
+wcwidth==0.9.4
     # via prompt-toolkit
 webcolors==25.10.0
     # via jsonschema
@@ -440,5 +439,5 @@ websocket-client==1.9.2
     # via jupyter-server
 widgetsnbextension==4.0.16
     # via ipywidgets
-wrapt==2.5.1
+wrapt==2.5.2
     # via ddtrace
