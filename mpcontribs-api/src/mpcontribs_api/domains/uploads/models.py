@@ -1,43 +1,43 @@
-import re
 from datetime import UTC, datetime
 from typing import Annotated, Literal, Self
 
-from beanie import PydanticObjectId
+from beanie import Document, PydanticObjectId
 from bson.errors import InvalidId
-from pydantic import BaseModel, BeforeValidator, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from pymongo import ASCENDING, IndexModel
 
 from mpcontribs_api.domains._shared.filters import BaseFilter
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
-from mpcontribs_api.domains._shared.types import NFKCStr, ShortStr
-from mpcontribs_api.domains.contributions.models import ContributionIdentity
-from mpcontribs_api.domains.uploads.sanitization import file_extension, sanitize_segment
+from mpcontribs_api.domains._shared.sanitization import file_extension, sanitize_segment
+from mpcontribs_api.domains._shared.types import Sha256Hash, ShortStr
 from mpcontribs_api.exceptions import ValidationError
 
 UploadType = Literal["single", "multipart"]
+
 UploadStatus = Literal["pending", "completed"]
 
-# What an upload session does. S3 is the system of record; a worker syncs the result into MongoDB.
-# ``replace`` overwrites the resource at each file's manifest location; ``update`` merges the supplied
-# content into what is already there.
-# add_contribution and add_component are different from update. update operates on fields, while add_* operates
-# on whole objects (an entire contribution, not a single field in a contribution).
-# ``repin`` updates a contribution's `Structure` reference to a new version and records (RepinRecord).
-UploadOperation = Literal["create_project", "add_contributions", "add_component", "replace", "update", "repin"]
+# Per-file initiate status: ``present`` = the content-addressed object already exists (skip upload).
+FileStatus = Literal["present", "pending"]
+
+# What this upload is doing
+UploadOperation = Literal["create_project", "update", "replace", "delete", "set_public"]
+
 # What a single file in the session is. See the domain docs for the full semantics.
-FileRole = Literal["project", "contributions", "component"]
-# The kind of component a ``component``-role file materializes into.
+FileType = Literal["project", "contribution", "component"]
+
+# The kind of component a ``component``-type file materializes into.
 ComponentKind = Literal["table", "structure", "attachment"]
+
 # The declared payload format of a file (drives how the worker parses it).
 UploadFormat = Literal["json", "jsonl", "csv", "parquet", "cif", "image"]
 
-# Formats each role may carry. ``component`` is narrowed further by component_kind below.
-_ROLE_FORMATS: dict[FileRole, frozenset[UploadFormat]] = {
+# Formats each type may carry. ``component`` is narrowed further by subtype below.
+_TYPE_FORMATS: dict[FileType, frozenset[UploadFormat]] = {
     "project": frozenset({"json"}),
-    "contributions": frozenset({"csv", "json", "jsonl"}),
+    "contribution": frozenset({"csv", "json", "jsonl"}),
     "component": frozenset({"csv", "parquet", "cif", "image"}),
 }
-# Extensions that may carry each format. The filename extension must be one of these.
+# Extensions that may carry each format. A file's extension must be one of these.
 _FORMAT_EXTENSIONS: dict[UploadFormat, frozenset[str]] = {
     "json": frozenset({"json"}),
     "jsonl": frozenset({"jsonl", "ndjson"}),
@@ -46,48 +46,45 @@ _FORMAT_EXTENSIONS: dict[UploadFormat, frozenset[str]] = {
     "cif": frozenset({"cif"}),
     "image": frozenset({"jpg", "jpeg", "png"}),
 }
-# For ``component`` files, which formats each component kind accepts.
+# Reverse map
+_EXTENSION_FORMAT: dict[str, UploadFormat] = {ext: fmt for fmt, exts in _FORMAT_EXTENSIONS.items() for ext in exts}
+# Extension -> the Content-Type signed into the presign (the client must send this exact header).
+_EXTENSION_CONTENT_TYPE: dict[str, str] = {
+    "json": "application/json",
+    "jsonl": "application/x-ndjson",
+    "ndjson": "application/x-ndjson",
+    "csv": "text/csv",
+    "parquet": "application/vnd.apache.parquet",
+    "cif": "chemical/x-cif",
+    "jpg": "image/jpeg",
+    "jpeg": "image/jpeg",
+    "png": "image/png",
+}
+# For ``component`` files, which formats each subtype accepts.
 _COMPONENT_KIND_FORMATS: dict[ComponentKind, frozenset[UploadFormat]] = {
     "table": frozenset({"csv", "parquet"}),
     "structure": frozenset({"cif"}),
     "attachment": frozenset({"image"}),
 }
-# Which file roles each operation permits, and which roles it requires at least one of.
-_OPERATION_ROLES: dict[UploadOperation, frozenset[FileRole]] = {
-    "create_project": frozenset({"project", "contributions", "component"}),
-    "add_contributions": frozenset({"contributions", "component"}),
-    "add_component": frozenset({"component"}),
-    "replace": frozenset({"project", "contributions", "component"}),
-    "update": frozenset({"project", "contributions"}),
-    "repin": frozenset({"contributions"}),
+# Which file types each operation permits, and which it requires at least one of.
+_OPERATION_TYPES: dict[UploadOperation, frozenset[FileType]] = {
+    "create_project": frozenset({"project", "contribution", "component"}),
+    "update": frozenset({"project", "contribution", "component"}),
+    "replace": frozenset({"project", "contribution", "component"}),
+    "set_public": frozenset({"project"}),
+    "delete": frozenset(),
 }
-_OPERATION_REQUIRES: dict[UploadOperation, frozenset[FileRole]] = {
+_OPERATION_REQUIRES: dict[UploadOperation, frozenset[FileType]] = {
     "create_project": frozenset({"project"}),
-    "add_contributions": frozenset({"contributions"}),
-    "add_component": frozenset({"component"}),
-    "replace": frozenset({"project", "contributions", "component"}),  # at least one of these
-    "update": frozenset({"project", "contributions"}),  # at least one of these
-    "repin": frozenset({"contributions"}),
+    "update": frozenset({"project", "contribution", "component"}),  # at least one of these
+    "replace": frozenset({"project", "contribution", "component"}),  # at least one of these
+    "set_public": frozenset({"project"}),
+    "delete": frozenset(),
 }
 
-UPDATE_FORMATS: frozenset[UploadFormat] = frozenset({"json", "jsonl"})
-
-_CONTENT_TYPE_RE = re.compile(r"^[a-z0-9][a-z0-9!#$&^_.+-]*/[a-z0-9][a-z0-9!#$&^_.+-]*$")
-
-
-def _validate_content_type(v: str) -> str:
-    v = v.strip().lower()
-    if not _CONTENT_TYPE_RE.match(v):
-        raise ValidationError("content_type must be a MIME type like 'text/csv' or 'application/json'", content_type=v)
-    return v
-
-
-# A MIME type, broader than the ``application/*``-only ``MimeFormat`` used by attachments, since
-# uploads legitimately carry ``text/csv``, ``image/png``, ``chemical/x-cif``, etc.
-ContentType = Annotated[str, BeforeValidator(_validate_content_type)]
-
-
-# --- Transfer strategy (per file, unchanged from the one-object design) -----------------------
+# Canonical names for the single-per-session role files at the upload root.
+PROJECT_FILE_NAME = "project.json"
+CONTRIBUTIONS_STEM = "contributions"
 
 
 class SingleStrategy(BaseModel):
@@ -116,103 +113,146 @@ class MultipartStrategy(BaseModel):
 UploadStrategy = Annotated[SingleStrategy | MultipartStrategy, Field(discriminator="type")]
 
 
-# --- Manifest (the request body / declared intent) --------------------------------------------
-
-
 class ManifestFile(BaseModel):
-    """One declared file in an upload session: what it is (``role``/``format``) and where it goes."""
+    """One declared file in an upload session: what it is (``type``/``subtype``) and where it goes.
 
-    # Becomes a sanitized S3 key segment (see `sanitize_segment`)
-    filename: str
-    role: FileRole
-    format: UploadFormat
-    content_type: ContentType
-    size: int = Field(gt=0)
-    # Contribution id to link components to their owning contributions in S3
-    cid: str | None = None
-    # Optional natural identity, for the worker to match/create the target contribution.
-    contribution: ContributionIdentity | None = None
-    component_kind: ComponentKind | None = None
-    component_name: NFKCStr | None = None
+    One ManifestFile describes a single file being uploaded in this session
+    """
+
+    type: FileType
+    # Arbitrary common name - not required to be unique. Primarily used for display.
+    name: str
+    size_bytes: int = Field(gt=0)
+    # Required for ``component`` files only: which component kind the file materializes into.
+    subtype: ComponentKind | None = None
+    # Optional client-supplied content digest, bound into the presign so S3 rejects a mismatched body.
+    sha256: Sha256Hash | None = None
+
+    @property
+    def format(self) -> UploadFormat:
+        """The payload format, derived from the (validated) extension."""
+        return _EXTENSION_FORMAT[file_extension(self.name)]
+
+    @property
+    def content_type(self) -> str:
+        """The Content-Type signed into the presign, derived from the extension."""
+        return _EXTENSION_CONTENT_TYPE[file_extension(self.name)]
 
     @model_validator(mode="after")
-    def _validate_role_coherence(self) -> Self:
-        self.filename = sanitize_segment(self.filename, field="filename")
-        ext = file_extension(self.filename)
+    def _validate_coherence(self) -> Self:
+        self.name = sanitize_segment(self.name, field="name")
+        ext = file_extension(self.name)
         if not ext:
-            raise ValidationError("filename must have an extension", filename=self.filename)
-        if self.format not in _ROLE_FORMATS[self.role]:
+            raise ValidationError("name must have a file extension", name=self.name)
+        fmt = _EXTENSION_FORMAT.get(ext)
+        if fmt is None:
             raise ValidationError(
-                f"format '{self.format}' is not allowed for role '{self.role}'",
-                role=self.role,
-                allowed=sorted(_ROLE_FORMATS[self.role]),
+                f"unsupported file extension '.{ext}'", name=self.name, allowed=sorted(_EXTENSION_FORMAT)
             )
-        if ext not in _FORMAT_EXTENSIONS[self.format]:
+        if fmt not in _TYPE_FORMATS[self.type]:
             raise ValidationError(
-                f"filename extension '.{ext}' does not match format '{self.format}'",
-                filename=self.filename,
-                allowed=sorted(_FORMAT_EXTENSIONS[self.format]),
+                f"extension '.{ext}' (format '{fmt}') is not allowed for type '{self.type}'",
+                type=self.type,
+                allowed=sorted(_TYPE_FORMATS[self.type]),
             )
-        if self.role == "component":
-            if self.cid is None or self.component_kind is None or self.component_name is None:
+        if self.type == "component":
+            if self.subtype is None:
+                raise ValidationError("component files require a subtype", name=self.name)
+            if fmt not in _COMPONENT_KIND_FORMATS[self.subtype]:
                 raise ValidationError(
-                    "component files require cid, component_kind, and component_name", filename=self.filename
+                    f"format '{fmt}' is not valid for component subtype '{self.subtype}'",
+                    subtype=self.subtype,
+                    allowed=sorted(_COMPONENT_KIND_FORMATS[self.subtype]),
                 )
-            self.cid = sanitize_segment(self.cid, field="cid")
-            if self.format not in _COMPONENT_KIND_FORMATS[self.component_kind]:
-                raise ValidationError(
-                    f"format '{self.format}' is not valid for component_kind '{self.component_kind}'",
-                    allowed=sorted(_COMPONENT_KIND_FORMATS[self.component_kind]),
-                )
-        elif self.cid is not None or self.component_kind is not None or self.component_name is not None:
-            raise ValidationError(
-                f"'{self.role}' files must not set cid/component_kind/component_name", filename=self.filename
-            )
+            # Components are content-addressed in S3 at ``components/{kind}/{sha256}.{ext}``, so the
+            # server needs the digest to build the key - it never sees the bytes to compute it.
+            if self.sha256 is None:
+                raise ValidationError("component files require a sha256 content digest", name=self.name)
+        elif self.subtype is not None:
+            raise ValidationError(f"'{self.type}' files must not set a subtype", name=self.name)
+        return self
+
+
+class ComponentDeletions(BaseModel):
+    """Component ids to delete, grouped by kind (each a list of stored component ids)."""
+
+    tables: list[str] = Field(default_factory=list)
+    structures: list[str] = Field(default_factory=list)
+    attachments: list[str] = Field(default_factory=list)
+
+    def is_empty(self) -> bool:
+        return not (self.tables or self.structures or self.attachments)
+
+
+class DeletionsPayload(BaseModel):
+    """What a ``delete`` upload removes, written by the server to ``deletions.json``.
+
+    ``project`` deletes the whole project; the other fields delete the listed resources by id. At
+    least one target must be present.
+    """
+
+    project: bool = False
+    contributions: list[str] = Field(default_factory=list)
+    components: ComponentDeletions = Field(default_factory=ComponentDeletions)
+
+    @model_validator(mode="after")
+    def _validate_targets(self) -> Self:
+        if not (self.project or self.contributions or not self.components.is_empty()):
+            raise ValidationError("a delete must name at least one target (project, contributions, or components)")
         return self
 
 
 class UploadManifest(BaseModel):
-    """A declared upload session: one operation against one project over a set of files.
+    """A declared upload session: one operation against one project.
 
-    Validates operation↔role coherence and that resolved keys are unique, so the server never
-    presigns two files onto the same key.
+    Byte-carrying operations (``create_project``/``update``/``replace``/``set_public``) declare a set
+    of ``files``; ``delete`` instead carries a ``deletions`` payload and uploads no bytes. Validates
+    operation↔role coherence and that resolved names are unique, so the server never presigns two
+    files onto the same key.
     """
 
     project: ShortStr
     operation: UploadOperation
-    files: list[ManifestFile] = Field(min_length=1)
+    files: list[ManifestFile] = Field(default_factory=list)
+    deletions: DeletionsPayload | None = None
 
     @model_validator(mode="after")
     def _validate_operation_coherence(self) -> Self:
-        roles = {file.role for file in self.files}
-        allowed = _OPERATION_ROLES[self.operation]
-        if extra := roles - allowed:
+        # set_public doesn't require any files, so we return early. Downstream methods ignore other fields
+        if self.operation == "set_public":
+            return self
+
+        if self.operation == "delete":
+            if self.files:
+                raise ValidationError("a 'delete' upload must not declare files", operation=self.operation)
+            if self.deletions is None:
+                raise ValidationError("a 'delete' upload requires a 'deletions' payload", operation=self.operation)
+            return self
+
+        if self.deletions is not None:
+            raise ValidationError("only a 'delete' upload may carry a 'deletions' payload", operation=self.operation)
+        if not self.files:
+            raise ValidationError(f"operation '{self.operation}' requires at least one file", operation=self.operation)
+
+        types = {file.type for file in self.files}
+        allowed = _OPERATION_TYPES[self.operation]
+        if extra := types - allowed:
             raise ValidationError(
-                f"operation '{self.operation}' does not allow role(s) {sorted(extra)}",
+                f"operation '{self.operation}' does not allow type(s) {sorted(extra)}",
                 operation=self.operation,
                 allowed=sorted(allowed),
             )
         required = _OPERATION_REQUIRES[self.operation]
-        if required and roles.isdisjoint(required):
+        if required and types.isdisjoint(required):
             raise ValidationError(
-                f"operation '{self.operation}' requires at least one file with role in {sorted(required)}",
+                f"operation '{self.operation}' requires at least one file with type in {sorted(required)}",
                 operation=self.operation,
             )
-        if self.operation in ("update", "repin"):
-            if bad := [file.filename for file in self.files if file.format not in UPDATE_FORMATS]:
-                raise ValidationError(
-                    f"operation '{self.operation}' requires structured files (json/jsonl)",
-                    files=bad,
-                    allowed=sorted(UPDATE_FORMATS),
-                )
-        # Prevent uploading duplicate files
-        slots = [(file.role, file.cid, file.filename) for file in self.files]
-        if len(set(slots)) != len(slots):
-            raise ValidationError("two files resolve to the same storage key (role + cid + filename must be unique)")
+        # At most one project file and one contribution file land at the upload root (canonical names).
+        for role in ("project", "contribution"):
+            if sum(1 for file in self.files if file.type == role) > 1:
+                raise ValidationError(f"an upload session may declare at most one '{role}' file")
         return self
-
-
-# --- Stored session document ------------------------------------------------------------------
 
 
 class UploadFile(BaseModel):
@@ -222,28 +262,30 @@ class UploadFile(BaseModel):
     key: str
     strategy: UploadStrategy
     status: UploadStatus = "pending"
-    # Component files only: the server-generated contribution id (ObjectId hex) that groups this file
-    # with its siblings in the S3 key and in ``manifest.json``. ``None`` for non-component roles.
-    contribution_key: str | None = None
 
     @property
     def name(self) -> str:
-        return self.spec.filename
+        return self.spec.name
 
 
 class Upload(BaseDocumentWithInput[PydanticObjectId]):
-    """A tracked direct-to-S3 upload *session*.
+    """MongoDB Document reflecting the Upload operation.
 
-    Declares an ``operation`` against one ``project`` over a set of ``files``; each file carries its
-    own key and single/multipart strategy. Keys are grouped by project then session, ``{project}/{_id}/...``.
-    The consumer is still carried on the document (and in ``manifest.json``) and is what sessions are scoped by.
+    Declares an `operation` against one `proejct`. `files` are used in writing; `deletions` is used for a `delete`
+    operation. A single upload is keyed by `mpcontribs/{project-id}/{seq}`, where `seq` is a per-project, monotonically
+    increasing integer used to track the sequence of events on a project (allowing for auditability via replaying the
+    entire history of a project).
     """
 
     consumer_id: str
     project: ShortStr
+    # Per-project monotonic upload id (the S3 key segment and the manifest ``upload_id``).
+    seq: int
     operation: UploadOperation
-    files: list[UploadFile]
+    files: list[UploadFile] = Field(default_factory=list)
+    deletions: DeletionsPayload | None = None
     status: UploadStatus = "pending"
+    initiated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     last_modified: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
     class Settings:
@@ -255,13 +297,24 @@ class Upload(BaseDocumentWithInput[PydanticObjectId]):
             IndexModel(
                 keys=[("consumer_id", ASCENDING), ("last_modified", ASCENDING)], name="consumer_id_last_modified"
             ),
+            IndexModel(keys=[("project", ASCENDING), ("seq", ASCENDING)], name="project_seq", unique=True),
         ]
         validate_on_save = True
 
     @property
+    def upload_prefix(self) -> str:
+        """This upload's per-upload S3 prefix: ``mpcontribs/{project}/{seq}``."""
+        return f"mpcontribs/{self.project}/{self.seq}"
+
+    @property
     def manifest_key(self) -> str:
-        """The S3 key of this session's server-written manifest: ``{project}/{_id}/manifest.json``."""
-        return f"{self.project}/{self.id}/manifest.json"
+        """The S3 key of this session's server-written manifest: ``{upload_prefix}/manifest.json``."""
+        return f"{self.upload_prefix}/manifest.json"
+
+    @property
+    def deletions_key(self) -> str:
+        """The S3 key of a ``delete`` upload's server-written payload: ``{upload_prefix}/deletions.json``."""
+        return f"{self.upload_prefix}/deletions.json"
 
     @model_validator(mode="after")
     def _touch_last_modified(self) -> Self:
@@ -269,19 +322,38 @@ class Upload(BaseDocumentWithInput[PydanticObjectId]):
         return self
 
 
+# This seems horribly verbose/overengineered for just a counter, but it comes from MongoDB's recommended arch. for
+# auto-incrementing sequences: https://www.mongodb.com/resources/products/platform/mongodb-auto-increment
+class UploadCounter(Document):
+    """Per-project monotonic upload sequence.
+
+    One document per project, keyed by project id on ``_id``. ``seq`` is advanced atomically via
+    ``$inc`` so raw uploads sort by creation and the worker can replay them in order.
+    """
+
+    id: str = Field(alias="_id")  # pyright: ignore[reportGeneralTypeIssues, reportIncompatibleVariableOverride]
+    seq: int = 0
+
+    class Settings:
+        name = "upload_counters"
+
+
 class UploadOut(DocumentOut[PydanticObjectId]):
     """Full output projection of an :class:`Upload` session."""
 
     consumer_id: str | None = None
     project: str | None = None
+    seq: int | None = None
     operation: UploadOperation | None = None
     files: list[UploadFile] | None = None
+    deletions: DeletionsPayload | None = None
     status: UploadStatus | None = None
+    initiated_at: datetime | None = None
     last_modified: datetime | None = None
 
     @staticmethod
     def default_fields() -> tuple[str, ...]:
-        return ("operation", "project", "status")
+        return ("operation", "project", "seq", "status")
 
 
 class UploadPatch(BaseModel):
@@ -342,8 +414,13 @@ class UploadFilter(BaseFilter):
 
 
 class GeneratePartsIn(BaseModel):
-    """Request presigned URLs for one in-progress multipart file, starting at ``start_part``."""
+    """Request presigned URLs for one in-progress file of a session.
 
+    The file is identified by its resolved object ``key`` (returned per file in ``SessionInitiated`` /
+    ``FileInitiated``). Names are not unique within a session, so the key is the per-file handle.
+    """
+
+    key: str = Field(description="Resolved object key of the file to presign (from the initiate response).")
     start_part: int = Field(default=1, ge=1, description="1-based part number to start generating URLs from.")
 
 
@@ -355,9 +432,12 @@ class CompletedPart(BaseModel):
 
 
 class CompletedFile(BaseModel):
-    """Completion info for one file in the session: its name and (for multipart) the per-part ETags."""
+    """Completion info for one file in the session: its resolved object ``key`` and (for multipart) ETags.
 
-    name: str
+    Identified by ``key`` (the session's per-file handle), not name — names may repeat within a session.
+    """
+
+    key: str
     parts: list[CompletedPart] = Field(default_factory=list)
 
 
@@ -371,23 +451,35 @@ class CompleteIn(BaseModel):
 
 
 class FileInitiated(BaseModel):
-    """A per-file upload handle. ``url`` is set for a single-shot file; multipart files use ``/parts``."""
+    """A per-file upload handle.
+
+    ``status == present`` when the content-addressed object already exists (the client skips it:
+    ``url`` is null, no ``/parts``/``/complete`` needed); ``pending`` otherwise, where ``url`` is set
+    for a single-shot file and multipart files use ``/parts``.
+    """
 
     name: str
     key: str
     type: UploadType
+    status: FileStatus = "pending"
     num_parts: int
     part_size: int
     url: str | None = None
 
 
 class SessionInitiated(BaseModel):
-    """Result of creating an upload session: the session id and a handle per file."""
+    """Result of creating an upload session: the session id, the per-project ``seq``, and a handle per file.
+
+    A ``delete`` upload is finalized in this one call (no files to transfer), so it comes back with
+    ``status='completed'`` and an empty ``files`` list.
+    """
 
     id: PydanticObjectId
+    seq: int
     operation: UploadOperation
     project: str
-    files: list[FileInitiated]
+    status: UploadStatus = "pending"
+    files: list[FileInitiated] = Field(default_factory=list)
 
 
 class PartUrl(BaseModel):
