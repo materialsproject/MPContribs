@@ -40,9 +40,9 @@ boltons==26.2.0
     # via
     #   flask-mongorest-mpcontribs
     #   mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
-boto3==1.43.125
+boto3==1.43.126
     # via flask-mongorest-mpcontribs
-botocore==1.43.125
+botocore==1.43.126
     # via
     #   boto3
     #   s3transfer
