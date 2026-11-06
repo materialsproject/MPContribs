@@ -1,6 +1,7 @@
 from typing import Any
 
 from beanie import PydanticObjectId, UpdateResponse
+from beanie.odm.utils.encoder import Encoder
 from beanie.operators import Set
 from pymongo.asynchronous.client_session import AsyncClientSession
 from pymongo.errors import DuplicateKeyError
@@ -327,7 +328,9 @@ class MongoDbContributionRepository(
         # inserted document lands under it (and on_insert stores it there).
         doc.id = oid
         doc.unique_value = unique_value
-        update_data = doc.model_dump(exclude={"id"}, exclude_none=True)
+        # Beanie's Encoder produces the DB-storable form (component Link -> DBRef), matching on_insert=doc;
+        # Encoder excludes by alias, so drop "_id" not "id".
+        update_data = Encoder(exclude={"_id"}, to_db=True, keep_nulls=False).encode(doc)
         update_data["unique_value"] = unique_value
         try:
             query = self.document_model.find_one(

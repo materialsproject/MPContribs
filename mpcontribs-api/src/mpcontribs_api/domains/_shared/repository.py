@@ -11,6 +11,7 @@ from typing import Any, ClassVar, cast
 
 import structlog
 from beanie import PydanticObjectId, UpdateResponse
+from beanie.odm.utils.encoder import Encoder
 from beanie.operators import In, Set
 from bson.errors import InvalidId
 from fastapi_filter.contrib.beanie import Filter
@@ -251,7 +252,9 @@ class MongoDbRepository[
             session (AsyncClientSession | None): optional client session for transactions
         """
         match = self._scoped_identity_match(document.identity())
-        update_data = document.model_dump(exclude={"id"}, exclude_none=True)
+        # Encode a document directly to properly encode Link -> DBRef
+        # WARNING: Encoder is a Beanie Internal and may change
+        update_data = Encoder(exclude={"_id"}, to_db=True, keep_nulls=False).encode(document)
         try:
             result = await self.document_model.find_one(match, session=session).upsert(  # pyright: ignore[reportGeneralTypeIssues] # beanie UpdateQuery is awaitable
                 Set(update_data),
