@@ -54,20 +54,24 @@ async def initiate_upload(service: UploadServiceDep, body: UploadManifest) -> Se
     """Create an upload session from a manifest; returns a presigned handle per declared file.
 
     Each file comes back as a ``FileInitiated`` handle: a single-shot file carries its presigned
-    PUT ``url`` directly, while multipart file drives the ``/files/{name}/parts`` and ``/complete`` steps.
+    PUT ``url`` directly, while a multipart file drives the ``/files/parts`` and ``/complete`` steps.
+    Each handle carries the file's resolved object ``key`` - the identifier those steps take.
     """
     return await service.initiate(manifest=body)
 
 
-@router.post("/{upload_id}/files/{name}/parts")
+@router.post("/{upload_id}/files/parts")
 async def generate_parts(
     service: UploadServiceDep,
     upload_id: PydanticObjectId,
-    name: str,
     body: GeneratePartsIn,
 ) -> PartUrls:
-    """Return presigned URLs to transfer the named file of the session, starting at ``start_part``."""
-    return await service.generate_part_urls(upload_id=upload_id, name=name, start_part=body.start_part)
+    """Return presigned URLs to transfer one file of the session, starting at ``start_part``.
+
+    The file is identified by its resolved object ``key`` (from the initiate response), since names are
+    not unique within a session.
+    """
+    return await service.generate_part_urls(upload_id=upload_id, key=body.key, start_part=body.start_part)
 
 
 @router.post("/{upload_id}/complete")
