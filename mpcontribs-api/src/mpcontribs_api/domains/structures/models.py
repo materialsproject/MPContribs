@@ -1,9 +1,8 @@
 from beanie import PydanticObjectId
-from pydantic import BaseModel
 from pymongo import ASCENDING, IndexModel
 
 from mpcontribs_api.domains._shared.filters import BaseFilter
-from mpcontribs_api.domains._shared.types import NFKCStr, Sha256Hash, ShortStr
+from mpcontribs_api.domains._shared.types import Sha256Hash, ShortStr
 from mpcontribs_api.domains.components.models import Component, ComponentIdentity, ComponentOut
 
 
@@ -22,18 +21,6 @@ class Structure(Component):
             ComponentIdentity.index_model(name="identity", unique=True),
             IndexModel(keys=[("size", ASCENDING)], name="size"),
         ]
-
-
-class StructureIn(BaseModel):
-    """A by-name reference to a structure from a contribution row.
-
-    Not a component write model — components are worker-created in S3 and never inserted via the API.
-    A contribution row names its structures; the worker resolves each name to the content-addressed
-    object and links it. Mirrors :class:`TableIn`/:class:`AttachmentIn`.
-    """
-
-    # NFKC-normalized so compatibility-equivalent spellings of a name collapse to one stored form.
-    name: NFKCStr
 
 
 class StructureOut(ComponentOut):
