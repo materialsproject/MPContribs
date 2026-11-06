@@ -4,10 +4,7 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from fastapi_filter import FilterDepends
 
-from mpcontribs_api.config import get_settings
-from mpcontribs_api.dependencies import S3Dep, require_user
-from mpcontribs_api.domains._shared.bulk import BulkUpdateSummary, BulkWriteSummary
-from mpcontribs_api.domains._shared.models import DeleteResult
+from mpcontribs_api.dependencies import S3Dep
 from mpcontribs_api.domains._shared.types import (
     DownloadFormat,
     FieldSelector,
@@ -18,36 +15,13 @@ from mpcontribs_api.domains.contributions.dependencies import ContributionServic
 from mpcontribs_api.domains.contributions.models import (
     ContributionFilter,
     ContributionIdentity,
-    ContributionIn,
     ContributionOut,
-    ContributionPatch,
 )
-from mpcontribs_api.exceptions import ValidationError
 from mpcontribs_api.pagination import CursorParams, Page
 
+# Contributions are worker-written documents: these endpoints are read-only. Creation, replacement,
+# and deletion all flow through the /uploads endpoints.
 router = APIRouter()
-
-
-def _enforce_bulk_limit(contributions: list[ContributionIn]) -> None:
-    """Reject a bulk write larger than the configured per-request ceiling.
-
-    Guards the synchronous bulk endpoints so a single request can't hand the service an unbounded
-    list. Callers over the limit should chunk (the limit is advertised at ``GET /api/v1/limits``)
-    or use the async bulk ingestion endpoint. Complements the body-size middleware, which bounds
-    bytes rather than item count.
-
-    This bounds the *submitted* item count; the service re-applies the same limit to the *expanded*
-    row count after annotated-key pivoting (one submission can expand into many contributions).
-    """
-    limit = get_settings().mongo.bulk_write_limit
-    count = len(contributions)
-    if count > limit:
-        raise ValidationError(
-            f"Bulk request of {count} contributions exceeds the per-request limit of {limit}. "
-            "Chunk the request (see GET /api/v1/limits) or use the async bulk ingestion endpoint.",
-            count=count,
-            limit=limit,
-        )
 
 
 @router.get("", response_model_exclude_unset=True)
@@ -59,51 +33,6 @@ async def read_many(
 ) -> Page[ContributionOut]:
     selected = ContributionOut.parse_fields(fields)
     return await service.read_many(pagination=pagination, filter=filter, fields=selected)
-
-
-@router.delete("", dependencies=[Depends(require_user)])
-async def delete_many(
-    service: ContributionServiceDep,
-    filter: ContributionFilter = FilterDepends(ContributionFilter),
-) -> DeleteResult:
-    return await service.delete_many(filter=filter)
-
-
-@router.patch("", dependencies=[Depends(require_user)])
-async def update_many(
-    service: ContributionServiceDep,
-    body: ContributionPatch,
-    filter: ContributionFilter = FilterDepends(ContributionFilter),
-    replace_data: bool = False,
-) -> BulkUpdateSummary:
-    """Update every contribution matching ``filter`` that the caller may write.
-
-    Allows updates within the user's scope. If Identity fields are modified, updates occur per-row,
-    and may result in failures reported in BulkUpdateSummary.failed
-
-    ``data`` deep-merges into each row's stored ``data`` by default
-    Pass ``?replace_data=true`` to overwrite the whole ``data`` dict instead.
-    """
-    return await service.update_many(filter=filter, update=body, replace_data=replace_data)
-
-
-# TODO: Might want to take contributions in from request body and run model_validate_json on it (much faster)
-@router.post("", dependencies=[Depends(require_user)])
-async def insert_many(
-    service: ContributionServiceDep,
-    contributions: list[ContributionIn],
-) -> BulkWriteSummary[ContributionOut]:
-    _enforce_bulk_limit(contributions)
-    return await service.insert_many(contributions=contributions)
-
-
-@router.put("", dependencies=[Depends(require_user)])
-async def upsert_many(
-    service: ContributionServiceDep,
-    contributions: list[ContributionIn],
-) -> BulkWriteSummary[ContributionOut]:
-    _enforce_bulk_limit(contributions)
-    return await service.upsert_many(contributions=contributions)
 
 
 @router.get("/download/{short_mime}")
@@ -145,26 +74,6 @@ async def read_one_by_identity(
     return await service.read_one(identity.as_dict(), fields=selected)
 
 
-@router.delete("/item", dependencies=[Depends(require_user)])
-async def delete_one_by_identity(
-    service: ContributionServiceDep,
-    identity: Annotated[ContributionIdentity, Depends()],
-) -> DeleteResult:
-    """Delete the single contribution addressed by its natural identity, cascading to components."""
-    return await service.delete_one(identity.as_dict())
-
-
-@router.patch("/item", dependencies=[Depends(require_user)])
-async def update_one_by_identity(
-    service: ContributionServiceDep,
-    update: ContributionPatch,
-    identity: Annotated[ContributionIdentity, Depends()],
-    replace_data: bool = False,
-) -> ContributionOut:
-    """Patch the single contribution addressed by its natural identity (409 if ambiguous)."""
-    return await service.update_one(identity.as_dict(), update=update, replace_data=replace_data)
-
-
 @router.get("/search", response_model_exclude_unset=True)
 async def search(
     service: ContributionServiceDep,
@@ -186,14 +95,6 @@ async def search(
     return await service.search(query, limit=limit)
 
 
-@router.delete("/{id}", dependencies=[Depends(require_user)])
-async def delete_one(
-    service: ContributionServiceDep,
-    id: str,
-) -> DeleteResult:
-    return await service.delete_one({"id": id})
-
-
 @router.get("/{id}", response_model_exclude_unset=True)
 async def read_one(
     service: ContributionServiceDep,
@@ -202,15 +103,3 @@ async def read_one(
 ) -> ContributionOut | None:
     selected = ContributionOut.parse_fields(fields)
     return await service.read_one({"id": id}, fields=selected)
-
-
-@router.put("/{id}", dependencies=[Depends(require_user)])
-async def upsert_one(service: ContributionServiceDep, id: str, contribution: ContributionIn) -> ContributionOut:
-    return await service.upsert_one({"id": id}, contribution)
-
-
-@router.patch("/{id}", dependencies=[Depends(require_user)])
-async def update_one(
-    service: ContributionServiceDep, id: str, update: ContributionPatch, replace_data: bool = False
-) -> ContributionOut:
-    return await service.update_one({"id": id}, update=update, replace_data=replace_data)

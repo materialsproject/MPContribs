@@ -1,192 +1,38 @@
 from typing import Any
 
-from beanie import PydanticObjectId, UpdateResponse
-from beanie.odm.utils.encoder import Encoder
-from beanie.operators import Set
+from beanie import PydanticObjectId
+from pydantic import BaseModel
 from pymongo.asynchronous.client_session import AsyncClientSession
-from pymongo.errors import DuplicateKeyError
 
 from mpcontribs_api.authz import PROJECT_PATH
-from mpcontribs_api.domains._shared.bulk import BulkUpdateSummary
 from mpcontribs_api.domains._shared.repository import MongoDbRepository
-from mpcontribs_api.domains._shared.units import QuantityLeaf
 from mpcontribs_api.domains.contributions.models import (
     Contribution,
     ContributionFilter,
     ContributionIdentity,
-    ContributionIn,
     ContributionOut,
-    ContributionPatch,
     ContributionSearchIndex,
-    Scalar,
 )
-from mpcontribs_api.domains.contributions.stats import (
-    ColumnStat,
-    ProjectAggregate,
-    finalize_columns,
-    merge_contribution_columns,
-)
-from mpcontribs_api.exceptions import ConflictError, NotFoundError
+from mpcontribs_api.exceptions import ConflictError
 from mpcontribs_api.scope import Granted, Public, Scope
-
-# Sentinel for "leave unique_value untouched" on patch (distinct from a real None value).
-_UNSET: Any = object()
-
-
-def _build_update_set(update_data: dict[str, Any], existing_data: Any, *, replace_data: bool) -> dict[str, Any]:
-    """Translate a patch's field map into the document handed to ``$set``.
-
-    With ``replace_data`` the map is used verbatim, so ``data`` overwrites the stored dict whole.
-    Otherwise the ``data`` dict is flattened against the stored ``existing_data`` into dotted paths
-    so it additively merges — only the named leaves are written, a bare scalar routes onto a stored
-    quantity leaf's ``value``, sibling survives. All other fields (scalars, lists, identity inputs)
-    set directly.
-    """
-    if replace_data:
-        return update_data
-    document: dict[str, Any] = {}
-    for field, value in update_data.items():
-        if field == "data" and isinstance(value, dict):
-            document.update(QuantityLeaf.flatten_merge_paths(existing_data, value, prefix="data."))
-        else:
-            document[field] = value
-    return document
 
 
 class MongoDbContributionRepository(
-    MongoDbRepository[Contribution, ContributionIn, ContributionOut, ContributionFilter, ContributionPatch]
+    MongoDbRepository[Contribution, BaseModel, ContributionOut, ContributionFilter, BaseModel]
 ):
-    """A repository layer for access to MongoDB."""
+    """Read-only repository for the Contribution collection.
+
+    Contributions are worker-written: creation, replacement, and deletion all flow through the
+    ``/uploads`` endpoints, so this repository exposes reads only. ``TIn``/``TPatch`` are bound to
+    ``BaseModel`` because there is no input/patch contract.
+    """
 
     document_model = Contribution
     out_model = ContributionOut
     # Contributions have no owner of their own; visible when public or belonging to a project the
-    # caller is granted any role on, viewer included (keyed on ``project``). Writes are separately
-    # gated on ``User.writable(*PROJECT_PATH)``. Admins bypass scope (handled by ``Scope``).
+    # caller is granted any role on, viewer included (keyed on ``project``). Admins bypass scope
+    # (handled by ``Scope``).
     read_scope = Scope(Public(), Granted("project", PROJECT_PATH))
-
-    async def update_one(  # pyright: ignore[reportIncompatibleMethodOverride]
-        self,
-        identifiers: dict[str, Any],
-        update: ContributionPatch,
-        unique_value: Scalar | None = _UNSET,
-        *,
-        replace_data: bool = False,
-        existing_data: Any = None,
-        session: AsyncClientSession | None = None,
-    ) -> Contribution:
-        """Partially update the single scoped contribution matching ``identifiers``.
-
-        ``unique_value`` is server-recomputed by the service when the patch changes ``data`` or
-        ``project`` (the inputs to identity); left as ``_UNSET`` it delegates to the base partial
-        update. When set, it is folded into the ``$set`` so the identity index stays consistent with
-        the patched ``data``.
-
-        ``data`` additively merges into the stored dict by default (unmentioned leaves survive, and a
-        bare scalar routes onto a stored quantity leaf's ``value``); the merge is resolved against the
-        caller-supplied ``existing_data``. Pass ``replace_data`` to overwrite the whole ``data`` dict
-        instead. See ``_build_update_set``.
-        """
-        match = self._identifier_query(identifiers)
-        not_found = NotFoundError(f"{self.document_model.__name__} not found", identifiers=identifiers)
-        try:
-            if unique_value is _UNSET:
-                return await self._update_matching(match, update, not_found, session=session)
-            update_data = _build_update_set(
-                update.model_dump(exclude_unset=True), existing_data, replace_data=replace_data
-            )
-            update_data["unique_value"] = unique_value
-            query = self.document_model.find_one(self._scope, match, session=session).update(
-                Set(update_data), response_type=UpdateResponse.NEW_DOCUMENT
-            )
-            updated = await query  # pyright: ignore[reportGeneralTypeIssues] # beanie UpdateQuery is awaitable
-            if updated is None:
-                raise not_found
-            return updated
-        except DuplicateKeyError as err:
-            raise ConflictError(
-                "contribution cannot be patched: the resulting identity already exists",
-                identifiers=identifiers,
-            ) from err
-
-    async def update_many(
-        self,
-        filter: ContributionFilter,
-        fields: dict[str, Any],
-    ) -> BulkUpdateSummary:
-        """``$set`` ``fields`` on every scoped row matching ``filter``.
-
-        Callers that need to limit the update to specific projects (e.g. a non-admin's writable
-        projects) inject them into ``filter`` via ``project__in`` rather than a separate argument
-        here.
-
-        Args:
-            filter: the caller-supplied query, applied on top of the user scope
-            fields: the field/value map handed verbatim to ``$set``
-
-        Returns:
-            BulkUpdateSummary: the counts of matched and modified contribs, and the list of the projects changed
-        """
-        criteria: list[Any] = []
-        if self._scope:
-            criteria.append(self._scope)
-        query = filter.filter(self.document_model.find(*criteria)).get_filter_query()
-        collection = self.document_model.get_pymongo_collection()
-        # Distinct projects among the *matched* rows (computed before the write, since ``fields`` may
-        # change values the filter keyed on) so the caller can recompute those projects' rollups.
-        projects = {p for p in await collection.distinct("project", query) if p is not None}
-        result = await collection.update_many(query, {"$set": fields})
-        return BulkUpdateSummary(
-            matched=result.matched_count, modified=result.modified_count, projects=sorted(projects)
-        )
-
-    async def list_ids(
-        self,
-        filter: ContributionFilter,
-        session: AsyncClientSession | None = None,
-    ) -> list[PydanticObjectId]:
-        """Return the ids of scoped rows matching ``filter``.
-
-        Callers that need to limit the match to specific projects (e.g. a non-admin's writable
-        projects on a bulk write) inject them into ``filter`` via ``project__in`` rather than a
-        separate argument here.
-
-        Args:
-            filter: the caller-supplied query, applied on top of the user scope
-            session: unused; accepted to match the base ``list_ids`` signature
-        """
-        criteria: list[Any] = []
-        if self._scope:
-            criteria.append(self._scope)
-        query = filter.filter(self.document_model.find(*criteria)).get_filter_query()
-        collection = self.document_model.get_pymongo_collection()
-        return [doc["_id"] async for doc in collection.find(query, {"_id": 1})]
-
-    async def existing_identities(self, identities: list[ContributionIdentity]) -> set[ContributionIdentity]:
-        """Return the subset of identities that already exist, scoped to the user.
-
-        One query answers the whole batch so the write path avoids a round-trip per contribution.
-        Scope is merged into the match (mirroring :meth:`referenced_component_ids`); a writer sees
-        every contribution in their own project, so this equals the global existence check for
-        identities they may write. A null ``unique_value`` matches documents where the field is null
-        or absent (the empty-``unique_column`` case, since ``keep_nulls=False`` strips it).
-
-        Args:
-            identities: the identities to test for existence
-
-        Returns:
-            set[ContributionIdentity]: the subset of ``identities`` already present
-        """
-        if not identities:
-            return set()
-        match: dict[str, Any] = {"$or": [identity.as_dict() for identity in identities]}
-        if self._scope:
-            match = {"$and": [self._scope, match]}
-        collection = self.document_model.get_pymongo_collection()
-        found: set[ContributionIdentity] = set()
-        async for doc in collection.find(match, ContributionIdentity.projection()):
-            found.add(ContributionIdentity.from_document(doc))
-        return found
 
     async def referenced_component_ids(
         self,
@@ -231,35 +77,6 @@ class MongoDbContributionRepository(
                 if rid is not None and (target is None or rid in target):
                     referenced.add(rid)
         return referenced
-
-    async def aggregate_project_stats(self, project_id: str) -> ProjectAggregate:
-        """Recompute derived stats/columns for one project from its current contributions.
-
-        Deliberately **unscoped**: this is a system-computed rollup, not a user-facing read. Stats
-        must reflect every contribution in the project (a group contributor who cannot see sibling
-        contributions must not persist an undercount), so no user scope is merged into the ``$match``.
-        """
-        collection = self.document_model.get_pymongo_collection()
-        match: dict[str, Any] = {"project": project_id}
-
-        agg = ProjectAggregate()
-        pipeline: list[dict[str, Any]] = [
-            {"$match": match},
-            {"$group": {"_id": None, "contributions": {"$sum": 1}, "size": {"$sum": {"$bsonSize": "$$ROOT"}}}},
-        ]
-        async for row in await collection.aggregate(pipeline):
-            agg.contributions = int(row.get("contributions", 0))
-            agg.size = float(row.get("size", 0))
-
-        agg.structures = len(await collection.distinct("structures.$id", match))
-        agg.tables = len(await collection.distinct("tables.$id", match))
-        agg.attachments = len(await collection.distinct("attachments.$id", match))
-
-        acc: dict[str, ColumnStat] = {}
-        async for doc in collection.find(match, {"data": 1}):
-            merge_contribution_columns(acc, doc.get("data") or {})
-        agg.columns = finalize_columns(acc)
-        return agg
 
     async def read_one(
         self,
@@ -307,46 +124,6 @@ class MongoDbContributionRepository(
                 identifiers=identifiers,
             )
         return None if not docs else docs[0]
-
-    async def upsert_by_id(
-        self,
-        id: str,
-        contribution: ContributionIn,
-        unique_value: Scalar | None = None,
-    ) -> Contribution:
-        """Upsert a single Contribution keyed on its Mongo ``_id``.
-
-        Distinct from the base identity-keyed :meth:`upsert_one`: a PUT addresses a specific existing
-        document by ``_id`` and may *change* its identity fields, so the match must stay on ``_id``.
-        Non-null fields merge into the stored document (so component links absent from the payload
-        survive), while the server-owned ``unique_value`` is written explicitly — even when ``None`` —
-        so the identity index tracks the new data. A resulting duplicate identity surfaces as a 409.
-        """
-        oid = self._convert_object_id(id)
-        doc = self.document_model.from_input_model(contribution)
-        # from_input_model mints a fresh id; upsert-by-id must key on the caller-supplied id so the
-        # inserted document lands under it (and on_insert stores it there).
-        doc.id = oid
-        doc.unique_value = unique_value
-        # Beanie's Encoder produces the DB-storable form (component Link -> DBRef), matching on_insert=doc;
-        # Encoder excludes by alias, so drop "_id" not "id".
-        update_data = Encoder(exclude={"_id"}, to_db=True, keep_nulls=False).encode(doc)
-        update_data["unique_value"] = unique_value
-        try:
-            query = self.document_model.find_one(
-                self._scope,
-                self.document_model.id == oid,
-            ).upsert(
-                Set(update_data),
-                on_insert=doc,
-                response_type=UpdateResponse.NEW_DOCUMENT,
-            )
-            return await query  # pyright: ignore[reportGeneralTypeIssues] # beanie UpdateQuery is awaitable, but pyright doesn't see it
-        except DuplicateKeyError as err:
-            raise ConflictError(
-                f"contribution '{id}' cannot be upserted: the resulting identity already exists",
-                id=id,
-            ) from err
 
     async def search(self, terms: list[str], limit: int) -> list[ContributionOut]:
         """Run the formula-autocomplete Atlas Search over ``terms``, scoped to the user.

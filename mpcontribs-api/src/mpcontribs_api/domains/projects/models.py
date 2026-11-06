@@ -127,7 +127,7 @@ class ProjectBase(BaseModel):
 
     # The single data column (dotted path) that disambiguates contributions sharing the same
     # (material_id, chemical_system_id, formula). None -> that triple must be unique on its own. Its
-    # value is promoted to Contribution.unique_value on write (see contributions.extract_unique_value).
+    # value is promoted to Contribution.unique_value when the upload worker writes the contribution.
     unique_column: str | None = None
 
     # Optional

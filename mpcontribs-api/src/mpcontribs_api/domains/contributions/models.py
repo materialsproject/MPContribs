@@ -14,59 +14,19 @@ from beanie import (
 )
 from bson.errors import InvalidId
 from fastapi_filter import FilterDepends, with_prefix
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import Field, field_validator, model_validator
 from pymongo import ASCENDING, IndexModel
 
-from mpcontribs_api._openapi import CONTRIBUTION_DATA_INPUT_DESCRIPTION, CONTRIBUTION_DATA_OUTPUT_DESCRIPTION
+from mpcontribs_api._openapi import CONTRIBUTION_DATA_OUTPUT_DESCRIPTION
 from mpcontribs_api.domains._shared.filters import BaseFilter
 from mpcontribs_api.domains._shared.models import BaseDocumentWithInput, DocumentOut
 from mpcontribs_api.domains._shared.search_index import SearchIndex, SearchIndexed
 from mpcontribs_api.domains._shared.types import ChemicalSystemId, Formula, Identity, MaterialId, Scalar, ShortStr
-from mpcontribs_api.domains.attachments.models import Attachment, AttachmentFilter, AttachmentIn
-from mpcontribs_api.domains.contributions.data import ContributionData, ContributionPatchData, ContributionStoredData
-from mpcontribs_api.domains.structures.models import Structure, StructureFilter, StructureIn
-from mpcontribs_api.domains.tables.models import Table, TableFilter, TableIn
+from mpcontribs_api.domains.attachments.models import Attachment, AttachmentFilter
+from mpcontribs_api.domains.contributions.data import ContributionStoredData
+from mpcontribs_api.domains.structures.models import Structure, StructureFilter
+from mpcontribs_api.domains.tables.models import Table, TableFilter
 from mpcontribs_api.exceptions import ValidationError
-from mpcontribs_api.projection import SparseFieldsModel
-
-
-def _value_at(data: dict[str, Any], path: str) -> Any:
-    """Resolve a dotted ``path`` inside ``data``; raises ``KeyError`` if any segment is absent."""
-    cursor: Any = data
-    for segment in path.split("."):
-        if not isinstance(cursor, dict) or segment not in cursor:
-            raise KeyError(path)
-        cursor = cursor[segment]
-    return cursor
-
-
-def extract_unique_value(data: dict[str, Any] | None, unique_column: str) -> Scalar:
-    """Promote the value at a project's ``unique_column`` path to the Contribution's identity value.
-
-    Args:
-        data: the contribution's ``data`` payload
-        unique_column: the dotted path the project designated as its uniqueness discriminator
-
-    Returns:
-        Scalar: the scalar value at ``unique_column``
-
-    Raises:
-        ValidationError: if the path is absent or resolves to a non-scalar (dict/list/None)
-    """
-    try:
-        value = _value_at(data or {}, unique_column)
-    except KeyError as err:
-        raise ValidationError(
-            f"unique_column '{unique_column}' is required by the project but missing from Contribution.data",
-            unique_column=unique_column,
-        ) from err
-    if not isinstance(value, Scalar):
-        raise ValidationError(
-            f"unique_column '{unique_column}' must resolve to a scalar (str/int/float/bool), "
-            f"got '{type(value).__name__}'",
-            unique_column=unique_column,
-        )
-    return value
 
 
 class ContributionIdentity(Identity):
@@ -116,41 +76,6 @@ class ContributionIdentity(Identity):
         return self
 
 
-class ContributionBase(BaseModel):
-    """Shared fields for Contribution, ContributionIn, and ContributionOut.
-
-    ``data`` uses the annotation-aware ``ContributionData`` validator: raw input may carry the pivot
-    grammar (``conductivity (S/cm, T=300K)``, dotted paths) and punctuation folded to ``_`` on write,
-    while non-ASCII, empty-after-coercion, and reserved leaf keys are still rejected. The *strict*
-    plain-key check (``ContributionStoredData``) is applied only to the coerced, stored
-    ``Contribution.data`` (see :class:`Contribution`).
-    """
-
-    # Identifiers follow a specificity hierarchy: chemical_system_id > formula > material_id.
-    # chemical_system_id is always required
-    project: str
-    material_id: str | None = None
-    chemical_system_id: str
-    formula: str | None = None
-    is_public: bool = False
-    data: ContributionData
-
-    last_modified: datetime = Field(default_factory=lambda: datetime.now(UTC))
-
-    class Settings:
-        name = "contributions"
-        keep_nulls = False
-        indexes = [
-            # Keep the deployed index name — renaming forces a drop/recreate on a large collection.
-            ContributionIdentity.index_model(name="project_identity"),
-            # Multikey indexes over each Link field's DBRef id so the component-delete
-            # reference check (referenced_component_ids) is index-served, not a COLLSCAN.
-            IndexModel(keys=[("structures.$id", ASCENDING)], name="ref_structures"),
-            IndexModel(keys=[("tables.$id", ASCENDING)], name="ref_tables"),
-            IndexModel(keys=[("attachments.$id", ASCENDING)], name="ref_attachments"),
-        ]
-
-
 class ContributionSearchIndex(StrEnum):
     """Names of Contribution's Atlas Search indexes."""
 
@@ -158,15 +83,23 @@ class ContributionSearchIndex(StrEnum):
 
 
 class Contribution(
-    ContributionBase,
     BaseDocumentWithInput[PydanticObjectId],
     SearchIndexed,
 ):
     """Models what is actually stored in the database."""
 
     identity_model: ClassVar[type[Identity]] = ContributionIdentity
-    # Strict validation over stored data rather than coercsion
+
+    # Identifiers follow a specificity hierarchy: chemical_system_id > formula > material_id.
+    # chemical_system_id is always required.
+    project: str
+    material_id: str | None = None
+    chemical_system_id: str
+    formula: str | None = None
+    is_public: bool = False
+    # Strict validation over stored data rather than coercion.
     data: ContributionStoredData
+    last_modified: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
     # Server owner - uses Project.unique_column to extract the value from Contribution.data
     unique_value: Scalar | None = None
@@ -175,6 +108,18 @@ class Contribution(
     structures: list[Link[Structure]] | None = None
     tables: list[Link[Table]] | None = None
     attachments: list[Link[Attachment]] | None = None
+
+    class Settings:
+        name = "contributions"
+        keep_nulls = False
+        indexes = [
+            ContributionIdentity.index_model(name="project_identity"),
+            # Multikey indexes over each Link field's DBRef id so the component-delete
+            # reference check is index-served, not a COLLSCAN.
+            IndexModel(keys=[("structures.$id", ASCENDING)], name="ref_structures"),
+            IndexModel(keys=[("tables.$id", ASCENDING)], name="ref_tables"),
+            IndexModel(keys=[("attachments.$id", ASCENDING)], name="ref_attachments"),
+        ]
 
     @classmethod
     def search_indexes(cls) -> tuple[SearchIndex, ...]:
@@ -207,68 +152,9 @@ class Contribution(
             ),
         )
 
-    @classmethod
-    def from_input_model(cls, data: ContributionIn) -> Contribution:
-        return cls.model_validate(
-            {
-                **data.model_dump(exclude={"is_public", "structures", "tables", "attachments", "last_modified"}),
-                "_id": PydanticObjectId(),
-                "is_public": False,
-            }
-        )
-
     @before_event(Insert, Replace, Update, Save, SaveChanges)
     def set_last_modified(self):
         self.last_modified = datetime.now(UTC)
-
-
-class ContributionIn(ContributionBase):
-    """Fields that users are allowed to submit when adding a Contribution.
-
-    Identifiers follow the specificity hierarchy ``chemical_system_id`` > ``formula`` >
-    ``material_id``: ``chemical_system_id`` is always required, and each lower level requires the ones
-    above it (see :meth:`_check_identifier_hierarchy`).
-    """
-
-    material_id: MaterialId | None = None
-    chemical_system_id: ChemicalSystemId
-    formula: Formula | None = None
-    structures: list[StructureIn] | None = None
-    tables: list[TableIn] | None = None
-    attachments: list[AttachmentIn] | None = None
-
-    @model_validator(mode="after")
-    def _check_identifier_hierarchy(self) -> ContributionIn:
-        """Enforce ``chemical_system_id`` > ``formula`` > ``material_id`` (see :meth:`Identity.check_hierarchy`)."""
-        ContributionIdentity.check_hierarchy(self.material_id, self.chemical_system_id, self.formula)
-        return self
-
-    def has_components(self) -> bool:
-        """Returns ``True`` if the contribution has any components (structures, tables, attachments)"""
-        return bool(self.structures or self.tables or self.attachments)
-
-    def component_count(self) -> int:
-        """Returns the total number of components (structures, tables, attachments) in the contribution"""
-        return len(self.structures or []) + len(self.tables or []) + len(self.attachments or [])
-
-    def identity(self, unique_value: Scalar | None = None, condition_key: str = "") -> ContributionIdentity:
-        """Build this contribution's :class:`ContributionIdentity` from its flat fields plus server-resolved parts.
-
-        ``unique_value`` and ``condition_key`` are server-resolved, so they are passed in rather than
-        read off the (untrusted) input model.
-        """
-        return ContributionIdentity(
-            project=self.project,
-            material_id=self.material_id,
-            chemical_system_id=self.chemical_system_id,
-            formula=self.formula,
-            unique_value=unique_value,
-            condition_key=condition_key,
-        )
-
-    def identity_dict(self, unique_value: Scalar | None = None, condition_key: str = "") -> dict[str, Any]:
-        """Returns the identity fields of a contribution (outside of id) for reporting and upsert."""
-        return self.identity(unique_value, condition_key).as_dict()
 
 
 class ContributionOut(DocumentOut[PydanticObjectId]):
@@ -299,22 +185,6 @@ class ContributionOut(DocumentOut[PydanticObjectId]):
             "is_public",
             "last_modified",
         )
-
-
-class ContributionPatch(SparseFieldsModel):
-    """Fields that can be specified for partial updates to a Contribution."""
-
-    project: str | None = None
-    material_id: MaterialId | None = None
-    chemical_system_id: ChemicalSystemId | None = None
-    formula: Formula | None = None
-    is_public: bool | None = None
-    # Permissive validator: a merge patch may address a single field inside a stored quantity leaf
-    # (e.g. ``{"bandgap": {"unit": "kg"}}``). replace_data=True re-validates strictly in the service.
-    data: ContributionPatchData = Field(default=None, description=CONTRIBUTION_DATA_INPUT_DESCRIPTION)
-    structures: list[Link[Structure]] | None = None
-    tables: list[Link[Table]] | None = None
-    attachments: list[Link[Attachment]] | None = None
 
 
 class ContributionFilter(BaseFilter):
