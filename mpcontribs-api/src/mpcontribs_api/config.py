@@ -152,10 +152,6 @@ class S3Settings(BaseModel):
         description="Hard ceiling (bytes) on a single declared file in an upload manifest. Defaults to "
         "S3's 5 GiB single-object limit.",
     )
-    max_session_bytes: int = Field(
-        default=20 * 1024 * 1024 * 1024,
-        description="Hard ceiling (bytes) on the summed declared size of all files in one upload session.",
-    )
 
 
 class SqsSettings(BaseModel):
