@@ -1,12 +1,21 @@
-"""Fixtures for the live-AWS golden-path upload test.
+"""Fixtures for the live golden-path upload tests.
 
-These drive the *real* FastAPI app (real Mongo + Beanie + aioboto3) against a local MiniStack
-(S3 + SQS on :4566), so the whole module self-skips unless both MiniStack and MongoDB are up.
+These drive the *real* FastAPI app (real Mongo + Beanie + aioboto3) against S3 + SQS. The same tests
+run against two targets, selected by ``MPCONTRIBS_TEST_AWS_TARGET``:
 
-Environment wiring happens at import time, before ``mpcontribs_api.app`` is first imported:
-importing that module eagerly builds ``create_app(get_settings())`` and ``get_settings`` is
-``lru_cache``d, so the AWS/SQS/db-name env vars must already be set here (and the cache cleared
-in the ``client`` fixture) for the app to be wired at MiniStack rather than real AWS.
+- ``ministack`` (default): a local MiniStack (S3 + SQS on :4566). The harness sets the localhost
+  endpoint and uses dummy creds.
+- ``cloud``: a real cloud dev AWS account + dev MongoDB cluster. The harness touches nothing about the
+  endpoint/region/creds/Mongo — it inherits whatever the dev ``.env``/environment provides (an explicit
+  endpoint, or empty for the region's default AWS endpoints). Run ``init-aws.sh`` against the dev
+  account first; the harness only check-and-creates anything still missing.
+
+The whole module self-skips unless the selected AWS target *and* MongoDB are reachable.
+
+Environment wiring happens at import time, before ``mpcontribs_api.app`` is first imported: importing
+that module eagerly builds ``create_app(get_settings())`` and ``get_settings`` is ``lru_cache``d, so
+the AWS/db-name env vars must already be set here (and the cache cleared in the ``client`` fixture) for
+the app to be wired at the intended target.
 """
 
 import os
@@ -15,40 +24,52 @@ import time
 import pytest
 
 # ---------------------------------------------------------------------------
-# Env wiring — MUST run before mpcontribs_api.app is imported.
+# Target selection + env wiring — MUST run before mpcontribs_api.app is imported.
 # ---------------------------------------------------------------------------
 
-ENDPOINT = "http://localhost:4566"
-REGION = "us-east-1"
-STAGING_BUCKET = "mpcontribs-staging"
+TARGET = os.environ.get("MPCONTRIBS_TEST_AWS_TARGET", "ministack").strip().lower()
+IS_CLOUD = TARGET == "cloud"
 
-# Small & fast multipart: 5 MiB is S3's minimum part size (valid for every non-final part), so a
-# ~6 MiB "large" table splits into exactly two real parts without tripping the min-size rule.
+MINISTACK_ENDPOINT = "http://localhost:4566"
+
+# Small & fast multipart in both modes: 5 MiB is S3's minimum part size (valid for every non-final
+# part), so a ~6 MiB "large" table splits into exactly two real parts without tripping the min-size
+# rule. Overriding these only affects the in-process test app, never a deployed service.
 PART_SIZE = 5 * 1024 * 1024
 MULTIPART_THRESHOLD = 5 * 1024 * 1024
 
-TRANSFORM_QUEUE_URL = f"{ENDPOINT}/000000000000/mpcontribs-transform"
-_DOWNLOAD_QUEUE_URL = f"{ENDPOINT}/000000000000/mpcontribs-download"
-_PROJECTION_QUEUE_URL = f"{ENDPOINT}/000000000000/mpcontribs-projection"
+# A dedicated transform queue for the tests. Using a test-only queue (rather than the shared
+# ``mpcontribs-transform``) keeps the drain + "exactly one message" assertions safe and isolates the
+# tests from any live worker consuming the real queue. ``init-aws.sh`` does not create this one; the
+# harness does (see ``_provision``).
+TRANSFORM_TEST_QUEUE_NAME = "mpcontribs-transform-test"
 
-# Direct assignment (not setdefault): override any .env that points the app at real AWS.
 os.environ["MPCONTRIBS_ENVIRONMENT"] = "dev"
 os.environ["MPCONTRIBS_OTEL__ENABLED"] = "false"
-# NB: we deliberately do NOT override MONGO__DB_NAME. The configured (Atlas) user is only
-# provisioned for the project's own database; a fresh db name fails init_beanie with an Atlas
-# permission error. State hygiene is instead handled by `_clean`, scoped to this run's unique
-# project id and the test consumer, so the shared db is never polluted across runs.
-os.environ["MPCONTRIBS_AWS__ENDPOINT_URL"] = ENDPOINT
-os.environ["MPCONTRIBS_AWS__REGION"] = REGION
+# Exercise the multipart path cheaply in both targets.
 os.environ["MPCONTRIBS_AWS__S3__MULTIPART_THRESHOLD"] = str(MULTIPART_THRESHOLD)
 os.environ["MPCONTRIBS_AWS__S3__PART_SIZE"] = str(PART_SIZE)
-os.environ["MPCONTRIBS_AWS__SQS__DOWNLOAD_QUEUE_URL"] = _DOWNLOAD_QUEUE_URL
-os.environ["MPCONTRIBS_AWS__SQS__TRANSFORM_QUEUE_URL"] = TRANSFORM_QUEUE_URL
-os.environ["MPCONTRIBS_AWS__SQS__PROJECTION_QUEUE_URL"] = _PROJECTION_QUEUE_URL
-# Dummy creds so boto will sign; MiniStack ignores the values.
-os.environ.setdefault("AWS_ACCESS_KEY_ID", "test")
-os.environ.setdefault("AWS_SECRET_ACCESS_KEY", "test")
-os.environ.setdefault("AWS_DEFAULT_REGION", REGION)
+# Disable the default multipart ChecksumAlgorithm so multipart uploads take the plain/classic path
+# (part PUTs + ETags, no S3-side checksum). This is the one multipart path that works identically on
+# MiniStack and real S3: FULL_OBJECT checksums (the path a declared sha256 would trigger) are rejected
+# by MiniStack's light edition, and the COMPOSITE default needs per-part checksums the service does not
+# presign. Single-PUT sha256 integrity binding is independent of this and is still exercised below.
+os.environ["MPCONTRIBS_AWS__S3__CHECKSUM_ALGORITHM"] = ""
+
+if not IS_CLOUD:
+    # Direct assignment (not setdefault): override any .env that points the app at real AWS.
+    os.environ["MPCONTRIBS_AWS__ENDPOINT_URL"] = MINISTACK_ENDPOINT
+    os.environ["MPCONTRIBS_AWS__REGION"] = "us-east-1"
+    # Dummy creds so boto will sign; MiniStack ignores the values.
+    os.environ.setdefault("AWS_ACCESS_KEY_ID", "test")
+    os.environ.setdefault("AWS_SECRET_ACCESS_KEY", "test")
+    os.environ.setdefault("AWS_DEFAULT_REGION", "us-east-1")
+# Cloud: leave MPCONTRIBS_AWS__ENDPOINT_URL / REGION / creds / Mongo entirely to the dev .env. An empty
+# endpoint there resolves to the region's default AWS endpoints (mirrors app.py's ``endpoint_url or
+# None``). We deliberately do NOT override MONGO__DB_NAME in either mode: the configured (Atlas) user
+# is only provisioned for the project's own database; a fresh db name fails init_beanie with an Atlas
+# permission error. State hygiene is handled by ``_clean``, scoped to this run's unique project id and
+# the test consumer, so the shared db is never polluted across runs.
 
 UPLOADS_COLLECTION = "uploads"
 
@@ -65,22 +86,75 @@ def _mock_beanie_collection():
 
 
 # ---------------------------------------------------------------------------
-# Infra gate — skip the whole module unless MiniStack *and* Mongo are reachable.
+# Resolved endpoint/region (after the env above is in place).
+# ---------------------------------------------------------------------------
+
+
+def _endpoint() -> str | None:
+    """The S3/SQS endpoint the app and the verification clients both use.
+
+    MiniStack: the localhost override. Cloud: whatever the dev env configured — an explicit endpoint,
+    or ``None`` (empty) so boto falls back to the region's default AWS endpoints. Mirrors app.py's
+    ``settings.aws.endpoint_url or None`` idiom so the test's own boto3 clients hit the same place.
+    """
+    if not IS_CLOUD:
+        return MINISTACK_ENDPOINT
+    from mpcontribs_api.config import get_settings
+
+    get_settings.cache_clear()
+    return get_settings().aws.endpoint_url or None
+
+
+def _region() -> str:
+    from mpcontribs_api.config import get_settings
+
+    return get_settings().aws.region
+
+
+# ---------------------------------------------------------------------------
+# Infra gate — skip the whole module unless the AWS target *and* Mongo are reachable.
 # ---------------------------------------------------------------------------
 
 
 @pytest.fixture(scope="session")
 def _require_infra() -> None:
-    import requests
     from pymongo import MongoClient
 
     from mpcontribs_api.config import get_settings
 
-    try:
-        resp = requests.get(f"{ENDPOINT}/_ministack/health", timeout=2)
-        resp.raise_for_status()
-    except Exception as exc:  # noqa: BLE001 - any failure means "infra down, skip"
-        pytest.skip(f"MiniStack not reachable at {ENDPOINT}: {exc}")
+    if IS_CLOUD:
+        import boto3
+
+        # Guard the commonest footgun: "cloud" target but the endpoint still points at MiniStack/local
+        # (a leftover MPCONTRIBS_AWS__ENDPOINT_URL in .env or the shell). Otherwise every S3/SQS call —
+        # and STS — silently hits localhost and fails cryptically ("Unsupported service: sts").
+        endpoint = _endpoint()
+        if endpoint and any(h in endpoint for h in ("localhost", "127.0.0.1", "0.0.0.0", ":4566")):
+            pytest.skip(
+                f"MPCONTRIBS_TEST_AWS_TARGET=cloud but MPCONTRIBS_AWS__ENDPOINT_URL points at a local "
+                f"endpoint ({endpoint}). Unset/clear it (e.g. in .env) so the run targets real AWS."
+            )
+        # Credentials presence only — no network call, so it does not assume any particular service is
+        # reachable at the endpoint. Real auth/reachability failures surface loudly in _provision.
+        if boto3.Session().get_credentials() is None:
+            hint = ""
+            if os.environ.get("AWS_PROFILE"):
+                # A profile boto cannot read (e.g. a CLI-only mechanism like `login_session`, or an
+                # expired SSO session). Materialize its creds as env vars boto understands:
+                hint = (
+                    f"\n  AWS_PROFILE={os.environ['AWS_PROFILE']} is set but boto could not resolve its "
+                    f'credentials. Try:\n    eval "$(aws configure export-credentials '
+                    f'--profile {os.environ["AWS_PROFILE"]} --format env)"'
+                )
+            pytest.skip(f"cloud AWS credentials not found{hint}")
+    else:
+        import requests
+
+        try:
+            resp = requests.get(f"{MINISTACK_ENDPOINT}/_ministack/health", timeout=2)
+            resp.raise_for_status()
+        except Exception as exc:  # noqa: BLE001 - any failure means "infra down, skip"
+            pytest.skip(f"MiniStack not reachable at {MINISTACK_ENDPOINT}: {exc}")
 
     get_settings.cache_clear()
     uri = get_settings().mongo.uri.get_secret_value()
@@ -102,40 +176,82 @@ def _require_infra() -> None:
 def s3(_require_infra):
     import boto3
 
-    return boto3.client("s3", endpoint_url=ENDPOINT, region_name=REGION)
+    return boto3.client("s3", endpoint_url=_endpoint(), region_name=_region())
 
 
 @pytest.fixture(scope="session")
 def sqs(_require_infra):
     import boto3
 
-    return boto3.client("sqs", endpoint_url=ENDPOINT, region_name=REGION)
+    return boto3.client("sqs", endpoint_url=_endpoint(), region_name=_region())
+
+
+@pytest.fixture(scope="session")
+def bronze(_require_infra) -> str:
+    """The bronze bucket the upload service writes to (from settings, not hardcoded)."""
+    from mpcontribs_api.config import get_settings
+
+    get_settings.cache_clear()
+    return get_settings().aws.s3.bronze_bucket
+
+
+@pytest.fixture(scope="session")
+def transform_queue_url(_provision) -> str:
+    """The resolved URL of the dedicated test transform queue (set into the env by ``_provision``)."""
+    return os.environ["MPCONTRIBS_AWS__SQS__TRANSFORM_QUEUE_URL"]
 
 
 @pytest.fixture(scope="session")
 def _provision(s3, sqs) -> None:
-    """Ensure the buckets/queues the app expects exist, idempotently.
+    """Check-and-create any infra still missing, idempotently, in both targets.
 
-    MiniStack's in-container ``init-aws.sh`` hook doesn't always run (e.g. no aws CLI in the image),
-    so the test provisions its own infra rather than depending on prior setup. Mirrors the names in
-    ``init-aws.sh`` / ``config.py``.
+    The user runs ``init-aws.sh`` first (bronze/silver/gold + CORS + the shared queues); this is the
+    safety net. It also creates the dedicated test transform queue (which init-aws.sh does not) and
+    resolves its URL into the environment so the ``client`` fixture wires the app at it. No bucket
+    versioning: the current model resolves components to the latest object at a stable key.
     """
     from botocore.exceptions import ClientError
 
-    for bucket in ("mpcontribs-staging", "mpcontribs-raw", "mpcontribs-processed", "mpcontribs-blobs"):
+    from mpcontribs_api.config import get_settings
+
+    get_settings.cache_clear()
+    s3_settings = get_settings().aws.s3
+    buckets = (s3_settings.bronze_bucket, s3_settings.silver_bucket, s3_settings.gold_bucket)
+    for bucket in buckets:
         try:
             s3.create_bucket(Bucket=bucket)
         except ClientError as exc:
             if exc.response["Error"]["Code"] not in ("BucketAlreadyOwnedByYou", "BucketAlreadyExists"):
                 raise
-    # Structure versions are pinned by S3 object version under ``{project}/structures/{name}``, so the
-    # processed bucket must have versioning enabled (mirrors the production infra requirement).
-    s3.put_bucket_versioning(
-        Bucket="mpcontribs-processed",
-        VersioningConfiguration={"Status": "Enabled"},
-    )
-    for queue in ("mpcontribs-download", "mpcontribs-transform", "mpcontribs-projection"):
+    # Users upload into the bronze bucket, so browser-based presigned PUT/POST needs CORS there
+    # (no-op/harmless for curl & python clients).
+    try:
+        s3.put_bucket_cors(
+            Bucket=s3_settings.bronze_bucket,
+            CORSConfiguration={
+                "CORSRules": [
+                    {
+                        "AllowedMethods": ["GET", "PUT", "POST", "HEAD"],
+                        "AllowedOrigins": ["*"],
+                        "AllowedHeaders": ["*"],
+                        "ExposeHeaders": ["ETag"],
+                    }
+                ]
+            },
+        )
+    except ClientError:
+        # CORS may be denied on a shared/managed bucket; it is not needed for the python test client.
+        pass
+
+    for queue in ("mpcontribs-download", "mpcontribs-transform", "mpcontribs-projection", TRANSFORM_TEST_QUEUE_NAME):
         sqs.create_queue(QueueName=queue)  # idempotent: returns the existing queue if present
+
+    # Resolve the test queue's URL and wire the app to enqueue there (cleared+rebuilt in `client`).
+    if IS_CLOUD:
+        queue_url = sqs.get_queue_url(QueueName=TRANSFORM_TEST_QUEUE_NAME)["QueueUrl"]
+    else:
+        queue_url = f"{MINISTACK_ENDPOINT}/000000000000/{TRANSFORM_TEST_QUEUE_NAME}"
+    os.environ["MPCONTRIBS_AWS__SQS__TRANSFORM_QUEUE_URL"] = queue_url
 
 
 @pytest.fixture(scope="session")
@@ -201,7 +317,10 @@ def _keep_artifacts() -> bool:
 
 
 def _drain_queue(sqs_client, queue_url: str) -> None:
-    """Receive-and-delete every message (purge_queue is rate-limited to once/60s on real AWS)."""
+    """Receive-and-delete every message (purge_queue is rate-limited to once/60s on real AWS).
+
+    Safe here because ``queue_url`` is always the dedicated test queue, never the shared one.
+    """
     while True:
         resp = sqs_client.receive_message(QueueUrl=queue_url, MaxNumberOfMessages=10, WaitTimeSeconds=0)
         messages = resp.get("Messages", [])
@@ -211,42 +330,42 @@ def _drain_queue(sqs_client, queue_url: str) -> None:
             sqs_client.delete_message(QueueUrl=queue_url, ReceiptHandle=msg["ReceiptHandle"])
 
 
-def _wipe_prefix(s3_client, prefix: str) -> None:
+def _wipe_prefix(s3_client, bucket: str, prefix: str) -> None:
     # Delete finished objects.
-    resp = s3_client.list_objects_v2(Bucket=STAGING_BUCKET, Prefix=prefix)
+    resp = s3_client.list_objects_v2(Bucket=bucket, Prefix=prefix)
     for obj in resp.get("Contents", []):
-        s3_client.delete_object(Bucket=STAGING_BUCKET, Key=obj["Key"])
+        s3_client.delete_object(Bucket=bucket, Key=obj["Key"])
     # Abort any in-progress multipart uploads left behind by a failed run.
-    mpu = s3_client.list_multipart_uploads(Bucket=STAGING_BUCKET, Prefix=prefix)
+    mpu = s3_client.list_multipart_uploads(Bucket=bucket, Prefix=prefix)
     for up in mpu.get("Uploads", []):
-        s3_client.abort_multipart_upload(Bucket=STAGING_BUCKET, Key=up["Key"], UploadId=up["UploadId"])
+        s3_client.abort_multipart_upload(Bucket=bucket, Key=up["Key"], UploadId=up["UploadId"])
 
 
 @pytest.fixture(autouse=True)
-def _clean(_provision, s3, sqs, mongo, project: str):
-    """Start from a clean transform queue; tear down all S3/Mongo state this run created.
+def _clean(_provision, s3, sqs, mongo, bronze: str, transform_queue_url: str, project: str):
+    """Start from a clean test queue; tear down all S3/Mongo state this run created.
 
-    Set ``KEEP_ARTIFACTS=1`` to skip teardown and leave the staging objects, Mongo doc, and the
+    Set ``KEEP_ARTIFACTS=1`` to skip teardown and leave the bronze objects, Mongo doc, and the
     transform-queue message in place for manual inspection (the per-run prefix is printed with
     ``-s``). The next run uses a fresh project id, so kept artifacts never collide.
     """
-    prefix = f"{project}/"
-    print(f"\n[s3-upload-test] staging prefix: s3://{STAGING_BUCKET}/{prefix}")
-    _drain_queue(sqs, TRANSFORM_QUEUE_URL)
+    prefix = f"mpcontribs/{project}/"
+    print(f"\n[s3-upload-test] target={TARGET} bronze prefix: s3://{bronze}/{prefix}")
+    _drain_queue(sqs, transform_queue_url)
     yield
     if _keep_artifacts():
         print(
             f"\n[s3-upload-test] KEEP_ARTIFACTS=1 -> left in place. Inspect with:\n"
-            f"  aws --endpoint-url {ENDPOINT} s3 ls s3://{STAGING_BUCKET}/{prefix} --recursive\n"
-            f"  aws --endpoint-url {ENDPOINT} sqs receive-message --queue-url {TRANSFORM_QUEUE_URL}"
+            f"  aws s3 ls s3://{bronze}/{prefix} --recursive\n"
+            f"  aws sqs receive-message --queue-url {transform_queue_url}"
         )
         return
-    _wipe_prefix(s3, prefix)
+    _wipe_prefix(s3, bronze, prefix)
     mongo[UPLOADS_COLLECTION].delete_many({"consumer_id": CONSUMER_ID, "project": project})
-    _drain_queue(sqs, TRANSFORM_QUEUE_URL)
+    _drain_queue(sqs, transform_queue_url)
 
 
-def poll_transform_messages(sqs_client, timeout: float = 5.0) -> list[dict]:
+def poll_transform_messages(sqs_client, queue_url: str, timeout: float = 5.0) -> list[dict]:
     """Collect transform-queue messages, giving SQS a short window to make them visible.
 
     With ``KEEP_ARTIFACTS=1`` the messages are left on the queue — received with a zero visibility
@@ -254,7 +373,7 @@ def poll_transform_messages(sqs_client, timeout: float = 5.0) -> list[dict]:
     run alongside the kept S3/Mongo state; otherwise each collected message is deleted.
     """
     keep = _keep_artifacts()
-    receive_kwargs: dict = {"QueueUrl": TRANSFORM_QUEUE_URL, "MaxNumberOfMessages": 10, "WaitTimeSeconds": 1}
+    receive_kwargs: dict = {"QueueUrl": queue_url, "MaxNumberOfMessages": 10, "WaitTimeSeconds": 1}
     if keep:
         receive_kwargs["VisibilityTimeout"] = 0
     deadline = time.time() + timeout
@@ -266,6 +385,6 @@ def poll_transform_messages(sqs_client, timeout: float = 5.0) -> list[dict]:
             collected.extend(messages)
             if not keep:
                 for msg in messages:
-                    sqs_client.delete_message(QueueUrl=TRANSFORM_QUEUE_URL, ReceiptHandle=msg["ReceiptHandle"])
+                    sqs_client.delete_message(QueueUrl=queue_url, ReceiptHandle=msg["ReceiptHandle"])
             break
     return collected

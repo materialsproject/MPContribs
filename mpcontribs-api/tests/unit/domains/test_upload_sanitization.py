@@ -8,7 +8,7 @@ original backslash-in-key footgun motivated.
 import pytest
 
 from mpcontribs_api.domains.uploads.models import ManifestFile
-from mpcontribs_api.domains.uploads.sanitization import file_extension, sanitize_segment
+from mpcontribs_api.domains._shared.sanitization import file_extension, sanitize_segment
 from mpcontribs_api.exceptions import ValidationError
 
 
@@ -52,13 +52,12 @@ class TestFileExtension:
 
 
 class TestManifestFileSanitizes:
-    def test_backslash_filename_rejected_at_manifest(self):
-        # The manifest model runs sanitization, so a bad filename is a 422 at initiate, never a key.
+    def test_backslash_name_rejected_at_manifest(self):
+        # The manifest model runs sanitization, so a bad name is a 422 at initiate, never a key.
         with pytest.raises(ValidationError):
-            ManifestFile(
-                filename="a\\b.csv", role="contributions", format="csv", content_type="text/csv", size=10
-            )
+            ManifestFile(name="a\\b.csv", type="contribution", size_bytes=10)
 
-    def test_extension_must_match_format(self):
+    def test_extension_must_match_type(self):
+        # A project file must be json; a .csv extension (format csv) is not allowed for type project.
         with pytest.raises(ValidationError):
-            ManifestFile(filename="data.csv", role="project", format="json", content_type="application/json", size=10)
+            ManifestFile(name="data.csv", type="project", size_bytes=10)

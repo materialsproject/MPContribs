@@ -1,6 +1,5 @@
 import pytest
 
-from mpcontribs_api.domains._shared.models import DeleteResult
 from mpcontribs_api.domains.contributions.dependencies import get_contribution_service
 from mpcontribs_api.domains.contributions.models import ContributionOut
 from mpcontribs_api.pagination import Page
@@ -78,48 +77,3 @@ class TestListContributions:
         contribution_service.read_many.return_value = Page(items=[], next_cursor=None)
         client.get("/api/v1/contributions", params={"formula": "Fe2O3"}, headers=AUTHED_HEADERS)
         contribution_service.read_many.assert_called_once()
-
-
-# ---------------------------------------------------------------------------
-# DELETE /api/v1/contributions (batch)
-# ---------------------------------------------------------------------------
-
-
-class TestDeleteContributions:
-    def test_batch_delete_returns_200(self, client, contribution_service):
-        contribution_service.delete_many.return_value = DeleteResult(num_deleted=0)
-        r = client.delete("/api/v1/contributions", headers=AUTHED_HEADERS)
-        assert r.status_code == 200
-
-    def test_repo_delete_called(self, client, contribution_service):
-        contribution_service.delete_many.return_value = None
-        client.delete("/api/v1/contributions", headers=AUTHED_HEADERS)
-        contribution_service.delete_many.assert_called_once()
-
-    def test_filter_forwarded_to_repo(self, client, contribution_service):
-        contribution_service.delete_many.return_value = None
-        client.delete("/api/v1/contributions", params={"is_public": "true"}, headers=AUTHED_HEADERS)
-        _, kwargs = contribution_service.delete_many.call_args
-        assert kwargs["filter"] is not None
-
-
-# ---------------------------------------------------------------------------
-# Stub endpoints — verify they exist and wire to the repo
-# ---------------------------------------------------------------------------
-
-
-class TestStubEndpoints:
-    """These endpoints are stubs in the repo but the routes must be wired."""
-
-    def test_post_contributions_route_exists(self, client, contribution_service):
-        contribution_service.insert_many.return_value = None
-        r = client.post("/api/v1/contributions", json=[], headers=AUTHED_HEADERS)
-        # Should reach the route (not 404/405) even if the handler is a stub
-        assert r.status_code != 404
-        assert r.status_code != 405
-
-    def test_put_contributions_route_exists(self, client, contribution_service):
-        contribution_service.upsert_many.return_value = None
-        r = client.put("/api/v1/contributions", json=[], headers=AUTHED_HEADERS)
-        assert r.status_code != 404
-        assert r.status_code != 405

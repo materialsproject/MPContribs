@@ -31,8 +31,8 @@ class TestScalarAndIn:
         assert conditions["operation"] == "update"
 
     def test_operation_in(self):
-        conditions = _flatten(UploadFilter(operation__in=["create_project", "add_component"])._get_filter_conditions())
-        assert conditions["operation"] == {"$in": ["create_project", "add_component"]}
+        conditions = _flatten(UploadFilter(operation__in=["create_project", "set_public"])._get_filter_conditions())
+        assert conditions["operation"] == {"$in": ["create_project", "set_public"]}
 
     def test_project(self):
         conditions = _flatten(UploadFilter(project="myproject")._get_filter_conditions())

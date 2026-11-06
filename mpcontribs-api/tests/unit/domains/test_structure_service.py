@@ -1,10 +1,13 @@
-"""Unit tests for ``StructureService.read_content``.
+"""Unit tests for ``ComponentService.read_content`` (the single read-only component service).
 
-The service no longer proxies object bytes: after the contribution-reachability access check it mints a
-short-lived presigned S3 GET URL, and the route 307-redirects to it. These tests pin that the access
-gate still runs *before* any URL is minted, and that the presigned request addresses the exact
-version-pinned object (bucket / ``{project}/structures/{name}`` key / ``VersionId``). The key is built
-straight from the record's own ``project``/``name`` — no contribution round trip is needed to locate it.
+The service no longer proxies object bytes: after a reachability access check it mints a short-lived
+presigned S3 GET URL, and the route 307-redirects to it. Components are immutable and content-addressed,
+so the key is built straight from the record's own ``(project, hash, ext)`` —
+``mpcontribs/{project}/components/{subtype}/{hash}.{ext}`` — with no owner path and no version pinning.
+
+Components are owned by contributions (never projects), so reachability is a single contribution-reference
+check. These tests pin that the access gate runs *before* any URL is minted and that the presigned request
+addresses the content-addressed object.
 """
 
 from types import SimpleNamespace
@@ -14,72 +17,59 @@ import pytest
 from beanie import PydanticObjectId
 
 from mpcontribs_api.config import get_settings
-from mpcontribs_api.domains.structures.service import StructureService
+from mpcontribs_api.domains.components.service import ComponentService
 from mpcontribs_api.exceptions import NotFoundError
 
 pytestmark = pytest.mark.asyncio
 
 PRESIGNED = "https://s3.example/presigned-get"
+HASH = "a" * 64
 
 
 def _make_service(
     *,
     structure: SimpleNamespace | None,
-    reachable: bool,
-) -> tuple[StructureService, AsyncMock, AsyncMock, AsyncMock]:
-    """Build a StructureService over mocked structure + contribution repos and a mocked S3 client.
+    reachable: bool = False,
+) -> tuple[ComponentService, AsyncMock, AsyncMock, AsyncMock]:
+    """Build a structure-configured ComponentService over mocked repos and an S3 client.
 
-    ``structure`` is what the structure repo's ``read_one`` returns (the index record, or None), and
-    ``reachable`` controls whether an in-scope contribution references it: the contribution repo's
-    ``referenced_component_ids`` returns the record id (reachable) or an empty set (unreachable). The
-    S3 client's ``generate_presigned_url`` returns a fixed URL so callers can assert both the returned
-    value and the exact request parameters.
+    ``structure`` is what the component repo's ``read_one`` returns (the index record, or None).
+    ``reachable`` controls whether an in-scope contribution references it. The S3 client's
+    ``generate_presigned_url`` returns a fixed URL so callers can assert the request parameters.
     """
+    sid = {structure.id} if structure is not None else set()
+
     structures = AsyncMock(name="structures")
     structures.read_one = AsyncMock(return_value=structure)
 
-    reached = {structure.id} if reachable and structure is not None else set()
     contributions = AsyncMock(name="contributions")
-    contributions.referenced_component_ids = AsyncMock(return_value=reached)
+    contributions.referenced_component_ids = AsyncMock(return_value=sid if reachable else set())
 
     s3 = AsyncMock(name="s3")
     s3.generate_presigned_url = AsyncMock(return_value=PRESIGNED)
 
-    return StructureService(structures, contributions), structures, contributions, s3
+    service = ComponentService(structures, contributions, subtype="structure", ref_field="structures")
+    return service, structures, contributions, s3
 
 
-async def test_read_content_mints_version_pinned_presigned_get():
+async def test_read_content_reachable_mints_content_addressed_get():
     oid = PydanticObjectId()
-    record = SimpleNamespace(id=oid, project="my_project", name="Fe2O3.cif", s3_version_id="v-abc123")
+    record = SimpleNamespace(id=oid, project="my_project", hash=HASH, ext="cif")
     svc, _, contributions, s3 = _make_service(structure=record, reachable=True)
 
     url = await svc.read_content({"id": str(oid)}, s3=s3)
 
     assert url == PRESIGNED
-    # Access gate keyed off the resolved record id, not the raw identifiers.
+    # Reachability is a single contribution-reference check, keyed off the resolved record id.
     contributions.referenced_component_ids.assert_awaited_once_with("structures", [oid], scoped=True)
-    s3.generate_presigned_url.assert_awaited_once()
     kwargs = s3.generate_presigned_url.await_args.kwargs
     assert kwargs["ClientMethod"] == "get_object"
     assert kwargs["ExpiresIn"] == get_settings().aws.s3.expires_in
+    # Content-addressed key; no VersionId (resolves to the immutable object).
     assert kwargs["Params"] == {
-        "Bucket": get_settings().aws.s3.processed_data_bucket,
-        "Key": "my_project/structures/Fe2O3.cif",
-        "VersionId": "v-abc123",
+        "Bucket": get_settings().aws.s3.bronze_bucket,
+        "Key": f"mpcontribs/my_project/components/structures/{HASH}.cif",
     }
-
-
-@pytest.mark.parametrize("version", [None, ""])
-async def test_read_content_omits_versionid_when_absent(version):
-    # A record without a pinned version must not sign a literal empty ``VersionId`` (which would
-    # address a non-existent version rather than the current object).
-    oid = PydanticObjectId()
-    record = SimpleNamespace(id=oid, project="my_project", name="Fe2O3.cif", s3_version_id=version)
-    svc, _, _, s3 = _make_service(structure=record, reachable=True)
-
-    await svc.read_content({"id": str(oid)}, s3=s3)
-
-    assert "VersionId" not in s3.generate_presigned_url.await_args.kwargs["Params"]
 
 
 async def test_read_content_missing_structure_raises_before_presign():
@@ -95,8 +85,8 @@ async def test_read_content_missing_structure_raises_before_presign():
 
 async def test_read_content_unreachable_structure_raises_before_presign():
     oid = PydanticObjectId()
-    record = SimpleNamespace(id=oid, project="my_project", name="Fe2O3.cif", s3_version_id="v1")
-    # Record exists but no in-scope contribution references it -> gate returns an empty set.
+    record = SimpleNamespace(id=oid, project="my_project", hash=HASH, ext="cif")
+    # Record exists but no in-scope contribution references it.
     svc, _, _, s3 = _make_service(structure=record, reachable=False)
 
     with pytest.raises(NotFoundError):

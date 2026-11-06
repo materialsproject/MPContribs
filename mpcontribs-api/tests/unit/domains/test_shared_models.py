@@ -4,18 +4,18 @@ from pymongo.results import DeleteResult as MongoDeleteResult
 
 from mpcontribs_api.domains._shared.models import (
     BaseDocumentWithInput,
-    ComponentIdentity,
     DeleteResult,
     DocumentOut,
 )
-from mpcontribs_api.domains.attachments.models import Attachment, ComponentIdentity, AttachmentIn
+from mpcontribs_api.domains.attachments.models import Attachment
+from mpcontribs_api.domains.components.models import ComponentIdentity
 from mpcontribs_api.domains.consumers.models import Consumer, ConsumerIdentity
 from mpcontribs_api.domains.contributions.models import Contribution, ContributionIdentity
 from mpcontribs_api.domains.initiatives.models import Initiative, InitiativeIdentity
 from mpcontribs_api.domains.project_groups.models import ProjectGroup, ProjectGroupIdentity
 from mpcontribs_api.domains.projects.models import Project, ProjectIdentity, ProjectIn
-from mpcontribs_api.domains.structures.models import Structure, StructureVersionIdentity
-from mpcontribs_api.domains.tables.models import Table, ComponentIdentity
+from mpcontribs_api.domains.structures.models import Structure
+from mpcontribs_api.domains.tables.models import Table
 from mpcontribs_api.pagination import encode_cursor
 
 # ---------------------------------------------------------------------------
@@ -23,37 +23,21 @@ from mpcontribs_api.pagination import encode_cursor
 # ---------------------------------------------------------------------------
 
 
-def _attachment_in(**overrides) -> AttachmentIn:
+def _attachment(**overrides) -> Attachment:
     payload = {
-        "name": "data.csv.gz",
+        "_id": PydanticObjectId(),
+        "project": "my_project",
+        "hash": "c" * 64,
+        "size": 10,
+        "ext": "gz",
         "mime": "application/gzip",
-        "content": 1,
     }
     payload.update(overrides)
-    return AttachmentIn(**payload)
+    return Attachment.model_validate(payload)
 
 
 class _OidOut(DocumentOut[PydanticObjectId]):
     name: str | None = None
-
-
-# ---------------------------------------------------------------------------
-# Component.from_input (server-assigned id, computed md5)
-# ---------------------------------------------------------------------------
-
-
-class TestComponentFromInput:
-    def test_returns_document_class_instance(self):
-        doc = Attachment.from_input(_attachment_in())
-        assert isinstance(doc, Attachment)
-
-    def test_content_carried_id_assigned_md5_computed(self):
-        doc = Attachment.from_input(_attachment_in(name="x.gz"))
-        assert doc.name == "x.gz"
-        assert doc.mime == "application/gzip"
-        assert doc.content == 1
-        assert doc.id is not None
-        assert len(doc.md5) == 32
 
 
 # ---------------------------------------------------------------------------
@@ -114,9 +98,9 @@ _DOMAIN_IDENTITIES = [
     (Initiative, InitiativeIdentity, {"slug"}),
     (ProjectGroup, ProjectGroupIdentity, {"name", "owner"}),
     (Consumer, ConsumerIdentity, {"consumer_id"}),
-    (Structure, StructureVersionIdentity, {"s3_version_id"}),
-    (Table, ComponentIdentity, {"md5"}),
-    (Attachment, ComponentIdentity, {"md5"}),
+    (Structure, ComponentIdentity, {"project", "hash"}),
+    (Table, ComponentIdentity, {"project", "hash"}),
+    (Attachment, ComponentIdentity, {"project", "hash"}),
     (
         Contribution,
         ContributionIdentity,
@@ -147,11 +131,11 @@ class TestDocumentIdentityRoundTrips:
         assert project.identity() == ProjectIdentity(id="my-proj")
         assert project.identity().as_dict() == {"id": "my-proj"}
 
-    def test_content_addressed_component_identity_is_its_md5(self):
-        # A component's identity is its server-computed content md5.
-        doc = Attachment.from_input(_attachment_in())
-        assert doc.identity() == ComponentIdentity(md5=doc.md5)
-        assert doc.identity().as_dict() == {"md5": doc.md5}
+    def test_content_addressed_component_identity_is_project_and_hash(self):
+        # A component's identity is its content-addressed (project, hash) location.
+        doc = _attachment(project="my_project", hash="c" * 64)
+        assert doc.identity() == ComponentIdentity(project="my_project", hash="c" * 64)
+        assert doc.identity().as_dict() == {"project": "my_project", "hash": "c" * 64}
 
     def test_compound_identity_reads_all_fields_and_tolerates_nulls(self):
         # A chem-system-only contribution stores null material_id/formula; identity() falls back to the

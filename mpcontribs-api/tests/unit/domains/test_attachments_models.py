@@ -1,3 +1,10 @@
+"""Unit tests for the thin, content-addressed ``Attachment`` index model.
+
+Attachments are now immutable, content-addressed S3 objects like structures/tables. The Mongo document
+is a thin locator whose natural key is ``(project, hash)``, plus the ``mime`` clients filter on. There
+is no inline content or md5 content-hashing anymore.
+"""
+
 import pytest
 from beanie import PydanticObjectId
 from pydantic import ValidationError as PydanticValidationError
@@ -5,156 +12,102 @@ from pydantic import ValidationError as PydanticValidationError
 from mpcontribs_api.domains.attachments.models import (
     Attachment,
     AttachmentFilter,
-    AttachmentIn,
     AttachmentOut,
-    AttachmentPatch,
 )
+from mpcontribs_api.domains.components.models import ComponentIdentity
 from mpcontribs_api.exceptions import ValidationError as AppValidationError
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
+HASH = "c" * 64
 
 
 def _payload(**overrides) -> dict:
     payload = {
         "_id": PydanticObjectId(),
-        "name": "spectrum.json.gz",
-        "md5": "c" * 32,
+        "project": "my_project",
+        "hash": HASH,
+        "size": 1024,
+        "ext": "gz",
         "mime": "application/gzip",
-        "content": 1,
     }
     payload.update(overrides)
     return payload
 
 
-# ---------------------------------------------------------------------------
-# Attachment / AttachmentIn
-# ---------------------------------------------------------------------------
-
-
 class TestAttachment:
     def test_valid_construction(self):
         attachment = Attachment(**_payload())
-        assert attachment.name == "spectrum.json.gz"
-        assert attachment.content == 1
+        assert attachment.project == "my_project"
+        assert attachment.hash == HASH
+        assert attachment.size == 1024
+        assert attachment.ext == "gz"
+        assert attachment.mime == "application/gzip"
 
     def test_collection_name(self):
         assert Attachment.Settings.name == "attachments"
 
-    def test_name_requires_extension(self):
-        with pytest.raises(AppValidationError):
-            Attachment(**_payload(name="noextension"))
+    def test_identity_is_project_and_hash(self):
+        doc = Attachment(**_payload())
+        assert doc.identity_model is ComponentIdentity
+        assert doc.identity() == ComponentIdentity(project="my_project", hash=HASH)
 
-    def test_md5_is_computed_not_taken_from_input(self):
-        # A client-supplied md5 is overwritten by the content-derived hash.
-        attachment = Attachment(**_payload(md5="c" * 32))
-        assert attachment.md5 != "c" * 32
-        assert len(attachment.md5) == 32
-
-    def test_same_content_same_md5(self):
-        assert Attachment(**_payload()).md5 == Attachment(**_payload()).md5
-
-    def test_different_content_different_md5(self):
-        assert Attachment(**_payload(content=1)).md5 != Attachment(**_payload(content=2)).md5
+    def test_no_inline_content_or_md5(self):
+        doc = Attachment(**_payload())
+        assert not hasattr(doc, "content")
+        assert not hasattr(doc, "md5")
+        assert not hasattr(doc, "name")
 
     def test_invalid_mime_raises(self):
         with pytest.raises(AppValidationError):
-            Attachment(**_payload(mime="text/plain"))
+            Attachment(**_payload(mime="not-a-mime"))
 
-    def test_missing_content_raises(self):
+    def test_missing_mime_raises(self):
         payload = _payload()
-        del payload["content"]
+        del payload["mime"]
         with pytest.raises(PydanticValidationError):
             Attachment(**payload)
 
-    def test_attachment_in_has_no_id_or_md5(self):
-        assert "md5" not in AttachmentIn.model_fields
-        assert "id" not in AttachmentIn.model_fields
-
-    def test_attachment_in_validates_name_extension(self):
+    def test_hash_must_be_a_valid_digest(self):
         with pytest.raises(AppValidationError):
-            AttachmentIn(name="noextension", mime="application/gzip", content=1)
-
-    def test_from_input_assigns_id_and_computes_md5(self):
-        doc = Attachment.from_input(AttachmentIn(name="s.gz", mime="application/gzip", content=1))
-        assert doc.id is not None
-        assert len(doc.md5) == 32
-
-
-# ---------------------------------------------------------------------------
-# AttachmentOut
-# ---------------------------------------------------------------------------
+            Attachment(**_payload(hash="nothex"))
 
 
 class TestAttachmentOut:
     def test_all_fields_optional(self):
         out = AttachmentOut()
         assert out.id is None
-        assert out.name is None
-        assert out.md5 is None
+        assert out.project is None
+        assert out.hash is None
         assert out.mime is None
 
-    def test_partial_population(self):
-        out = AttachmentOut(name="a.gz")
-        assert out.name == "a.gz"
-        assert out.md5 is None
+    def test_default_fields(self):
+        assert AttachmentOut.default_fields() == ("id", "project", "hash", "size", "ext", "mime")
 
     def test_populates_id_from_mongo_alias(self):
         oid = PydanticObjectId()
-        out = AttachmentOut.model_validate({"_id": oid, "md5": "d" * 32})
+        out = AttachmentOut.model_validate({"_id": oid, "hash": HASH})
         assert out.id == oid
 
     def test_validators_still_apply_when_value_given(self):
         with pytest.raises(AppValidationError):
-            AttachmentOut(mime="text/plain")
-
-
-# ---------------------------------------------------------------------------
-# AttachmentPatch
-# ---------------------------------------------------------------------------
-
-
-class TestAttachmentPatch:
-    def test_all_fields_optional(self):
-        patch = AttachmentPatch()
-        assert patch.name is None
-        assert patch.mime is None
-
-    def test_partial_patch_excludes_unset(self):
-        patch = AttachmentPatch(name="renamed.gz")
-        assert patch.model_dump(exclude_unset=True) == {"name": "renamed.gz"}
-
-    def test_invalid_name_raises(self):
-        with pytest.raises(AppValidationError):
-            AttachmentPatch(name="noextension")
-
-    def test_invalid_mime_raises(self):
-        with pytest.raises(AppValidationError):
-            AttachmentPatch(mime="bogus")
-
-
-# ---------------------------------------------------------------------------
-# AttachmentFilter
-# ---------------------------------------------------------------------------
+            AttachmentOut(mime="not-a-mime")
 
 
 class TestAttachmentFilter:
     def test_empty_filter(self):
         filter = AttachmentFilter()
         assert filter.id is None
-        assert filter.md5 is None
-        assert filter.name__ilike is None
+        assert filter.hash is None
+        assert filter.mime__ilike is None
 
     def test_constants_bind_attachment_model(self):
         assert AttachmentFilter.Constants.model is Attachment
 
-    def test_md5_value_validated(self):
-        assert AttachmentFilter(md5="E" * 32).md5 == "e" * 32
+    def test_hash_value_validated(self):
+        assert AttachmentFilter(hash=HASH).hash == HASH
 
-    def test_invalid_md5_raises(self):
+    def test_invalid_hash_raises(self):
         with pytest.raises(AppValidationError):
-            AttachmentFilter(md5="nothex")
+            AttachmentFilter(hash="nothex")
 
     def test_id_in_accepts_object_ids(self):
         oids = [PydanticObjectId(), PydanticObjectId()]

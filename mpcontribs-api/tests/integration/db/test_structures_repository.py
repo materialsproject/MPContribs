@@ -10,17 +10,18 @@ pytestmark = [pytest.mark.db, pytest.mark.asyncio(loop_scope="session")]
 
 
 # ---------------------------------------------------------------------------
-# Thin, S3-versioned structure index: content lives in S3; Mongo holds only
-# (name, s3_version_id, size) per version. These exercise the index round-trip
-# and the ``size_stats`` aggregation used for project stats.
+# Thin, content-addressed structure index: content lives in S3 (always the latest object); Mongo holds
+# only (project, hash, size, ext), keyed by its content-addressed (project, hash) location. These
+# exercise the index round-trip and that reads go through the component repository.
 # ---------------------------------------------------------------------------
 
+HASH_A = "a" * 64
+HASH_B = "b" * 64
 
-def _structure(
-    name: str = "relaxed-cell", s3_version_id: str = "v-1", size: int = 2048, project: str = "my_project"
-) -> Structure:
+
+def _structure(hash: str = HASH_A, size: int = 2048, project: str = "my_project", ext: str = "cif") -> Structure:
     return Structure.model_validate(
-        {"_id": PydanticObjectId(), "project": project, "name": name, "s3_version_id": s3_version_id, "size": size}
+        {"_id": PydanticObjectId(), "project": project, "hash": hash, "size": size, "ext": ext}
     )
 
 
@@ -30,35 +31,28 @@ def _repo() -> MongoDbStructureRepository:
 
 class TestIndexRoundTrip:
     async def test_thin_document_survives_insert_and_read(self, db):
-        doc = _structure(name="Fe2O3", s3_version_id="v-abc", size=4096)
+        doc = _structure(hash=HASH_A, size=4096)
         await doc.insert()
 
         read = await Structure.get(doc.id)
         assert read is not None
-        assert read.name == "Fe2O3"
-        assert read.s3_version_id == "v-abc"
+        assert read.project == "my_project"
+        assert read.hash == HASH_A
         assert read.size == 4096
+        assert read.ext == "cif"
 
-    async def test_same_name_different_version_coexist(self, db):
-        # A lineage is ``(project-key) name``; successive uploads are distinct versions (distinct docs).
-        v1 = _structure(name="cell", s3_version_id="v-1", size=100)
-        v2 = _structure(name="cell", s3_version_id="v-2", size=120)
-        await v1.insert()
-        await v2.insert()
+    async def test_read_one_by_project_and_hash(self, db):
+        doc = _structure(hash=HASH_A)
+        await doc.insert()
+        found = await _repo().read_one({"project": "my_project", "hash": HASH_A}, fields=None)
+        assert found is not None
+        assert found.id == doc.id
 
-        both = await Structure.find(Structure.name == "cell").to_list()
-        assert {d.s3_version_id for d in both} == {"v-1", "v-2"}
-
-
-class TestSizeStats:
-    async def test_sums_sizes_of_given_versions(self, db):
-        a = _structure(name="a", s3_version_id="va", size=100)
-        b = _structure(name="b", s3_version_id="vb", size=250)
+    async def test_distinct_hashes_coexist(self, db):
+        a = _structure(hash=HASH_A, size=100)
+        b = _structure(hash=HASH_B, size=120)
         await a.insert()
         await b.insert()
 
-        total = await _repo().size_stats([a.id, b.id])
-        assert total == 350
-
-    async def test_empty_ids_is_zero(self, db):
-        assert await _repo().size_stats([]) == 0
+        both = await Structure.find(Structure.project == "my_project").to_list()
+        assert {d.hash for d in both} == {HASH_A, HASH_B}

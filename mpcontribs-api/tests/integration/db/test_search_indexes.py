@@ -37,7 +37,6 @@ from pymongo.errors import PyMongoError
 
 from mpcontribs_api.authz import User
 from mpcontribs_api.domains._shared.search_index import SearchIndexSyncStatus
-from mpcontribs_api.domains.attachments.repository import MongoDbAttachmentRepository
 from mpcontribs_api.domains.contributions.models import Contribution
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
 from mpcontribs_api.domains.contributions.service import ContributionService
@@ -45,8 +44,6 @@ from mpcontribs_api.domains.initiatives.repository import MongoDbInitiativeRepos
 from mpcontribs_api.domains.projects.models import Project
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
 from mpcontribs_api.domains.projects.service import ProjectService
-from mpcontribs_api.domains.structures.repository import MongoDbStructureRepository
-from mpcontribs_api.domains.tables.repository import MongoDbTableRepository
 from mpcontribs_api.exceptions import ValidationError
 
 pytestmark = [pytest.mark.db, pytest.mark.asyncio(loop_scope="session")]
@@ -78,16 +75,8 @@ def _project_service(user: User) -> ProjectService:
     )
 
 
-def _contribution_service(client, user: User) -> ContributionService:
-    return ContributionService(
-        client=client,
-        user=user,
-        projects=MongoDbProjectRepository(user),
-        contributions=MongoDbContributionRepository(user),
-        structures=MongoDbStructureRepository(user),
-        attachments=MongoDbAttachmentRepository(user),
-        tables=MongoDbTableRepository(user),
-    )
+def _contribution_service(user: User) -> ContributionService:
+    return ContributionService(contributions=MongoDbContributionRepository(user))
 
 
 # ---------------------------------------------------------------------------
@@ -330,7 +319,7 @@ class TestContributionFormulaSearch:
     async def test_formula_round_trips(self, db, mongo_client, search_indexes):
         contribution = await _insert_contribution(formula="Fe2O3", is_public=True)
         results = await _search_eventually(
-            lambda: _contribution_service(mongo_client, ADMIN).search("Fe2O3"),
+            lambda: _contribution_service(ADMIN).search("Fe2O3"),
             lambda r: str(contribution.id) in _ids(r),
         )
         assert str(contribution.id) in _ids(results)
@@ -342,7 +331,7 @@ class TestContributionFormulaSearch:
         # matches. This is the whole reason the service builds permutations rather than a single token.
         contribution = await _insert_contribution(formula="Fe2O3", identifier="order-independent", is_public=True)
         results = await _search_eventually(
-            lambda: _contribution_service(mongo_client, ADMIN).search("O3Fe2"),
+            lambda: _contribution_service(ADMIN).search("O3Fe2"),
             lambda r: str(contribution.id) in _ids(r),
         )
         assert str(contribution.id) in _ids(results)
@@ -350,12 +339,12 @@ class TestContributionFormulaSearch:
     async def test_scope_hides_private_contribution_from_anonymous(self, db, mongo_client, search_indexes):
         contribution = await _insert_contribution(formula="Fe2O3", identifier="private-formula", is_public=False)
         admin_hit = await _search_eventually(
-            lambda: _contribution_service(mongo_client, ADMIN).search("Fe2O3"),
+            lambda: _contribution_service(ADMIN).search("Fe2O3"),
             lambda r: str(contribution.id) in _ids(r),
         )
         assert str(contribution.id) in _ids(admin_hit)
 
-        anon_result = await _contribution_service(mongo_client, ANON).search("Fe2O3")
+        anon_result = await _contribution_service(ANON).search("Fe2O3")
         assert str(contribution.id) not in _ids(anon_result)
 
     async def test_group_member_sees_granted_private_contribution(self, db, mongo_client, search_indexes):
@@ -365,12 +354,12 @@ class TestContributionFormulaSearch:
             project="mp-team", formula="Fe2O3", identifier="granted-formula", is_public=False
         )
         alice_hit = await _search_eventually(
-            lambda: _contribution_service(mongo_client, ALICE).search("Fe2O3"),
+            lambda: _contribution_service(ALICE).search("Fe2O3"),
             lambda r: str(contribution.id) in _ids(r),
         )
         assert str(contribution.id) in _ids(alice_hit)
 
-        anon_result = await _contribution_service(mongo_client, ANON).search("Fe2O3")
+        anon_result = await _contribution_service(ANON).search("Fe2O3")
         assert str(contribution.id) not in _ids(anon_result)
 
     async def test_non_matching_formula_returns_nothing(self, db, mongo_client, search_indexes):
@@ -379,13 +368,13 @@ class TestContributionFormulaSearch:
         await _insert_contribution(formula="Fe2O3", is_public=True)
         # Give the index a beat to absorb the insert, then a distinct-formula search must be empty.
         await _search_eventually(
-            lambda: _contribution_service(mongo_client, ADMIN).search("Fe2O3"),
+            lambda: _contribution_service(ADMIN).search("Fe2O3"),
             lambda r: len(r) >= 1,
         )
-        result = await _contribution_service(mongo_client, ADMIN).search("SiO2")
+        result = await _contribution_service(ADMIN).search("SiO2")
         assert result == []
 
     async def test_invalid_formula_is_rejected(self, db, mongo_client, search_indexes):
         # A query that is not a parseable composition never reaches Atlas.
         with pytest.raises(ValidationError):
-            await _contribution_service(mongo_client, ADMIN).search("not-a-formula!!")
+            await _contribution_service(ADMIN).search("not-a-formula!!")

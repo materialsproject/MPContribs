@@ -57,10 +57,10 @@ class TestBaseFilterQueryNormalization:
         assert "_id" in conditions
         assert "id" not in conditions
 
-    def test_component_name_lookup_folded(self):
-        conditions = _flatten(TableFilter(name=OHM_SIGN)._get_filter_conditions())
-        assert conditions["name"] == GREEK_OMEGA
+    def test_component_title_lookup_folded(self):
+        conditions = _flatten(TableFilter(title=OHM_SIGN)._get_filter_conditions())
+        assert conditions["title"] == GREEK_OMEGA
 
-    def test_component_name_ilike_regex_folded(self):
-        conditions = _flatten(TableFilter(name__ilike=OHM_SIGN)._get_filter_conditions())
-        assert conditions["name"]["$regex"] == f".*{GREEK_OMEGA}.*"
+    def test_component_title_ilike_regex_folded(self):
+        conditions = _flatten(TableFilter(title__ilike=OHM_SIGN)._get_filter_conditions())
+        assert conditions["title"]["$regex"] == f".*{GREEK_OMEGA}.*"

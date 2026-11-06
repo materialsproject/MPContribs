@@ -9,9 +9,9 @@ import pytest
 from beanie import PydanticObjectId
 
 from mpcontribs_api.authz import User
-from mpcontribs_api.domains._shared.service import ComponentService
 from mpcontribs_api.domains.attachments.models import Attachment, AttachmentFilter
 from mpcontribs_api.domains.attachments.repository import MongoDbAttachmentRepository
+from mpcontribs_api.domains.components.service import ComponentService
 from mpcontribs_api.domains.contributions.models import Contribution
 from mpcontribs_api.domains.contributions.repository import MongoDbContributionRepository
 from mpcontribs_api.pagination import CursorParams
@@ -25,13 +25,21 @@ def _service(user: User) -> ComponentService:
     return ComponentService(
         MongoDbAttachmentRepository(user),
         MongoDbContributionRepository(user),
+        subtype="attachment",
         ref_field="attachments",
     )
 
 
-async def _attachment(content: int) -> Attachment:
-    # md5 is server-computed from (mime, content); distinct content -> distinct md5/dedup.
-    doc = Attachment(_id=PydanticObjectId(), name="d.csv", mime="application/gzip", content=content)
+async def _attachment(seed: int) -> Attachment:
+    # Worker-style locator; distinct seed -> distinct content hash (its natural key with project).
+    doc = Attachment(
+        _id=PydanticObjectId(),
+        project="reach-proj",
+        hash=f"{seed:064x}",
+        size=1024,
+        ext="gz",
+        mime="application/gzip",
+    )
     await doc.insert()
     return doc
 

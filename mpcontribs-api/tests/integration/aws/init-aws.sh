@@ -14,35 +14,58 @@
 # must stay in sync with env.aws.example.
 set -eu
 
-ENDPOINT="${AWS_ENDPOINT_URL:-http://localhost:4566}"
-export AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID:-test}"
-export AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY:-test}"
-export AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-east-1}"
+# When AWS_PROFILE is set, use that profile's credentials/region/endpoint and
+# target real AWS (no forced test creds, no implicit localhost endpoint). An
+# endpoint is only added if you explicitly export AWS_ENDPOINT_URL.
+#
+#   AWS_PROFILE=my-profile sh tests/integration/aws/init-aws.sh
+#
+# With no profile, behave exactly as before: default to MiniStack with dummy creds.
+PROFILE_FLAG=""
+if [ -n "${AWS_PROFILE:-}" ]; then
+  PROFILE_FLAG="--profile ${AWS_PROFILE}"
+  ENDPOINT="${AWS_ENDPOINT_URL:-}"
+  # Respect the profile's own region; only honor AWS_DEFAULT_REGION if explicitly set.
+else
+  ENDPOINT="${AWS_ENDPOINT_URL:-http://localhost:4566}"
+  export AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID:-test}"
+  export AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY:-test}"
+  export AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-east-1}"
+fi
 
-# POSIX-sh stand-in for a bash array: prefix every call with the endpoint flag.
+# POSIX-sh stand-in for a bash array: prefix every call with the profile and,
+# when set, the endpoint flag.
 aws_local() {
-  aws --endpoint-url "$ENDPOINT" "$@"
+  if [ -n "$ENDPOINT" ]; then
+    aws $PROFILE_FLAG --endpoint-url "$ENDPOINT" "$@"
+  else
+    aws $PROFILE_FLAG "$@"
+  fi
 }
 
-echo "[init-aws] provisioning against ${ENDPOINT} ..."
+echo "[init-aws] provisioning against ${ENDPOINT:-${AWS_PROFILE:+profile $AWS_PROFILE}} ..."
 
-# --- S3 buckets (S3Settings: staging_bucket / raw_data_bucket / processed_data_bucket / blobs_bucket) ---
-for bucket in mpcontribs-staging mpcontribs-raw mpcontribs-processed mpcontribs-blobs; do
+# Create S3 buckets in aws environment
+for bucket in lbnl-msd-bronze lbnl-msd-silver lbnl-msd-gold; do
   aws_local s3 mb "s3://${bucket}" || true
 done
 
-# Users upload into the staging bucket, so browser-based presigned PUT/POST needs CORS there
-# (no-op/harmless for curl & python clients).
-aws_local s3api put-bucket-cors --bucket mpcontribs-staging --cors-configuration '{
-  "CORSRules": [{
-    "AllowedMethods": ["GET", "PUT", "POST", "HEAD"],
-    "AllowedOrigins": ["*"],
-    "AllowedHeaders": ["*"],
-    "ExposeHeaders": ["ETag"]
-  }]
-}'
+# Users upload into the bronze bucket, so browser-based presigned PUT/POST needs CORS there
+# (no-op/harmless for curl & python clients). Only applied in the MiniStack (no-profile)
+# path: the wildcard origin is fine for a throwaway container but shouldn't be pushed onto
+# a real bucket in a real account. Configure CORS explicitly for real deployments instead.
+if [ -z "$PROFILE_FLAG" ]; then
+  aws_local s3api put-bucket-cors --bucket lbnl-msd-bronze --cors-configuration '{
+    "CORSRules": [{
+      "AllowedMethods": ["GET", "PUT", "POST", "HEAD"],
+      "AllowedOrigins": ["*"],
+      "AllowedHeaders": ["*"],
+      "ExposeHeaders": ["ETag"]
+    }]
+  }'
+fi
 
-# --- SQS queues (the three the app enqueues to) ---
+# SQS queues
 for queue in mpcontribs-download mpcontribs-transform mpcontribs-projection; do
   aws_local sqs create-queue --queue-name "${queue}" || true
 done
