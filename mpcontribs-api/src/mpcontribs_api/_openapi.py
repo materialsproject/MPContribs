@@ -1,8 +1,3 @@
-# Client-facing documentation for the Contribution ``data`` field. Referenced as the OpenAPI schema
-# description on the input/output models (see ``contributions.models``) so it renders in the docs UI
-# and generated clients. Keep these in sync with the behavior in ``contributions.pivot`` and
-# ``_shared.units``.
-
 CONTRIBUTION_DATA_INPUT_DESCRIPTION = """\
 Hierarchical, JSON-object data for the contribution. Nesting deeper than 7 levels is rejected. Lists
 are allowed; any dictionaries inside them have their keys coerced and validated like every other key.
