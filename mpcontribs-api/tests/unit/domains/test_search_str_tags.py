@@ -1,7 +1,7 @@
 """Fuzz the ``SearchStr`` normalizer behind ``tags`` (and the other places it is reused).
 
-``tags`` is ``list[SearchStr]`` on ``ProjectIn`` / ``ProjectOut`` / ``ProjectPatch`` and on every
-``ProjectFilter`` operator (``tags`` / ``tags__in`` / ``tags__contains``); ``SearchStr`` also backs
+``tags`` is ``list[SearchStr]`` on ``ProjectOut`` and on every ``ProjectFilter`` operator
+(``tags`` / ``tags__in`` / ``tags__contains``); ``SearchStr`` also backs
 other fields such as ``ProjectGroupFilter.name``. ``SearchStr`` runs ``_nfkc_casefold`` — NFKC
 compatibility fold, whitespace strip, then casefold — so a stored tag and a query tag always
 collapse to the same bytes. These tests hit the tricky unicode edges and prove the normalizer is
@@ -16,8 +16,6 @@ import pytest
 from pydantic import TypeAdapter
 
 from mpcontribs_api.domains._shared.types import SearchStr
-from mpcontribs_api.domains.project_groups.models import ProjectGroupFilter
-from mpcontribs_api.domains.projects.models import ProjectFilter, ProjectIn, ProjectPatch
 
 _search = TypeAdapter(SearchStr)
 

@@ -1,6 +1,7 @@
 from typing import Any
 
 from beanie import PydanticObjectId
+from pydantic import BaseModel
 from pymongo import UpdateOne
 
 from mpcontribs_api.authz import PROJECT_PATH
@@ -10,17 +11,17 @@ from mpcontribs_api.domains.projects.models import (
     Column,
     Project,
     ProjectFilter,
-    ProjectIn,
     ProjectOut,
-    ProjectPatch,
     ProjectSearchIndex,
     Stats,
 )
 from mpcontribs_api.scope import Granted, Owned, Public, Scope
 
 
-class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut, ProjectFilter, ProjectPatch]):
-    """A repository layer for access to MongoDB.
+class MongoDbProjectRepository(MongoDbRepository[Project, BaseModel, ProjectOut, ProjectFilter, BaseModel]):
+    """Read-only repository for the Project collection.
+
+    Since projects are written by workers, there are no modifying paths here.
 
     Attributes:
         _scope (dict[str, Any]): additional terms to inject into mongo queries to enforce user
@@ -32,15 +33,6 @@ class MongoDbProjectRepository(MongoDbRepository[Project, ProjectIn, ProjectOut,
     # Visible when public+approved, owned by the caller, or granted any role on the project (keyed on
     # its ``_id``). Admins bypass scope (handled by ``Scope``).
     read_scope = Scope(Public(approved=True), Owned(), Granted("_id", PROJECT_PATH))
-
-    async def find_by_id_unscoped(self, id: str) -> Project | None:
-        """Return the project with ``id`` regardless of user scope, or ``None`` if absent.
-
-        The upsert path uses this to decide insert-vs-replace: a caller must not be able to "create"
-        a project over an id that already exists but is invisible to them, so existence is checked
-        without the scope filter. The service authorizes the write against the returned document.
-        """
-        return await self.document_model.find_one(self.document_model.id == id)
 
     async def unique_columns_by_id(self, ids: list[str]) -> dict[str, str | None]:
         """Return ``{project_id: unique_column}`` for the given project ids, scoped to the user.

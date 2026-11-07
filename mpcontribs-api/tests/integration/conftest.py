@@ -14,7 +14,7 @@ def _mock_beanie_collection():
     """Stub Beanie's collection check for mock-based integration tests.
 
     FastAPI parses request bodies into Beanie Document subclasses (e.g.
-    ProjectIn), which calls get_pymongo_collection() in __init__.  Without a
+    InitiativeIn), which calls get_pymongo_collection() in __init__.  Without a
     real init_beanie() these raise CollectionWasNotInitialized.
 
     The tests/integration/db/ conftest overrides this fixture with a no-op so

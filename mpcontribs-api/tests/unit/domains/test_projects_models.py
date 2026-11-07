@@ -1,22 +1,22 @@
 import pytest
-from mpcontribs_api.exceptions import ValidationError as AppValidationError
 from pydantic import ValidationError as PydanticValidationError
 
 from mpcontribs_api.domains.projects.models import (
     Column,
     Project,
-    ProjectIn,
     ProjectOut,
-    ProjectPatch,
     Reference,
     Stats,
     validate_column_limit,
 )
 from mpcontribs_api.exceptions import ValidationError
+from mpcontribs_api.exceptions import ValidationError as AppValidationError
 
 
 class TestUniqueColumnValidation:
     def _make_input(self, **overrides):
+        # ``unique_column`` is validated by ``ProjectBase._check_unique_column``, inherited by the
+        # stored ``Project`` document, so construct one directly (there is no input model anymore).
         defaults = {
             "_id": "uc-proj",
             "title": "Test Project",
@@ -26,7 +26,7 @@ class TestUniqueColumnValidation:
             "stats": Stats(columns=0, contributions=0, tables=0, structures=0, attachments=0, size=0.0),
         }
         defaults.update(overrides)
-        return ProjectIn(**defaults)
+        return Project(**defaults)
 
     def test_none_is_allowed(self):
         assert self._make_input().unique_column is None
@@ -53,12 +53,6 @@ class TestUniqueColumnValidation:
         with pytest.raises(ValidationError):
             self._make_input(unique_column="a.***")
 
-    def test_patch_validates_unique_column(self):
-        with pytest.raises(ValidationError):
-            ProjectPatch(unique_column="a..b")
-
-    def test_patch_coerces_unique_column(self):
-        assert ProjectPatch(unique_column="sample_id").unique_column == "sampleId"
 
 # ---------------------------------------------------------------------------
 # Column
@@ -148,9 +142,10 @@ class TestReference:
 _MAX_LONGSTR = 300
 
 
-def _project_in_kwargs(**overrides):
-    """Valid ProjectIn kwargs, with the given LongStr field overridden for a boundary case."""
+def _project_kwargs(**overrides):
+    """Valid stored-``Project`` kwargs, with the given LongStr field overridden for a boundary case."""
     defaults = {
+        "_id": "longstr-proj",
         "title": "Test Project",
         "authors": "Alice, Bob",
         "description": "A test project",
@@ -161,7 +156,7 @@ def _project_in_kwargs(**overrides):
 
 
 class TestLongStrLengthConstraintsOnInput:
-    """Regression guard for the LongStr fields on ``ProjectIn`` (authors, description, long_title).
+    """Regression guard for the LongStr fields on the stored ``Project`` (authors, description, long_title).
 
     A value longer than ``max_length`` (300) is rejected, and a *present* value must be non-empty
     (``min_length=1`` -> an empty string is rejected, a single char is the shortest accepted value).
@@ -172,55 +167,55 @@ class TestLongStrLengthConstraintsOnInput:
     @pytest.mark.parametrize("field", ["authors", "description", "long_title"])
     def test_over_max_length_rejected(self, field):
         with pytest.raises(PydanticValidationError):
-            ProjectIn(**_project_in_kwargs(**{field: "x" * (_MAX_LONGSTR + 1)}))
+            Project(**_project_kwargs(**{field: "x" * (_MAX_LONGSTR + 1)}))
 
     @pytest.mark.parametrize("field", ["authors", "description", "long_title"])
     def test_at_max_length_accepted(self, field):
         # The cap is inclusive: exactly 300 chars must pass.
         value = "x" * _MAX_LONGSTR
-        assert getattr(ProjectIn(**_project_in_kwargs(**{field: value})), field) == value
+        assert getattr(Project(**_project_kwargs(**{field: value})), field) == value
 
     @pytest.mark.parametrize("field", ["authors", "description", "long_title"])
     def test_empty_string_rejected(self, field):
         # A present LongStr must be non-empty (min_length=1); "" is rejected.
         with pytest.raises(PydanticValidationError):
-            ProjectIn(**_project_in_kwargs(**{field: ""}))
+            Project(**_project_kwargs(**{field: ""}))
 
     @pytest.mark.parametrize("field", ["authors", "description", "long_title"])
     def test_single_char_accepted(self, field):
         # min_length=1: a single character is the shortest allowed value.
-        assert getattr(ProjectIn(**_project_in_kwargs(**{field: "a"})), field) == "a"
+        assert getattr(Project(**_project_kwargs(**{field: "a"})), field) == "a"
 
     def test_long_title_optional_when_absent(self):
-        # long_title is the only optional LongStr on input; omitting it is valid.
-        assert ProjectIn(**_project_in_kwargs()).long_title is None
+        # long_title is the only optional LongStr; omitting it is valid.
+        assert Project(**_project_kwargs()).long_title is None
 
 
 class TestLongStrLengthConstraintsAcrossModels:
     """The same LongStr bounds hold on the other Project representations that re-declare these fields.
 
-    ``ProjectOut`` and ``ProjectPatch`` each annotate authors/description/long_title as
-    ``LongStr | None`` independently of ``ProjectIn``, so a regression that widened one model's type
-    would slip past input-only tests. Here every field is optional (``None`` allowed), but any
-    supplied value still obeys min_length=1 / max_length=300.
+    ``ProjectOut`` annotates authors/description/long_title as ``LongStr | None`` independently of the
+    stored ``Project``, so a regression that widened one model's type would slip past document-only
+    tests. Here every field is optional (``None`` allowed), but any supplied value still obeys
+    min_length=1 / max_length=300.
     """
 
-    @pytest.mark.parametrize("model", [ProjectOut, ProjectPatch])
+    @pytest.mark.parametrize("model", [ProjectOut])
     @pytest.mark.parametrize("field", ["authors", "description", "long_title"])
     def test_over_max_length_rejected(self, model, field):
         with pytest.raises(PydanticValidationError):
             model(**{field: "x" * (_MAX_LONGSTR + 1)})
 
-    @pytest.mark.parametrize("model", [ProjectOut, ProjectPatch])
+    @pytest.mark.parametrize("model", [ProjectOut])
     @pytest.mark.parametrize("field", ["authors", "description", "long_title"])
     def test_empty_string_rejected(self, model, field):
         with pytest.raises(PydanticValidationError):
             model(**{field: ""})
 
-    @pytest.mark.parametrize("model", [ProjectOut, ProjectPatch])
+    @pytest.mark.parametrize("model", [ProjectOut])
     @pytest.mark.parametrize("field", ["authors", "description", "long_title"])
     def test_none_allowed(self, model, field):
-        # These fields are all optional on the out/patch models, so an unset value is valid.
+        # These fields are all optional on the out model, so an unset value is valid.
         assert getattr(model(**{field: None}), field) is None
 
 
@@ -309,87 +304,6 @@ class TestProjectOutProjection:
 
 
 # ---------------------------------------------------------------------------
-# ProjectPatch
-# ---------------------------------------------------------------------------
-
-
-class TestProjectPatch:
-    def test_all_optional(self):
-        patch = ProjectPatch()
-        assert patch.title is None
-        assert patch.authors is None
-
-    def test_partial_update(self):
-        patch = ProjectPatch(title="Updated Title", is_public=True)
-        assert patch.title == "Updated Title"
-        assert patch.is_public is True
-
-    def test_invalid_short_str_for_title_raises(self):
-        with pytest.raises(PydanticValidationError):
-            ProjectPatch(title="ab")  # too short
-
-    def test_default_lists_are_empty(self):
-        patch = ProjectPatch()
-        assert patch.references == []
-
-    def test_is_approved_defaults_to_none(self):
-        # None => unset, so an ordinary patch never implicitly touches approval.
-        assert ProjectPatch().is_approved is None
-
-    def test_columns_is_not_a_patch_field(self):
-        # ``columns`` is server-owned and must not be accepted on the patch model.
-        assert "columns" not in ProjectPatch.model_fields
-        assert "stats" not in ProjectPatch.model_fields
-
-    def test_invalid_license_raises(self):
-        with pytest.raises(PydanticValidationError):
-            ProjectPatch(license="GPL")
-
-
-# ---------------------------------------------------------------------------
-# Project.from_input_model (smoke-test via ProjectIn)
-# ---------------------------------------------------------------------------
-
-
-class TestProjectFromInputModel:
-    def _make_input(self, **overrides):
-        defaults = {
-            "title": "Test Project",
-            "authors": "Alice, Bob",
-            "description": "A test project",
-            "owner": "google:alice@example.com",
-        }
-        defaults.update(overrides)
-        return ProjectIn(**defaults)
-
-    def test_from_input_model_creates_project(self):
-        project_in = self._make_input()
-        project = Project.from_input_model(project_in, id="test-proj")
-        assert isinstance(project, Project)
-        assert project.id == "test-proj"
-        assert project.title == "Test Project"
-
-    def test_from_input_model_preserves_owner(self):
-        project_in = self._make_input(owner="github:bob@github.com")
-        project = Project.from_input_model(project_in, id="test-proj")
-        assert project.owner == "github:bob@github.com"
-
-    def test_from_input_model_defaults(self):
-        project_in = self._make_input()
-        project = Project.from_input_model(project_in, id="test-proj")
-        assert project.is_public is False
-        assert project.is_approved is False
-        assert project.references == []
-        assert project.columns == []
-
-    def test_from_input_model_starts_with_empty_server_owned_fields(self):
-        # stats/columns aren't on the input model and default empty on the document.
-        project = Project.from_input_model(self._make_input(), id="test-proj")
-        assert project.stats == Stats()
-        assert project.columns == []
-
-
-# ---------------------------------------------------------------------------
 # Project.decode_cursor (string-id override)
 # ---------------------------------------------------------------------------
 
@@ -423,7 +337,7 @@ def _columns(n: int) -> list[Column]:
 class TestColumnLengthQuota:
     """The column cap is enforced by ``validate_column_limit``, called on the contribution write path
     (``ContributionService``) against a project's resulting column set with the caller's effective
-    ``max_columns`` — not by the ``ProjectIn``/``ProjectPatch`` models, since columns are server-derived
+    ``max_columns`` — not by any project input model, since columns are server-derived
     from contributions. These tests pin the pure function's contract: the cap is inclusive, over-cap
     writes raise, and a non-list value is a no-op so legacy documents that already exceed the cap can
     still be read back.

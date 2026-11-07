@@ -1,11 +1,8 @@
-from unittest.mock import AsyncMock
-
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from pydantic import BaseModel
 
-from mpcontribs_api.config import get_settings
-from mpcontribs_api.domains.consumers.dependencies import get_consumer_service
 from mpcontribs_api.exceptions import (
     AuthenticationError,
     ConflictError,
@@ -58,42 +55,42 @@ class TestUnknownRoute:
 # ---------------------------------------------------------------------------
 
 
-class TestRequestValidation:
-    @pytest.fixture(autouse=True)
-    def _stub_consumer_service(self, test_app):
-        # The project write endpoints resolve per-consumer limits via ConsumerService, which reads
-        # Mongo; these mock-based route tests have no DB, so stub it so request-body validation (the
-        # behaviour under test) is what surfaces rather than a collection-not-initialised 500.
-        service = AsyncMock()
-        service.effective_limits.return_value = get_settings().consumer
-        test_app.dependency_overrides[get_consumer_service] = lambda: service
-        yield
-        test_app.dependency_overrides.pop(get_consumer_service, None)
+class _ProbeBody(BaseModel):
+    title: str
+    count: int
 
-    def test_missing_required_body_field(self, client):
-        # PUT /api/v1/projects/{id} requires a ProjectIn body
-        r = client.put(
-            "/api/v1/projects/my-proj",
-            json={"title": "Missing required fields"},
-            headers=AUTHED_HEADERS,
-        )
+
+def _app_with_body_probe() -> FastAPI:
+    """A test app with a POST /probe-body route that requires a typed JSON body.
+
+    Exercises the app-wide RequestValidationError -> 422 handler without depending on any domain
+    write route (projects are read-only now; mutations flow through /uploads).
+    """
+    app = make_test_app()
+
+    @app.post("/probe-body")
+    async def _probe_body(body: _ProbeBody):  # pragma: no cover - never reached on invalid input
+        return {"ok": True}
+
+    return app
+
+
+class TestRequestValidation:
+    def test_missing_required_body_field(self):
+        r = _client(_app_with_body_probe()).post("/probe-body", json={"title": "missing count"})
         assert r.status_code == 422
 
-    def test_validation_error_envelope(self, client):
-        r = client.put(
-            "/api/v1/projects/my-proj",
-            json={"title": "Missing required fields"},
-            headers=AUTHED_HEADERS,
-        )
+    def test_validation_error_envelope(self):
+        r = _client(_app_with_body_probe()).post("/probe-body", json={"title": "missing count"})
         body = r.json()
         assert body["error"]["code"] == "validation_error"
         assert "errors" in body["error"]["detail"]
 
-    def test_non_json_body(self, client):
-        r = client.put(
-            "/api/v1/projects/my-proj",
+    def test_non_json_body(self):
+        r = _client(_app_with_body_probe()).post(
+            "/probe-body",
             content=b"not json at all",
-            headers={**AUTHED_HEADERS, "content-type": "application/json"},
+            headers={"content-type": "application/json"},
         )
         assert r.status_code == 422
 

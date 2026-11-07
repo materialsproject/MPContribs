@@ -1,38 +1,23 @@
 from typing import Any
 
-from beanie import Link
-from bson import DBRef, ObjectId
-
-from mpcontribs_api.authz import INITIATIVE_PATH, ROOT_PATH, User
-from mpcontribs_api.config import ConsumerLimits, get_settings
-from mpcontribs_api.domains._shared.models import DeleteResult
-from mpcontribs_api.domains.initiatives.models import Initiative
-from mpcontribs_api.domains.initiatives.repository import MongoDbInitiativeRepository
 from mpcontribs_api.domains.projects.models import (
     ProjectFilter,
-    ProjectIn,
     ProjectOut,
-    ProjectPatch,
 )
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
-from mpcontribs_api.exceptions import ConflictError, NotFoundError, PermissionError, ValidationError
+from mpcontribs_api.exceptions import ValidationError
 from mpcontribs_api.pagination import CursorParams, Page
 
 
 class ProjectService:
-    """Owns project write policy and coordinates initiative assignment."""
+    """Read-only access service for projects.
 
-    def __init__(
-        self,
-        user: User,
-        projects: MongoDbProjectRepository,
-        initiatives: MongoDbInitiativeRepository,
-        limits: ConsumerLimits | None = None,
-    ) -> None:
-        self._user = user
+    Projects are worker-written: creation, replacement, and deletion all flow through the
+    ``/uploads`` endpoints, so this service exposes reads only (list, fetch, search).
+    """
+
+    def __init__(self, projects: MongoDbProjectRepository) -> None:
         self._projects = projects
-        self._initiatives = initiatives
-        self._limits = limits or get_settings().consumer
 
     async def read_many(
         self, filter: ProjectFilter, pagination: CursorParams, fields: frozenset[str] | None
@@ -43,181 +28,6 @@ class ProjectService:
     async def read_one(self, identifiers: dict[str, Any], fields: frozenset[str] | None) -> ProjectOut | None:
         """Return the single scoped project matching ``identifiers`` (``{"id": ...}``), or None when absent."""
         return await self._projects.read_one(identifiers, fields)
-
-    async def upsert_one(self, identifiers: dict[str, Any], data: ProjectIn) -> ProjectOut:
-        """Upsert a project by id, applying every write-policy decision before persisting.
-
-        Update the document if the id exists, otherwise insert a new one under that id.
-
-        - **Existing project:** only its ``owner`` or an admin may overwrite it. The stored ``owner``,
-          the ``initiative`` link, and all server-managed fields (see ``Project.server_managed_fields``)
-          are preserved, so a PUT never resets approval, publication, stats, or the initiative
-          assignment. Reassigning an initiative goes through PATCH.
-        - **New project:** ``owner`` is forced to the caller, approval starts 'False' for non-admins, and
-          the per-user cap is enforced against the caller. A body-supplied ``initiative`` (id or slug)
-          is resolved through the same guarded path as PATCH — the target must exist, be visible,
-          be manageable by the caller, and (when unapproved) have room under its member cap.
-
-        Raises:
-            PermissionError: anonymous caller, a non-owner/non-admin targeting an existing project,
-                the per-user project cap, or an initiative the caller cannot manage
-            ConflictError: assigning to an unapproved initiative already at its member cap
-            NotFoundError: a body-supplied initiative that does not exist or is not visible
-            ValidationError: the resulting project would be public while unapproved
-        """
-        # The route enforces authentication, so an anonymous caller should never reach here.
-        if self._user.username is None:
-            raise PermissionError(required_role="authenticated")
-
-        id = identifiers["id"]
-        existing = await self._projects.find_by_id_unscoped(id)
-        project = self._projects.document_model.from_input_model(data, id=id)
-
-        if existing is not None:
-            if not (self._user.is_admin(*ROOT_PATH) or existing.owner == self._user.username):
-                raise PermissionError(required_role="owner-or-admin")
-            # Ownership is immutable via upsert; keep the original owner.
-            project.owner = existing.owner
-            # A full replacement must not overwrite server-defined fields.
-            for field in self._projects.document_model.server_managed_fields():
-                setattr(project, field, getattr(existing, field))
-            # Server owned calculated fields are not taken from request body
-            project.stats = existing.stats
-            project.columns = existing.columns
-            # Initiative assignment is not part of a full replace: preserve the stored link so a PUT
-            # cannot silently clear or reassign it. Reassignment goes through the PATCH path.
-            project.initiative = existing.initiative
-            # Approval is an admin-only flag
-            if not self._user.is_admin(*ROOT_PATH):
-                project.is_approved = existing.is_approved
-        else:
-            # New project: the caller owns it, regardless of the submitted owner.
-            project.owner = self._user.username
-            # Approval is admin-only; a non-admin's new project always starts unapproved.
-            if not self._user.is_admin(*ROOT_PATH):
-                project.is_approved = False
-            await self._enforce_project_cap(self._user.username)
-            # Assigning an initiative on create runs the same as PATCH: the target
-            # must exist and be visible, the caller must be able to manage it, and an unapproved
-            # target must have room under its member cap. Accepts the initiative's id or slug.
-            ref = await self._resolve_initiative_assignment(project_id=id, identifier=data.initiative)
-            project.initiative = Link(ref, Initiative) if ref is not None else None
-
-        if project.is_public and not project.is_approved:
-            raise ValidationError("a project cannot be public until it is approved", id=id)
-        doc = await self._projects.replace_one(id, project)
-        return ProjectOut.model_validate(doc, from_attributes=True)
-
-    async def update_one(self, identifiers: dict[str, Any], update: ProjectPatch) -> ProjectOut:
-        """Apply a project patch, enforcing approval rules and routing ``initiative`` changes.
-
-        The approval rules (admin-only ``is_approved``, ``public ⇒ approved``) are checked against the
-        scoped target before any write.
-        """
-        id = identifiers["id"]
-        await self._enforce_patch_rules(id, update)
-
-        if "initiative" not in update.model_fields_set:
-            doc = await self._projects.update_one(identifiers, update)
-            return ProjectOut.model_validate(doc, from_attributes=True)
-
-        data = update.model_dump(exclude_unset=True)
-        identifier = data.pop("initiative", None)
-
-        # Resolve the target link (and run the both-rights + limit checks) before touching anything.
-        ref = await self._resolve_initiative_assignment(project_id=id, identifier=identifier)
-
-        # `initiative` is server derived, so ProjectPatch can't handle it (expects str), so hand it in extra_set
-        doc = await self._projects.update_one(identifiers, ProjectPatch(**data), extra_set={"initiative": ref})
-        return ProjectOut.model_validate(doc, from_attributes=True)
-
-    async def delete_one(self, identifiers: dict[str, Any]) -> DeleteResult:
-        """Delete a scoped project by id. Restricted to the owner or an admin.
-
-        Project must be deleted by an owner or admin. A caller who cannot see the project gets a 404; a
-        caller who can see it but does not own it gets a 403.
-        """
-        existing = await self._projects.read_one(identifiers)
-        if existing is not None and not (self._user.is_admin(*ROOT_PATH) or existing.owner == self._user.username):
-            raise PermissionError(required_role="owner-or-admin")
-        return await self._projects.delete_one(identifiers)
-
-    async def _enforce_project_cap(self, owner: str) -> None:
-        """Reject a *new* project that would push ``owner`` past the per-user cap.
-
-        Soft limit: the count-then-insert is not atomic, so concurrent creates by the same owner can
-        overshoot the cap slightly.
-        """
-        max_projects = self._limits.project.max_projects
-        # Unscoped: the per-owner cap is a property of the owner, independent of who is asking.
-        count = await self._projects.count_matching({"owner": owner}, scoped=False)
-        if count >= max_projects:
-            raise PermissionError(
-                f"Cannot be owner of more than {max_projects} projects",
-                owner=owner,
-                num_projects=count,
-            )
-
-    async def _enforce_patch_rules(self, id: str, update: ProjectPatch) -> None:
-        """Enforce project patch invariants against the scoped target.
-
-        - Only the project's owner or an admin may patch it. Read visibility (public/approved or a
-          project role grant) is not enough to write, mirroring ``upsert_one`` and ``delete_one``.
-        - Only an admin may change ``is_approved``.
-        - The resulting state must satisfy the ``is_public ⇒ is_approved`` condition.
-        """
-        data = update.model_dump(exclude_unset=True)
-        if "is_approved" in data and not self._user.is_admin(*ROOT_PATH):
-            raise PermissionError(required_role="admin")
-
-        existing = await self._projects.read_one({"id": id})
-        if existing is None:
-            return
-        if not (self._user.is_admin(*ROOT_PATH) or existing.owner == self._user.username):
-            raise PermissionError(required_role="owner-or-admin")
-
-        resulting_approved = data.get("is_approved", existing.is_approved)
-        resulting_public = data.get("is_public", existing.is_public)
-        if resulting_public and not resulting_approved:
-            raise ValidationError("a project cannot be public until it is approved", id=id)
-
-    async def _resolve_initiative_assignment(self, project_id: str, identifier: str | None) -> DBRef | None:
-        """Validate an initiative assignment and return the link to store (or None to unassign).
-
-        ``identifier`` addresses the target initiative by its id or its slug. Unassigning
-        (``identifier is None``) needs only project-write access (already enforced downstream).
-        Assigning additionally requires that the caller can manage the target initiative and that an
-        unapproved target has room under its member cap.
-        """
-        if identifier is None:
-            return None
-
-        # A valid ObjectId string is an id lookup; anything else is a slug. ``read_one`` is scoped,
-        # so an initiative the caller cannot see resolves to None -> NotFoundError.
-        key = "id" if ObjectId.is_valid(identifier) else "slug"
-        initiative = await self._initiatives.read_one({key: identifier})
-        if initiative is None or initiative.id is None:
-            raise NotFoundError("Initiative not found or not visible", initiative=identifier)
-
-        # Use the resolved slug (the identifier may have been an id) for the manage check.
-        self._user.require_manage(*INITIATIVE_PATH, initiative.slug, doc_owner=initiative.owner)
-
-        if not initiative.is_approved:
-            # Unscoped integrity count: the member cap must see every project assigned to the
-            # initiative, even ones the caller cannot. Excluding ``project_id`` keeps re-assigning an
-            # already-assigned project idempotent so it never trips the limit.
-            members_query: dict[str, Any] = {"initiative.$id": initiative.id}
-            if project_id is not None:
-                members_query["_id"] = {"$ne": project_id}
-            members = await self._projects.count_matching(members_query, scoped=False)
-            if members >= self._limits.initiative.max_projects_per_unapproved:
-                raise ConflictError(
-                    message="unapproved initiative already has the maximum number of assigned projects",
-                    slug=initiative.slug,
-                    limit=self._limits.initiative.max_projects_per_unapproved,
-                )
-
-        return DBRef("initiatives", initiative.id)
 
     async def search(self, query: str, limit: int = 10) -> list[ProjectOut]:
         """Full-text search across projects."""

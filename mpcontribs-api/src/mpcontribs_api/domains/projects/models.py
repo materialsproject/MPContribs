@@ -183,13 +183,6 @@ class Project(ProjectBase, BaseDocumentWithInput[ShortStr], SearchIndexed):
             ),
         )
 
-    @classmethod
-    def from_input_model(cls, data: ProjectIn, id: str) -> Project:  # pyright: ignore[reportIncompatibleMethodOverride]
-        # ``id`` comes from the request path, not the body (see ``ProjectIn``). ``initiative`` is a
-        # bare id/slug identifier on input (see ``ProjectIn.initiative``); it is resolved to a
-        # ``Link`` by ``ProjectService`` and never flows straight into the document here.
-        return cls(_id=id, **data.model_dump(exclude={"initiative"}))
-
     @staticmethod
     def decode_cursor(cursor: str) -> str:
         """Decodes cursor and returns it as a str.
@@ -197,10 +190,6 @@ class Project(ProjectBase, BaseDocumentWithInput[ShortStr], SearchIndexed):
         Needs to override the parent class since Project.id is a simple str
         """
         return pagination.decode_cursor(cursor)
-
-    @classmethod
-    def server_managed_fields(cls) -> tuple:
-        return ("is_public", "is_approved", "stats", "mp_category")
 
 
 class ProjectOut(DocumentOut[ShortStr]):
@@ -271,46 +260,3 @@ class ProjectFilter(BaseFilter):
 
     class Constants(BaseFilter.Constants):
         model = Project
-
-
-# Left for namespace similarity between modules
-class ProjectIn(ProjectBase):
-    """User-supplied input for a project write.
-
-    Carries no ``id`` (it comes from the request path) and no ``stats``/``columns`` (server-owned,
-    recomputed from contributions). ``is_approved`` is accepted but only honored for admins.
-    """
-
-    # str here (id or slug), but ProjectService resolves it to a Link. Deliberately narrows the
-    # inherited `Link[Initiative] | None` to a plain identifier that never reaches the document.
-    initiative: str | None = None  # pyright: ignore[reportIncompatibleVariableOverride]
-
-
-class ProjectPatch(BaseModel):
-    """Nullable Project representation of user-supplied data for partial update (patch).
-
-    ``stats`` and ``columns`` are intentionally absent: they are server-owned and recomputed from
-    the project's contributions, never patched by a client. ``is_approved`` is accepted but the
-    repository allows only admins to change it.
-    """
-
-    title: ShortStr | None = None
-    authors: LongStr | None = None
-    description: LongStr | None = None
-    tags: list[SearchStr] | None = None
-    unique_column: str | None = None
-    references: list[Reference] = Field(default_factory=list)
-    long_title: LongStr | None = None
-    other: dict[str, Any] = Field(default_factory=dict)
-    is_public: bool = False
-    # None => unset (left unchanged); admin-only when set
-    is_approved: bool | None = None
-    license: Literal["CCA4", "CCPD"] | None = None
-
-    # str here, but ProjectService coerces to a Link
-    initiative: str | None = None
-
-    @field_validator("unique_column")
-    @classmethod
-    def _check_unique_column(cls, v: str | None) -> str | None:
-        return _validate_unique_column(v)

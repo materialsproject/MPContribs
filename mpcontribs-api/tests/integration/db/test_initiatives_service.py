@@ -1,14 +1,14 @@
 import pytest
 from beanie import Link
+from bson import DBRef
 
 from mpcontribs_api.authz import User
 from mpcontribs_api.config import get_settings
 from mpcontribs_api.domains.initiatives.models import Initiative, InitiativeFilter, InitiativeIn, InitiativePatch
 from mpcontribs_api.domains.initiatives.repository import MongoDbInitiativeRepository
 from mpcontribs_api.domains.initiatives.service import InitiativeService
-from mpcontribs_api.domains.projects.models import Project, ProjectIn, ProjectPatch
+from mpcontribs_api.domains.projects.models import Project
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
-from mpcontribs_api.domains.projects.service import ProjectService
 from mpcontribs_api.exceptions import ConflictError, NotFoundError, PermissionError, ValidationError
 from mpcontribs_api.pagination import CursorParams
 
@@ -28,27 +28,20 @@ BOB_EMAIL = "google:bob@example.com"
 CAROL_EMAIL = "google:carol@example.com"
 
 
-def _service(user: User) -> ProjectService:
-    return ProjectService(
-        user=user,
-        projects=MongoDbProjectRepository(user),
-        initiatives=MongoDbInitiativeRepository(user),
-    )
-
-
 def _collaborator(slug: str, username: str = BOB_EMAIL) -> User:
     return User(username=username, groups=[f"mpcontribs:initiatives/{slug}=owner"])
 
 
-async def _insert_project(pid: str, owner: str = ALICE_EMAIL) -> Project:
-    document = Project.from_input_model(
-        ProjectIn(
-            title=pid[:30],
-            authors="Author",
-            description="desc",
-            owner=owner,
-        ),
-        id=pid,
+async def _insert_project(pid: str, owner: str = ALICE_EMAIL, initiative_id=None) -> Project:
+    """Seed a project directly. Projects are worker-written now, so build the stored document by hand;
+    ``initiative_id`` optionally seeds the initiative back-reference the worker would have set."""
+    document = Project(
+        _id=pid,
+        title=pid[:30],
+        authors="Author",
+        description="desc",
+        owner=owner,
+        initiative=Link(DBRef("initiatives", initiative_id), Initiative) if initiative_id is not None else None,
     )
     return await MongoDbProjectRepository(ADMIN).insert_one(document)
 
@@ -66,155 +59,14 @@ def _assigned_id(project: Project):
     return link.ref.id if isinstance(link, Link) else link.id
 
 
-# ---------------------------------------------------------------------------
-# Happy-path assignment
-# ---------------------------------------------------------------------------
-
-
-class TestAssign:
-    async def test_owner_of_both_can_assign(self, db):
-        await _insert_project("proj-a", owner=ALICE_EMAIL)
-        init = await _insert_initiative("init-a", ALICE)
-        updated = await _service(ALICE).update_one({"id": "proj-a"}, ProjectPatch(initiative="init-a"))
-        assert _assigned_id(updated) == init.id
-
-    async def test_collaborator_can_assign_own_project(self, db):
-        await _insert_project("proj-b", owner=BOB_EMAIL)
-        init = await _insert_initiative("init-collab", ALICE)
-        bob = _collaborator("init-collab")
-        updated = await _service(bob).update_one({"id": "proj-b"}, ProjectPatch(initiative="init-collab"))
-        assert _assigned_id(updated) == init.id
-
-    async def test_plain_patch_passes_through_untouched(self, db):
-        await _insert_project("proj-plain", owner=ALICE_EMAIL)
-        init = await _insert_initiative("init-plain", ALICE)
-        await _service(ALICE).update_one({"id": "proj-plain"}, ProjectPatch(initiative="init-plain"))
-        # A patch that does not mention `initiative` must not disturb the existing assignment.
-        updated = await _service(ALICE).update_one({"id": "proj-plain"}, ProjectPatch(title="new-title"))
-        assert updated.title == "new-title"
-        assert _assigned_id(updated) == init.id
-
-    async def test_unassign_clears_link(self, db):
-        await _insert_project("proj-un", owner=ALICE_EMAIL)
-        await _insert_initiative("init-un", ALICE)
-        await _service(ALICE).update_one({"id": "proj-un"}, ProjectPatch(initiative="init-un"))
-        updated = await _service(ALICE).update_one({"id": "proj-un"}, ProjectPatch(initiative=None))
-        assert _assigned_id(updated) is None
-
-
-# ---------------------------------------------------------------------------
-# Both-rights enforcement
-# ---------------------------------------------------------------------------
-
-
-class TestBothRights:
-    async def test_visible_but_unmanaged_initiative_rejected(self, db):
-        # Carol owns her project (project-write ok) and can *see* this public+approved initiative,
-        # but she neither owns nor collaborates on it, so she still cannot assign to it.
-        await _insert_project("proj-c", owner=CAROL_EMAIL)
-        await _insert_initiative("init-c", ALICE)
-        await MongoDbInitiativeRepository(ADMIN).update_one(
-            {"slug": "init-c"}, InitiativePatch(is_approved=True, is_public=True)
-        )
-        with pytest.raises(PermissionError):
-            await _service(CAROL).update_one({"id": "proj-c"}, ProjectPatch(initiative="init-c"))
-
-    async def test_invisible_initiative_is_not_found(self, db):
-        # Alice's private initiative is invisible to Carol, so it reads as not-found (not a 403).
-        await _insert_project("proj-c2", owner=CAROL_EMAIL)
-        await _insert_initiative("init-priv", ALICE)
-        with pytest.raises(NotFoundError):
-            await _service(CAROL).update_one({"id": "proj-c2"}, ProjectPatch(initiative="init-priv"))
-
-    async def test_manager_without_project_write_rejected(self, db):
-        # Alice manages the initiative but cannot see/write Bob's private project.
-        await _insert_project("proj-bob", owner=BOB_EMAIL)
-        await _insert_initiative("init-d", ALICE)
-        with pytest.raises(NotFoundError):
-            await _service(ALICE).update_one({"id": "proj-bob"}, ProjectPatch(initiative="init-d"))
-
-    async def test_assign_to_missing_initiative_is_not_found(self, db):
-        await _insert_project("proj-ghost", owner=ALICE_EMAIL)
-        with pytest.raises(NotFoundError):
-            await _service(ALICE).update_one({"id": "proj-ghost"}, ProjectPatch(initiative="ghost-init"))
-
-
-# ---------------------------------------------------------------------------
-# Member cap on unapproved initiatives
-# ---------------------------------------------------------------------------
-
-
-class TestMemberCap:
-    async def test_unapproved_capped_at_configured_members(self, db):
-        cap = get_settings().consumer.initiative.max_projects_per_unapproved
-        await _insert_initiative("init-cap", ALICE)
-        for i in range(cap):
-            await _insert_project(f"cap-proj-{i}", owner=ALICE_EMAIL)
-            await _service(ALICE).update_one({"id": f"cap-proj-{i}"}, ProjectPatch(initiative="init-cap"))
-        await _insert_project("cap-proj-over", owner=ALICE_EMAIL)
-        with pytest.raises(ConflictError):
-            await _service(ALICE).update_one({"id": "cap-proj-over"}, ProjectPatch(initiative="init-cap"))
-
-    async def test_reassigning_existing_member_is_idempotent(self, db):
-        cap = get_settings().consumer.initiative.max_projects_per_unapproved
-        await _insert_initiative("init-idem", ALICE)
-        for i in range(cap):
-            await _insert_project(f"idem-proj-{i}", owner=ALICE_EMAIL)
-            await _service(ALICE).update_one({"id": f"idem-proj-{i}"}, ProjectPatch(initiative="init-idem"))
-        # At the cap, re-assigning a project that is already a member must not trip the limit.
-        again = await _service(ALICE).update_one({"id": "idem-proj-0"}, ProjectPatch(initiative="init-idem"))
-        assert again.initiative is not None
-
-    async def test_approved_initiative_has_no_member_cap(self, db, monkeypatch):
-        cap = get_settings().consumer.initiative.max_projects_per_unapproved
-        # Lift the orthogonal per-user project quota so seeding cap+2 owned projects doesn't trip it;
-        # this test isolates the *initiative member* cap, not the project-count cap.
-        monkeypatch.setattr(get_settings().consumer.project, "max_projects", cap + 5)
-        await _insert_initiative("init-approved", ALICE)
-        await MongoDbInitiativeRepository(ADMIN).update_one(
-            {"slug": "init-approved"}, InitiativePatch(is_approved=True)
-        )
-        for i in range(cap + 2):  # comfortably past the unapproved cap
-            await _insert_project(f"appr-proj-{i}", owner=ALICE_EMAIL)
-            await _service(ALICE).update_one({"id": f"appr-proj-{i}"}, ProjectPatch(initiative="init-approved"))
-        initiative_id = (await MongoDbInitiativeRepository(ADMIN).read_one({"slug": "init-approved"})).id  # type: ignore[union-attr]
-        count = await MongoDbProjectRepository(ADMIN).count_matching({"initiative.$id": initiative_id}, scoped=False)
-        assert count == cap + 2
-
-
-# ---------------------------------------------------------------------------
-# Admin bypass + unassignment rights
-# ---------------------------------------------------------------------------
-
-
-class TestAdminAndUnassign:
-    async def test_admin_can_assign_to_any_initiative(self, db):
-        # Alice's private initiative is manageable by an admin even though the admin holds no role.
-        await _insert_project("adm-proj", owner=ALICE_EMAIL)
-        init = await _insert_initiative("adm-init", ALICE)
-        updated = await _service(ADMIN).update_one({"id": "adm-proj"}, ProjectPatch(initiative="adm-init"))
-        assert _assigned_id(updated) == init.id
-
-    async def test_project_owner_can_unassign_without_initiative_rights(self, db):
-        # A collaborator assigns Bob's project; Bob, lacking any initiative role, can still detach
-        # his own project — unassignment needs only project-write access.
-        await _insert_project("detach-proj", owner=BOB_EMAIL)
-        await _insert_initiative("detach-init", ALICE)
-        await _service(_collaborator("detach-init", username=BOB_EMAIL)).update_one(
-            {"id": "detach-proj"}, ProjectPatch(initiative="detach-init")
-        )
-        bob_plain = User(username=BOB_EMAIL, groups=frozenset())
-        updated = await _service(bob_plain).update_one({"id": "detach-proj"}, ProjectPatch(initiative=None))
-        assert _assigned_id(updated) is None
-
-
 # ===========================================================================
 # InitiativeService — create / patch / delete authorization
 #
 # The initiative write policy (authenticated-create, per-owner unapproved quota, manage rights,
 # admin-only approval, public⇒approved, owner-or-admin delete) lives on InitiativeService; these
-# drive it against the real DB. The ProjectService assignment tests above are a separate concern —
-# assignment is an initiative-facing operation on the *project* service.
+# drive it against the real DB. Initiative<->project *assignment* no longer lives in the API
+# (projects are read-only; assignment is deferred to the upload worker), so those tests are gone —
+# only the back-reference cleanup on initiative delete remains below.
 # ===========================================================================
 
 
@@ -339,15 +191,13 @@ class TestInitiativeDelete:
 
     async def test_delete_clears_member_project_links(self, db):
         # Deleting an initiative must unset the `initiative` link on its members, leaving no
-        # dangling reference behind (round-trip: assign, delete, re-read from the DB).
-        await _insert_project("del-refs-proj", owner=ALICE_EMAIL)
+        # dangling reference behind (round-trip: seed a linked project, delete, re-read from the DB).
         init = await _insert_initiative("svc-del-refs", ALICE)
-        assigned = await _service(ALICE).update_one({"id": "del-refs-proj"}, ProjectPatch(initiative="svc-del-refs"))
-        assert _assigned_id(assigned) == init.id
+        await _insert_project("del-refs-proj", owner=ALICE_EMAIL, initiative_id=init.id)
 
         await _initiative_service(ALICE).delete_one({"slug": "svc-del-refs"})
 
-        reloaded = await MongoDbProjectRepository(ADMIN).find_by_id_unscoped("del-refs-proj")
+        reloaded = await Project.find_one(Project.id == "del-refs-proj")
         assert reloaded is not None
         assert _assigned_id(reloaded) is None
 

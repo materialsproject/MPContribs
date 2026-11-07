@@ -13,7 +13,7 @@ from mpcontribs_api.domains.consumers.models import Consumer, ConsumerIdentity
 from mpcontribs_api.domains.contributions.models import Contribution, ContributionIdentity
 from mpcontribs_api.domains.initiatives.models import Initiative, InitiativeIdentity
 from mpcontribs_api.domains.project_groups.models import ProjectGroup, ProjectGroupIdentity
-from mpcontribs_api.domains.projects.models import Project, ProjectIdentity, ProjectIn
+from mpcontribs_api.domains.projects.models import Project, ProjectIdentity
 from mpcontribs_api.domains.structures.models import Structure
 from mpcontribs_api.domains.tables.models import Table
 from mpcontribs_api.pagination import encode_cursor
@@ -124,9 +124,8 @@ class TestIdentityContract:
 class TestDocumentIdentityRoundTrips:
     def test_id_keyed_document_identity_is_its_id(self):
         # A project's identity IS its id (the human-chosen slug), so ``identity()`` reads it off ``id``.
-        project = Project.from_input_model(
-            ProjectIn(title="my-project", authors="abc", description="abc", owner="google:a@example.com"),
-            id="my-proj",
+        project = Project(
+            _id="my-proj", title="my-project", authors="abc", description="abc", owner="google:a@example.com"
         )
         assert project.identity() == ProjectIdentity(id="my-proj")
         assert project.identity().as_dict() == {"id": "my-proj"}

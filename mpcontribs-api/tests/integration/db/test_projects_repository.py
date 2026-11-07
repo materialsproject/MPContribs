@@ -1,9 +1,8 @@
 import pytest
 
 from mpcontribs_api.authz import User
-from mpcontribs_api.domains.projects.models import Project, ProjectIn, ProjectOut, ProjectPatch
+from mpcontribs_api.domains.projects.models import Project, ProjectOut
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
-from mpcontribs_api.exceptions import NotFoundError
 from mpcontribs_api.pagination import CursorParams
 
 # All tests in this module share the session event loop so they can reuse the
@@ -29,61 +28,26 @@ def _repo(user: User) -> MongoDbProjectRepository:
     return MongoDbProjectRepository(user)
 
 
-def _project_in(id: str, **overrides) -> ProjectIn:
-    """Build a user-supplied ``ProjectIn`` (content fields only — no server-managed id/stats)."""
-    defaults = {
+async def _insert(id: str, **overrides) -> Project:
+    """Seed a project directly (admin, no policy) — construct the stored document by hand.
+
+    Projects are read-only through the API now; this builds the stored ``Project`` and inserts it so
+    the read-path tests below have data to read.
+    """
+    fields = {
         "title": id[:30],
         "authors": "Test Author",
         "description": "Test description",
         "owner": ALICE_EMAIL,
     }
-    defaults.update(overrides)
-    return ProjectIn(**defaults)
-
-
-async def _insert(id: str, **overrides) -> Project:
-    """Seed a project via the repository's mechanical write path (admin, no policy).
-
-    The repository is document-in: the service builds the stored ``Project`` (here via
-    ``from_input_model``) and hands it to ``upsert_one``, which inserts-or-replaces by ``_id``.
-    """
-    document = Project.from_input_model(_project_in(id, **overrides), id=id)
-    return await _repo(ADMIN).upsert_one(document)
+    fields.update(overrides)
+    return await _repo(ADMIN).insert_one(Project(_id=id, **fields))
 
 
 def _noop_filter():
     from mpcontribs_api.domains.projects.models import ProjectFilter
 
     return ProjectFilter()
-
-
-# ---------------------------------------------------------------------------
-# upsert_one  (mechanical insert-or-replace by _id, no policy)
-# ---------------------------------------------------------------------------
-
-
-class TestInsertProject:
-    async def test_inserted_project_is_retrievable(self, db):
-        await _insert("ins-basic")
-        found = await Project.find_one(Project.id == "ins-basic")
-        assert found is not None
-        assert found.id == "ins-basic"
-
-    async def test_save_replaces_existing_id(self, db):
-        # save is upsert-by-_id, so re-saving the same id replaces rather than conflicts. Duplicate
-        # rejection for the create path is a service concern (ProjectService.upsert_one), not the repo.
-        await _insert("ins-dup", title="first")
-        await _insert("ins-dup", title="second")
-        found = await Project.find_one(Project.id == "ins-dup")
-        assert found is not None
-        assert found.title == "second"
-
-    async def test_insert_defaults_private_and_unapproved(self, db):
-        # ProjectIn carries no is_public/is_approved, so an inserted project is private and unapproved.
-        await _insert("ins-priv")
-        found = await Project.find_one(Project.id == "ins-priv")
-        assert found.is_public is False
-        assert found.is_approved is False
 
 
 # ---------------------------------------------------------------------------
@@ -327,52 +291,6 @@ class TestPagination:
 
 
 # ---------------------------------------------------------------------------
-# update_one  (base mechanics: scoped $set; policy lives in the service)
-# ---------------------------------------------------------------------------
-
-
-class TestPatchProject:
-    async def test_updates_single_field(self, db):
-        await _insert("patch-me")
-        await _repo(ADMIN).update_one({"id": "patch-me"}, ProjectPatch(title="Updated Title"))
-        found = await Project.find_one(Project.id == "patch-me")
-        assert found.title == "Updated Title"
-
-    async def test_unset_fields_not_overwritten(self, db):
-        await _insert("patch-preserve")
-        original = await Project.find_one(Project.id == "patch-preserve")
-        await _repo(ADMIN).update_one({"id": "patch-preserve"}, ProjectPatch(title="New Title"))
-        found = await Project.find_one(Project.id == "patch-preserve")
-        assert found.authors == original.authors
-
-    async def test_not_found_raises(self, db):
-        with pytest.raises(NotFoundError):
-            await _repo(ADMIN).update_one({"id": "no-such-id"}, ProjectPatch(title="Won't work"))
-
-    async def test_empty_patch_returns_existing(self, db):
-        await _insert("patch-empty")
-        result = await _repo(ADMIN).update_one({"id": "patch-empty"}, ProjectPatch())
-        assert result.id == "patch-empty"
-
-
-# ---------------------------------------------------------------------------
-# delete_one  (base mechanics: scoped delete; owner-or-admin gate lives in the service)
-# ---------------------------------------------------------------------------
-
-
-class TestDeleteProject:
-    async def test_deleted_project_not_in_default_query(self, db):
-        await _insert("del-me", is_public=True, is_approved=True)
-        await _repo(ADMIN).delete_one({"id": "del-me"})
-        page = await _repo(ADMIN).read_many(filter=_noop_filter(), pagination=CursorParams(), fields=None)
-        assert "del-me" not in {p.id for p in page.items}
-
-    async def test_delete_nonexistent_throws_error(self, db):
-        with pytest.raises(NotFoundError, match="not found"):
-            await _repo(ADMIN).delete_one({"id": "ghost-id"})
-
-
-# ---------------------------------------------------------------------------
 # Toolbox query/persistence primitives the service composes
 # ---------------------------------------------------------------------------
 
@@ -399,25 +317,6 @@ class TestToolboxPrimitives:
         await _insert("cbo-sc-2", owner=ALICE_EMAIL, is_public=False)
         assert await _repo(BOB).count_matching({"owner": ALICE_EMAIL}, scoped=True) == 0
         assert await _repo(ALICE).count_matching({"owner": ALICE_EMAIL}, scoped=True) == 2
-
-    async def test_find_by_id_unscoped_ignores_visibility(self, db):
-        await _insert("fbi-hidden", owner=ALICE_EMAIL, is_public=False)
-        # BOB cannot *see* it via scope, but the unscoped existence lookup still resolves it.
-        found = await _repo(BOB).find_by_id_unscoped("fbi-hidden")
-        assert found is not None
-        assert found.id == "fbi-hidden"
-
-    async def test_find_by_id_unscoped_returns_none_when_absent(self, db):
-        assert await _repo(ADMIN).find_by_id_unscoped("fbi-missing") is None
-
-    async def test_save_inserts_then_replaces(self, db):
-        doc = Project.from_input_model(_project_in("save-doc", title="First"), id="save-doc")
-        await _repo(ADMIN).upsert_one(doc)
-        assert (await Project.find_one(Project.id == "save-doc")).title == "First"
-        # Saving the same id again replaces in place (upsert semantics).
-        doc.title = "Second"
-        await _repo(ADMIN).upsert_one(doc)
-        assert (await Project.find_one(Project.id == "save-doc")).title == "Second"
 
 
 # ---------------------------------------------------------------------------

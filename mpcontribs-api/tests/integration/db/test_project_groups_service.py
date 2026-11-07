@@ -10,9 +10,9 @@ from mpcontribs_api.domains.project_groups.models import (
 )
 from mpcontribs_api.domains.project_groups.repository import MongoDbProjectGroupRepository
 from mpcontribs_api.domains.project_groups.service import ProjectGroupService
-from mpcontribs_api.domains.projects.models import Project, ProjectIn
+from mpcontribs_api.domains.projects.models import Project
 from mpcontribs_api.domains.projects.repository import MongoDbProjectRepository
-from mpcontribs_api.exceptions import ConflictError, NotFoundError, PermissionError
+from mpcontribs_api.exceptions import NotFoundError, PermissionError
 
 pytestmark = [pytest.mark.db, pytest.mark.asyncio(loop_scope="session")]
 
@@ -49,7 +49,7 @@ async def _insert_project(pid: str, owner: str = ALICE_EMAIL, **overrides):
         "owner": owner,
     }
     payload.update(overrides)
-    document = Project.from_input_model(ProjectIn(**payload), id=pid)
+    document = Project(_id=pid, **payload)
     return await MongoDbProjectRepository(ADMIN).insert_one(document)
 
 
