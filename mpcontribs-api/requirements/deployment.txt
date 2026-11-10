@@ -40,9 +40,9 @@ boltons==26.2.0
     # via
     #   flask-mongorest-mpcontribs
     #   mpcontribs-api (MPContribs/mpcontribs-api/pyproject.toml)
-boto3==1.43.126
+boto3==1.43.127
     # via flask-mongorest-mpcontribs
-botocore==1.43.126
+botocore==1.43.127
     # via
     #   boto3
     #   s3transfer
@@ -413,7 +413,7 @@ referencing==0.37.0
     #   jsonschema
     #   jsonschema-specifications
     #   jupyter-events
-regex==2026.11.7
+regex==2026.11.9
     # via dateparser
 requests==2.34.2
     # via
@@ -460,7 +460,7 @@ six==1.17.0
     #   flask-sse
     #   python-dateutil
     #   rfc3339-validator
-soupsieve==4.0.1
+soupsieve==4.1
     # via beautifulsoup4
 spglib==2.8.0
     # via pymatgen-core
@@ -479,7 +479,7 @@ terminado==0.18.1
     #   notebook
 tinycss2==1.5.1
     # via bleach
-tornado==6.6
+tornado==6.6.1
     # via
     #   ipykernel
     #   jupyter-client
