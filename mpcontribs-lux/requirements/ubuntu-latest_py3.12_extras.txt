@@ -34,7 +34,7 @@ emmet-core==0.88.1
     # via mpcontribs-lux (pyproject.toml)
 execnet==2.1.2
     # via pytest-xdist
-filelock==4.2.9
+filelock==4.2.10
     # via
     #   python-discovery
     #   virtualenv
@@ -234,5 +234,5 @@ uncertainties==3.2.3
     # via pymatgen-core
 urllib3==2.8.0
     # via requests
-virtualenv==21.15.5
+virtualenv==21.15.6
     # via pre-commit
