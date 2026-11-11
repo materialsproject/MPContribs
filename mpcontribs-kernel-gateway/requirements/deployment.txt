@@ -112,7 +112,7 @@ joblib==1.6.0
     # via pymatgen-core
 json2html==1.3.0
     # via mpcontribs-client
-jsonpointer==3.10
+jsonpointer==3.12
     # via jsonschema
 jsonref==1.1.0
     # via bravado-core
@@ -347,7 +347,7 @@ scipy==1.18.1
     #   pymatgen-core
 send2trash==2.1.0
     # via jupyter-server
-simplejson==4.2.0
+simplejson==4.3.0
     # via
     #   bravado
     #   bravado-core
