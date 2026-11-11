@@ -50,7 +50,7 @@ contourpy==1.4.0
     # via matplotlib
 cycler==0.12.1
     # via matplotlib
-ddtrace==4.8.2
+ddtrace==4.15.6
     # via mpcontribs-portal (pyproject.toml)
 debugpy==1.8.22
     # via ipykernel
