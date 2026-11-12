@@ -1,34 +1,30 @@
 # -*- coding: utf-8 -*-
 """This module provides the views for the portal."""
 
-import os
-import gzip
 import json
+import os
+import urllib
+import zipfile
+from copy import deepcopy
+from io import BytesIO
+
 import boto3
 import nbformat
 import requests
-import urllib
-
-from redis import Redis
-from io import BytesIO
-from copy import deepcopy
-from pathlib import Path
-from shutil import make_archive, rmtree
-from nbconvert import HTMLExporter
-from bravado.exception import HTTPNotFound
-from json2html import Json2Html
 from boltons.iterutils import remap
 from botocore.errorfactory import ClientError
+from bravado.exception import HTTPNotFound
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import render
+from django.template import RequestContext
+from django.template.loader import select_template
+from json2html import Json2Html
+from mpcontribs.client import Client, get_md5
+from nbconvert import HTMLExporter
 from pygments import highlight
 from pygments.formatters import HtmlFormatter
 from pygments.lexers.special import TextLexer
-
-from django.shortcuts import render
-from django.template import RequestContext
-from django.http import HttpResponse, JsonResponse
-from django.template.loader import select_template
-
-from mpcontribs.client import Client, get_md5
+from redis import Redis
 
 BUCKET = os.environ.get("S3_DOWNLOADS_BUCKET", "mpcontribs-downloads")
 COMPONENTS = {"structures", "tables", "attachments"}
@@ -250,6 +246,13 @@ def show_component(request, oid):
     return HttpResponse(status=404)
 
 
+def zip_compress(data: bytes, filename: str) -> bytes:
+    buf = BytesIO()
+    with zipfile.ZipFile(buf, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr(filename, data)
+    return buf.getvalue()
+
+
 def download_component(request, oid):
     ckwargs = client_kwargs(request)
     content = None
@@ -260,17 +263,19 @@ def download_component(request, oid):
             pk=oid, _fields=["name", "cif"]
         ).result()
         name = resp["name"]
-        content = gzip.compress(bytes(resp["cif"], "utf-8"))
-        content_type = "application/gzip"
-        filename = f"{oid}_{name}.cif.gz"
+        base_filename = f"{oid}_{name}.cif"
+        content = zip_compress(bytes(resp["cif"], "utf-8"), base_filename)
+        content_type = "application/zip"
+        filename = f"{base_filename}.zip"
     except HTTPNotFound:
         try:
-            resp = client.get_table(oid)
-            content = gzip.compress(bytes(resp.to_csv(), "utf-8"))
+            table = client.get_table(oid)
             resp = client.tables.getTableById(pk=oid, _fields=["name"]).result()
             name = resp["name"]
-            content_type = "application/gzip"
-            filename = f"{oid}_{name}.csv.gz"
+            base_filename = f"{oid}_{name}.csv"
+            content = zip_compress(bytes(table.to_csv(), "utf-8"), base_filename)
+            content_type = "application/zip"
+            filename = f"{base_filename}.zip"
         except HTTPNotFound:
             try:
                 resp = client.get_attachment(oid)
@@ -318,9 +323,9 @@ def download_contribution(request, cid):
                     ).result()
 
     encoded = json.dumps(contribution, default=str, indent=2).encode("utf-8")
-    content = gzip.compress(encoded)
-    response = HttpResponse(content, content_type="application/gzip")
-    response["Content-Disposition"] = f"attachment; filename={cid}.json.gz"
+    content = zip_compress(encoded, f"{cid}.json")
+    response = HttpResponse(content, content_type="application/zip")
+    response["Content-Disposition"] = f"attachment; filename={cid}.zip"
     return response
 
 
