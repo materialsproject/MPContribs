@@ -1,5 +1,6 @@
 import functools
 import gzip
+import zipfile
 import importlib.metadata
 import io
 import itertools
@@ -290,7 +291,7 @@ def _response_hook(resp, *args, **kwargs):
             resp.result = result
             resp.count = len(result)
 
-    elif content_type == "application/gzip":
+    elif content_type == "application/zip":
         resp.result = resp.content
         resp.count = 1
     else:
@@ -2504,7 +2505,7 @@ class Client(SwaggerClient):
         include: list[str] | None = None,
         timeout: int = -1,
     ) -> list:
-        """Download a list of contributions as .json.gz file(s)
+        """Download a list of contributions as .zip file(s)
 
         Args:
             query: query to select contributions
@@ -2563,7 +2564,7 @@ class Client(SwaggerClient):
 
                 cls = classes_map[component]
                 for path in paths:
-                    with gzip.open(path, "r") as f:
+                    with zipfile.ZipFile(path) as zf, zf.open(zf.namelist()[0]) as f:
                         for c in ujson.load(f):
                             components_loaded[component][c["id"]] = cls.from_dict(c)
 
@@ -2584,7 +2585,7 @@ class Client(SwaggerClient):
             )
 
             for path in paths:
-                with gzip.open(path, "r") as f:
+                with zipfile.ZipFile(path) as zf, zf.open(zf.namelist()[0]) as f:
                     for c in ujson.load(f):
                         contrib = Dict(c)
                         for component in components_loaded.keys():
@@ -2605,7 +2606,7 @@ class Client(SwaggerClient):
         timeout: int = -1,
         fmt: str = "json",
     ) -> list[Path]:
-        """Download a list of structures as a .json.gz file
+        """Download a list of structures as a .zip file
 
         Args:
             ids: list of structure ObjectIds
@@ -2634,7 +2635,7 @@ class Client(SwaggerClient):
         timeout: int = -1,
         fmt: str = "json",
     ) -> list[Path]:
-        """Download a list of tables as a .json.gz file
+        """Download a list of tables as a .zip file
 
         Args:
             ids: list of table ObjectIds
@@ -2663,7 +2664,7 @@ class Client(SwaggerClient):
         timeout: int = -1,
         fmt: str = "json",
     ) -> list[Path]:
-        """Download a list of attachments as a .json.gz file
+        """Download a list of attachments as a .zip file
 
         Args:
             ids: list of attachment ObjectIds
@@ -2693,7 +2694,7 @@ class Client(SwaggerClient):
         timeout: int = -1,
         fmt: str = "json",
     ) -> list[Path]:
-        """Helper to download a list of resources as .json.gz file
+        """Helper to download a list of resources as .zip file
 
         Args:
             resource: type of resource
@@ -2731,12 +2732,12 @@ class Client(SwaggerClient):
 
         for query in queries:
             digest = get_md5({"ids": query["id__in"].split(",")})
-            path = subdir / f"{digest}.{fmt}.gz"
+            path = subdir / f"{digest}.{fmt}.zip"
             paths.append(path)
 
             if not path.exists() or overwrite:
                 futures.append(
-                    self._get_future(path, query, rel_url=f"{resource}/download/gz")
+                    self._get_future(path, query, rel_url=f"{resource}/download/zip")
                 )
 
         if futures:
