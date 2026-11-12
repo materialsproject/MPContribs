@@ -38,7 +38,7 @@ dependencies = [
     "flasgger-tschaume>=0.9.7",
     "flask-compress",
     "flask-marshmallow",
-    "flask-mongorest-mpcontribs>=3.2.1",
+    "flask-mongorest-mpcontribs==3.3.2",
     "Flask-RQ2",
     "gunicorn[gevent]==24.1.1",
     "jinja2",
