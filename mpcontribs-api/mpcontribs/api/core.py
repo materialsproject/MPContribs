@@ -245,7 +245,7 @@ def get_specs(klass, method, collection):
             "summary": f"Filter and download {collection}.",
             "operationId": f"download{doc_name}s",
             "parameters": params,
-            "produces": ["application/gzip"],
+            "produces": ["application/zip"],
             "responses": {
                 200: {
                     "description": f"{collection} download",
