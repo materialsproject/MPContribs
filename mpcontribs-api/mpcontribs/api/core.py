@@ -225,8 +225,8 @@ def get_specs(klass, method, collection):
                 "in": "path",
                 "type": "string",
                 "required": True,
-                "description": "MIME Download Type: gz",
-                "default": "gz",
+                "description": "MIME Download Type: zip",
+                "default": "zip",
             },
             {
                 "name": "format",
