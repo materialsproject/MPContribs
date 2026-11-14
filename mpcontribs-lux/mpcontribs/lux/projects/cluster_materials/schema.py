@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections import Counter
 import re
 from math import isclose
 from typing import Annotated, Literal
@@ -20,7 +21,6 @@ from pymatgen.core import Element
 from .cluster import Cluster
 from .cluster_membership import (
     ClusterMembership,
-    membership_hash,
     parse_site_references,
 )
 from .cluster_point_group import ClusterPointGroup
@@ -154,18 +154,6 @@ class ClusterHighlighting(BaseModel):
     isAvailable: bool = Field(
         description="Whether a validated clusterMemberships table is available."
     )
-    formatVersion: Literal["cluster-memberships-v1"] = Field(
-        description="Compact clusterMemberships table contract; pointGroupRow is a symbol lookup."
-    )
-    membershipHash: SHA256 | None = Field(
-        default=None,
-        description=(
-            "SHA-256 of the certified membership rows after canonical scalar "
-            "normalization and JSON serialization with sorted keys and separators "
-            "(',', ':'). Rows retain clusterIndex order. Binds per-instance "
-            "site references and point-group references; absent when unavailable."
-        ),
-    )
     structureHash: SHA256 | None = Field(
         default=None,
         description=(
@@ -201,18 +189,12 @@ class ClusterHighlighting(BaseModel):
                 "structureHash and numberOfSites must be supplied together"
             )
         if self.isAvailable:
-            if (
-                self.structureHash is None
-                or self.membershipHash is None
-                or self.reason is not None
-            ):
+            if self.structureHash is None or self.reason is not None:
                 raise ValueError(
-                    "Available highlighting requires structure/membership hashes and no reason"
+                    "Available highlighting requires a structure hash and no reason"
                 )
-        elif self.reason is None or self.membershipHash is not None:
-            raise ValueError(
-                "Unavailable highlighting requires a reason and no membershipHash"
-            )
+        elif self.reason is None:
+            raise ValueError("Unavailable highlighting requires a reason")
         return self
 
 
@@ -352,12 +334,10 @@ def validate_material(
         ClusterMembership.model_validate(row)
         for row in cluster_memberships.to_dict(orient="records")
     ]
-    if membership_hash(rows) != highlighting.membershipHash:
-        raise ValueError("Memberships differ from the certified membershipHash")
-    if len(rows) != len(cluster_rows) or {row.clusterIndex for row in rows} != set(
-        range(len(cluster_rows))
-    ):
-        raise ValueError("Memberships must reference every clusters row exactly once")
+    if [row.clusterIndex for row in rows] != list(range(len(cluster_rows))):
+        raise ValueError(
+            "Memberships must reference every clusters row exactly once in source order"
+        )
     if {str(row.materialId) for row in rows} != cluster_material_ids:
         raise ValueError("Membership materialId must match the source tables")
     observed = []
@@ -379,8 +359,6 @@ def validate_material(
                 "pointGroupRow must use the first matching source symbol row"
             )
         observed.append(cluster_group_rows[row.pointGroupRow].symbol)
-    from collections import Counter
-
     expected = [row.symbol for row in cluster_group_rows]
     if set(observed) != set(expected) or Counter(expected) - Counter(observed):
         raise ValueError(

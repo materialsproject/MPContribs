@@ -3,21 +3,11 @@
 from __future__ import annotations
 
 import re
-import hashlib
-import json
-from typing import Annotated
 
 from emmet.core.mpid import MPID
-from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
-def _not_boolean(value):
-    if isinstance(value, bool):
-        raise ValueError("Membership indices cannot be booleans")
-    return value
-
-
-Index = Annotated[int, BeforeValidator(_not_boolean)]
 _SITE = re.compile(
     r"(0|[1-9][0-9]*)(?:@\((-?(?:0|[1-9][0-9]*)),(-?(?:0|[1-9][0-9]*)),(-?(?:0|[1-9][0-9]*))\))?"
 )
@@ -62,9 +52,10 @@ class ClusterMembership(BaseModel):
     model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
 
     materialId: MPID = Field(description="Original contribution MP identifier.")
-    clusterIndex: Index = Field(
+    clusterIndex: int = Field(
         ge=0,
         description="Zero-based row position in the bound clusters table; not an X-label.",
+        strict=True,
     )
     siteReferences: str = Field(
         min_length=1,
@@ -76,7 +67,7 @@ class ClusterMembership(BaseModel):
             "order is preserved; elements/coordinates come from the exact bound summary structure."
         ),
     )
-    pointGroupRow: Index = Field(
+    pointGroupRow: int = Field(
         ge=0,
         description=(
             "Zero-based row position in the checksum-bound clusterPointGroups table "
@@ -84,6 +75,7 @@ class ClusterMembership(BaseModel):
             "When identical symbols occur on multiple type rows, use the first matching "
             "row. This is a symbol lookup, not a unique cluster-type/X-label assignment."
         ),
+        strict=True,
     )
 
     @field_validator("siteReferences")
@@ -91,15 +83,3 @@ class ClusterMembership(BaseModel):
     def canonical_members(cls, value):
         """Normalize site references without changing their member order."""
         return format_site_references(parse_site_references(value))
-
-
-def membership_hash(rows) -> str:
-    """Bind the exact certified instance-to-site and point-group references."""
-    clean = [
-        ClusterMembership.model_validate(row).model_dump(mode="json") for row in rows
-    ]
-    return hashlib.sha256(
-        json.dumps(
-            clean, sort_keys=True, separators=(",", ":"), allow_nan=False
-        ).encode()
-    ).hexdigest()
