@@ -1,6 +1,5 @@
 import functools
 import gzip
-import zipfile
 import importlib.metadata
 import io
 import itertools
@@ -9,6 +8,7 @@ import os
 import sys
 import time
 import warnings
+import zipfile
 from base64 import b64decode, b64encode, urlsafe_b64encode
 from collections import defaultdict
 from concurrent.futures import as_completed
@@ -2605,6 +2605,7 @@ class Client(SwaggerClient):
         overwrite: bool = False,
         timeout: int = -1,
         fmt: str = "json",
+        symmetrize: bool = True,
     ) -> list[Path]:
         """Download a list of structures as a .zip file
 
@@ -2614,6 +2615,9 @@ class Client(SwaggerClient):
             overwrite: force re-download
             timeout: cancel remaining requests if timeout exceeded (in seconds)
             fmt: download format - "json" or "csv"
+            symmetrize: generate CIFs with crystallographic symmetry (space group).
+                Set False for P1 CIFs that include per-site properties such as
+                _atom_site_charge (mutually exclusive with symmetry).
 
         Returns:
             paths of output files
@@ -2625,6 +2629,7 @@ class Client(SwaggerClient):
             outdir=outdir,
             overwrite=overwrite,
             timeout=timeout,
+            symmetrize=symmetrize,
         )
 
     def download_tables(
@@ -2693,6 +2698,7 @@ class Client(SwaggerClient):
         overwrite: bool = False,
         timeout: int = -1,
         fmt: str = "json",
+        symmetrize: bool = True,
     ) -> list[Path]:
         """Helper to download a list of resources as .zip file
 
@@ -2703,6 +2709,9 @@ class Client(SwaggerClient):
             overwrite: force re-download
             timeout: cancel remaining requests if timeout exceeded (in seconds)
             fmt: download format - "json" or "csv"
+            symmetrize: structures only - generate CIFs with crystallographic
+                symmetry (space group). Set False for P1 CIFs that include
+                per-site properties such as _atom_site_charge.
 
         Returns:
             list of paths to output files
@@ -2722,6 +2731,8 @@ class Client(SwaggerClient):
         model = self.get_model(f"{resource.capitalize()}Schema")
         fields = list(model._properties.keys())
         query = {"format": fmt, "_fields": fields, "id__in": oids}
+        if resource == "structures":
+            query["symmetrize"] = str(symmetrize).lower()
         _, total_pages = self.get_totals(
             query=query, resource=resource, op="download", timeout=timeout
         )
@@ -2731,8 +2742,12 @@ class Client(SwaggerClient):
         paths, futures = [], []
 
         for query in queries:
-            digest = get_md5({"ids": query["id__in"].split(",")})
-            path = subdir / f"{digest}.{fmt}.zip"
+            digest_payload = {"ids": query["id__in"].split(",")}
+            if resource == "structures":
+                # keep symmetrized and P1 downloads in separate cache files
+                digest_payload["symmetrize"] = query.get("symmetrize")
+            digest = get_md5(digest_payload)
+            path = subdir / f"{digest}.{fmt}.gz"
             paths.append(path)
 
             if not path.exists() or overwrite:

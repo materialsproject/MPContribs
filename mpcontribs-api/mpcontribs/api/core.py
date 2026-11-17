@@ -147,6 +147,21 @@ def get_specs(klass, method, collection):
         for k, v in klass.resource.filters.items():
             filter_params += get_filter_params(k, v)
 
+    # structures expose a `symmetrize` toggle controlling on-the-fly CIF generation
+    symmetrize_param = None
+    if collection == "structures":
+        symmetrize_param = {
+            "name": "symmetrize",
+            "in": "query",
+            "type": "boolean",
+            "default": True,
+            "description": (
+                "Generate the CIF with crystallographic symmetry (space group). "
+                "Set to false for a P1 CIF that includes per-site properties such "
+                "as _atom_site_charge (mutually exclusive with symmetry)."
+            ),
+        }
+
     order_params = []
     if klass.resource.allowed_ordering:
         allowed_ordering = [
@@ -176,6 +191,8 @@ def get_specs(klass, method, collection):
         if fields_param is not None:
             params.append(fields_param)
         params += field_pagination_params
+        if symmetrize_param is not None:
+            params.append(symmetrize_param)
         spec = {
             "summary": f"Retrieve a {collection[:-1]}.",
             "operationId": f"get{doc_name}By{id_field}",
@@ -194,6 +211,8 @@ def get_specs(klass, method, collection):
         params += field_pagination_params
         params += order_params
         params += filter_params
+        if symmetrize_param is not None:
+            params.append(symmetrize_param)
         schema_props = {
             "data": {
                 "type": "array",
@@ -239,6 +258,8 @@ def get_specs(klass, method, collection):
         params += [fields_param] if fields_param is not None else []
         params += order_params
         params += filter_params
+        if symmetrize_param is not None:
+            params.append(symmetrize_param)
         if klass.resource.paginate:
             params += get_limit_params(klass.resource, method_name)
         spec = {
