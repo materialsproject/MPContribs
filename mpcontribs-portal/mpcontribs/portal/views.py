@@ -258,9 +258,17 @@ def download_component(request, oid):
     content = None
     client = Client(**ckwargs)
 
+    # `symmetrize=false` returns a P1 CIF that includes per-site properties
+    # (e.g. _atom_site_charge); default (true) keeps crystallographic symmetry.
+    symmetrize = request.GET.get("symmetrize", "true").lower() not in (
+        "false",
+        "0",
+        "no",
+    )
+
     try:
         resp = client.structures.getStructureById(
-            pk=oid, _fields=["name", "cif"]
+            pk=oid, _fields=["name", "cif"], symmetrize=symmetrize
         ).result()
         name = resp["name"]
         base_filename = f"{oid}_{name}.cif"
