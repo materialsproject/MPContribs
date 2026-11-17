@@ -17,7 +17,7 @@ scripts/metric.py derives from a frame's per-atom positions/energies/stresses
 for the crack-growth labelling pipeline, so for what this schema needs to
 represent, the per-atom fields don't add information beyond CrackFrame. The
 raw dumps remain valuable for other things entirely (different downstream
-analyses, visualization, reproducibility) -- that's exactly why they're kept
+analyses, visualization, reproducibility) - that's exactly why they're kept
 as Attachments rather than dropped, per the MPContribs onboarding plan; they
 just aren't modeled as a *table* here.
 
@@ -47,7 +47,7 @@ class CrackAtomRecord(BaseModel):
     ``potentialEnergy`` and the ``stress*`` fields come from LAMMPS
     ``compute pe/atom`` and ``compute stress/atom`` respectively. Only the
     three normal (diagonal) stress components are dumped by this workflow's
-    template -- the shear components (xy, xz, yz) are computed but not
+    template - the shear components (xy, xz, yz) are computed but not
     written out. ``compute stress/atom`` reports a pressure*volume quantity
     per atom (not a pressure), so the stress fields carry bar*Angstrom^3
     units, not bar.
@@ -81,7 +81,7 @@ class CrackAtomRecord(BaseModel):
             "Deliberately unbounded: some corpus runs contain known-corrupted, "
             "physically overlapping atoms with per-atom energies around "
             "+1.3e4 eV, and those are intentionally still representable here "
-            "rather than silently rejected -- see the workflow AGENTS.md and "
+            "rather than silently rejected - see the workflow AGENTS.md and "
             "CrackFrame.peMedian."
         )
     )

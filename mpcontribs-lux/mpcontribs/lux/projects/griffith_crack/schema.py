@@ -8,32 +8,235 @@ it under oscillatory strain, and ``scripts/metric.py`` decides whether the
 notch-connected void grew (``crack-growth``) or not (``no-crack-growth``).
 
 One :class:`CrackSimulation` corresponds to one run directory produced by
-``scripts/crack.py`` (one row in an MPContribs upload). The per-dumped-frame
-measurements that back the ``verdict`` fields below live in a separate table,
-see ``frame.py``'s :class:`~mpcontribs.lux.projects.griffith_crack.frame.CrackFrame`.
-The raw LAMMPS dump files themselves (hundreds of MB per run) are uploaded as
-MPContribs Attachments, not modeled as a table -- see ``atom.py`` for why.
+``scripts/crack.py`` (one row in an MPContribs upload). The models mirror the
+layout of that run's ``damage.json``, so a parsed file validates directly::
+
+    CrackSimulation(**damage, runId=run_id, campaign=campaign)
+
+Field names are camelCase; validation aliases map them onto damage.json's
+snake_case keys (and ``parameters.env``'s SNAKE_CASE keys), with explicit
+``validation_alias`` only where the field name is more descriptive than the
+key. Dumping (``model_dump``) always uses the camelCase field names.
+
+The per-dumped-frame measurements that back the ``verdict`` fields live in a
+separate table, see ``frame.py``'s
+:class:`~mpcontribs.lux.projects.griffith_crack.frame.CrackFrame`. The raw
+LAMMPS dump files themselves (hundreds of MB per run) are uploaded as
+MPContribs Attachments, not modeled as a table - see ``atom.py`` for why.
 
 Field names deliberately carry no unit suffixes (MPContribs infers/attaches
 units separately, e.g. via the client's ``init_columns``); see each field's
-``description`` for units instead.
+``description`` for units.
 """
 
 from __future__ import annotations
 
 import math
-from collections.abc import Mapping
-from typing import Any, Literal
+from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import AliasGenerator, BaseModel, ConfigDict, Field
+from pydantic.alias_generators import to_snake
 
-_MODEL_CONFIG = ConfigDict(extra="forbid", allow_inf_nan=False)
+#: camelCase field name -> damage.json's snake_case key.
+SNAKE_CASE_ALIASES = AliasGenerator(validation_alias=to_snake)
+
+#: camelCase field name -> parameters.env's SNAKE_CASE key.
+ENV_CASE_ALIASES = AliasGenerator(validation_alias=lambda name: to_snake(name).upper())
+
+_MODEL_CONFIG = ConfigDict(
+    extra="forbid",
+    allow_inf_nan=False,
+    alias_generator=SNAKE_CASE_ALIASES,
+    validate_by_alias=True,
+    validate_by_name=True,
+)
+
+
+class CrackParameters(BaseModel):
+    """The DOE knobs of one run: ``damage.json["parameters"]``.
+
+    ``scripts/metric.py`` copies the run's ``parameters.env`` into damage.json
+    verbatim, so every value arrives as a string (``"494.393"``, ``"1"``);
+    pydantic's lax mode coerces them to the annotated types. Units follow the
+    LAMMPS ``units metal`` convention used by the workflow's templates: K for
+    temperature, bar for pressure, ps for time, radians for angle.
+    """
+
+    model_config = _MODEL_CONFIG | ConfigDict(alias_generator=ENV_CASE_ALIASES)
+
+    # Provenance
+    templateVariant: str | None = Field(
+        default=None,
+        max_length=64,
+        pattern=r"^templates[A-Za-z0-9_]*$",
+        description=(
+            "basename() of the LAMMPS template directory that machined this "
+            "sample's notch, e.g. 'templates' (current/wide), "
+            "'templates_legacy_narrow', 'templates_reissue', 'templates_wide3', "
+            "'templates_wide4' (see the workflow AGENTS.md for the narrow-vs-wide "
+            "slot-width history). Only a subset of campaigns' batch.sh record "
+            "TEMPLATE_VARIANT in parameters.env at all, and new template trees "
+            "get added over time. Null means the campaign did not record it, "
+            "not that the template is unknown - infer it from the campaign "
+            "name if needed. Template identity is not interchangeable across "
+            "runs; see AGENTS.md's repeated 'not poolable' caveats."
+        ),
+    )
+    backend: Literal["kokkos-gpu", "cpu"] | None = Field(
+        default=None,
+        description=(
+            "LAMMPS execution backend. Only a subset of campaigns record this "
+            "explicitly; null means not recorded, not unknown - most of the "
+            "historical corpus ran on kokkos-gpu."
+        ),
+    )
+    sampleId: int = Field(
+        ge=0, description="Sample index within its campaign (SAMPLE_ID)."
+    )
+    batch: int | None = Field(
+        default=None,
+        ge=0,
+        description="Strict-batch index (BATCH), for campaigns using libe_lse.py --strict-batches.",
+    )
+    member: int | None = Field(
+        default=None,
+        ge=0,
+        description="Member index within its batch (MEMBER), for strict-batch campaigns.",
+    )
+    randSeed1: int = Field(
+        ge=0,
+        le=32767,
+        validation_alias="RAND1",
+        description=(
+            "First LAMMPS velocity-initialization random seed (RAND1). "
+            "crack.py/libe_lse.py always draw unset seeds as "
+            "random.randint(0, 32767), inclusive of both ends."
+        ),
+    )
+    randSeed2: int = Field(
+        ge=0,
+        le=32767,
+        validation_alias="RAND2",
+        description="Second LAMMPS velocity-initialization random seed (RAND2).",
+    )
+    randSeed3: int = Field(
+        ge=0,
+        le=32767,
+        validation_alias="RAND3",
+        description="Third LAMMPS velocity-initialization random seed (RAND3).",
+    )
+
+    # Physical parameters
+    temperature: float = Field(
+        gt=0,
+        le=2000,
+        description=(
+            "Target thermostat temperature, in K. Every executed campaign so "
+            "far sweeps 50-800 K; the upper bound here is a generous sanity "
+            "envelope, not the campaign domain."
+        ),
+    )
+    normalPrestress: float = Field(
+        ge=-200000,
+        le=200000,
+        description=(
+            "Target normal (crack-opening-direction) prestress, in bar. "
+            "Every executed campaign so far sweeps -50000 to +30000 bar; the "
+            "bound here is a generous sanity envelope, not the campaign domain."
+        ),
+    )
+    inPlanePrestress: float = Field(
+        ge=-200000,
+        le=200000,
+        description=(
+            "Target in-plane prestress, in bar; the dominant driver of crack "
+            "growth. Every executed campaign so far sweeps -50000 to -20000 "
+            "bar (LSE domain) or -50000 to +5000 bar (parameter scans); the "
+            "bound here is a generous sanity envelope, not the campaign domain."
+        ),
+    )
+    strainAmplitude: float = Field(
+        gt=0,
+        le=0.1,
+        validation_alias="STRAIN_AMP",
+        description=(
+            "Oscillatory strain amplitude, dimensionless (fractional strain). "
+            "Every executed campaign so far sweeps 0.001-0.01; the upper "
+            "bound here is a generous sanity envelope, not the campaign domain."
+        ),
+    )
+    strainPeriod: float = Field(
+        gt=0,
+        le=10000,
+        description=(
+            "Oscillatory strain period, in picoseconds. Fixed at 200 ps in "
+            "every campaign run so far, though the underlying code supports "
+            "sweeping it."
+        ),
+    )
+    angle: float = Field(
+        ge=-math.pi,
+        le=math.pi,
+        description=(
+            "Crack angle relative to the template's default, in radians. "
+            "Always 0 in every campaign run so far; bounded to one full "
+            "rotation either way since angles are periodic."
+        ),
+    )
+    orientation: Literal["100", "110", "111"] = Field(
+        description="Crystal orientation preset, which also fixes the default sample geometry."
+    )
+    numCyclesPlanned: int = Field(
+        gt=0,
+        le=100,
+        validation_alias="NUM_CYCLES",
+        description="Number of strain cycles the run was configured to execute.",
+    )
+    earlyStopEnabled: bool = Field(
+        default=False,
+        validation_alias="EARLY_STOP",
+        description="Whether crack.py --early-stop was active for this run (EARLY_STOP).",
+    )
+    interatomicPotential: str = Field(
+        default="Cu_mishin1.eam.alloy",
+        max_length=64,
+        description=(
+            "EAM/alloy interatomic potential file used for all pair "
+            "interactions (pair_style eam/alloy). Mishin Cu EAM potential, "
+            "Mishin, Phys. Rev. B 63, 224106 (2001); static across every run "
+            "in this workflow. The ~700 KB file itself is not duplicated "
+            "into every contribution - see the workflow's Attachments "
+            "strategy for whether/how it is referenced once, separately."
+        ),
+    )
+
+
+class VoidGrid(BaseModel):
+    """Fractional grid used to bin atoms for void detection: ``damage.json["grid"]``."""
+
+    model_config = _MODEL_CONFIG
+
+    cellTarget: float = Field(
+        gt=0,
+        le=50,
+        description=(
+            "Target fractional-grid cell size, in Angstrom. Fixed at 2.5 A in "
+            "every campaign run so far."
+        ),
+    )
+    nx: int = Field(gt=0, description="Number of grid columns along x.")
+    ny: int = Field(gt=0, description="Number of grid columns along y.")
+    depletionFraction: float = Field(
+        gt=0.0,
+        lt=1.0,
+        description="Column occupancy fraction (relative to the median) below which a column counts as void.",
+    )
 
 
 class CrackDiagnostics(BaseModel):
-    """Mechanism flags and bulk-deformation diagnostics from ``metric.verdict``.
+    """Mechanism flags and bulk-deformation diagnostics: ``damage.json["verdict"]["diagnostics"]``.
 
-    None of these vote on the crack-growth verdict -- they exist only to let a
+    None of these vote on the crack-growth verdict - they exist only to let a
     human explain one. Each was tried as a primary growth criterion on the
     625-run parameter scan and each one fails on its own (see the top of
     ``scripts/metric.py`` for the measured counter-examples): cell length Lx
@@ -69,7 +272,7 @@ class CrackDiagnostics(BaseModel):
     prefractured: bool = Field(
         description=(
             "The notch already spanned most of the cell's y-extent at the end "
-            "of prep, before any cycling -- 'did cycling grow the crack' is not "
+            "of prep, before any cycling - 'did cycling grow the crack' is not "
             "well posed for these runs."
         )
     )
@@ -84,7 +287,7 @@ class CrackDiagnostics(BaseModel):
         description=(
             "The cell elongated in x well beyond the plastic-flow threshold "
             "with no corresponding volume increase, and the growth ratio never "
-            "crossed theta_a -- consistent with isochoric plastic flow / "
+            "crossed theta_a - consistent with isochoric plastic flow / "
             "deformation twinning rather than crack opening."
         )
     )
@@ -127,6 +330,65 @@ class CrackDiagnostics(BaseModel):
     )
 
 
+class CrackVerdict(BaseModel):
+    """The crack-growth decision: ``damage.json["verdict"]``.
+
+    Ignores unknown keys: real damage.json files also carry
+    ``a_y_per_cycle`` / ``a_y_ratio_per_cycle`` / ``n_surf_ratio_per_cycle``,
+    which are exactly reconstructable from the CrackFrame table and so are
+    not modeled here.
+    """
+
+    model_config = _MODEL_CONFIG | ConfigDict(extra="ignore")
+
+    crackGrowth: bool | None = Field(
+        default=None,
+        description=(
+            "The verdict: true if notch extension was observed, false if not, "
+            "null if undecidable (no baseline frame or no completed cycle)."
+        ),
+    )
+    firstCrossingCycle: int | None = Field(
+        default=None,
+        ge=1,
+        description="First cycle end at which the sustained growth-threshold crossing began, if any.",
+    )
+    trackedFeature: Literal["notch", "largest-void"] = Field(
+        validation_alias="tracked",
+        description=(
+            "Which void component the verdict tracked: the notch-descended "
+            "component, or (only when the notch closed during prep) the "
+            "largest void present."
+        ),
+    )
+    aYBaseline: float = Field(
+        ge=0.0,
+        description="y-extent of the tracked component at the baseline (end-of-prep) frame, in Angstrom.",
+    )
+    aYReference: float = Field(
+        gt=0.0,
+        description=(
+            "Reference length used as the denominator for growth ratios, in "
+            "Angstrom (a floor is applied when the baseline is very small, "
+            "so this is always strictly positive)."
+        ),
+    )
+    aYRatioMax: float = Field(
+        ge=0.0,
+        description="Maximum a_y(cycle)/a_y(reference) observed over all analyzed cycle ends.",
+    )
+    aYRatioMin: float = Field(
+        ge=0.0,
+        description="Minimum a_y(cycle)/a_y(reference) observed over all analyzed cycle ends.",
+    )
+    nCyclesObserved: int = Field(
+        ge=0,
+        validation_alias="n_cycles",
+        description="Number of completed cycle ends included in the verdict (<= params.numCyclesPlanned).",
+    )
+    diagnostics: CrackDiagnostics
+
+
 class EarlyStopInfo(BaseModel):
     """Present only when ``crack.py --early-stop`` terminated the run early.
 
@@ -146,7 +408,9 @@ class EarlyStopInfo(BaseModel):
         description="Last cycle end whose dumps were analyzed before the run was killed.",
     )
     stopStepId: int = Field(
-        ge=0, description="LAMMPS timestep at which the run was terminated."
+        ge=0,
+        validation_alias="stop_step",
+        description="LAMMPS timestep at which the run was terminated.",
     )
     firstCrossingCycle: int | None = Field(
         default=None,
@@ -173,16 +437,19 @@ class EarlyStopInfo(BaseModel):
 class CrackSimulation(BaseModel):
     """One strain-controlled Griffith-crack simulation (one ``crack.py`` run).
 
-    Built from that run directory's ``parameters.env`` (the DOE knobs) and
-    ``damage.json`` (the ``scripts/metric.py`` verdict). Field units follow the
-    LAMMPS ``units metal`` convention used by the workflow's templates: K for
-    temperature, bar for pressure, ps for time, Angstrom for length, radians
-    for angle.
+    Mirrors a run directory's ``damage.json`` (written by ``scripts/metric.py``),
+    plus the ``runId`` / ``campaign`` provenance that damage.json does not
+    record. Build one with ``CrackSimulation(**damage, runId=..., campaign=...)``.
+
+    Ignores unknown top-level keys, so a real damage.json validates as-is:
+    ``frames`` is modeled separately as the CrackFrame table, ``run_dir`` is
+    an absolute scratch path, ``criterion`` is static descriptive text, and
+    ``cycle_end_steps`` is reconstructable from ``frames``. The nested models
+    (other than ``verdict``) still forbid unknown keys.
     """
 
-    model_config = _MODEL_CONFIG
+    model_config = _MODEL_CONFIG | ConfigDict(extra="ignore")
 
-    # --- Provenance -----------------------------------------------------
     runId: str = Field(
         max_length=256,
         description=(
@@ -195,133 +462,13 @@ class CrackSimulation(BaseModel):
         pattern=r"^[0-9]{1,2}[a-zA-Z]?_[A-Za-z0-9_]+$",
         description="Name of the runs/<N>_<name> campaign directory this run belongs to.",
     )
-    templateVariant: str | None = Field(
-        default=None,
-        max_length=64,
-        pattern=r"^templates[A-Za-z0-9_]*$",
-        description=(
-            "basename() of the LAMMPS template directory that machined this "
-            "sample's notch, e.g. 'templates' (current/wide), "
-            "'templates_legacy_narrow', 'templates_reissue', 'templates_wide3', "
-            "'templates_wide4' (see the workflow AGENTS.md for the narrow-vs-wide "
-            "slot-width history). Only a subset of campaigns' batch.sh record "
-            "TEMPLATE_VARIANT in parameters.env at all, and new template trees "
-            "get added over time. Null means the campaign did not record it, "
-            "not that the template is unknown -- infer it from the campaign "
-            "name if needed. Template identity is not interchangeable across "
-            "runs; see AGENTS.md's repeated 'not poolable' caveats."
-        ),
-    )
-    backend: Literal["kokkos-gpu", "cpu"] | None = Field(
-        default=None,
-        description=(
-            "LAMMPS execution backend. Only a subset of campaigns record this "
-            "explicitly; null means not recorded, not unknown -- most of the "
-            "historical corpus ran on kokkos-gpu."
-        ),
-    )
-    sampleId: int = Field(
-        ge=0, description="Sample index within its campaign (SAMPLE_ID)."
-    )
-    batch: int | None = Field(
-        default=None,
-        ge=0,
-        description="Strict-batch index (BATCH), for campaigns using libe_lse.py --strict-batches.",
-    )
-    member: int | None = Field(
-        default=None,
-        ge=0,
-        description="Member index within its batch (MEMBER), for strict-batch campaigns.",
-    )
-    randSeed1: int = Field(
-        ge=0,
-        le=32767,
-        description=(
-            "First LAMMPS velocity-initialization random seed (RAND1). "
-            "crack.py/libe_lse.py always draw unset seeds as "
-            "random.randint(0, 32767), inclusive of both ends."
-        ),
-    )
-    randSeed2: int = Field(
-        ge=0,
-        le=32767,
-        description="Second LAMMPS velocity-initialization random seed (RAND2).",
-    )
-    randSeed3: int = Field(
-        ge=0,
-        le=32767,
-        description="Third LAMMPS velocity-initialization random seed (RAND3).",
+    params: CrackParameters = Field(
+        validation_alias="parameters",
+        description="DOE parameters of the run (parameters.env).",
     )
 
-    # --- DOE / physical parameters ---------------------------------------
-    temperature: float = Field(
-        gt=0,
-        le=2000,
-        description=(
-            "Target thermostat temperature, in K. Every executed campaign so "
-            "far sweeps 50-800 K; the upper bound here is a generous sanity "
-            "envelope, not the campaign domain."
-        ),
-    )
-    normalPrestress: float = Field(
-        ge=-200000,
-        le=200000,
-        description=(
-            "Target normal (crack-opening-direction) prestress, in bar. "
-            "Every executed campaign so far sweeps -50000 to +30000 bar; the "
-            "bound here is a generous sanity envelope, not the campaign domain."
-        ),
-    )
-    inPlanePrestress: float = Field(
-        ge=-200000,
-        le=200000,
-        description=(
-            "Target in-plane prestress, in bar; the dominant driver of crack "
-            "growth. Every executed campaign so far sweeps -50000 to -20000 "
-            "bar (LSE domain) or -50000 to +5000 bar (parameter scans); the "
-            "bound here is a generous sanity envelope, not the campaign domain."
-        ),
-    )
-    strainAmplitude: float = Field(
-        gt=0,
-        le=0.1,
-        description=(
-            "Oscillatory strain amplitude, dimensionless (fractional strain). "
-            "Every executed campaign so far sweeps 0.001-0.01; the upper "
-            "bound here is a generous sanity envelope, not the campaign domain."
-        ),
-    )
-    strainPeriod: float = Field(
-        gt=0,
-        le=10000,
-        description=(
-            "Oscillatory strain period, in picoseconds. Fixed at 200 ps in "
-            "every campaign run so far, though the underlying code supports "
-            "sweeping it."
-        ),
-    )
-    angle: float = Field(
-        ge=-math.pi,
-        le=math.pi,
-        description=(
-            "Crack angle relative to the template's default, in radians. "
-            "Always 0 in every campaign run so far; bounded to one full "
-            "rotation either way since angles are periodic."
-        ),
-    )
-    orientation: Literal["100", "110", "111"] = Field(
-        description="Crystal orientation preset, which also fixes the default sample geometry."
-    )
-    numCyclesPlanned: int = Field(
-        gt=0,
-        le=100,
-        description="Number of strain cycles the run was configured to execute.",
-    )
-    earlyStopEnabled: bool = Field(
-        description="Whether crack.py --early-stop was active for this run (EARLY_STOP)."
-    )
-
-    # --- Metric configuration (scripts/metric.py knobs in effect) --------
+    # Metric configuration (scripts/metric.py knobs in effect)
+    grid: VoidGrid
     thetaA: float = Field(
         gt=1.0,
         le=10.0,
@@ -337,25 +484,6 @@ class CrackSimulation(BaseModel):
             "itself asserts."
         ),
     )
-    gridCellTarget: float = Field(
-        gt=0,
-        le=50,
-        description=(
-            "Target fractional-grid cell size used to bin atoms for void "
-            "detection, in Angstrom. Fixed at 2.5 A in every campaign run so far."
-        ),
-    )
-    gridNx: int = Field(
-        gt=0, description="Number of grid columns along x used for void detection."
-    )
-    gridNy: int = Field(
-        gt=0, description="Number of grid columns along y used for void detection."
-    )
-    depletionFraction: float = Field(
-        gt=0.0,
-        lt=1.0,
-        description="Column occupancy fraction (relative to the median) below which a column counts as void.",
-    )
     surfaceSigma: float = Field(
         gt=0,
         le=50,
@@ -363,73 +491,23 @@ class CrackSimulation(BaseModel):
     )
     baselineStepId: int = Field(
         ge=0,
+        validation_alias="baseline_step",
         description="LAMMPS timestep used as the baseline (end-of-prep) frame for growth ratios.",
     )
     metricVersion: int = Field(
-        ge=1, description="Schema version of damage.json written by scripts/metric.py."
+        ge=1,
+        validation_alias="version",
+        description="Schema version of damage.json written by scripts/metric.py.",
     )
     metricSource: Literal["dump", "vtp"] = Field(
-        description="Whether the metric was computed from raw LAMMPS dumps or from post-processed VTP files."
-    )
-    interatomicPotential: str = Field(
-        default="Cu_mishin1.eam.alloy",
-        max_length=64,
-        description=(
-            "EAM/alloy interatomic potential file used for all pair "
-            "interactions (pair_style eam/alloy). Mishin Cu EAM potential, "
-            "Mishin, Phys. Rev. B 63, 224106 (2001); static across every run "
-            "in this workflow. The ~700 KB file itself is not duplicated "
-            "into every contribution -- see the workflow's Attachments "
-            "strategy for whether/how it is referenced once, separately."
-        ),
+        validation_alias="source",
+        description="Whether the metric was computed from raw LAMMPS dumps or from post-processed VTP files.",
     )
 
-    # --- Outcome / verdict -------------------------------------------------
-    crackGrowth: bool | None = Field(
-        default=None,
-        description=(
-            "The verdict: true if notch extension was observed, false if not, "
-            "null if undecidable (no baseline frame or no completed cycle)."
-        ),
-    )
-    firstCrossingCycle: int | None = Field(
-        default=None,
-        ge=1,
-        description="First cycle end at which the sustained growth-threshold crossing began, if any.",
-    )
-    trackedFeature: Literal["notch", "largest-void"] = Field(
-        description=(
-            "Which void component the verdict tracked: the notch-descended "
-            "component, or (only when the notch closed during prep) the "
-            "largest void present."
-        )
-    )
-    aYBaseline: float = Field(
-        ge=0.0,
-        description="y-extent of the tracked component at the baseline (end-of-prep) frame, in Angstrom.",
-    )
-    aYReference: float = Field(
-        gt=0.0,
-        description=(
-            "Reference length used as the denominator for growth ratios, in "
-            "Angstrom (a floor is applied when the baseline is very small, "
-            "so this is always strictly positive)."
-        ),
-    )
-    aYRatioMax: float = Field(
-        ge=0.0,
-        description="Maximum a_y(cycle)/a_y(reference) observed over all analyzed cycle ends.",
-    )
-    aYRatioMin: float = Field(
-        ge=0.0,
-        description="Minimum a_y(cycle)/a_y(reference) observed over all analyzed cycle ends.",
-    )
-    nCyclesObserved: int = Field(
-        ge=0,
-        description="Number of completed cycle ends included in the verdict (<= numCyclesPlanned).",
-    )
+    # Outcome
     nFramesAnalyzed: int = Field(
         gt=0,
+        validation_alias="n_frames",
         description="Total number of dumped frames analyzed, including the baseline frame.",
     )
     cycleStageCompleted: bool = Field(
@@ -442,97 +520,8 @@ class CrackSimulation(BaseModel):
         default=None,
         description="Whether the analysis itself was restricted to a max-step prefix of the dumps.",
     )
-
-    diagnostics: CrackDiagnostics
+    verdict: CrackVerdict
     earlyStop: EarlyStopInfo | None = Field(
         default=None,
         description="Early-stop provenance, present only when this run was terminated early.",
     )
-
-    @classmethod
-    def from_damage_json(
-        cls, damage: Mapping[str, Any], *, run_id: str, campaign: str
-    ) -> CrackSimulation:
-        """Build a CrackSimulation from a run directory's parsed ``damage.json``.
-
-        ``damage`` is whatever ``json.load`` returns for a run's ``damage.json``
-        (as written by ``scripts/metric.py``'s ``label_run``). Its embedded
-        ``parameters`` block is used for the DOE values rather than requiring a
-        separately-parsed ``parameters.env``, since ``metric.py`` already copies
-        it in verbatim (as strings).
-        """
-        params = damage["parameters"]
-        verdict = damage["verdict"]
-        diagnostics = verdict["diagnostics"]
-        grid = damage["grid"]
-        early_stop = damage.get("early_stop")
-
-        return cls(
-            runId=run_id,
-            campaign=campaign,
-            templateVariant=params.get("TEMPLATE_VARIANT"),
-            backend=params.get("BACKEND"),
-            sampleId=int(params["SAMPLE_ID"]),
-            batch=int(params["BATCH"]) if "BATCH" in params else None,
-            member=int(params["MEMBER"]) if "MEMBER" in params else None,
-            randSeed1=int(params["RAND1"]),
-            randSeed2=int(params["RAND2"]),
-            randSeed3=int(params["RAND3"]),
-            temperature=float(params["TEMPERATURE"]),
-            normalPrestress=float(params["NORMAL_PRESTRESS"]),
-            inPlanePrestress=float(params["IN_PLANE_PRESTRESS"]),
-            strainAmplitude=float(params["STRAIN_AMP"]),
-            strainPeriod=float(params["STRAIN_PERIOD"]),
-            angle=float(params["ANGLE"]),
-            orientation=params["ORIENTATION"],
-            numCyclesPlanned=int(params["NUM_CYCLES"]),
-            earlyStopEnabled=bool(int(params.get("EARLY_STOP", 0))),
-            thetaA=damage["theta_a"],
-            gridCellTarget=grid["cell_target"],
-            gridNx=grid["nx"],
-            gridNy=grid["ny"],
-            depletionFraction=grid["depletion_fraction"],
-            surfaceSigma=damage["surface_sigma"],
-            baselineStepId=damage["baseline_step"],
-            metricVersion=damage["version"],
-            metricSource=damage["source"],
-            interatomicPotential=params.get(
-                "INTERATOMIC_POTENTIAL", "Cu_mishin1.eam.alloy"
-            ),
-            crackGrowth=verdict.get("crack_growth"),
-            firstCrossingCycle=verdict.get("first_crossing_cycle"),
-            trackedFeature=verdict["tracked"],
-            aYBaseline=verdict["a_y_baseline"],
-            aYReference=verdict["a_y_reference"],
-            aYRatioMax=verdict["a_y_ratio_max"],
-            aYRatioMin=verdict["a_y_ratio_min"],
-            nCyclesObserved=verdict["n_cycles"],
-            nFramesAnalyzed=damage["n_frames"],
-            cycleStageCompleted=damage["cycle_stage_completed"],
-            truncated=damage.get("truncated"),
-            diagnostics=CrackDiagnostics(
-                notchClosedAtBaseline=diagnostics["notch_closed_at_baseline"],
-                damageNucleated=diagnostics["damage_nucleated"],
-                weakBaseline=diagnostics["weak_baseline"],
-                prefractured=diagnostics["prefractured"],
-                notchHealed=diagnostics["notch_healed"],
-                plasticFlow=diagnostics["plastic_flow"],
-                atomLossFrac=diagnostics["atom_loss_frac"],
-                atomLoss=diagnostics["atom_loss"],
-                voidElsewhere=diagnostics["void_elsewhere"],
-                dLx=diagnostics["d_lx"],
-                dLy=diagnostics["d_ly"],
-                dVolume=diagnostics["d_volume"],
-            ),
-            earlyStop=(
-                EarlyStopInfo(
-                    stoppedAfterCycle=early_stop["stopped_after_cycle"],
-                    stopStepId=early_stop["stop_step"],
-                    firstCrossingCycle=early_stop["first_crossing_cycle"],
-                    numCyclesPlanned=early_stop["num_cycles_planned"],
-                    reason=early_stop["reason"],
-                )
-                if early_stop
-                else None
-            ),
-        )
