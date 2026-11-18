@@ -24,60 +24,15 @@ from __future__ import annotations
 
 import math
 from collections.abc import Mapping
+from itertools import pairwise
 from typing import Any, Literal
 
 import pandas as pd
 from pydantic import BaseModel, Field, model_validator
 
-from .schema import _MODEL_CONFIG, CrackSimulation
+from .schema import _MODEL_CONFIG, FLOAT_REL_TOL, CrackSimulation
 
-_CNA_SUM_TOLERANCE = 1e-6
-
-
-class CnaFractions(BaseModel):
-    """Common-neighbor-analysis structure-type fractions for one frame.
-
-    Diagnostic only - CNA "other" fraction is dominated by stacking faults at
-    the stresses this workflow explores and does not vote on the crack-growth
-    verdict (see scripts/metric.py). Not computed by default, so this is null
-    on most frames. When present, all five fractions are always populated
-    together: scripts/metric.py builds them from a single
-    ``np.bincount(..., minlength=5) / n_atoms`` call and assigns the whole
-    dict in one place, so there is no code path that produces a partial
-    record - enforced below by requiring the fractions to sum to ~1.
-    """
-
-    model_config = _MODEL_CONFIG
-
-    other: float = Field(
-        ge=0.0,
-        le=1.0,
-        description="Fraction of atoms classified as 'other' (incl. surfaces, defects).",
-    )
-    fcc: float = Field(
-        ge=0.0, le=1.0, description="Fraction of atoms classified as FCC-coordinated."
-    )
-    hcp: float = Field(
-        ge=0.0,
-        le=1.0,
-        description="Fraction of atoms classified as HCP-coordinated (e.g. stacking faults).",
-    )
-    bcc: float = Field(
-        ge=0.0, le=1.0, description="Fraction of atoms classified as BCC-coordinated."
-    )
-    ico: float = Field(
-        ge=0.0,
-        le=1.0,
-        description="Fraction of atoms classified as icosahedral-coordinated.",
-    )
-
-    @model_validator(mode="after")
-    def check_fractions_sum_to_one(self) -> CnaFractions:
-        """Every atom falls into exactly one of the five bins, by construction."""
-        total = self.other + self.fcc + self.hcp + self.bcc + self.ico
-        if not math.isclose(total, 1.0, abs_tol=_CNA_SUM_TOLERANCE):
-            raise ValueError(f"CNA fractions must sum to ~1.0, got {total}")
-        return self
+_CNA_FIELDS = ("cnaOther", "cnaFcc", "cnaHcp", "cnaBcc", "cnaIco")
 
 
 class CrackFrame(BaseModel):
@@ -90,6 +45,13 @@ class CrackFrame(BaseModel):
     per-frame, so a fully general cell reconstruction is not possible from
     this table alone; that is a property of the upstream data, not something
     papered over here.
+
+    Common-neighbor-analysis fractions are flattened into five ``cna*``
+    columns (tables do not accept nested columns). They are diagnostic only
+    and not computed by default, so they are null on most frames. When
+    present, scripts/metric.py fills all five from a single
+    ``np.bincount(..., minlength=5) / n_atoms`` call, so they are either all
+    set and sum to ~1, or all null.
     """
 
     model_config = _MODEL_CONFIG
@@ -142,8 +104,13 @@ class CrackFrame(BaseModel):
         ge=0.0,
         description="Area of the notch-connected void component, in square Angstrom.",
     )
-    notchAspect: float = Field(
-        ge=0.0, description="aY / wX for the notch-connected component."
+    notchAspect: float | None = Field(
+        default=None,
+        ge=0.0,
+        description=(
+            "aY / wX for the notch-connected component; null when wX is 0 "
+            "(undefined; scripts/metric.py writes a 0.0 placeholder there)."
+        ),
     )
     nVoidComponents: int = Field(
         ge=0,
@@ -181,13 +148,76 @@ class CrackFrame(BaseModel):
         ge=0.0,
         description="Robust (MAD-based) per-atom potential-energy spread, in eV/atom.",
     )
-    cna: CnaFractions | None = Field(
+    cnaOther: float | None = Field(
         default=None,
-        description="Common-neighbor-analysis fractions, when computed (usually null).",
+        ge=0.0,
+        le=1.0,
+        description="CNA fraction of atoms classified as 'other' (incl. surfaces, defects).",
+    )
+    cnaFcc: float | None = Field(
+        default=None,
+        ge=0.0,
+        le=1.0,
+        description="CNA fraction of atoms classified as FCC-coordinated.",
+    )
+    cnaHcp: float | None = Field(
+        default=None,
+        ge=0.0,
+        le=1.0,
+        description="CNA fraction of atoms classified as HCP-coordinated (e.g. stacking faults).",
+    )
+    cnaBcc: float | None = Field(
+        default=None,
+        ge=0.0,
+        le=1.0,
+        description="CNA fraction of atoms classified as BCC-coordinated.",
+    )
+    cnaIco: float | None = Field(
+        default=None,
+        ge=0.0,
+        le=1.0,
+        description="CNA fraction of atoms classified as icosahedral-coordinated.",
     )
     boxSource: Literal["dump-header"] = Field(
         description="Provenance of the box dimensions used for this frame; always read from the dump header, never inferred from the atom bounding box."
     )
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_raw_frame(cls, data: Any) -> Any:
+        """Flatten damage.json's nested ``cna`` dict and drop the 0.0 aspect placeholder."""
+        if not isinstance(data, dict):
+            return data
+        data = dict(data)
+        if "cna" in data:
+            cna = data.pop("cna") or {}
+            for field in _CNA_FIELDS:
+                data.setdefault(field, cna.get(field[3:].lower()))
+        w_x = data.get("w_x", data.get("wX"))
+        if w_x == 0:
+            for key in ("notch_aspect", "notchAspect"):
+                if data.get(key) == 0:
+                    data[key] = None
+        return data
+
+    @model_validator(mode="after")
+    def check_consistency(self) -> CrackFrame:
+        """notchAspect agrees with aY/wX; CNA fractions are all-or-nothing and sum to ~1."""
+        if self.wX == 0:
+            if self.notchAspect is not None:
+                raise ValueError("notchAspect must be null when wX is 0")
+        elif self.notchAspect is None or not math.isclose(
+            self.notchAspect, self.aY / self.wX, rel_tol=FLOAT_REL_TOL
+        ):
+            raise ValueError("notchAspect must equal aY / wX")
+
+        cna = [getattr(self, field) for field in _CNA_FIELDS]
+        n_set = sum(value is not None for value in cna)
+        if n_set not in (0, len(cna)):
+            raise ValueError("CNA fractions must be all set or all null")
+        if n_set and not math.isclose(sum(cna), 1.0, abs_tol=FLOAT_REL_TOL):
+            raise ValueError(f"CNA fractions must sum to ~1.0, got {sum(cna)}")
+        return self
 
 
 def frames_table(damage: Mapping[str, Any], *, run_id: str) -> pd.DataFrame:
@@ -200,8 +230,8 @@ def frames_table(damage: Mapping[str, Any], *, run_id: str) -> pd.DataFrame:
 def validate_simulation(
     simulation: CrackSimulation,
     frames: pd.DataFrame,
-) -> bool:
-    """Return True when a CrackSimulation and its CrackFrame table agree."""
+) -> None:
+    """Raise ValueError unless a CrackSimulation and its CrackFrame table agree."""
     # pandas turns None into NaN in numeric columns (e.g. cycle); restore None
     # so allow_inf_nan=False doesn't reject it.
     records = (
@@ -222,7 +252,7 @@ def validate_simulation(
     baseline_rows = [row for row in frame_rows if row.isBaseline]
     if len(baseline_rows) != 1:
         raise ValueError("frames must contain exactly one baseline row")
-    if baseline_rows[0].aY != verdict.aYBaseline:
+    if not math.isclose(baseline_rows[0].aY, verdict.aYBaseline, rel_tol=FLOAT_REL_TOL):
         raise ValueError("baseline row's aY must equal verdict.aYBaseline")
     if baseline_rows[0].timestepId != simulation.baselineStepId:
         raise ValueError("baseline row's timestepId must equal baselineStepId")
@@ -234,7 +264,11 @@ def validate_simulation(
         )
 
     timesteps = [row.timestepId for row in frame_rows]
-    if timesteps != sorted(timesteps):
-        raise ValueError("frame rows must be ordered by increasing timestepId")
+    if any(later <= earlier for earlier, later in pairwise(timesteps)):
+        raise ValueError("frame rows must have unique timestepIds in increasing order")
 
-    return True
+    if (
+        simulation.earlyStop is not None
+        and timesteps[-1] != simulation.earlyStop.stopStepId
+    ):
+        raise ValueError("last frame's timestepId must equal earlyStop.stopStepId")

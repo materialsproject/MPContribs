@@ -32,9 +32,9 @@ units separately, e.g. via the client's ``init_columns``); see each field's
 from __future__ import annotations
 
 import math
-from typing import Literal
+from typing import Any, Literal
 
-from pydantic import AliasGenerator, BaseModel, ConfigDict, Field
+from pydantic import AliasGenerator, BaseModel, ConfigDict, Field, model_validator
 from pydantic.alias_generators import to_snake
 
 #: camelCase field name -> damage.json's snake_case key.
@@ -42,6 +42,11 @@ SNAKE_CASE_ALIASES = AliasGenerator(validation_alias=to_snake)
 
 #: camelCase field name -> parameters.env's SNAKE_CASE key.
 ENV_CASE_ALIASES = AliasGenerator(validation_alias=lambda name: to_snake(name).upper())
+
+#: Relative tolerance for float comparisons. MPContribs stores at most 6
+#: significant digits, and derived quantities (e.g. aY / wX) combine several
+#: independently rounded values, so allow a little more than 1e-6.
+FLOAT_REL_TOL = 1e-4
 
 _MODEL_CONFIG = ConfigDict(
     extra="forbid",
@@ -341,17 +346,21 @@ class CrackVerdict(BaseModel):
 
     model_config = _MODEL_CONFIG | ConfigDict(extra="ignore")
 
-    crackGrowth: bool | None = Field(
-        default=None,
+    crackGrowth: bool = Field(
         description=(
-            "The verdict: true if notch extension was observed, false if not, "
-            "null if undecidable (no baseline frame or no completed cycle)."
+            "The verdict: true if notch extension was observed, false if not. "
+            "Always decided: scripts/metric.py only writes damage.json for "
+            "classifiable runs."
         ),
     )
     firstCrossingCycle: int | None = Field(
         default=None,
         ge=1,
-        description="First cycle end at which the sustained growth-threshold crossing began, if any.",
+        description=(
+            "First cycle end at which the sustained growth-threshold crossing "
+            "began. Set only on positive verdicts; null on negatives and on "
+            "catastrophic positives (see CrackSimulation.truncated)."
+        ),
     )
     trackedFeature: Literal["notch", "largest-void"] = Field(
         validation_alias="tracked",
@@ -388,6 +397,17 @@ class CrackVerdict(BaseModel):
     )
     diagnostics: CrackDiagnostics
 
+    @model_validator(mode="after")
+    def check_consistency(self) -> CrackVerdict:
+        """Ratio ordering and crossing/verdict agreement, as metric.verdict builds them."""
+        if self.aYRatioMax < self.aYRatioMin:
+            raise ValueError("aYRatioMax must be >= aYRatioMin")
+        if self.firstCrossingCycle is not None and not self.crackGrowth:
+            raise ValueError(
+                "firstCrossingCycle may only be set when crackGrowth is true"
+            )
+        return self
+
 
 class EarlyStopInfo(BaseModel):
     """Present only when ``crack.py --early-stop`` terminated the run early.
@@ -417,10 +437,6 @@ class EarlyStopInfo(BaseModel):
         ge=1,
         description="Cycle at which the sustained growth-threshold crossing was first observed.",
     )
-    numCyclesPlanned: int = Field(
-        gt=0,
-        description="Number of cycles the run was configured to execute before truncation.",
-    )
     reason: str = Field(
         max_length=160,
         description=(
@@ -431,6 +447,27 @@ class EarlyStopInfo(BaseModel):
             "a bounded free string rather than a Literal so a future wording "
             "change doesn't require a schema update to keep ingesting data."
         ),
+    )
+
+
+class TruncationInfo(BaseModel):
+    """Present only when the analysis stopped at a catastrophic frame.
+
+    scripts/metric.py stops reading dumps once the cell volume exceeds 10x
+    the baseline ("cell exploded"): the sample has come apart, so the run is
+    labelled crack-growth even though there is no notch left to measure.
+    """
+
+    model_config = _MODEL_CONFIG
+
+    step: int = Field(ge=0, description="LAMMPS timestep of the catastrophic frame.")
+    reason: str = Field(
+        max_length=160,
+        description="Why the analysis stopped; currently always 'cell volume exploded'.",
+    )
+    volumeRatio: float = Field(
+        gt=10.0,
+        description="Cell volume of the catastrophic frame relative to the baseline frame.",
     )
 
 
@@ -516,12 +553,79 @@ class CrackSimulation(BaseModel):
             "or walltime-killed runs; see earlyStop for the former."
         )
     )
-    truncated: bool | None = Field(
+    truncated: TruncationInfo | None = Field(
         default=None,
-        description="Whether the analysis itself was restricted to a max-step prefix of the dumps.",
+        description="Catastrophic-frame provenance, present only when the analysis stopped at an exploded cell.",
     )
     verdict: CrackVerdict
     earlyStop: EarlyStopInfo | None = Field(
         default=None,
         description="Early-stop provenance, present only when this run was terminated early.",
     )
+
+    @model_validator(mode="before")
+    @classmethod
+    def drop_duplicate_num_cycles(cls, data: Any) -> Any:
+        """Drop ``early_stop.num_cycles_planned``, a copy of ``NUM_CYCLES``.
+
+        crack.py fills both from the same value; check they agree, then keep
+        only ``params.numCyclesPlanned``.
+        """
+        if not isinstance(data, dict):
+            return data
+        early_stop = data.get("early_stop")
+        if not isinstance(early_stop, dict) or "num_cycles_planned" not in early_stop:
+            return data
+        early_stop = dict(early_stop)
+        planned = early_stop.pop("num_cycles_planned")
+        params = data.get("parameters", data.get("params")) or {}
+        num_cycles = params.get("NUM_CYCLES", params.get("numCyclesPlanned"))
+        if (
+            planned is not None
+            and num_cycles is not None
+            and int(planned) != int(num_cycles)
+        ):
+            raise ValueError(
+                "early_stop.num_cycles_planned must equal parameters.NUM_CYCLES"
+            )
+        return {**data, "early_stop": early_stop}
+
+    @model_validator(mode="after")
+    def check_consistency(self) -> CrackSimulation:
+        """Cross-field invariants that crack.py / scripts/metric.py guarantee."""
+        if not self.runId.startswith(f"{self.campaign}/"):
+            raise ValueError("runId must start with '<campaign>/'")
+
+        verdict = self.verdict
+        if verdict.nCyclesObserved > self.params.numCyclesPlanned:
+            raise ValueError(
+                "verdict.nCyclesObserved must be <= params.numCyclesPlanned"
+            )
+        if (
+            verdict.crackGrowth
+            and verdict.firstCrossingCycle is None
+            and self.truncated is None
+        ):
+            raise ValueError(
+                "a positive verdict needs firstCrossingCycle unless the run was truncated"
+            )
+
+        early = self.earlyStop
+        if early is not None:
+            if self.cycleStageCompleted:
+                raise ValueError(
+                    "earlyStop may only be set when cycleStageCompleted is false"
+                )
+            if not self.params.earlyStopEnabled:
+                raise ValueError("earlyStop requires params.earlyStopEnabled")
+            if not verdict.crackGrowth:
+                raise ValueError("earlyStop requires a positive verdict")
+            if early.firstCrossingCycle != verdict.firstCrossingCycle:
+                raise ValueError(
+                    "earlyStop.firstCrossingCycle must equal verdict.firstCrossingCycle"
+                )
+            if early.stoppedAfterCycle != verdict.nCyclesObserved:
+                raise ValueError(
+                    "earlyStop.stoppedAfterCycle must equal verdict.nCyclesObserved"
+                )
+        return self

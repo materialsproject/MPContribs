@@ -152,7 +152,9 @@ def test_crack_frame_table_matches_damage_json(damage, run_id):
     assert baseline["timestepId"] == damage["baseline_step"]
 
     # Every frame in this fixture has cna=None (not computed).
-    assert frames["cna"].isna().all()
+    cna_columns = ["cnaOther", "cnaFcc", "cnaHcp", "cnaBcc", "cnaIco"]
+    assert frames[cna_columns].isna().all().all()
+    assert "cna" not in frames.columns
 
     # timesteps strictly increasing
     timesteps = frames["timestepId"].tolist()
@@ -167,7 +169,7 @@ def test_validate_simulation_round_trips(simulation, damage, run_id):
     )
 
     frames = frames_table(damage, run_id=run_id)
-    assert validate_simulation(simulation, frames) is True
+    assert validate_simulation(simulation, frames) is None
 
 
 def test_validate_simulation_rejects_mismatched_run_id(simulation, damage):
@@ -201,8 +203,195 @@ def test_crack_atom_record_matches_dump_columns():
     assert record.atomType == 1
 
 
-def test_cna_fractions_require_sum_to_one():
-    from mpcontribs.lux.projects.griffith_crack import CnaFractions
+CAMPAIGN = "01_bernoulli_lse_2D"
 
-    with pytest.raises(ValueError, match="sum to ~1.0"):
-        CnaFractions(other=0.5, fcc=0.5, hcp=0.5, bcc=0.0, ico=0.0)
+
+def _build(damage, run_id, campaign=CAMPAIGN):
+    from mpcontribs.lux.projects.griffith_crack import CrackSimulation
+
+    return CrackSimulation(**damage, runId=run_id, campaign=campaign)
+
+
+def _set(d, path, value):
+    *keys, last = path
+    for key in keys:
+        d = d[key]
+    d[last] = value
+
+
+def _negative(damage):
+    """Mutate the fixture into a completed, non-early-stopped negative run."""
+    damage["verdict"]["crack_growth"] = False
+    damage["verdict"]["first_crossing_cycle"] = None
+    damage["cycle_stage_completed"] = True
+    damage.pop("early_stop")
+    return damage
+
+
+@pytest.mark.parametrize(
+    "path, value, match",
+    [
+        (("verdict", "a_y_ratio_min"), 5.0, "aYRatioMax must be >= aYRatioMin"),
+        (("verdict", "crack_growth"), None, "crack_growth"),
+        (("verdict", "first_crossing_cycle"), None, "firstCrossingCycle"),
+        (("cycle_stage_completed",), True, "cycleStageCompleted"),
+        (("parameters", "EARLY_STOP"), "0", "earlyStopEnabled"),
+        (("early_stop", "num_cycles_planned"), 12, "num_cycles_planned"),
+        (("early_stop", "first_crossing_cycle"), 3, "earlyStop.firstCrossingCycle"),
+        (("early_stop", "stopped_after_cycle"), 4, "stoppedAfterCycle"),
+    ],
+)
+def test_crack_simulation_rejects_inconsistent_damage(
+    damage, run_id, path, value, match
+):
+    bad = copy.deepcopy(damage)
+    _set(bad, path, value)
+    with pytest.raises(ValidationError, match=match):
+        _build(bad, run_id)
+
+
+def test_crack_simulation_rejects_negative_with_crossing(damage, run_id):
+    bad = _negative(copy.deepcopy(damage))
+    bad["verdict"]["first_crossing_cycle"] = 4
+    with pytest.raises(ValidationError, match="firstCrossingCycle may only be set"):
+        _build(bad, run_id)
+
+
+def test_crack_simulation_accepts_negative(damage, run_id):
+    sim = _build(_negative(copy.deepcopy(damage)), run_id)
+    assert sim.verdict.crackGrowth is False
+    assert sim.earlyStop is None
+
+
+def test_crack_simulation_rejects_early_stop_on_negative(damage, run_id):
+    bad = copy.deepcopy(damage)
+    bad["verdict"]["crack_growth"] = False
+    bad["verdict"]["first_crossing_cycle"] = None
+    bad["early_stop"]["first_crossing_cycle"] = None
+    with pytest.raises(ValidationError, match="earlyStop requires a positive verdict"):
+        _build(bad, run_id)
+
+
+def test_crack_simulation_rejects_more_cycles_than_planned(damage, run_id):
+    bad = _negative(copy.deepcopy(damage))
+    bad["parameters"]["NUM_CYCLES"] = "4"
+    with pytest.raises(ValidationError, match="nCyclesObserved"):
+        _build(bad, run_id)
+
+
+def test_crack_simulation_rejects_run_id_outside_campaign(damage):
+    with pytest.raises(ValidationError, match="runId must start with"):
+        _build(damage, "02_other_campaign/some_run")
+
+
+def test_crack_simulation_accepts_catastrophic_positive(damage, run_id):
+    """metric.py labels an exploded cell positive with no crossing cycle."""
+    full = _negative(copy.deepcopy(damage))
+    full["verdict"]["crack_growth"] = True
+    full["truncated"] = {
+        "step": 900000,
+        "reason": "cell volume exploded",
+        "volume_ratio": 12.5,
+    }
+    sim = _build(full, run_id)
+    assert sim.truncated.volumeRatio == pytest.approx(12.5)
+
+    del full["truncated"]
+    with pytest.raises(ValidationError, match="needs firstCrossingCycle"):
+        _build(full, run_id)
+
+
+@pytest.fixture
+def raw_frame(damage):
+    return copy.deepcopy(damage["frames"][0])
+
+
+def test_crack_frame_flattens_cna(raw_frame, run_id):
+    from mpcontribs.lux.projects.griffith_crack import CrackFrame
+
+    raw_frame["cna"] = {"other": 0.1, "fcc": 0.8, "hcp": 0.1, "bcc": 0.0, "ico": 0.0}
+    frame = CrackFrame(**raw_frame, runId=run_id)
+    assert frame.cnaFcc == pytest.approx(0.8)
+    assert "cna" not in frame.model_dump()
+
+
+@pytest.mark.parametrize(
+    "cna, match",
+    [
+        ({"other": 0.5, "fcc": 0.5, "hcp": 0.5, "bcc": 0.0, "ico": 0.0}, "sum to ~1.0"),
+        ({"other": 0.2, "fcc": 0.8}, "all set or all null"),
+    ],
+)
+def test_crack_frame_rejects_bad_cna(raw_frame, run_id, cna, match):
+    from mpcontribs.lux.projects.griffith_crack import CrackFrame
+
+    raw_frame["cna"] = cna
+    with pytest.raises(ValidationError, match=match):
+        CrackFrame(**raw_frame, runId=run_id)
+
+
+def test_crack_frame_zero_width_notch_has_no_aspect(raw_frame, run_id):
+    from mpcontribs.lux.projects.griffith_crack import CrackFrame
+
+    # metric.py writes notch_aspect = 0.0 as a placeholder when w_x == 0.
+    raw_frame.update(w_x=0.0, notch_aspect=0.0)
+    assert CrackFrame(**raw_frame, runId=run_id).notchAspect is None
+
+    raw_frame["notch_aspect"] = 3.0
+    with pytest.raises(ValidationError, match="notchAspect must be null"):
+        CrackFrame(**raw_frame, runId=run_id)
+
+
+def test_crack_frame_rejects_inconsistent_aspect(raw_frame, run_id):
+    from mpcontribs.lux.projects.griffith_crack import CrackFrame
+
+    raw_frame["notch_aspect"] *= 1.01
+    with pytest.raises(ValidationError, match="notchAspect must equal"):
+        CrackFrame(**raw_frame, runId=run_id)
+
+
+def test_validate_simulation_tolerates_storage_precision(simulation, damage, run_id):
+    from mpcontribs.lux.projects.griffith_crack import (
+        frames_table,
+        validate_simulation,
+    )
+
+    frames = frames_table(damage, run_id=run_id)
+    baseline = frames.index[frames["isBaseline"]][0]
+    # MPContribs keeps 6 significant digits.
+    frames.loc[baseline, "aY"] = float(f"{frames.loc[baseline, 'aY']:.6g}")
+    validate_simulation(simulation, frames)
+
+    off = simulation.model_copy(
+        update={
+            "verdict": simulation.verdict.model_copy(
+                update={"aYBaseline": simulation.verdict.aYBaseline * 1.001}
+            )
+        }
+    )
+    with pytest.raises(ValueError, match="aYBaseline"):
+        validate_simulation(off, frames)
+
+
+def test_validate_simulation_rejects_duplicate_timesteps(simulation, damage, run_id):
+    from mpcontribs.lux.projects.griffith_crack import (
+        frames_table,
+        validate_simulation,
+    )
+
+    frames = frames_table(damage, run_id=run_id)
+    frames.loc[2, "timestepId"] = frames.loc[1, "timestepId"]
+    with pytest.raises(ValueError, match="unique timestepIds"):
+        validate_simulation(simulation, frames)
+
+
+def test_validate_simulation_rejects_frames_past_early_stop(simulation, damage, run_id):
+    from mpcontribs.lux.projects.griffith_crack import (
+        frames_table,
+        validate_simulation,
+    )
+
+    frames = frames_table(damage, run_id=run_id)
+    frames.loc[frames.index[-1], "timestepId"] += 100000
+    with pytest.raises(ValueError, match="earlyStop.stopStepId"):
+        validate_simulation(simulation, frames)

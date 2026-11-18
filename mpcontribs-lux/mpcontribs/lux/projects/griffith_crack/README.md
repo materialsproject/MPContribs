@@ -11,6 +11,8 @@ A run machines a notch into a Cu slab, cycles it under oscillatory strain, and
 (`crack-growth`) or not (`no-crack-growth`), writing the decision plus
 per-frame measurements into that run's `damage.json`.
 
+Each contribution's `identifier` is `mp-30` (FCC Cu, Fm-3m); `data.runId` is the unique per-run key.
+
 ## Files
 
 - `schema.py` - `CrackSimulation`, one per `crack.py` run (one MPContribs
@@ -18,10 +20,19 @@ per-frame measurements into that run's `damage.json`.
   `damage.json`: `params` (`CrackParameters`, the DOE knobs from
   `damage.json["parameters"]`, i.e. `parameters.env`), `grid` (`VoidGrid`),
   `verdict` (`CrackVerdict`, the growth decision, with the eight non-voting
-  mechanism flags nested as `verdict.diagnostics` / `CrackDiagnostics`), and
+  mechanism flags nested as `verdict.diagnostics` / `CrackDiagnostics`),
   `earlyStop` (`EarlyStopInfo`, present only when `crack.py --early-stop`
-  killed the run early). A parsed `damage.json` validates directly:
-  `CrackSimulation(**damage, runId=run_id, campaign=campaign)`.
+  killed the run early) and `truncated` (`TruncationInfo`, present only when
+  the analysis stopped at an exploded cell). A parsed `damage.json` validates
+  directly: `CrackSimulation(**damage, runId=run_id, campaign=campaign)`.
+  Model validators enforce the cross-field invariants `crack.py` /
+  `metric.py` guarantee: `runId` starts with `campaign/`,
+  `aYRatioMax >= aYRatioMin`, `firstCrossingCycle` only on positives (and
+  required on positives unless `truncated`), and `earlyStop` only on
+  positive, early-stop-enabled runs whose cycle stage did not complete, with
+  matching crossing and cycle counts. `early_stop.num_cycles_planned` is
+  checked against `NUM_CYCLES` and then dropped, keeping only
+  `params.numCyclesPlanned`.
 - `frame.py` - `CrackFrame`, one row per dumped frame (`damage.json["frames"]`):
   the baseline frame plus every dump in the analyzed window, not only
   cycle-end frames. This is the table meant to accompany a `CrackSimulation`
@@ -31,9 +42,13 @@ per-frame measurements into that run's `damage.json`.
   `metric.py` guarantees by construction (one baseline row matching
   `verdict.aYBaseline` and `baselineStepId`, `verdict.nCyclesObserved`
   matching the row count with `cycle is not None`, consistent `runId`,
-  increasing `timestepId`). Its nested `CnaFractions` model requires its five
-  fields to sum to ~1 (they are always populated together by `metric.py`,
-  never partially - see the docstring).
+  unique and increasing `timestepId`, last row at `earlyStop.stopStepId`
+  for early-stopped runs) and raises `ValueError` otherwise. CNA fractions
+  are flattened into five `cna*` columns (tables don't accept nested
+  columns), all set and summing to ~1 or all null. `notchAspect` is null
+  when `wX` is 0 (metric.py writes a 0.0 placeholder there) and must equal
+  `aY / wX` otherwise. Float comparisons use a relative tolerance of 1e-4,
+  since MPContribs stores 6 significant digits.
 - `atom.py` - `CrackAtomRecord` documents the raw per-atom dump column format
   (`dump.<step>.cracked`: `id type x y z c_6 c_7[1] c_7[2] c_7[3]`) for
   reference. **Not uploaded as an MPContribs table**: a run analyzes on the
@@ -116,7 +131,7 @@ data to reject. Bounding these would silently discard real corpus data.
   `scripts/metric.py` does not retain the tilt per frame, so a full cell
   reconstruction is not possible from this table alone - that's a property
   of the upstream data.
-- `cna` is null on the large majority of frames; CNA is diagnostic-only and
+- The `cna*` columns are null on the large majority of frames; CNA is diagnostic-only and
   not computed by default (see `scripts/metric.py`'s mechanism catalogue).
 - `params.interatomicPotential` on `CrackSimulation` identifies and cites the EAM
   potential (`Cu_mishin1.eam.alloy`; Mishin, Phys. Rev. B 63, 224106 (2001)),
