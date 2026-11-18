@@ -1,4 +1,4 @@
-ddtrace==4.8.2
+ddtrace==4.15.6
 mpcontribs-client
 redis
 
