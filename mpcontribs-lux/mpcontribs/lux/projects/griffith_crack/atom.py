@@ -2,12 +2,11 @@
 
 Documents the ``dump.<step>.cracked`` attachments
 (``id type x y z c_6 c_7[1] c_7[2] c_7[3]``). Not uploaded as a table: each
-frame has ~750k atoms, and the frames table already holds the aggregates.
+frame has hundreds of thousands of atoms, and the frames table already
+holds the aggregates.
 """
 
 from __future__ import annotations
-
-from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -20,7 +19,7 @@ class CrackAtomRecord(BaseModel):
     model_config = _MODEL_CONFIG
 
     atomId: int = Field(ge=1, description="LAMMPS atom id, stable across frames.")
-    atomType: Literal[1] = Field(description="LAMMPS atom type (Cu only).")
+    atomType: int = Field(ge=1, description="LAMMPS atom type.")
     x: float = Field(description="Position x (Angstrom).")
     y: float = Field(description="Position y (Angstrom).")
     z: float = Field(description="Position z (Angstrom).")

@@ -8,7 +8,7 @@ from __future__ import annotations
 import math
 from collections.abc import Mapping
 from itertools import pairwise
-from typing import Any, Literal
+from typing import Any
 
 import pandas as pd
 from pydantic import BaseModel, Field, model_validator
@@ -23,7 +23,7 @@ def _fraction(description: str) -> Any:
 
 
 class CrackFrame(BaseModel):
-    """One analyzed frame. Box lengths are orthogonal edges (tilt not retained)."""
+    """One analyzed frame. Box lengths come from the dump header (tilt not retained)."""
 
     model_config = _MODEL_CONFIG
 
@@ -63,7 +63,6 @@ class CrackFrame(BaseModel):
     cnaHcp: float | None = _fraction("CNA fraction: HCP.")
     cnaBcc: float | None = _fraction("CNA fraction: BCC.")
     cnaIco: float | None = _fraction("CNA fraction: icosahedral.")
-    boxSource: Literal["dump-header"] = Field(description="Source of box dimensions.")
 
     @model_validator(mode="before")
     @classmethod
@@ -72,6 +71,7 @@ class CrackFrame(BaseModel):
         if not isinstance(data, dict):
             return data
         data = dict(data)
+        data.pop("box_source", None)  # constant provenance, not a measurement
         cna = data.pop("cna", None) or {}
         for field in _CNA_FIELDS:
             data.setdefault(field, cna.get(field[3:].lower()))

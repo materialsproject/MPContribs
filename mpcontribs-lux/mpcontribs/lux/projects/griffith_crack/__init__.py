@@ -8,6 +8,7 @@ from .schema import (
     CrackSimulation,
     CrackVerdict,
     EarlyStopInfo,
+    RunProvenance,
     TruncationInfo,
     VoidGrid,
 )
@@ -20,6 +21,7 @@ __all__ = [
     "CrackSimulation",
     "CrackVerdict",
     "EarlyStopInfo",
+    "RunProvenance",
     "TruncationInfo",
     "VoidGrid",
     "frames_table",

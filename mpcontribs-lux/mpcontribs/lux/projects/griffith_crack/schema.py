@@ -1,10 +1,12 @@
 """Run-level schema for strain-controlled Griffith crack simulations.
 
-A LAMMPS simulation cycles a notched Cu slab under oscillatory strain, and
+A LAMMPS simulation cycles a notched metal slab under oscillatory strain, and
 ``metric.py`` decides whether the notch grew. One :class:`CrackSimulation`
-mirrors one run's ``damage.json``::
+mirrors one run's ``damage.json``, plus fields damage.json does not record::
 
-    CrackSimulation(**damage, runId=run_id, campaign=campaign)
+    CrackSimulation(
+        **damage, runId=run_id, campaign=campaign, interatomicPotential=potential
+    )
 
 Units follow LAMMPS ``units metal``: K, bar, ps, Angstrom; angles in radians.
 """
@@ -30,27 +32,38 @@ _MODEL_CONFIG = ConfigDict(
     validate_by_name=True,
 )
 
+_ENV_CASE = ConfigDict(
+    alias_generator=AliasGenerator(validation_alias=lambda n: to_snake(n).upper())
+)
 
-class CrackParameters(BaseModel):
-    """Run parameters (``parameters.env``); string values are coerced."""
+#: parameters.env keys that describe how a run was scheduled, not its physics.
+_PROVENANCE_KEYS = (
+    *("SAMPLE_ID", "BATCH", "MEMBER", "TEMPLATE_VARIANT", "BACKEND"),
+    *("RAND1", "RAND2", "RAND3"),
+)
 
-    model_config = _MODEL_CONFIG | ConfigDict(
-        alias_generator=AliasGenerator(validation_alias=lambda n: to_snake(n).upper())
-    )
 
-    templateVariant: str | None = Field(
-        default=None,
-        max_length=64,
-        pattern=_NAME_PATTERN,
-        description="LAMMPS template directory that machined the notch; null if not recorded.",
-    )
-    backend: Literal["kokkos-gpu", "cpu"] | None = Field(
-        default=None, description="LAMMPS backend; null if not recorded."
-    )
+class RunProvenance(BaseModel):
+    """Scheduling and reproducibility details from ``parameters.env``."""
+
+    model_config = _MODEL_CONFIG | _ENV_CASE
+
     sampleId: int = Field(ge=0, description="Sample index within the campaign.")
     batch: int | None = Field(default=None, ge=0, description="Batch index.")
     member: int | None = Field(
         default=None, ge=0, description="Member index within the batch."
+    )
+    templateVariant: str | None = Field(
+        default=None,
+        max_length=64,
+        pattern=_NAME_PATTERN,
+        description="LAMMPS template that machined the notch; null if not recorded.",
+    )
+    backend: str | None = Field(
+        default=None,
+        max_length=32,
+        pattern=_NAME_PATTERN,
+        description="LAMMPS backend; null if not recorded.",
     )
     randSeed1: int = Field(
         ge=0, le=32767, validation_alias="RAND1", description="Velocity seed 1."
@@ -61,40 +74,39 @@ class CrackParameters(BaseModel):
     randSeed3: int = Field(
         ge=0, le=32767, validation_alias="RAND3", description="Velocity seed 3."
     )
-    temperature: float = Field(gt=0, le=2000, description="Thermostat temperature (K).")
+
+
+class CrackParameters(BaseModel):
+    """Physical inputs from ``parameters.env``; string values are coerced."""
+
+    model_config = _MODEL_CONFIG | _ENV_CASE
+
+    temperature: float = Field(gt=0, description="Thermostat temperature (K).")
     normalPrestress: float = Field(
-        ge=-200000, le=200000, description="Normal (crack-opening) prestress (bar)."
+        description="Normal (crack-opening) prestress (bar)."
     )
-    inPlanePrestress: float = Field(
-        ge=-200000, le=200000, description="In-plane prestress (bar)."
-    )
+    inPlanePrestress: float = Field(description="In-plane prestress (bar).")
     strainAmplitude: float = Field(
-        gt=0, le=0.1, validation_alias="STRAIN_AMP", description="Strain amplitude."
+        gt=0, lt=1, validation_alias="STRAIN_AMP", description="Strain amplitude."
     )
-    strainPeriod: float = Field(gt=0, le=10000, description="Strain period (ps).")
+    strainPeriod: float = Field(gt=0, description="Strain period (ps).")
     angle: float = Field(
         ge=-math.pi,
         le=math.pi,
         description="Crack angle relative to the template (rad).",
     )
-    orientation: Literal["100", "110", "111"] = Field(
-        description="Crystal orientation preset."
+    orientation: str = Field(
+        max_length=9,
+        pattern=r"^-?\d{1,2}-?\d{1,2}-?\d{1,2}$",
+        description="Crystal orientation as Miller indices, e.g. '100'.",
     )
     numCyclesPlanned: int = Field(
-        gt=0,
-        le=100,
-        validation_alias="NUM_CYCLES",
-        description="Planned strain cycles.",
+        gt=0, validation_alias="NUM_CYCLES", description="Planned strain cycles."
     )
     earlyStopEnabled: bool = Field(
         default=False,
         validation_alias="EARLY_STOP",
         description="Whether the run stops once the verdict is decided.",
-    )
-    interatomicPotential: str = Field(
-        default="Cu_mishin1.eam.alloy",
-        max_length=64,
-        description="EAM potential file (Mishin, Phys. Rev. B 63, 224106 (2001)).",
     )
 
 
@@ -103,7 +115,7 @@ class VoidGrid(BaseModel):
 
     model_config = _MODEL_CONFIG
 
-    cellTarget: float = Field(gt=0, le=50, description="Target cell size (Angstrom).")
+    cellTarget: float = Field(gt=0, description="Target cell size (Angstrom).")
     nx: int = Field(gt=0, description="Grid columns along x.")
     ny: int = Field(gt=0, description="Grid columns along y.")
     depletionFraction: float = Field(
@@ -216,7 +228,7 @@ class TruncationInfo(BaseModel):
 
     step: int = Field(ge=0, description="Timestep of the exploded frame.")
     reason: str = Field(max_length=160, description="Why analysis stopped.")
-    volumeRatio: float = Field(gt=10.0, description="Cell volume relative to baseline.")
+    volumeRatio: float = Field(gt=1.0, description="Cell volume relative to baseline.")
 
 
 class CrackSimulation(BaseModel):
@@ -228,19 +240,23 @@ class CrackSimulation(BaseModel):
     campaign: str = Field(
         max_length=64, pattern=_NAME_PATTERN, description="Campaign the run belongs to."
     )
+    interatomicPotential: str = Field(
+        max_length=128, description="Interatomic potential used, e.g. file name."
+    )
     params: CrackParameters = Field(validation_alias="parameters")
+    provenance: RunProvenance
     grid: VoidGrid
-    thetaA: float = Field(gt=1.0, le=10.0, description="Growth-ratio threshold.")
+    thetaA: float = Field(gt=1.0, description="Growth-ratio threshold.")
     surfaceSigma: float = Field(
-        gt=0, le=50, description="Energy cut (robust sigmas) for free-surface atoms."
+        gt=0, description="Energy cut (robust sigmas) for free-surface atoms."
     )
     baselineStepId: int = Field(
         ge=0,
         validation_alias="baseline_step",
         description="Timestep of the baseline frame.",
     )
-    metricVersion: int = Field(
-        ge=1, validation_alias="version", description="damage.json format version."
+    metricVersion: Literal[2] = Field(
+        validation_alias="version", description="damage.json format version."
     )
     metricSource: Literal["dump", "vtp"] = Field(
         validation_alias="source", description="Input the metric was computed from."
@@ -257,19 +273,25 @@ class CrackSimulation(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def drop_duplicate_num_cycles(cls, data: Any) -> Any:
-        """``early_stop.num_cycles_planned`` duplicates ``NUM_CYCLES``; check and drop it."""
-        early = data.get("early_stop") if isinstance(data, dict) else None
-        if not isinstance(early, dict) or "num_cycles_planned" not in early:
+    def normalize_raw(cls, data: Any) -> Any:
+        """Split provenance out of ``parameters``; drop the duplicate cycle count."""
+        if not isinstance(data, dict) or not isinstance(data.get("parameters"), dict):
             return data
-        early = dict(early)
-        planned = early.pop("num_cycles_planned")
-        num_cycles = (data.get("parameters") or {}).get("NUM_CYCLES")
-        if None not in (planned, num_cycles) and int(planned) != int(num_cycles):
-            raise ValueError(
-                "early_stop.num_cycles_planned must equal parameters.NUM_CYCLES"
-            )
-        return {**data, "early_stop": early}
+        data = dict(data)
+        params = dict(data["parameters"])
+        data["provenance"] = {k: params.pop(k) for k in _PROVENANCE_KEYS if k in params}
+        data["parameters"] = params
+
+        early = data.get("early_stop")
+        if isinstance(early, dict) and "num_cycles_planned" in early:
+            early = data["early_stop"] = dict(early)
+            planned = early.pop("num_cycles_planned")
+            num_cycles = params.get("NUM_CYCLES")
+            if None not in (planned, num_cycles) and int(planned) != int(num_cycles):
+                raise ValueError(
+                    "early_stop.num_cycles_planned must equal parameters.NUM_CYCLES"
+                )
+        return data
 
     @model_validator(mode="after")
     def check_consistency(self) -> CrackSimulation:

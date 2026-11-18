@@ -16,6 +16,7 @@ from mpcontribs.lux.projects.griffith_crack import (
 
 CAMPAIGN = "campaign_a"
 RUN_ID = f"{CAMPAIGN}/run_0000"
+POTENTIAL = "Cu_mishin1.eam.alloy"
 
 
 @pytest.fixture(scope="module")
@@ -36,7 +37,7 @@ def raw(damage):
 
 @pytest.fixture(scope="module")
 def simulation(damage):
-    return CrackSimulation(**damage, runId=RUN_ID, campaign=CAMPAIGN)
+    return build(damage)
 
 
 @pytest.fixture
@@ -45,7 +46,9 @@ def frames(damage):
 
 
 def build(damage, run_id=RUN_ID):
-    return CrackSimulation(**damage, runId=run_id, campaign=CAMPAIGN)
+    return CrackSimulation(
+        **damage, runId=run_id, campaign=CAMPAIGN, interatomicPotential=POTENTIAL
+    )
 
 
 def make_negative(damage):
@@ -62,12 +65,16 @@ def test_parameters_env_matches_damage_json(fixture_dir, damage):
 
 
 def test_simulation_fields(simulation):
-    params, verdict = simulation.params, simulation.verdict
-    assert (params.sampleId, params.randSeed1, params.numCyclesPlanned) == (0, 3612, 10)
+    params, provenance = simulation.params, simulation.provenance
+    verdict = simulation.verdict
+    assert (provenance.sampleId, provenance.randSeed1) == (0, 3612)
+    assert provenance.templateVariant is None
+    assert params.numCyclesPlanned == 10
+    assert params.orientation == "100"
     assert params.temperature == pytest.approx(494.393)
     assert params.strainAmplitude == pytest.approx(0.01)
     assert params.earlyStopEnabled is True
-    assert params.templateVariant is None
+    assert simulation.interatomicPotential == POTENTIAL
     assert (simulation.grid.nx, simulation.grid.ny) == (183, 242)
     assert simulation.baselineStepId == 200000
     assert verdict.crackGrowth is True
@@ -81,6 +88,17 @@ def test_simulation_ignores_unmodeled_keys(raw):
     raw.update(run_dir="/path/to/run", criterion="text", cycle_end_steps=[1, 2])
     raw["verdict"]["a_y_per_cycle"] = [1.0, 2.0]
     assert "frames" not in build(raw).model_dump()
+
+
+def test_simulation_requires_potential(damage):
+    with pytest.raises(ValidationError, match="interatomic_potential"):
+        CrackSimulation(**damage, runId=RUN_ID, campaign=CAMPAIGN)
+
+
+def test_simulation_accepts_other_orientation_and_backend(raw):
+    raw["parameters"].update(ORIENTATION="-112", BACKEND="cpu-omp")
+    sim = build(raw)
+    assert (sim.params.orientation, sim.provenance.backend) == ("-112", "cpu-omp")
 
 
 def test_simulation_round_trips_by_field_name(simulation):
@@ -97,6 +115,8 @@ def test_simulation_rejects_unknown_parameter(raw):
     "path, value, match",
     [
         (("verdict", "a_y_ratio_min"), 5.0, "aYRatioMax must be >= aYRatioMin"),
+        (("version",), 3, "version"),
+        (("parameters", "ORIENTATION"), "1x0", "ORIENTATION"),
         (("verdict", "crack_growth"), None, "crack_growth"),
         (("verdict", "first_crossing_cycle"), None, "firstCrossingCycle"),
         (("cycle_stage_completed",), True, "cycleStageCompleted"),
@@ -154,9 +174,9 @@ def test_simulation_truncated_positive(raw):
     raw["truncated"] = {
         "step": 900000,
         "reason": "cell volume exploded",
-        "volume_ratio": 12.5,
+        "volume_ratio": 2.5,
     }
-    assert build(raw).truncated.volumeRatio == pytest.approx(12.5)
+    assert build(raw).truncated.volumeRatio == pytest.approx(2.5)
 
 
 def test_frames_table(frames, damage):
@@ -164,7 +184,7 @@ def test_frames_table(frames, damage):
     assert (frames["runId"] == RUN_ID).all()
     assert frames["isBaseline"].sum() == 1
     assert frames["cnaFcc"].isna().all()
-    assert "cna" not in frames.columns
+    assert not {"cna", "boxSource"} & set(frames.columns)
 
 
 @pytest.fixture
@@ -241,7 +261,7 @@ def test_validate_simulation_rejects_bad_frames(simulation, frames, mutate, matc
 def test_atom_record():
     record = CrackAtomRecord(
         atomId=2,
-        atomType=1,
+        atomType=2,
         x=-2.98,
         y=-5.21,
         z=1.89,
@@ -250,4 +270,4 @@ def test_atom_record():
         stressYy=-590289,
         stressZz=-387612,
     )
-    assert record.atomType == 1
+    assert record.atomType == 2
