@@ -1,8 +1,8 @@
-"""Run-level schema for strain-controlled Griffith crack simulations.
+"""Run-level schema for Griffith crack simulations.
 
 A LAMMPS simulation cycles a notched metal slab under oscillatory strain, and
-``metric.py`` decides whether the notch grew. One :class:`CrackSimulation`
-mirrors one run's ``damage.json``, plus fields damage.json does not record::
+we monitor whether the notch grew. One :class:`CrackSimulation`
+mirrors one run's output file (``damage.json``), plus extra fields damage.json does not record::
 
     CrackSimulation(
         **damage, runId=run_id, campaign=campaign, interatomicPotential=potential
@@ -19,7 +19,7 @@ from typing import Any, Literal
 from pydantic import AliasGenerator, BaseModel, ConfigDict, Field, model_validator
 from pydantic.alias_generators import to_snake
 
-#: MPContribs stores 6 significant digits; derived values combine several.
+#: MPContribs stores 6 significant digits.
 FLOAT_REL_TOL = 1e-4
 
 _NAME_PATTERN = r"^[A-Za-z0-9_.-]+$"
@@ -36,7 +36,7 @@ _ENV_CASE = ConfigDict(
     alias_generator=AliasGenerator(validation_alias=lambda n: to_snake(n).upper())
 )
 
-#: parameters.env keys that describe how a run was scheduled, not its physics.
+#: control keys for a scheduled run.
 _PROVENANCE_KEYS = (
     *("SAMPLE_ID", "BATCH", "MEMBER", "TEMPLATE_VARIANT", "BACKEND"),
     *("RAND1", "RAND2", "RAND3"),
@@ -77,7 +77,7 @@ class RunProvenance(BaseModel):
 
 
 class CrackParameters(BaseModel):
-    """Physical inputs from ``parameters.env``; string values are coerced."""
+    """Physical inputs from ``parameters.env``."""
 
     model_config = _MODEL_CONFIG | _ENV_CASE
 
@@ -126,7 +126,7 @@ class VoidGrid(BaseModel):
 
 
 class CrackDiagnostics(BaseModel):
-    """Mechanism flags that explain, but do not decide, the verdict."""
+    """Mechanism flags that explain the crack growth verdict."""
 
     model_config = _MODEL_CONFIG
 
@@ -161,7 +161,7 @@ class CrackDiagnostics(BaseModel):
 
 
 class CrackVerdict(BaseModel):
-    """The crack-growth decision; per-cycle lists are ignored (see the frames table)."""
+    """The crack-growth decision."""
 
     model_config = _MODEL_CONFIG | ConfigDict(extra="ignore")
 
@@ -232,7 +232,7 @@ class TruncationInfo(BaseModel):
 
 
 class CrackSimulation(BaseModel):
-    """One simulation run; ignores ``damage.json`` keys not modeled here."""
+    """One simulation run."""
 
     model_config = _MODEL_CONFIG | ConfigDict(extra="ignore")
 
@@ -274,7 +274,7 @@ class CrackSimulation(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def normalize_raw(cls, data: Any) -> Any:
-        """Split provenance out of ``parameters``; drop the duplicate cycle count."""
+        """Get provenance out of ``parameters`` and drop the duplicate cycle count."""
         if not isinstance(data, dict) or not isinstance(data.get("parameters"), dict):
             return data
         data = dict(data)

@@ -1,4 +1,4 @@
-"""Frame-level table schema: one row per analyzed LAMMPS dump.
+"""Frame-level table schema, one row per analyzed LAMMPS dump.
 
 Rows come from ``damage.json["frames"]``: ``CrackFrame(**frame, runId=run_id)``.
 """
@@ -23,7 +23,7 @@ def _fraction(description: str) -> Any:
 
 
 class CrackFrame(BaseModel):
-    """One analyzed frame. Box lengths come from the dump header (tilt not retained)."""
+    """One analyzed crack frame."""
 
     model_config = _MODEL_CONFIG
 
@@ -67,11 +67,11 @@ class CrackFrame(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def normalize_raw_frame(cls, data: Any) -> Any:
-        """Flatten the nested ``cna`` dict; map the 0.0 aspect placeholder to None."""
+        """Flatten the nested ``cna`` dict."""
         if not isinstance(data, dict):
             return data
         data = dict(data)
-        data.pop("box_source", None)  # constant provenance, not a measurement
+        data.pop("box_source", None)
         cna = data.pop("cna", None) or {}
         for field in _CNA_FIELDS:
             data.setdefault(field, cna.get(field[3:].lower()))
@@ -107,7 +107,7 @@ def frames_table(damage: Mapping[str, Any], *, run_id: str) -> pd.DataFrame:
 
 def validate_simulation(simulation: CrackSimulation, frames: pd.DataFrame) -> None:
     """Raise ValueError unless a simulation and its frames table agree."""
-    # pandas stores None as NaN in numeric columns; restore None.
+    # pandas stores None as NaN in numeric columns, this restores None.
     records = frames.astype(object).where(pd.notnull(frames), None).to_dict("records")
     rows = [CrackFrame.model_validate(row) for row in records]
     verdict = simulation.verdict

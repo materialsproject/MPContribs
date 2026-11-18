@@ -1,8 +1,8 @@
 """Reference schema for the raw per-atom dump columns.
 
 Documents the ``dump.<step>.cracked`` attachments
-(``id type x y z c_6 c_7[1] c_7[2] c_7[3]``). Not uploaded as a table: each
-frame has hundreds of thousands of atoms, and the frames table already
+(``id type x y z c_6 c_7[1] c_7[2] c_7[3]``). Not uploaded as a table,
+because each frame can hold many atoms, and the frames table already
 holds the aggregates.
 """
 
@@ -14,7 +14,7 @@ _MODEL_CONFIG = ConfigDict(extra="forbid", allow_inf_nan=False)
 
 
 class CrackAtomRecord(BaseModel):
-    """One atom in one dump frame. Stresses are stress*volume (bar*Angstrom^3)."""
+    """One atom in one dump frame."""
 
     model_config = _MODEL_CONFIG
 

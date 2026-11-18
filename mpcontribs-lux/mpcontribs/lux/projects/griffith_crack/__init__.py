@@ -1,4 +1,4 @@
-"""Public models for the strain-controlled Griffith crack Lux schema."""
+"""Public models for the Griffith crack Lux schema."""
 
 from .atom import CrackAtomRecord
 from .frame import CrackFrame, frames_table, validate_simulation
