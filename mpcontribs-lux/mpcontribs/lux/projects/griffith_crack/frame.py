@@ -13,13 +13,9 @@ from typing import Any
 import pandas as pd
 from pydantic import BaseModel, Field, model_validator
 
-from .schema import _MODEL_CONFIG, FLOAT_REL_TOL, CrackSimulation
+from .schema import _MODEL_CONFIG, FLOAT_REL_TOL, CrackSimulation, Fraction
 
 _CNA_FIELDS = ("cnaOther", "cnaFcc", "cnaHcp", "cnaBcc", "cnaIco")
-
-
-def _fraction(description: str) -> Any:
-    return Field(default=None, ge=0.0, le=1.0, description=description)
 
 
 class CrackFrame(BaseModel):
@@ -58,11 +54,13 @@ class CrackFrame(BaseModel):
     nSurfNotch: int = Field(ge=0, description="Free-surface atoms on the notch.")
     peMedian: float = Field(description="Median per-atom energy (eV, unbounded).")
     peSigmaMad: float = Field(ge=0.0, description="Robust per-atom energy spread (eV).")
-    cnaOther: float | None = _fraction("CNA fraction: other.")
-    cnaFcc: float | None = _fraction("CNA fraction: FCC.")
-    cnaHcp: float | None = _fraction("CNA fraction: HCP.")
-    cnaBcc: float | None = _fraction("CNA fraction: BCC.")
-    cnaIco: float | None = _fraction("CNA fraction: icosahedral.")
+    cnaOther: Fraction | None = Field(default=None, description="CNA fraction: other.")
+    cnaFcc: Fraction | None = Field(default=None, description="CNA fraction: FCC.")
+    cnaHcp: Fraction | None = Field(default=None, description="CNA fraction: HCP.")
+    cnaBcc: Fraction | None = Field(default=None, description="CNA fraction: BCC.")
+    cnaIco: Fraction | None = Field(
+        default=None, description="CNA fraction: icosahedral."
+    )
 
     @model_validator(mode="before")
     @classmethod

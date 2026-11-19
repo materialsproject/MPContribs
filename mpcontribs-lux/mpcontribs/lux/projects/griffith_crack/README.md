@@ -34,8 +34,10 @@ The `parameters` block is split into
 
 ## Notes
 
-- Units follow LAMMPS `units metal` (K, bar, ps, Angstrom) and are given in
-  field descriptions.
+- Units follow LAMMPS `units metal` (K, bar, ps, Angstrom). Contribution
+  fields store theirs in `json_schema_extra["unit"]` (`None` for strings and
+  booleans); pass these to `client.init_columns` before the first
+  submission. Table units are given in field descriptions.
 - Numeric bounds are only those known to hold (e.g. positive lengths,
   fractions in [0, 1]).
 - Float cross-checks use `rel_tol=1e-4`, since MPContribs stores 6
