@@ -65,9 +65,9 @@ class ElemFraction(ops.Operator):
         self.suf = op
 
     def apply(self, queryset, field, value, negate=False):
-        # field is e.g. "formula__Li" — extract element (last part)
+        # field is e.g. "formula__Li" — extract element (last part), normalize to capitalized
         parts = field.split("__")
-        element = parts[-1]
+        element = parts[-1].capitalize()
         threshold = float(value)
         ops_map = {
             "gte": lambda f: f >= threshold,
@@ -114,7 +114,7 @@ class ContributionsResource(Resource):
         "last_modified": FILTERS["DATES"],
         "needs_build": [ops.Boolean],
         re.compile(r"^data__((?!__).)*$"): FILTERS["ALL"],
-        re.compile(r"^formula__([A-Z][a-z]?)$"): [
+        re.compile(r"^formula__([A-Za-z]{1,2})$"): [
             ElemFractionGte,
             ElemFractionLte,
             ElemFractionGt,
