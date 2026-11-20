@@ -78,6 +78,8 @@ class ElemFraction(ops.Operator):
         check = ops_map[self.op]
         matching = []
         for contrib in queryset.only("id", "formula"):
+            if not contrib.formula:
+                continue
             try:
                 comp = Composition(contrib.formula).reduced_composition
                 frac = comp.get_atomic_fraction(element)
@@ -85,7 +87,7 @@ class ElemFraction(ops.Operator):
                     matching.append(contrib.id)
             except Exception:
                 continue
-        return queryset.filter(id__in=matching)
+        return Contributions.objects(id__in=matching)
 
 
 ElemFractionGte = ElemFraction("gte")
