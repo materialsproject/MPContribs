@@ -46,6 +46,56 @@ def visit(path, key, value):
     return True
 
 
+class ElemFraction(ops.Operator):
+    """Filter contributions by element fraction in reduced composition.
+
+    Supports gte, lte, gt, lt comparisons. For example:
+        GET /contributions/?formula__Li__gte=0.2&formula__Li__lte=0.3
+
+    Both Li5O5N5F5 and Li1Mn1P1As1 have Li fraction = 0.25 and would match
+    formula__Li__gte=0.2&formula__Li__lte=0.3.
+
+    Multiple element filters are applied as AND conditions.
+    """
+
+    typ = "number"
+
+    def __init__(self, op):
+        self.op = op
+        self.suf = op
+
+    def apply(self, queryset, field, value, negate=False):
+        # field is e.g. "formula__Li" — extract element (last part), normalize to capitalized
+        parts = field.split("__")
+        element = parts[-1].capitalize()
+        threshold = float(value)
+        ops_map = {
+            "gte": lambda f: f >= threshold,
+            "lte": lambda f: f <= threshold,
+            "gt": lambda f: f > threshold,
+            "lt": lambda f: f < threshold,
+        }
+        check = ops_map[self.op]
+        matching = []
+        for contrib in queryset.only("id", "formula"):
+            if not contrib.formula:
+                continue
+            try:
+                comp = Composition(contrib.formula).reduced_composition
+                frac = comp.get_atomic_fraction(element)
+                if check(frac):
+                    matching.append(contrib.id)
+            except Exception:
+                continue
+        return Contributions.objects(id__in=matching)
+
+
+ElemFractionGte = ElemFraction("gte")
+ElemFractionLte = ElemFraction("lte")
+ElemFractionGt = ElemFraction("gt")
+ElemFractionLt = ElemFraction("lt")
+
+
 class ContributionsResource(Resource):
     document = Contributions
     related_resources = {
@@ -64,6 +114,12 @@ class ContributionsResource(Resource):
         "last_modified": FILTERS["DATES"],
         "needs_build": [ops.Boolean],
         re.compile(r"^data__((?!__).)*$"): FILTERS["ALL"],
+        re.compile(r"^formula__([A-Za-z]{1,2})$"): [
+            ElemFractionGte,
+            ElemFractionLte,
+            ElemFractionGt,
+            ElemFractionLt,
+        ],
         "structures": [ops.Size],
         "tables": [ops.Size],
         "attachments": [ops.Size],
