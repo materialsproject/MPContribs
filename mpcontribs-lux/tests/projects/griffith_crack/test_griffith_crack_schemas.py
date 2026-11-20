@@ -101,6 +101,13 @@ def test_simulation_accepts_other_orientation_and_backend(raw):
     assert (sim.params.orientation, sim.provenance.backend) == ("-112", "cpu-omp")
 
 
+def test_simulation_accepts_early_stop_on_last_cycle(raw):
+    raw["parameters"]["NUM_CYCLES"] = "5"
+    raw["early_stop"]["num_cycles_planned"] = 5
+    raw["cycle_stage_completed"] = True
+    assert build(raw).earlyStop.stoppedAfterCycle == 5
+
+
 def test_simulation_round_trips_by_field_name(simulation):
     assert CrackSimulation.model_validate(simulation.model_dump()) == simulation
 

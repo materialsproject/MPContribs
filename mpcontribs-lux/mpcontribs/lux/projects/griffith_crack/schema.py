@@ -439,9 +439,14 @@ class CrackSimulation(BaseModel):
             )
         if early is None:
             return self
-        if self.cycleStageCompleted:
+        # A stop at the end of the last planned cycle still completes the stage.
+        if (
+            self.cycleStageCompleted
+            and early.stoppedAfterCycle != self.params.numCyclesPlanned
+        ):
             raise ValueError(
-                "earlyStop may only be set when cycleStageCompleted is false"
+                "earlyStop with cycleStageCompleted requires "
+                "stoppedAfterCycle == params.numCyclesPlanned"
             )
         if not self.params.earlyStopEnabled:
             raise ValueError("earlyStop requires params.earlyStopEnabled")
