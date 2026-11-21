@@ -83,6 +83,8 @@ class ElemFraction(ops.Operator):
             try:
                 comp = Composition(contrib.formula).reduced_composition
                 frac = comp.get_atomic_fraction(element)
+                if self.op in ("lt", "lte") and frac == 0.0:
+                    continue  # element absent; lt/lte would falsely match
                 if check(frac):
                     matching.append(contrib.id)
             except Exception:
