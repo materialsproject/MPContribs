@@ -32,7 +32,7 @@ dependencies = [
     "boltons",
     "css-html-js-minify",
     "dateparser",
-    "ddtrace==4.8.2",
+    "ddtrace==4.15.6",
     "dnspython",
     "filetype",
     "flasgger-tschaume>=0.9.7",
@@ -55,11 +55,11 @@ dependencies = [
     "rq<=2.3.2",  # see https://github.com/rq/Flask-RQ2/issues/620
     "supervisor",
     "setproctitle",
-    "setuptools<82.0.0",
+    "setuptools<85.0.0",
     "uncertainties",
     "websocket_client",
     "zstandard",
-    "pymongo>=4.10.1,<4.18.0", #https://github.com/DataDog/dd-trace-py/issues/20119
+    "pymongo>=4.10.1,<4.19.0", #https://github.com/DataDog/dd-trace-py/issues/20119
 ]
 
 [project.urls]

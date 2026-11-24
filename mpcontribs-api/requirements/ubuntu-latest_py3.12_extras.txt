@@ -91,7 +91,7 @@ dateparser==1.5.0
     # via
     #   mpcontribs-api
     #   mpcontribs-api (pyproject.toml)
-ddtrace==4.8.2
+ddtrace==4.15.6
     # via
     #   mpcontribs-api
     #   mpcontribs-api (pyproject.toml)
@@ -425,7 +425,7 @@ pymatgen==2026.10.24
     #   mpcontribs-api (pyproject.toml)
 pymatgen-core==2026.10.31
     # via pymatgen
-pymongo==4.17.0
+pymongo==4.18.3
     # via
     #   flask-mongorest-mpcontribs
     #   mongoengine
