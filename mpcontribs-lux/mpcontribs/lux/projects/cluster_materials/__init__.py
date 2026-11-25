@@ -3,8 +3,7 @@
 from .cluster import Cluster
 from .cluster_membership import (
     ClusterMembership,
-    parse_site_references,
-    format_site_references,
+    group_memberships,
 )
 from .cluster_point_group import ClusterPointGroup
 from .schema import (
@@ -17,8 +16,7 @@ from .schema import (
 __all__ = [
     "Cluster",
     "ClusterMembership",
-    "parse_site_references",
-    "format_site_references",
+    "group_memberships",
     "ClusterHighlighting",
     "ClusterMaterial",
     "ClusterPointGroup",

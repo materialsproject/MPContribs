@@ -21,7 +21,7 @@ from pymatgen.core import Element
 from .cluster import Cluster
 from .cluster_membership import (
     ClusterMembership,
-    parse_site_references,
+    group_memberships,
 )
 from .cluster_point_group import ClusterPointGroup
 
@@ -126,6 +126,9 @@ class FlatBandProperties(BaseModel):
 
 SHA256 = Annotated[str, StringConstraints(pattern=r"^[0-9a-f]{64}$")]
 MD5 = Annotated[str, StringConstraints(pattern=r"^[0-9a-f]{32}$")]
+CoreStructureId = Annotated[
+    str, StringConstraints(pattern=r"^(?:mp-)?(?:[0-9]{1,12}|[a-z]{1,16})$")
+]
 HighlightingReason = Literal[
     "missing_summary_structure",
     "unresolved_geometry",
@@ -135,6 +138,10 @@ HighlightingReason = Literal[
     "cluster_distances_mismatch",
     "cluster_point_groups_mismatch",
     "processing_error",
+    "core_origin_missing",
+    "core_structure_unavailable",
+    "core_structure_mismatch",
+    "core_origin_ambiguous",
 ]
 
 
@@ -143,9 +150,9 @@ class ClusterHighlighting(BaseModel):
 
     model_config = _MODEL_CONFIG
 
-    policyVersion: Literal["summary-highlight-v1"] = Field(
+    policyVersion: Literal["core-structure-highlight-v2"] = Field(
         description=(
-            "Summary-only matching policy and ordered-structure-sha256-v1 hash "
+            "Pinned final task structure policy and ordered-structure-sha256-v1 hash "
             "contract. Distances use 1e-6 angstrom tolerance, with a reviewed "
             "1e-5 angstrom exception only for mp-1338522. Flags and X-label "
             "numbering are not highlighting eligibility criteria."
@@ -157,15 +164,15 @@ class ClusterHighlighting(BaseModel):
     structureHash: SHA256 | None = Field(
         default=None,
         description=(
-            "SHA-256 of the exact ordered summary lattice, species, and "
+            "SHA-256 of the exact ordered pinned lattice, species, and "
             "unrounded fractional coordinates under ordered-structure-sha256-v1. "
-            "No historical task structure or site-order substitution is permitted."
+            "The task is selected once via Core origins and must match the certified geometry; no site reordering is permitted."
         ),
     )
     numberOfSites: int | None = Field(
         default=None,
         ge=1,
-        description="Number of atomic sites in the fingerprinted summary structure.",
+        description="Number of atomic sites in the fingerprinted pinned task structure.",
     )
     clustersTableMd5: MD5 = Field(
         description="Existing clusters table checksum bound to this eligibility result."
@@ -202,6 +209,14 @@ class ClusterMaterial(BaseModel):
     """Main data fields for one Cluster Materials contribution."""
 
     model_config = _MODEL_CONFIG
+
+    coreStructureId: CoreStructureId | None = Field(
+        default=None,
+        description=(
+            "Exact structure-origin task_id, saved once from Core and retrieved through materials.tasks. "
+            "Accepts bare encoded IDs and legacy mp-prefixed IDs. This is not the changing material identifier."
+        ),
+    )
 
     compoundSystem: CompoundSystem = Field(
         description=(
@@ -267,11 +282,22 @@ class ClusterMaterial(BaseModel):
     clusterHighlighting: ClusterHighlighting | None = Field(
         default=None,
         description=(
-            "Optional summary-structure highlighting metadata. Legacy contributions "
+            "Optional pinned-structure highlighting metadata. Legacy contributions "
             "without this field remain valid. Members belong in the viewer-only "
             "clusterMemberships table, not in this object."
         ),
     )
+
+    @model_validator(mode="after")
+    def validate_structure_reference(self):
+        """Require a pinned task reference when highlighting is available."""
+        if (
+            self.clusterHighlighting is not None
+            and self.clusterHighlighting.isAvailable
+            and self.coreStructureId is None
+        ):
+            raise ValueError("Available highlighting requires coreStructureId")
+        return self
 
 
 def validate_material(
@@ -334,21 +360,16 @@ def validate_material(
         ClusterMembership.model_validate(row)
         for row in cluster_memberships.to_dict(orient="records")
     ]
-    if [row.clusterIndex for row in rows] != list(range(len(cluster_rows))):
-        raise ValueError(
-            "Memberships must reference every clusters row exactly once in source order"
-        )
+    member_groups = group_memberships(rows, highlighting.numberOfSites)
+    if len(member_groups) != len(cluster_rows):
+        raise ValueError("Memberships must cover every source cluster exactly once")
     if {str(row.materialId) for row in rows} != cluster_material_ids:
         raise ValueError("Membership materialId must match the source tables")
     observed = []
-    for row in rows:
-        members = parse_site_references(row.siteReferences)
+    for members in member_groups:
+        row = members[0]
         if len(members) != cluster_rows[row.clusterIndex].size:
             raise ValueError("Membership size must match its clusters row")
-        if any(site >= highlighting.numberOfSites for site, *_ in members):
-            raise ValueError(
-                "Membership site index exceeds the bound summary structure"
-            )
         if row.pointGroupRow >= len(cluster_group_rows):
             raise ValueError("pointGroupRow exceeds the bound clusterPointGroups table")
         symbol = cluster_group_rows[row.pointGroupRow].symbol
