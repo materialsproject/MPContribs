@@ -14,43 +14,43 @@ class ClusterMembership(BaseModel):
     materialId: MPID = Field(description="Original contribution MP identifier.")
     clusterIndex: int = Field(
         ge=0,
-        le=20000,
+        le=31,
         description="Zero-based row position in the bound clusters table; not an X-label.",
         strict=True,
     )
     memberIndex: int = Field(
         ge=0,
-        le=20000,
+        le=15,
         strict=True,
         description="Contiguous zero-based atom position within this cluster, preserving certified order.",
     )
     siteIndex: int = Field(
         ge=0,
-        le=100000,
+        le=255,
         strict=True,
         description="Zero-based atomic site in the exact final task structure identified by coreStructureId.",
     )
     imageA: int = Field(
-        ge=-100000,
-        le=100000,
+        ge=-2,
+        le=2,
         strict=True,
         description="Signed integer periodic image along the pinned lattice a vector.",
     )
     imageB: int = Field(
-        ge=-100000,
-        le=100000,
+        ge=-2,
+        le=2,
         strict=True,
         description="Signed integer periodic image along the pinned lattice b vector.",
     )
     imageC: int = Field(
-        ge=-100000,
-        le=100000,
+        ge=-2,
+        le=2,
         strict=True,
         description="Signed integer periodic image along the pinned lattice c vector.",
     )
     pointGroupRow: int = Field(
         ge=0,
-        le=20000,
+        le=31,
         description=(
             "Zero-based row position in the checksum-bound clusterPointGroups table "
             "whose symbol equals this instance's independently verified point group. "
