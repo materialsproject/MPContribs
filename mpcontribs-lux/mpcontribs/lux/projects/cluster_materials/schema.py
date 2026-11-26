@@ -124,10 +124,8 @@ class FlatBandProperties(BaseModel):
         return self
 
 
-SHA256 = Annotated[str, StringConstraints(pattern=r"^[0-9a-f]{64}$")]
-MD5 = Annotated[str, StringConstraints(pattern=r"^[0-9a-f]{32}$")]
 CoreStructureId = Annotated[
-    str, StringConstraints(pattern=r"^(?:mp-)?(?:[0-9]{1,12}|[a-z]{1,16})$")
+    str, StringConstraints(pattern=r"^mp-(?:[0-9]{1,12}|[a-z]{1,16})$")
 ]
 HighlightingReason = Literal[
     "missing_summary_structure",
@@ -145,66 +143,6 @@ HighlightingReason = Literal[
 ]
 
 
-class ClusterHighlighting(BaseModel):
-    """Eligibility and source bindings for the viewer-only membership table."""
-
-    model_config = _MODEL_CONFIG
-
-    policyVersion: Literal["core-structure-highlight-v2"] = Field(
-        description=(
-            "Pinned final task structure policy and ordered-structure-sha256-v1 hash "
-            "contract. Distances use 1e-6 angstrom tolerance, with a reviewed "
-            "1e-5 angstrom exception only for mp-1338522. Flags and X-label "
-            "numbering are not highlighting eligibility criteria."
-        )
-    )
-    isAvailable: bool = Field(
-        description="Whether a validated clusterMemberships table is available."
-    )
-    structureHash: SHA256 | None = Field(
-        default=None,
-        description=(
-            "SHA-256 of the exact ordered pinned lattice, species, and "
-            "unrounded fractional coordinates under ordered-structure-sha256-v1. "
-            "The task is selected once via Core origins and must match the certified geometry; no site reordering is permitted."
-        ),
-    )
-    numberOfSites: int | None = Field(
-        default=None,
-        ge=1,
-        description="Number of atomic sites in the fingerprinted pinned task structure.",
-    )
-    clustersTableMd5: MD5 = Field(
-        description="Existing clusters table checksum bound to this eligibility result."
-    )
-    pointGroupsTableMd5: MD5 = Field(
-        description="Existing clusterPointGroups checksum bound to this eligibility result."
-    )
-    reason: HighlightingReason | None = Field(
-        default=None,
-        description=(
-            "Unavailable reason code. The viewer message is: "
-            "Cluster highlighting isn't available for this material"
-        ),
-    )
-
-    @model_validator(mode="after")
-    def validate_availability(self) -> ClusterHighlighting:
-        """Require consistent availability, source bindings, and reason fields."""
-        if (self.structureHash is None) != (self.numberOfSites is None):
-            raise ValueError(
-                "structureHash and numberOfSites must be supplied together"
-            )
-        if self.isAvailable:
-            if self.structureHash is None or self.reason is not None:
-                raise ValueError(
-                    "Available highlighting requires a structure hash and no reason"
-                )
-        elif self.reason is None:
-            raise ValueError("Unavailable highlighting requires a reason")
-        return self
-
-
 class ClusterMaterial(BaseModel):
     """Main data fields for one Cluster Materials contribution."""
 
@@ -214,7 +152,7 @@ class ClusterMaterial(BaseModel):
         default=None,
         description=(
             "Exact structure-origin task_id, saved once from Core and retrieved through materials.tasks. "
-            "Accepts bare encoded IDs and legacy mp-prefixed IDs. This is not the changing material identifier."
+            "Requires the mp- prefix for numeric and encoded task IDs. This is not the changing material identifier."
         ),
     )
 
@@ -279,25 +217,10 @@ class ClusterMaterial(BaseModel):
         ),
     )
 
-    clusterHighlighting: ClusterHighlighting | None = Field(
+    highlightingUnavailableReason: HighlightingReason | None = Field(
         default=None,
-        description=(
-            "Optional pinned-structure highlighting metadata. Legacy contributions "
-            "without this field remain valid. Members belong in the viewer-only "
-            "clusterMemberships table, not in this object."
-        ),
+        description="Optional reason that clusterMemberships is unavailable. Table presence determines availability.",
     )
-
-    @model_validator(mode="after")
-    def validate_structure_reference(self):
-        """Require a pinned task reference when highlighting is available."""
-        if (
-            self.clusterHighlighting is not None
-            and self.clusterHighlighting.isAvailable
-            and self.coreStructureId is None
-        ):
-            raise ValueError("Available highlighting requires coreStructureId")
-        return self
 
 
 def validate_material(
@@ -344,45 +267,33 @@ def validate_material(
     if len(labels) != len(set(labels)):
         raise ValueError("clusterPointGroups labels must be unique")
 
-    highlighting = cluster_material.clusterHighlighting
+    expected = [row.symbol for row in cluster_group_rows]
+    for row in cluster_rows:
+        if row.symbol is not None and row.symbol not in expected:
+            raise ValueError("Cluster symbol must exist in clusterPointGroups")
     has_members = cluster_memberships is not None and not cluster_memberships.empty
-    if highlighting is None or not highlighting.isAvailable:
-        if has_members:
-            raise ValueError(
-                "Membership rows require available clusterHighlighting metadata"
-            )
-        return True
     if not has_members:
-        raise ValueError(
-            "Available highlighting requires a nonempty clusterMemberships table"
-        )
+        return True  # Legacy and explicitly unavailable contributions remain valid.
+    if cluster_material.coreStructureId is None:
+        raise ValueError("Memberships require coreStructureId")
+    if cluster_material.highlightingUnavailableReason is not None:
+        raise ValueError("Memberships cannot accompany an unavailable reason")
     rows = [
         ClusterMembership.model_validate(row)
         for row in cluster_memberships.to_dict(orient="records")
     ]
-    member_groups = group_memberships(rows, highlighting.numberOfSites)
+    member_groups = group_memberships(rows)
     if len(member_groups) != len(cluster_rows):
         raise ValueError("Memberships must cover every source cluster exactly once")
     if {str(row.materialId) for row in rows} != cluster_material_ids:
         raise ValueError("Membership materialId must match the source tables")
     observed = []
-    for members in member_groups:
-        row = members[0]
-        if len(members) != cluster_rows[row.clusterIndex].size:
+    for members, cluster in zip(member_groups, cluster_rows):
+        if len(members) != cluster.size:
             raise ValueError("Membership size must match its clusters row")
-        if row.pointGroupRow >= len(cluster_group_rows):
-            raise ValueError("pointGroupRow exceeds the bound clusterPointGroups table")
-        symbol = cluster_group_rows[row.pointGroupRow].symbol
-        if row.pointGroupRow != next(
-            i for i, group in enumerate(cluster_group_rows) if group.symbol == symbol
-        ):
-            raise ValueError(
-                "pointGroupRow must use the first matching source symbol row"
-            )
-        observed.append(cluster_group_rows[row.pointGroupRow].symbol)
-    expected = [row.symbol for row in cluster_group_rows]
+        if cluster.symbol is None:
+            raise ValueError("Every cluster with memberships requires a symbol")
+        observed.append(cluster.symbol)
     if set(observed) != set(expected) or Counter(expected) - Counter(observed):
-        raise ValueError(
-            "Membership point-group references must cover the source symbols"
-        )
+        raise ValueError("Cluster symbols must cover the source point groups")
     return True

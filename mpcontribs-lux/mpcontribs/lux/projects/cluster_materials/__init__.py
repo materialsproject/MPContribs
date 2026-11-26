@@ -7,7 +7,6 @@ from .cluster_membership import (
 )
 from .cluster_point_group import ClusterPointGroup
 from .schema import (
-    ClusterHighlighting,
     ClusterMaterial,
     FlatBandProperties,
     validate_material,
@@ -17,7 +16,6 @@ __all__ = [
     "Cluster",
     "ClusterMembership",
     "group_memberships",
-    "ClusterHighlighting",
     "ClusterMaterial",
     "ClusterPointGroup",
     "FlatBandProperties",
