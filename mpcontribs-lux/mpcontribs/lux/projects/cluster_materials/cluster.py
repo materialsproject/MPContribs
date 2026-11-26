@@ -77,6 +77,13 @@ class Cluster(BaseModel):
         )
     )
 
+    symbol: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=16,
+        description="Certified Schoenflies point-group symbol of this cluster instance; must exist in clusterPointGroups. Optional for legacy or unavailable records.",
+    )
+
     @model_validator(mode="after")
     def validate_cluster(self) -> Cluster:
         """Enforce invariants used when Cluster Finder created the source data."""

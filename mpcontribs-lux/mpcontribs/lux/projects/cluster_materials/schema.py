@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections import Counter
 import re
 from math import isclose
 from typing import Annotated, Literal
@@ -18,6 +19,10 @@ from pydantic import (
 from pymatgen.core import Element
 
 from .cluster import Cluster
+from .cluster_membership import (
+    ClusterMembership,
+    group_memberships,
+)
 from .cluster_point_group import ClusterPointGroup
 
 
@@ -119,10 +124,37 @@ class FlatBandProperties(BaseModel):
         return self
 
 
+CoreStructureId = Annotated[
+    str, StringConstraints(pattern=r"^mp-(?:[0-9]{1,12}|[a-z]{1,16})$")
+]
+HighlightingReason = Literal[
+    "missing_summary_structure",
+    "unresolved_geometry",
+    "cluster_count_mismatch",
+    "cluster_sizes_mismatch",
+    "cluster_compositions_mismatch",
+    "cluster_distances_mismatch",
+    "cluster_point_groups_mismatch",
+    "processing_error",
+    "core_origin_missing",
+    "core_structure_unavailable",
+    "core_structure_mismatch",
+    "core_origin_ambiguous",
+]
+
+
 class ClusterMaterial(BaseModel):
     """Main data fields for one Cluster Materials contribution."""
 
     model_config = _MODEL_CONFIG
+
+    coreStructureId: CoreStructureId | None = Field(
+        default=None,
+        description=(
+            "Exact structure-origin task_id, saved once from Core and retrieved through materials.tasks. "
+            "Requires the mp- prefix for numeric and encoded task IDs. This is not the changing material identifier."
+        ),
+    )
 
     compoundSystem: CompoundSystem = Field(
         description=(
@@ -185,13 +217,19 @@ class ClusterMaterial(BaseModel):
         ),
     )
 
+    highlightingUnavailableReason: HighlightingReason | None = Field(
+        default=None,
+        description="Optional reason that clusterMemberships is unavailable. Table presence determines availability.",
+    )
+
 
 def validate_material(
     cluster_material: ClusterMaterial,
     clusters: pd.DataFrame,
     cluster_groups: pd.DataFrame,
+    cluster_memberships: pd.DataFrame | None = None,
 ) -> bool:
-    """Return True when main data and both tables satisfy shared invariants."""
+    """Validate main data, both original tables, and optional viewer membership table."""
     cluster_rows = [
         Cluster.model_validate(row) for row in clusters.to_dict(orient="records")
     ]
@@ -229,4 +267,33 @@ def validate_material(
     if len(labels) != len(set(labels)):
         raise ValueError("clusterPointGroups labels must be unique")
 
+    expected = [row.symbol for row in cluster_group_rows]
+    for row in cluster_rows:
+        if row.symbol is not None and row.symbol not in expected:
+            raise ValueError("Cluster symbol must exist in clusterPointGroups")
+    has_members = cluster_memberships is not None and not cluster_memberships.empty
+    if not has_members:
+        return True  # Legacy and explicitly unavailable contributions remain valid.
+    if cluster_material.coreStructureId is None:
+        raise ValueError("Memberships require coreStructureId")
+    if cluster_material.highlightingUnavailableReason is not None:
+        raise ValueError("Memberships cannot accompany an unavailable reason")
+    rows = [
+        ClusterMembership.model_validate(row)
+        for row in cluster_memberships.to_dict(orient="records")
+    ]
+    member_groups = group_memberships(rows)
+    if len(member_groups) != len(cluster_rows):
+        raise ValueError("Memberships must cover every source cluster exactly once")
+    if {str(row.materialId) for row in rows} != cluster_material_ids:
+        raise ValueError("Membership materialId must match the source tables")
+    observed = []
+    for members, cluster in zip(member_groups, cluster_rows):
+        if len(members) != cluster.size:
+            raise ValueError("Membership size must match its clusters row")
+        if cluster.symbol is None:
+            raise ValueError("Every cluster with memberships requires a symbol")
+        observed.append(cluster.symbol)
+    if set(observed) != set(expected) or Counter(expected) - Counter(observed):
+        raise ValueError("Cluster symbols must cover the source point groups")
     return True
